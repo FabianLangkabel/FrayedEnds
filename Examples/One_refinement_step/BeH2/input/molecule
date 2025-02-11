@@ -1,0 +1,8 @@
+geometry
+units Bohr
+no_orient 1
+eprec 1.e-6
+Be 0.0 0.0 0.0
+H 0.0 0.0 2.5
+H 0.0 0.0 -2.5
+end

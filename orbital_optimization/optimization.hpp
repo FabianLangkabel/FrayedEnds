@@ -34,10 +34,11 @@ public:
     void UpdateIntegrals();
     void CalculateEnergies();
     void OptimizeOrbitals(double optimization_thresh, double NO_occupation_thresh);
-    real_function_3d GetOrbitalUpdate(int i);
+    std::vector<real_function_3d> GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update);
     void CalculateLagrangeMultiplier();
     double CalculateLagrangeMultiplierElement(int dim, int a, int i);
     void SaveOrbitals(std::string OutputPath);
+	void SaveNOs(std::string OutputPath);
     void SaveIntegralsToNumpy(std::string OutputPath);
 
 
@@ -51,6 +52,7 @@ private:
     std::vector<Orbital> all_orbitals;
     std::vector<int> active_orbital_indicies;
     std::vector<int> frozen_occupied_orbital_indicies;
+    std::vector<int> inactive_virtual_orbital_indicies;
 
     Eigen::MatrixXd ActiveSpaceRotationMatrix;
     Eigen::MatrixXd full_one_rdm;

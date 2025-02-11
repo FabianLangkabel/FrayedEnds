@@ -75,6 +75,10 @@ void Optimization::ReadInitialOrbitals(std::vector<Orbital> orbs, int number_act
         {
             frozen_occupied_orbital_indicies.push_back(i);
         }
+        else if(all_orbitals[i].orbital_type == "inactive_virtual")
+        {
+            inactive_virtual_orbital_indicies.push_back(i);
+        }
     }
 
     //Print frozen occupied indicies
@@ -90,6 +94,14 @@ void Optimization::ReadInitialOrbitals(std::vector<Orbital> orbs, int number_act
     for (auto const& actIdx : active_orbital_indicies)
     {
         std::cout << actIdx << " ";
+    }
+    std::cout << std::endl;
+
+    //Print inactive virtual indicies
+    std::cout << "Inactive virtual orbitals: ";
+    for (auto const& Idx : inactive_virtual_orbital_indicies)
+    {
+        std::cout << Idx << " ";
     }
     std::cout << std::endl;
 
@@ -399,24 +411,35 @@ void Optimization::CalculateAllIntegrals()
         std::vector<real_function_3d> kl = orbitals[k] * orbitals;
         orbs_kl.insert(std::end(orbs_kl), std::begin(kl), std::end(kl));
     }
+    orbs_kl = truncate(orbs_kl, 1e-5);
 
+
+    auto t1 = std::chrono::high_resolution_clock::now();
     auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, 0.001, 1e-6));
     coul_orbs_mn = apply(*world, *coul_op_parallel, orbs_kl);
+    coul_orbs_mn = truncate(coul_orbs_mn, 1e-5);
+    auto t2 = std::chrono::high_resolution_clock::now();
 
+    madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
     for(int k = 0; k < dim; k++)
     {
         for(int l = 0; l < dim; l++)
         {
-            //std::vector<real_function_3d> elements = inner(orbs_kl[k*dim + l], orbs_mn);
             for(int m = 0; m < dim; m++)
             {
                 for(int n = 0; n < dim; n++)
                 {
-                    integrals_two_body(k, l, m, n) = inner(orbs_kl[k*dim + l], coul_orbs_mn[m*dim + n]); 
+                    integrals_two_body(k, l, m, n) = Inner_prods(k*dim + l, m*dim + n);
                 }
             }
         }
     }
+
+    auto t3 = std::chrono::high_resolution_clock::now();
+    auto t12 = std::chrono::duration_cast<std::chrono::seconds>(t2 - t1);
+    auto t23 = std::chrono::duration_cast<std::chrono::seconds>(t3 - t2);
+    std::cout << "t12 took " << t12.count() << " seconds" << std::endl;
+    std::cout << "t23 took " << t23.count() << " seconds" << std::endl;
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
@@ -484,12 +507,19 @@ void Optimization::UpdateIntegrals()
             orbital_list_act_act.push_back(all_orbitals[actIdx_1].function * all_orbitals[actIdx_2].function);
         }
     }
+    orbital_list_frozen_act = truncate(orbital_list_frozen_act, 1e-5);
+    orbital_list_act_frozen = truncate(orbital_list_act_frozen, 1e-5);
+    orbital_list_act_act = truncate(orbital_list_act_act, 1e-5);
 
     //Calculate CoulombOperator(Orbital Lists) -> EXPENSIVE PART!!!
     std::vector<real_function_3d> orbital_list_coul_frozen_act, orbital_list_coul_act_frozen, orbital_list_coul_act_act;
     orbital_list_coul_frozen_act = apply(*world, *coul_op_parallel, orbital_list_frozen_act);
     orbital_list_coul_act_frozen = apply(*world, *coul_op_parallel, orbital_list_act_frozen);
     orbital_list_coul_act_act = apply(*world, *coul_op_parallel, orbital_list_act_act);
+
+    orbital_list_coul_frozen_act = truncate(orbital_list_coul_frozen_act, 1e-5);
+    orbital_list_coul_act_frozen = truncate(orbital_list_coul_act_frozen, 1e-5);
+    orbital_list_coul_act_act = truncate(orbital_list_coul_act_act, 1e-5);
 
     //Update |kl> and |1/r|mn> in full orbital space
     for(int i = 0; i < frozen_occupied_orbital_indicies.size(); i++)
@@ -523,6 +553,8 @@ void Optimization::UpdateIntegrals()
         }
     }
 
+
+    /*
     for(int k = 0; k < dim; k++)
     {
         for(int l = 0; l < dim; l++)
@@ -539,6 +571,22 @@ void Optimization::UpdateIntegrals()
                     {
                         integrals_two_body(k, l, m, n) = inner(orbs_kl[k*dim + l], coul_orbs_mn[m*dim + n]);
                     }
+                }
+            }
+        }
+    }
+    */
+
+    madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
+    for(int k = 0; k < dim; k++)
+    {
+        for(int l = 0; l < dim; l++)
+        {
+            for(int m = 0; m < dim; m++)
+            {
+                for(int n = 0; n < dim; n++)
+                {
+                    integrals_two_body(k, l, m, n) = Inner_prods(k*dim + l, m*dim + n);
                 }
             }
         }
@@ -681,20 +729,27 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
         //}
         //orbitals = solver->update(orbitals, rs);
 
-        //Fixed-Point update
-        for (auto const& actIdx : active_orbital_indicies)
+        //Fixed-Point update new
+        std::vector<int> orbital_indicies_for_update;
+        for (int idx = 0; idx < active_orbital_indicies.size(); idx++)
         {
-            if(abs(full_one_rdm(actIdx, actIdx)) < NO_occupation_thresh)
+            int actIdx = active_orbital_indicies[idx];
+            if(abs(full_one_rdm(actIdx, actIdx)) >= NO_occupation_thresh)
             {
-                std::cout << "Skip optimization of orbital " << actIdx << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
+                orbital_indicies_for_update.push_back(actIdx);
             }
             else
             {
-                orbitals[actIdx] = orbitals[actIdx] - GetOrbitalUpdate(actIdx);
+                std::cout << "Skip optimization of orbital " << actIdx << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
             }
         }
 
-        //Info: Madness kann Operator auf alle Elemente in Vektor anwenden
+        std::vector<real_function_3d> AllActiveOrbitalUpdates = GetAllActiveOrbitalUpdates(orbital_indicies_for_update);
+        for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+        {
+            int actIdx = orbital_indicies_for_update[idx];
+            orbitals[actIdx] = orbitals[actIdx] - AllActiveOrbitalUpdates[idx];
+        }
 
         auto end_orb_update_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
@@ -711,8 +766,34 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
             }
         }
 
+        //Project orbitals out of inactive virtual orbitals
+        if(inactive_virtual_orbital_indicies.size() > 0)
+        {
+            if(frozen_orbs.size() > 0)
+            {
+                auto Q_frozen = QProjector(*world, frozen_orbs);
+                for (auto const& Idx : inactive_virtual_orbital_indicies)
+                {
+                    orbitals[Idx] = Q_frozen(orbitals[Idx]);
+                }
+            }
+            
+            std::vector<real_function_3d> act_orbs_for_projection;
+            for (auto const& actIdx : active_orbital_indicies)
+            {
+                act_orbs_for_projection.push_back(orbitals[actIdx]);
+            }
+            auto Q_active = QProjector(*world, act_orbs_for_projection);
+            for (auto const& Idx : inactive_virtual_orbital_indicies)
+            {
+                orbitals[Idx] = Q_active(orbitals[Idx]);
+            }
+        }
+
+
         //Orthonormalize orbitals
         orbitals = orthonormalize_symmetric(orbitals);
+        //orbitals = orthonormalize_cd(orbitals);
         for(int i = 0; i < orbitals.size(); i++)
         {
             orbitals[i] = orbitals[i].truncate(1e-5);
@@ -738,96 +819,90 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
     }
 }
 
-real_function_3d Optimization::GetOrbitalUpdate(int i)
+std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update)
 {
-    std::cout << "Orbital: " << i << std::endl;
+    auto t1 = std::chrono::high_resolution_clock::now();
     int dim = all_orbitals.size();
-    double thresh = 1e-6; // precision
-    double rdm_ii_inv = 1 / full_one_rdm(i,i);
-    double en = LagrangeMultiplier(i,i) * rdm_ii_inv;
 
-    //Calculate rhs
-    real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
-    real_function_3d rhs = (*Vnuc)(all_orbitals[i].function);
+    std::vector<real_function_3d> AllOrbitalUpdates;
+    
+    //Calculate rdm_ii_inv values
+    std::vector<double> rdm_ii_inv;
+    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+    {
+        int i = orbital_indicies_for_update[idx];
+        rdm_ii_inv.push_back(1 / full_one_rdm(i,i));
+    }
+
+    //1e Part
+    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+    {
+        int i = orbital_indicies_for_update[idx];
+        real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
+        real_function_3d rhs = (*Vnuc)(all_orbitals[i].function);
+        for(int k = 0; k < dim; k++)
+        {
+            if(k != i)
+            {
+                rhs -= rdm_ii_inv[idx] * LagrangeMultiplier(k,i) * all_orbitals[k].function;
+            }
+        }
+        AllOrbitalUpdates.push_back(rhs);
+    }
+    AllOrbitalUpdates = truncate(AllOrbitalUpdates, 1e-5);
+
+    //2e Part
+    //auto t2 = std::chrono::high_resolution_clock::now();
     for(int k = 0; k < dim; k++)
     {
-        if(k != i)
+        std::vector<real_function_3d> lnk = coul_orbs_mn * all_orbitals[k].function;
+        lnk = truncate(lnk, 1e-5);
+        for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
         {
-            rhs -= rdm_ii_inv * LagrangeMultiplier(k,i) * all_orbitals[k].function;
-        }
-    }
-
-    //Alte 1. Variante -> Nachteil: Berechnet schon bekannte Integrale neu
-    /*
-    std::vector<real_function_3d> coul_orbs_lnk;
-    std::vector<real_function_3d> orbitals_rdm_ii_inv = orbitals * rdm_ii_inv;
-    for(int i = 0; i < coul_orbs_mn.size(); i++)
-    {
-        std::vector<real_function_3d> lnk = coul_orbs_mn[i] * orbitals_rdm_ii_inv;
-        coul_orbs_lnk.insert(std::end(coul_orbs_lnk), std::begin(lnk), std::end(lnk));
-    }
-    auto t3 = std::chrono::high_resolution_clock::now();
-    //Eventuell noch v.sum() nutzen!!!
-    for(int l = 0; l < dim; l++)
-    {
-        for(int n = 0; n < dim; n++)
-        {
-            for(int k = 0; k < dim; k++)
+            int i = orbital_indicies_for_update[idx];
+            std::vector<real_function_3d> lnk_copy = copy(*world, lnk, false);
+            for(int l = 0; l < dim; l++)
             {
-                rhs += full_two_rdm(k, l, i, n) * coul_orbs_lnk[l*dim*dim + n*dim + k];
-            }
-        }
-    }
-    */
-
-   //2. Variante -> Nachteil loopt auch über 2rdm Einträge die bekannterweise = 0 sind (unnötig)
-   for(int l = 0; l < dim; l++)
-    {
-        for(int n = 0; n < dim; n++)
-        {
-            for(int k = 0; k < dim; k++)
-            {
-                if(abs(full_two_rdm(k, l, i, n)) > 1e-12)
+                for(int n = 0; n < dim; n++)
                 {
-                    rhs += full_two_rdm(k, l, i, n) * rdm_ii_inv * coul_orbs_mn[l*dim + n] * all_orbitals[k].function;
+                    lnk_copy[l*dim + n] *= full_two_rdm(k, l, i, n) * rdm_ii_inv[idx];
                 }
             }
+            AllOrbitalUpdates[idx] += sum(*world, lnk_copy);
         }
+    }
+    //auto t3 = std::chrono::high_resolution_clock::now();
+
+    //BSH part
+    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+    {
+        int i = orbital_indicies_for_update[idx];
+        double en = LagrangeMultiplier(i,i) * rdm_ii_inv[idx];
+        SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), 0.01, 1e-6);
+        real_function_3d r = all_orbitals[i].function + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
+        double err = r.norm2();
+        std::cout << "Error of Orbital " << i << ": " << err << std::endl; 
+        if(err > highest_error){highest_error = err; }
+        AllOrbitalUpdates[idx] = r;
     }
     
-    //3. Variante ToDo
-    /*
-    //Interaction of active Orbital i with frozen Orbitals
-    for(int j = 0; j < number_frozen_orbs; j++)
-    {
-        rhs += two_rdm(i, j, i, j) * rdm_ii_inv * coul_orbs_mn[j*dim + j] * orbitals[i];
-        rhs += two_rdm(j, i, i, j) * rdm_ii_inv * coul_orbs_mn[i*dim + j] * orbitals[j];
-    }
 
-    //Interaction between active Orbitals
-    for(int l = number_frozen_orbs; l < dim; l++)
-    {
-        for(int n = number_frozen_orbs; n < dim; n++)
-        {
-            for(int k = number_frozen_orbs; k < dim; k++)
-            {
-                if(abs(two_rdm(k, l, i, n)) > 1e-10)
-                {
-                    //rhs += two_rdm(k, l, i, n) * coul_orbs_lnk[l*dim*dim + n*dim + k];
-                    rhs += two_rdm(k, l, i, n) * rdm_ii_inv * coul_orbs_mn[l*dim + n] * orbitals[k];
-                }
-            }
-        }
-    }
-    */
+    auto t4 = std::chrono::high_resolution_clock::now();
+    auto t41 = std::chrono::duration_cast<std::chrono::seconds>(t4 - t1);
+    //auto t32 = std::chrono::duration_cast<std::chrono::seconds>(t3 - t2);
+    std::cout << "GetAllActiveOrbitalUpdates took " << t41.count() << " seconds" << std::endl;
+    //std::cout << "t32 took " << t32.count() << " seconds" << std::endl;
 
-    SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), 0.01, thresh);
-    real_function_3d r = all_orbitals[i].function + 2.0 * bsh_op(rhs); // the residual
-    double err = r.norm2();
-    std::cout << "Error of Orbital " << i << ": " << err << std::endl; 
-    if(err > highest_error){highest_error = err; }
-    return r;
+    return AllOrbitalUpdates;
 } 
+
+void Optimization::SaveNOs(std::string OutputPath)
+{
+    for(int i = 0; i < all_orbitals.size(); i++)
+    {
+        save(all_orbitals[i].function, OutputPath + "/NO_" + std::to_string(i)); // ohne das .00000 im filename
+    }
+}
 
 void Optimization::SaveOrbitals(std::string OutputPath)
 {

@@ -102,7 +102,7 @@ for it in range(iterations):
     shutil.copy("madness_input.json", it_str + "/madness_input.json")
     
     # Execute orbital optimization
-    programm = sp.call("/workspace/MRA_Projects/code/orbital_optimization/build/OrbitalOptimization madness_input.json", stdout=open(it_str + '/log', 'w'), stderr=open(it_str + '/err_log', 'w'), shell = True)
+    programm = sp.call("/workspaces/MRA-OrbitalOptimization/build/OrbitalOptimization madness_input.json", stdout=open(it_str + '/log', 'w'), stderr=open(it_str + '/err_log', 'w'), shell = True)
     
     # The new h and g tensors from the orbital optimization must now be expanded to “number_total_orbs”, otherwise they cannot be read by tequila
     next_it_str = (it + 1).__str__()

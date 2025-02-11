@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(OrbitalOptimization)
 set(CMAKE_CXX_STANDARD 17)
-set(MADNESS_DIR "/home/fabian/MW-VQE/madness_install/opt/lib/cmake/madness")
 include_directories(
     "${CMAKE_SOURCE_DIR}/eigen"
 )
