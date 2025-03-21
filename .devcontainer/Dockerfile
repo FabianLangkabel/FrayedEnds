@@ -96,3 +96,6 @@ RUN \
     pip install qulacs && \
     conda install -y madtequila -c kottmann && \
     pip install block2
+
+RUN \
+    python -m pip install nanobind
