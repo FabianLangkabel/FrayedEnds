@@ -1,0 +1,7 @@
+geometry
+units Bohr
+no_orient 1
+eprec 1.e-6
+Na 0.0 0.0 4.0
+H 0.0 0.0 -4.0
+end

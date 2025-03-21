@@ -153,41 +153,47 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    std::vector<Orbital> all_orbitals;
+    std::vector<std::string> frozen_occ_orbs_files;
+    std::vector<std::string> active_orbs_files;
+    std::vector<std::string> frozen_virt_orb_files;
+
     int number_active_orbitals = 0;
     for(int i = 0; i < input["orbitals"].size(); i++)
     {
         json OrbitalDetails = input["orbitals"][i];
         if(!OrbitalDetails.contains("orbital_file_name")){std::cout << "orbital_file_name for the "<< i << "-th orbital could not be read" << std::endl; return 0;}
         if(!OrbitalDetails.contains("orbital_type")){std::cout << "orbital_type for orbital "<< OrbitalDetails["orbital_file_name"] << " could not be read" << std::endl; return 0;}
-        if(OrbitalDetails["orbital_type"] != "frozen_occupied" && OrbitalDetails["orbital_type"] != "active" && OrbitalDetails["orbital_type"] != "inactive_virtual")
-        {std::cout << "The orbital type " << OrbitalDetails["orbital_type"] << " of Orbital " << OrbitalDetails["orbital_file_name"] << " is not known. Currently the types frozen_occupied, inactive_virtual and active can be set." << std::endl; return 0;}
-        if(OrbitalDetails["orbital_type"] == "active" && !OrbitalDetails.contains("active_space_index")){std::cout << "active_space_index for active orbital "<< OrbitalDetails["orbital_file_name"] << " could not be read" << std::endl; return 0;}
-        all_orbitals.push_back(Orbital(OrbitalDetails["orbital_file_name"], OrbitalDetails["orbital_type"]));
-        if(OrbitalDetails["orbital_type"] == "active"){all_orbitals[i].active_space_index = OrbitalDetails["active_space_index"]; number_active_orbitals++;}
+        if(OrbitalDetails["orbital_type"] == "frozen_occupied"){frozen_occ_orbs_files.push_back(OrbitalDetails["orbital_file_name"]);}
+        else if(OrbitalDetails["orbital_type"] == "active"){active_orbs_files.push_back(OrbitalDetails["orbital_file_name"]);}
+        else if(OrbitalDetails["orbital_type"] == "inactive_virtual"){frozen_virt_orb_files.push_back(OrbitalDetails["orbital_file_name"]);}
+        else{std::cout << "The orbital type " << OrbitalDetails["orbital_type"] << " of Orbital " << OrbitalDetails["orbital_file_name"] << " is not known. Currently the types frozen_occupied, inactive_virtual and active can be set." << std::endl; return 0;}
     }
 
 
     //----------------------- Perform Orbital Optimization -----------------------
     Optimization* opti = new Optimization(argc, argv, box_size, wavelet_order, madness_thresh);
+    opti->nocc = 2; // spatial orbital = 2; spin orbitals = 1
+    opti->truncation_tol = 1e-6;
+    opti->coulomb_lo = 0.001;
+    opti->coulomb_eps = 1e-6;
+    opti->BSH_lo = 0.01;
+    opti->BSH_eps = 1e-6;
+
     std::cout << "Read rdms, create initial guess and calculate initial energy" << std::endl;
     opti->CreateNuclearPotentialAndRepulsion(molecule_file);
-    opti->ReadInitialOrbitals(all_orbitals, number_active_orbitals);
+    opti->ReadInitialOrbitals(frozen_occ_orbs_files, active_orbs_files, frozen_virt_orb_files);
     opti->ReadRDMFilesAndRotateOrbitals(active_space_one_rdm_file, active_space_two_rdm_file);
     opti->CalculateAllIntegrals();
+    opti->CalculateCoreEnergy();
     opti->CalculateEnergies();
-
 
     std::cout << "---------------------------------------------------" << std::endl;
     std::cout << "Start orbital optimization" << std::endl;
     opti->OptimizeOrbitals(optimization_thresh, NO_occupation_thresh);
-
-    //----------------------- Write Output -----------------------
-	if(print_final_nos){opti->SaveNOs(output_folder);}
-    opti->RotateOrbitalsAndIntegralsBack();
-    if(print_final_orbitals){opti->SaveOrbitals(output_folder);}
-    if(print_final_integrals){opti->SaveIntegralsToNumpy(output_folder);}
     
+    opti->RotateOrbitalsBackAndUpdateIntegrals();
+    opti->SaveOrbitals(output_folder);
+    opti->SaveEffectiveHamiltonian(output_folder);
 
     return 0;
 }

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(OrbitalOptimization)
 set(CMAKE_CXX_STANDARD 17)
+set(MADNESS_DIR "/usr/local/madness/lib/cmake/madness")
 include_directories(
     "${CMAKE_SOURCE_DIR}/eigen"
 )

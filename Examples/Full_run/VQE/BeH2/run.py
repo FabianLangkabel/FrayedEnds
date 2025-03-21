@@ -1,3 +1,10 @@
+
+###############################################
+# ATTENTION: This example still needs to be adapted to the new OrbitalRefinement code
+###############################################
+
+
+
 import tequila as tq
 import numpy as np
 import os

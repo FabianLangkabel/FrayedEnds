@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <madness/external/nlohmann_json/json.hpp>
 #include "npy.hpp"
-#include "orbital.hpp"
 
 using namespace madness;
 
@@ -23,49 +22,74 @@ public:
     ~Optimization();
 
     void CreateNuclearPotentialAndRepulsion(std::string GeometryFile);
-    void ReadInitialOrbitals(std::vector<Orbital> all_orbitals, int number_active_orbitals);
-    
-
+    void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files);
     void ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file);
-    void RotateOrbitalsAndIntegralsBack();
     void TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix);
     void TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::MatrixXd TransformationMatrix);
     void CalculateAllIntegrals();
-    void UpdateIntegrals();
+    void CalculateCoreEnergy();
     void CalculateEnergies();
+    void CalculateLagrangeMultiplier();
+    double CalculateLagrangeMultiplierElement_AS_AS(int z, int i);
+    double CalculateLagrangeMultiplierElement_AS_Core(int z, int i);
     void OptimizeOrbitals(double optimization_thresh, double NO_occupation_thresh);
     std::vector<real_function_3d> GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update);
-    void CalculateLagrangeMultiplier();
-    double CalculateLagrangeMultiplierElement(int dim, int a, int i);
+    void RotateOrbitalsBackAndUpdateIntegrals();
     void SaveOrbitals(std::string OutputPath);
-	void SaveNOs(std::string OutputPath);
-    void SaveIntegralsToNumpy(std::string OutputPath);
+    void SaveEffectiveHamiltonian(std::string OutputPath);
 
-
+    int nocc = 2; // spatial orbital = 2; spin orbitals = 1
+    double truncation_tol = 1e-6;
+    double coulomb_lo = 0.001;
+    double coulomb_eps = 1e-6;
+    double BSH_lo = 0.01;
+    double BSH_eps = 1e-6;
+    
 private:
 //World& world;
+
+    //Madness + Molecule
     World* world;
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy;
     Nuclear<double,3>* Vnuc;
 
-    std::vector<Orbital> all_orbitals;
-    std::vector<int> active_orbital_indicies;
-    std::vector<int> frozen_occupied_orbital_indicies;
-    std::vector<int> inactive_virtual_orbital_indicies;
+    //Orbitals
+    std::vector<std::string> frozen_occ_orbs_files;
+    std::vector<std::string> active_orbs_files;
+    std::vector<std::string> frozen_virt_orb_files;
+    std::vector<real_function_3d> frozen_occ_orbs;
+    std::vector<real_function_3d> active_orbs;
+    std::vector<real_function_3d> frozen_virt_orb;
+    int core_dim;
+    int as_dim;
+    int froz_virt_dim;
 
+    //RDMs
     Eigen::MatrixXd ActiveSpaceRotationMatrix;
-    Eigen::MatrixXd full_one_rdm;
-    Eigen::Tensor<double, 4> full_two_rdm;
+    Eigen::MatrixXd as_one_rdm;
+    Eigen::Tensor<double, 4> as_two_rdm;
 
-    std::vector<Eigen::MatrixXd> integrals_kinetic;
-    Eigen::MatrixXd integrals_potential;
-    Eigen::MatrixXd integrals_one_body;
-    Eigen::Tensor<double, 4> integrals_two_body;
+    //Integrals
+    Eigen::MatrixXd as_integrals_one_body; // (k,l)
+    Eigen::Tensor<double, 4> as_integrals_two_body; // (k,l,m,n)
 
+    Eigen::MatrixXd core_as_integrals_one_body_ak; // (a,k)
+    Eigen::Tensor<double, 4> core_as_integrals_two_body_akln; // (a,k,l,n)
+    Eigen::Tensor<double, 3> core_as_integrals_two_body_akal; // (a,k,l)
+    Eigen::Tensor<double, 3> core_as_integrals_two_body_akla; // (a,k,l)
+    Eigen::Tensor<double, 3> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
+    Eigen::Tensor<double, 3> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
+
+    //Energies
+    double core_total_energy;
+
+    //Refinement
+    double highest_error;
+    Eigen::MatrixXd LagrangeMultiplier_AS_AS;
+    Eigen::MatrixXd LagrangeMultiplier_AS_Core;
+
+    //Stored AS orbital combinations
     std::vector<real_function_3d> orbs_kl; // |kl>
     std::vector<real_function_3d> coul_orbs_mn; // 1/r|mn>
-
-    Eigen::MatrixXd LagrangeMultiplier;
-    double highest_error;
 };

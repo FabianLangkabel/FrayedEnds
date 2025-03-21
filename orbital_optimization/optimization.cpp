@@ -2,24 +2,6 @@
 
 using namespace madness;
 
-// KAIN allocator for vectorfunctions
-struct KAIN_allocator {
-    World &world;
-    const int norb;
-
-    /// @param[in]	world	the world
-    /// @param[in]	nnorb	the number of functions in a given vector
-    KAIN_allocator(World &world, const int nnorb) : world(world), norb(nnorb) {}
-
-    vector_real_function_3d operator()() {
-        return zero_functions<double, 3>(world, norb);
-    }
-
-    KAIN_allocator operator=(const KAIN_allocator &other) {
-        KAIN_allocator tmp(world, other.norb);
-        return tmp;
-    }
-};
 
 Optimization::Optimization(int argc, char** argv, double L, long k, double thresh)
 {
@@ -53,57 +35,37 @@ void Optimization::CreateNuclearPotentialAndRepulsion(std::string GeometryFile)
     nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
 }
 
-void Optimization::ReadInitialOrbitals(std::vector<Orbital> orbs, int number_active_orbitals)
+void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    all_orbitals = orbs;
-    active_orbital_indicies.resize(number_active_orbitals);
-    std::fill(active_orbital_indicies.begin(), active_orbital_indicies.end(), -1);
-    frozen_occupied_orbital_indicies.clear();
+    this->frozen_occ_orbs_files = frozen_occ_orbs_files;
+    this->active_orbs_files = active_orbs_files;
+    this->frozen_virt_orb_files = frozen_virt_orb_files;
 
-    for(int i = 0; i < all_orbitals.size(); i++)
+    for(int i = 0; i < frozen_occ_orbs_files.size(); i++)
     {
         real_function_3d orb = real_factory_3d(*world);
-        load(orb, all_orbitals[i].orbital_file_name);
-        all_orbitals[i].function = orb;
-        if(all_orbitals[i].orbital_type == "active")
-        {
-            active_orbital_indicies[all_orbitals[i].active_space_index] = i;
-        }
-        else if(all_orbitals[i].orbital_type == "frozen_occupied")
-        {
-            frozen_occupied_orbital_indicies.push_back(i);
-        }
-        else if(all_orbitals[i].orbital_type == "inactive_virtual")
-        {
-            inactive_virtual_orbital_indicies.push_back(i);
-        }
+        load(orb, frozen_occ_orbs_files[i]);
+        frozen_occ_orbs.push_back(orb);
     }
 
-    //Print frozen occupied indicies
-    std::cout << "Frozen occupied orbitals: ";
-    for (auto const& Idx : frozen_occupied_orbital_indicies)
+    for(int i = 0; i < active_orbs_files.size(); i++)
     {
-        std::cout << Idx << " ";
+        real_function_3d orb = real_factory_3d(*world);
+        load(orb, active_orbs_files[i]);
+        active_orbs.push_back(orb);
     }
-    std::cout << std::endl;
 
-    //Print active space indicies
-    std::cout << "Active space indicies: ";
-    for (auto const& actIdx : active_orbital_indicies)
+    for(int i = 0; i < frozen_virt_orb_files.size(); i++)
     {
-        std::cout << actIdx << " ";
+        real_function_3d orb = real_factory_3d(*world);
+        load(orb, frozen_virt_orb_files[i]);
+        frozen_virt_orb.push_back(orb);
     }
-    std::cout << std::endl;
-
-    //Print inactive virtual indicies
-    std::cout << "Inactive virtual orbitals: ";
-    for (auto const& Idx : inactive_virtual_orbital_indicies)
-    {
-        std::cout << Idx << " ";
-    }
-    std::cout << std::endl;
+    core_dim = frozen_occ_orbs.size();
+    as_dim = active_orbs.size();
+    froz_virt_dim = frozen_virt_orb.size();
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
@@ -117,185 +79,59 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
     //****************************************
     // Read active space RDMs
     //****************************************
-    std::ifstream one_rdm_imput_file, two_rdm_imput_file; 
-    one_rdm_imput_file.open(one_rdm_file);
-    two_rdm_imput_file.open(two_rdm_file);
+    as_one_rdm = Eigen::MatrixXd::Zero(as_dim, as_dim);
+    as_two_rdm = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
 
-    //Wird nichtmehr aus den Files benötigt muss aber trotzdem noch "gelesen" oder Zeile übersprungen werden
-    int one_rdm_dim, two_rdm_dim;
-    std::string read_temp;
-    one_rdm_imput_file >> read_temp;
-    one_rdm_dim = std::stoi(read_temp);
-    two_rdm_imput_file >> read_temp;
-    two_rdm_dim = std::stoi(read_temp);
+    std::vector<double> one_rdm_data = npy::read_npy<double>(one_rdm_file).data;
+    std::vector<double> two_rdm_data = npy::read_npy<double>(two_rdm_file).data;
 
-    int number_active_orbitals = active_orbital_indicies.size();
-
-    Eigen::MatrixXd active_space_one_rdm = Eigen::MatrixXd::Zero(number_active_orbitals, number_active_orbitals);
-    Eigen::Tensor<double, 4> active_space_two_rdm = Eigen::Tensor<double, 4>(number_active_orbitals, number_active_orbitals, number_active_orbitals, number_active_orbitals);
-    active_space_two_rdm.setZero();
-
-    for(int i = 0; i < number_active_orbitals; i++)
+    int x = 0;
+    for(int i = 0; i < as_dim; i++)
     {
-        for(int j = 0; j < number_active_orbitals; j++)
+        for(int j = 0; j < as_dim; j++)
         {
-            one_rdm_imput_file >> read_temp;
-            active_space_one_rdm(i,j) = std::stod(read_temp);
+            as_one_rdm(i,j) = one_rdm_data[x];
+            x++;
         }
     }
-    for(int i = 0; i < number_active_orbitals; i++)
+
+    x = 0;
+    for(int i = 0; i < as_dim; i++)
     {
-        for(int j = 0; j < number_active_orbitals; j++)
+        for(int j = 0; j < as_dim; j++)
         {
-            for(int k = 0; k < number_active_orbitals; k++)
+            for(int k = 0; k < as_dim; k++)
             {
-                for(int l = 0; l < number_active_orbitals; l++)
+                for(int l = 0; l < as_dim; l++)
                 {
-                    two_rdm_imput_file >> read_temp;
-                    active_space_two_rdm(i,j,k,l) = std::stod(read_temp);
+                    as_two_rdm(i,j,k,l) = two_rdm_data[x];
+                    x++;
                 }
             }
         }
     }
-    one_rdm_imput_file.close();
-    two_rdm_imput_file.close();
 
     //****************************************
     // Rotate active Space Orbitals
     //****************************************
     {
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-        es.compute(active_space_one_rdm);
+        es.compute(as_one_rdm);
         ActiveSpaceRotationMatrix = es.eigenvectors().rowwise().reverse();
-        TransformMatrix(&active_space_one_rdm, ActiveSpaceRotationMatrix);
-        TransformTensor(&active_space_two_rdm, ActiveSpaceRotationMatrix);
-        madness::Tensor<double> T(number_active_orbitals, number_active_orbitals);
-        for (int i = 0; i < number_active_orbitals; i++) {
-            for (int j = 0; j < number_active_orbitals; j++) {
+        TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
+        TransformTensor(&as_two_rdm, ActiveSpaceRotationMatrix);
+        madness::Tensor<double> T(as_dim, as_dim);
+        for (int i = 0; i < as_dim; i++) {
+            for (int j = 0; j < as_dim; j++) {
                 T(i,j) = ActiveSpaceRotationMatrix(i,j);
             }
         }
-        std::vector<real_function_3d> orbitals_rotate;
-        for (auto const& actIdx : active_orbital_indicies)
-        {
-            orbitals_rotate.push_back(all_orbitals[actIdx].function);
-        }
-        orbitals_rotate = transform(*world, orbitals_rotate, T);
-        for(int i = 0; i < number_active_orbitals; i++)
-        {
-            int actIdx = active_orbital_indicies[i];
-            all_orbitals[actIdx].function = orbitals_rotate[i];
-        }
-    }
-
-    //****************************************
-    // Build full RDMs
-    //****************************************
-    {
-        //Create full RDMs
-        int number_orbitals = all_orbitals.size();
-        full_one_rdm = Eigen::MatrixXd::Zero(number_orbitals, number_orbitals);
-        full_two_rdm = Eigen::Tensor<double, 4>(number_orbitals, number_orbitals, number_orbitals, number_orbitals);
-        full_two_rdm.setZero();
-
-        //Fill in active Orbital
-        for(int i = 0; i < number_active_orbitals; i++)
-        {
-            int full_i = active_orbital_indicies[i];
-            for(int j = 0; j < number_active_orbitals; j++)
-            {
-                int full_j = active_orbital_indicies[j];
-                full_one_rdm(full_i, full_j) = active_space_one_rdm(i, j);
-                for(int k = 0; k < number_active_orbitals; k++)
-                {
-                    int full_k = active_orbital_indicies[k];
-                    for(int l = 0; l < number_active_orbitals; l++)
-                    {
-                        int full_l = active_orbital_indicies[l];
-                        full_two_rdm(full_i, full_j, full_k, full_l) = active_space_two_rdm(i, j, k, l);
-                    }
-                }
-            }
-        }
-
-        //Fill in Frozen Core orbitals
-        for (int const& frozen_occ_idx : frozen_occupied_orbital_indicies)
-        {
-            full_one_rdm(frozen_occ_idx, frozen_occ_idx) = 2.0;
-            full_two_rdm(frozen_occ_idx, frozen_occ_idx, frozen_occ_idx, frozen_occ_idx) = 2.0;
-
-            //Frozen Orbtial with active Orbitals
-            for (int const& act_idx_1 : active_orbital_indicies)
-            {
-                for (int const& act_idx_2 : active_orbital_indicies)
-                {
-                    full_two_rdm(frozen_occ_idx, act_idx_1, frozen_occ_idx, act_idx_2) = 2.0 * full_one_rdm(act_idx_1, act_idx_2);
-                    full_two_rdm(act_idx_1, frozen_occ_idx, act_idx_2, frozen_occ_idx) = 2.0 * full_one_rdm(act_idx_1, act_idx_2);
-                    full_two_rdm(frozen_occ_idx, act_idx_1, act_idx_2, frozen_occ_idx) = -1.0 * full_one_rdm(act_idx_1, act_idx_2);
-                    full_two_rdm(act_idx_1, frozen_occ_idx, frozen_occ_idx, act_idx_2) = -1.0 * full_one_rdm(act_idx_1, act_idx_2);
-                }
-            }
-
-            //Frozen orbitals with each other
-            for (int const& frozen_occ_idx_2 : frozen_occupied_orbital_indicies)
-            {
-                if(frozen_occ_idx != frozen_occ_idx_2)
-                {
-                    full_two_rdm(frozen_occ_idx, frozen_occ_idx_2, frozen_occ_idx, frozen_occ_idx_2) = 4;
-                    full_two_rdm(frozen_occ_idx, frozen_occ_idx_2, frozen_occ_idx_2, frozen_occ_idx) = -2;
-                }
-            }
-        }
+        active_orbs = transform(*world, active_orbs, T);
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "ReadRDMFiles took " << duration.count() << " seconds" << std::endl;
-}
-
-void Optimization::RotateOrbitalsAndIntegralsBack()
-{
-    int number_all_orbitals = all_orbitals.size();
-    int number_active_orbitals = active_orbital_indicies.size();
-
-    //Create Full RotationMatrix
-    Eigen::MatrixXd RotationMatrixBack = ActiveSpaceRotationMatrix.transpose();
-    Eigen::MatrixXd Full_RotationMatrixBack = Eigen::MatrixXd::Identity(number_all_orbitals, number_all_orbitals);
-    for(int i = 0; i < number_active_orbitals; i++)
-    {
-        for(int j = 0; j < number_active_orbitals; j++)
-        {
-            Full_RotationMatrixBack(active_orbital_indicies[i], active_orbital_indicies[j]) = RotationMatrixBack(i,j);
-        }
-    }
-
-    //Transform RDMs
-    TransformMatrix(&full_one_rdm, Full_RotationMatrixBack);
-    TransformTensor(&full_two_rdm, Full_RotationMatrixBack);
-
-    //Transform active Orbitals
-    madness::Tensor<double> T(number_active_orbitals, number_active_orbitals);
-    for (int i = 0; i < number_active_orbitals; i++) {
-        for (int j = 0; j < number_active_orbitals; j++) {
-            T(i,j) = RotationMatrixBack(i,j);
-        }
-    }
-    std::vector<real_function_3d> orbitals_rotate;
-    for (auto const& actIdx : active_orbital_indicies)
-    {
-        orbitals_rotate.push_back(all_orbitals[actIdx].function);
-    }
-    orbitals_rotate = transform(*world, orbitals_rotate, T);
-    for(int i = 0; i < number_active_orbitals; i++)
-    {
-        int actIdx = active_orbital_indicies[i];
-        all_orbitals[actIdx].function = orbitals_rotate[i];
-    }
-
-    //Transform Integrals
-    integrals_one_body = integrals_potential + integrals_kinetic[0] + integrals_kinetic[1] + integrals_kinetic[2];
-    TransformMatrix(&integrals_one_body, Full_RotationMatrixBack);
-    TransformTensor(&integrals_two_body, Full_RotationMatrixBack);
 }
 
 void Optimization::TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix)
@@ -371,277 +207,313 @@ void Optimization::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen
 void Optimization::CalculateAllIntegrals()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
-    real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
 
-    std::vector<real_function_3d> orbitals;
-    for (auto const& orb : all_orbitals)
+    // Initializing the Coulomb operator
+    real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
+    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, coulomb_lo, coulomb_eps));
+
+    // Multiplication of AS orbital pairs and their Coulomb element (are needed more often and are therefore stored)
+    auto t1 = std::chrono::high_resolution_clock::now();
+    orbs_kl.clear();
+    for(int k = 0; k < as_dim; k++)
     {
-        orbitals.push_back(orb.function);
+        std::vector<real_function_3d> kl = active_orbs[k] * active_orbs;
+        orbs_kl.insert(std::end(orbs_kl), std::begin(kl), std::end(kl));
     }
-    int dim = orbitals.size();
+    orbs_kl = truncate(orbs_kl, truncation_tol);
+    coul_orbs_mn = apply(*world, *coul_op_parallel, orbs_kl);
+    coul_orbs_mn = truncate(coul_orbs_mn, truncation_tol);
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-    integrals_kinetic.clear();
-    integrals_kinetic.push_back(Eigen::MatrixXd::Zero(dim, dim)); //x
-    integrals_kinetic.push_back(Eigen::MatrixXd::Zero(dim, dim)); //y
-    integrals_kinetic.push_back(Eigen::MatrixXd::Zero(dim, dim)); //z
-    integrals_potential = Eigen::MatrixXd::Zero(dim, dim);
-    integrals_two_body = Eigen::Tensor<double, 4>(dim, dim, dim, dim);
-
-    //One Particle Part
-    for(int k = 0; k < dim; k++)
+    // AS-AS one electron integrals
+    as_integrals_one_body = Eigen::MatrixXd::Zero(as_dim, as_dim);
+    for(int k = 0; k < as_dim; k++)
     {
-        for(int l = 0; l < dim; l++)
+        for(int l = 0; l < as_dim; l++)
         {
             //Kinetic
             for (int axis=0; axis<3; axis++) {
                 real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
-                real_function_3d d_orb_k = D(orbitals[k]);
-                real_function_3d d_orb_l = D(orbitals[l]);
-                integrals_kinetic[axis](k, l) = 0.5 * inner(d_orb_k,d_orb_l);
+                real_function_3d d_orb_k = D(active_orbs[k]);
+                real_function_3d d_orb_l = D(active_orbs[l]);
+                as_integrals_one_body(k, l) += 0.5 * inner(d_orb_k,d_orb_l);
             }
             //Nuclear
-            real_function_3d Vnuc_orb_l = (*Vnuc)(orbitals[l]);
-            integrals_potential(k, l) = inner(orbitals[k], Vnuc_orb_l);
+            real_function_3d Vnuc_orb_l = (*Vnuc)(active_orbs[l]);
+            as_integrals_one_body(k, l) += inner(active_orbs[k], Vnuc_orb_l);
         }
     }
-
-    orbs_kl.clear();
-    for(int k = 0; k < dim; k++)
-    {
-        std::vector<real_function_3d> kl = orbitals[k] * orbitals;
-        orbs_kl.insert(std::end(orbs_kl), std::begin(kl), std::end(kl));
-    }
-    orbs_kl = truncate(orbs_kl, 1e-5);
+    auto t3 = std::chrono::high_resolution_clock::now();
 
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, 0.001, 1e-6));
-    coul_orbs_mn = apply(*world, *coul_op_parallel, orbs_kl);
-    coul_orbs_mn = truncate(coul_orbs_mn, 1e-5);
-    auto t2 = std::chrono::high_resolution_clock::now();
-
+    // AS two electron integrals
+    as_integrals_two_body = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
     madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
-    for(int k = 0; k < dim; k++)
+    for(int k = 0; k < as_dim; k++)
     {
-        for(int l = 0; l < dim; l++)
+        for(int l = 0; l < as_dim; l++)
         {
-            for(int m = 0; m < dim; m++)
+            for(int m = 0; m < as_dim; m++)
             {
-                for(int n = 0; n < dim; n++)
+                for(int n = 0; n < as_dim; n++)
                 {
-                    integrals_two_body(k, l, m, n) = Inner_prods(k*dim + l, m*dim + n);
+                    as_integrals_two_body(k, m, l, n) = Inner_prods(k*as_dim + l, m*as_dim + n);
+                }
+            }
+        }
+    }
+    auto t4 = std::chrono::high_resolution_clock::now();
+
+
+    // Core-AS one electron integrals
+    core_as_integrals_one_body_ak = Eigen::MatrixXd::Zero(core_dim, as_dim);
+    for(int a = 0; a < core_dim; a++)
+    {
+        for(int k = 0; k < as_dim; k++)
+        {
+            //Kinetic
+            for (int axis=0; axis<3; axis++) {
+                real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
+                real_function_3d d_orb_a = D(frozen_occ_orbs[a]);
+                real_function_3d d_orb_k = D(active_orbs[k]);
+                core_as_integrals_one_body_ak(a, k) += 0.5 * inner(d_orb_a, d_orb_k);
+            }
+            //Nuclear
+            real_function_3d Vnuc_orb_k = (*Vnuc)(active_orbs[k]);
+            core_as_integrals_one_body_ak(a, k) += inner(frozen_occ_orbs[a], Vnuc_orb_k);
+        }
+    }
+    auto t5 = std::chrono::high_resolution_clock::now();
+
+
+    // Core-AS two electron integrals <ak|al>
+    {
+        core_as_integrals_two_body_akal = Eigen::Tensor<double, 3>(core_dim, as_dim, as_dim);
+        std::vector<real_function_3d> orbs_aa;
+        for (int a = 0; a < core_dim; a++)
+        {
+            orbs_aa.push_back(frozen_occ_orbs[a] * frozen_occ_orbs[a]);
+        }
+        orbs_aa = truncate(orbs_aa, truncation_tol);
+        madness::Tensor<double> Inner_prods_akal = matrix_inner(*world, orbs_aa, coul_orbs_mn, false);
+        for (int a = 0; a < core_dim; a++)
+        {
+            for(int k = 0; k < as_dim; k++)
+            {
+                for(int l = 0; l < as_dim; l++)
+                {
+                    core_as_integrals_two_body_akal(a, k, l) = Inner_prods_akal(a, k*as_dim + l);
                 }
             }
         }
     }
 
-    auto t3 = std::chrono::high_resolution_clock::now();
-    auto t12 = std::chrono::duration_cast<std::chrono::seconds>(t2 - t1);
-    auto t23 = std::chrono::duration_cast<std::chrono::seconds>(t3 - t2);
-    std::cout << "t12 took " << t12.count() << " seconds" << std::endl;
-    std::cout << "t23 took " << t23.count() << " seconds" << std::endl;
+    // Core-AS two electron integrals <ak|la>, <ak|ln>, <ab|ak> and <ba|ak>
+    core_as_integrals_two_body_akla = Eigen::Tensor<double, 3>(core_dim, as_dim, as_dim);
+    core_as_integrals_two_body_akln = Eigen::Tensor<double, 4>(core_dim, as_dim, as_dim, as_dim);
+    core_as_integrals_two_body_abak = Eigen::Tensor<double, 3>(core_dim, core_dim, as_dim);
+    core_as_integrals_two_body_baak = Eigen::Tensor<double, 3>(core_dim, core_dim, as_dim);
+    for (int a = 0; a < core_dim; a++) //One core orbital after the other -> Slightly less efficient than all a at the same time, but reduces memory
+    {
+        std::vector<real_function_3d> orbs_ak = frozen_occ_orbs[a] * active_orbs;
+        orbs_ak = truncate(orbs_ak, truncation_tol);
+        std::vector<real_function_3d> coul_orbs_ak = apply(*world, *coul_op_parallel, orbs_ak);
+        coul_orbs_ak = truncate(coul_orbs_ak, truncation_tol);
+
+        std::vector<real_function_3d> orbs_ka = active_orbs * frozen_occ_orbs[a];
+        orbs_ka = truncate(orbs_ka, truncation_tol);
+        
+        // <ak|la> = <ka|al>
+        madness::Tensor<double> Inner_prods_akla = matrix_inner(*world, orbs_ka, coul_orbs_ak, false);
+        for(int k = 0; k < as_dim; k++)
+        {
+            for(int l = 0; l < as_dim; l++)
+            {
+                core_as_integrals_two_body_akla(a, k, l) = Inner_prods_akla(l, k);
+            }
+        }
+
+        // <ak|ln>
+        madness::Tensor<double> Inner_prods_akln = matrix_inner(*world, orbs_ak, coul_orbs_mn, false);
+        for(int k = 0; k < as_dim; k++)
+        {
+            for(int l = 0; l < as_dim; l++)
+            {
+                for(int n = 0; n < as_dim; n++)
+                {
+                    core_as_integrals_two_body_akln(a, l, k, n) = Inner_prods_akln(l, k * as_dim + n);
+                }
+            }
+        }
+
+        // <ab|ak>
+        for (int b = 0; b < core_dim; b++)
+        {
+            madness::Tensor<double> Inner_prods_abak = matrix_inner(*world, std::vector<real_function_3d>{ frozen_occ_orbs[b] * frozen_occ_orbs[b] }, coul_orbs_ak, false); //Change of indicies
+            for(int k = 0; k < as_dim; k++)
+            {
+                core_as_integrals_two_body_abak(b,a,k) = Inner_prods_abak(0, k);
+            }
+        }
+
+        // <ba|ak>
+        for (int b = 0; b < core_dim; b++)
+        {
+            madness::Tensor<double> Inner_prods_baak = matrix_inner(*world, std::vector<real_function_3d>{ frozen_occ_orbs[b] * frozen_occ_orbs[a] }, coul_orbs_ak, false);
+            for(int k = 0; k < as_dim; k++)
+            {
+                core_as_integrals_two_body_baak(a,b,k) = Inner_prods_baak(0, k);
+            }
+        }
+    }
+    auto t6 = std::chrono::high_resolution_clock::now();
+
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "CalculateAllIntegrals took " << duration.count() << " seconds" << std::endl;
+    std::cout << "Integral timings:" << std::endl;
+    std::cout << "Preparation AS pairs: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count() << " seconds" << std::endl;
+    std::cout << "AS-AS one-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t3 - t2).count() << " seconds" << std::endl;
+    std::cout << "AS-AS two-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t4 - t3).count() << " seconds" << std::endl;
+    std::cout << "Core-AS one-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t5 - t4).count() << " seconds" << std::endl;
+    std::cout << "Core-AS two-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t6 - t5).count() << " seconds" << std::endl;
+    std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count() << " seconds" << std::endl;
 }
 
-void Optimization::UpdateIntegrals()
+void Optimization::CalculateCoreEnergy()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
-    real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
-    int dim = all_orbitals.size();
 
-    //****************************************
-    // Update one electron integrals
-    //****************************************
-    for(int k = 0; k < dim; k++)
+    double nocc = 2; //Spatial orbitals = 2, Spin orbitals = 1
+
+    //1e Part
+    double core_kinetic_energy = 0;
+    double core_nuclear_attraction_energy = 0;
+    for(int i = 0; i < frozen_occ_orbs.size(); i++)
     {
-        for(int l = 0; l < dim; l++)
+        //Kinetic
+        for (int axis=0; axis<3; axis++) {
+            real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
+            real_function_3d d_orb = D(frozen_occ_orbs[i]);
+            core_kinetic_energy += 0.5 * inner(d_orb, d_orb);
+        }
+        //Nuclear
+        real_function_3d Vnuc_orb = (*Vnuc)(frozen_occ_orbs[i]);
+        core_nuclear_attraction_energy += inner(frozen_occ_orbs[i], Vnuc_orb);
+    }
+    core_kinetic_energy = nocc * core_kinetic_energy;
+    core_nuclear_attraction_energy = nocc * core_nuclear_attraction_energy;
+
+    //2e Part
+    double core_two_electron_energy = 0;
+
+    real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
+    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, coulomb_lo, coulomb_eps));
+
+    // <ab|ab>
+    {
+        std::vector<real_function_3d> orbs_aa;
+        for (int a = 0; a < core_dim; a++)
         {
-            bool is_k_active_orb = std::find(active_orbital_indicies.begin(), active_orbital_indicies.end(), k) != active_orbital_indicies.end();
-            bool is_l_active_orb = std::find(active_orbital_indicies.begin(), active_orbital_indicies.end(), l) != active_orbital_indicies.end();   
-            if(is_k_active_orb || is_l_active_orb)
+            orbs_aa.push_back(frozen_occ_orbs[a] * frozen_occ_orbs[a]);
+        }
+        orbs_aa = truncate(orbs_aa, truncation_tol);
+        std::vector<real_function_3d> coul_orbs_aa = apply(*world, *coul_op_parallel, orbs_aa);
+        coul_orbs_aa = truncate(coul_orbs_aa, truncation_tol);
+        for (int a = 0; a < core_dim; a++)
+        {
+            madness::Tensor<double> Inner_prods_abab = matrix_inner(*world, std::vector<real_function_3d>{ orbs_aa[a] }, coul_orbs_aa, false);
+            for (int b = 0; b < core_dim; b++)
             {
-                //Kinetic
-                for (int axis=0; axis<3; axis++) {
-                    real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
-                    real_function_3d d_orb_k = D(all_orbitals[k].function);
-                    real_function_3d d_orb_l = D(all_orbitals[l].function);
-                    integrals_kinetic[axis](k, l) = 0.5 * inner(d_orb_k,d_orb_l);
-                }
-                //Nuclear
-                real_function_3d Vnuc_orb_l = (*Vnuc)(all_orbitals[l].function);
-                integrals_potential(k, l) = inner(all_orbitals[k].function, Vnuc_orb_l);
+                core_two_electron_energy += 2 * Inner_prods_abab(0, b);
             }
         }
     }
 
-    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, 0.001, 1e-6));
-
-
-    //****************************************
-    // Update two electron integrals
-    //****************************************
-
-    //Fill Orbital Lists
-    std::vector<real_function_3d> orbital_list_frozen_act, orbital_list_act_frozen, orbital_list_act_act;
-    for (auto const& frozenIdx : frozen_occupied_orbital_indicies)
+    for (int a = 0; a < core_dim; a++) //One core orbital after the other -> Slightly less efficient than all a at the same time, but reduces memory
     {
-        for (auto const& actIdx : active_orbital_indicies)
+        std::vector<real_function_3d> orbs_ab = frozen_occ_orbs[a] * frozen_occ_orbs;
+        orbs_ab = truncate(orbs_ab, truncation_tol);
+        std::vector<real_function_3d> coul_orbs_ab = apply(*world, *coul_op_parallel, orbs_ab);
+        coul_orbs_ab = truncate(coul_orbs_ab, truncation_tol);
+        for (int b = 0; b < core_dim; b++)
         {
-            orbital_list_frozen_act.push_back(all_orbitals[frozenIdx].function * all_orbitals[actIdx].function);
-        }
-    }
-    for (auto const& actIdx : active_orbital_indicies)
-    {
-        for (auto const& frozenIdx : frozen_occupied_orbital_indicies)
-        {
-            orbital_list_act_frozen.push_back(all_orbitals[actIdx].function * all_orbitals[frozenIdx].function);
-        }
-    }
-    for (auto const& actIdx_1 : active_orbital_indicies)
-    {
-        for (auto const& actIdx_2 : active_orbital_indicies)
-        {
-            orbital_list_act_act.push_back(all_orbitals[actIdx_1].function * all_orbitals[actIdx_2].function);
-        }
-    }
-    orbital_list_frozen_act = truncate(orbital_list_frozen_act, 1e-5);
-    orbital_list_act_frozen = truncate(orbital_list_act_frozen, 1e-5);
-    orbital_list_act_act = truncate(orbital_list_act_act, 1e-5);
-
-    //Calculate CoulombOperator(Orbital Lists) -> EXPENSIVE PART!!!
-    std::vector<real_function_3d> orbital_list_coul_frozen_act, orbital_list_coul_act_frozen, orbital_list_coul_act_act;
-    orbital_list_coul_frozen_act = apply(*world, *coul_op_parallel, orbital_list_frozen_act);
-    orbital_list_coul_act_frozen = apply(*world, *coul_op_parallel, orbital_list_act_frozen);
-    orbital_list_coul_act_act = apply(*world, *coul_op_parallel, orbital_list_act_act);
-
-    orbital_list_coul_frozen_act = truncate(orbital_list_coul_frozen_act, 1e-5);
-    orbital_list_coul_act_frozen = truncate(orbital_list_coul_act_frozen, 1e-5);
-    orbital_list_coul_act_act = truncate(orbital_list_coul_act_act, 1e-5);
-
-    //Update |kl> and |1/r|mn> in full orbital space
-    for(int i = 0; i < frozen_occupied_orbital_indicies.size(); i++)
-    {
-        for(int j = 0; j < active_orbital_indicies.size(); j++)
-        {
-            int full_idx1 = frozen_occupied_orbital_indicies[i];
-            int full_idx2 = active_orbital_indicies[j];
-            orbs_kl[full_idx1 * dim + full_idx2] = orbital_list_frozen_act[i * active_orbital_indicies.size() + j];
-            coul_orbs_mn[full_idx1 * dim + full_idx2] = orbital_list_coul_frozen_act[i * active_orbital_indicies.size() + j];
-        }
-    }
-    for(int i = 0; i < active_orbital_indicies.size(); i++)
-    {
-        for(int j = 0; j < frozen_occupied_orbital_indicies.size(); j++)
-        {
-            int full_idx1 = active_orbital_indicies[i];
-            int full_idx2 = frozen_occupied_orbital_indicies[j];
-            orbs_kl[full_idx1 * dim + full_idx2] = orbital_list_act_frozen[i * frozen_occupied_orbital_indicies.size() + j];
-            coul_orbs_mn[full_idx1 * dim + full_idx2] = orbital_list_coul_act_frozen[i * frozen_occupied_orbital_indicies.size() + j];
-        }
-    }
-    for(int i = 0; i < active_orbital_indicies.size(); i++)
-    {
-        for(int j = 0; j < active_orbital_indicies.size(); j++)
-        {
-            int full_idx1 = active_orbital_indicies[i];
-            int full_idx2 = active_orbital_indicies[j];
-            orbs_kl[full_idx1 * dim + full_idx2] = orbital_list_act_act[i * active_orbital_indicies.size() + j];
-            coul_orbs_mn[full_idx1 * dim + full_idx2] = orbital_list_coul_act_act[i * active_orbital_indicies.size() + j];
+            core_two_electron_energy -= inner(orbs_ab[b], coul_orbs_ab[b]);
         }
     }
 
+    core_two_electron_energy = 0.5 * nocc * core_two_electron_energy;
 
-    /*
-    for(int k = 0; k < dim; k++)
-    {
-        for(int l = 0; l < dim; l++)
-        {
-            for(int m = 0; m < dim; m++)
-            {
-                for(int n = 0; n < dim; n++)
-                {
-                    bool is_k_active_orb = std::find(active_orbital_indicies.begin(), active_orbital_indicies.end(), k) != active_orbital_indicies.end();
-                    bool is_l_active_orb = std::find(active_orbital_indicies.begin(), active_orbital_indicies.end(), l) != active_orbital_indicies.end();  
-                    bool is_m_active_orb = std::find(active_orbital_indicies.begin(), active_orbital_indicies.end(), m) != active_orbital_indicies.end();
-                    bool is_n_active_orb = std::find(active_orbital_indicies.begin(), active_orbital_indicies.end(), n) != active_orbital_indicies.end();  
-                    if(is_k_active_orb || is_l_active_orb || is_m_active_orb || is_n_active_orb)
-                    {
-                        integrals_two_body(k, l, m, n) = inner(orbs_kl[k*dim + l], coul_orbs_mn[m*dim + n]);
-                    }
-                }
-            }
-        }
-    }
-    */
-
-    madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
-    for(int k = 0; k < dim; k++)
-    {
-        for(int l = 0; l < dim; l++)
-        {
-            for(int m = 0; m < dim; m++)
-            {
-                for(int n = 0; n < dim; n++)
-                {
-                    integrals_two_body(k, l, m, n) = Inner_prods(k*dim + l, m*dim + n);
-                }
-            }
-        }
-    }
+    core_total_energy = core_kinetic_energy + core_nuclear_attraction_energy + core_two_electron_energy;
+    print("                   Core - Kinetic energy ", core_kinetic_energy);
+    print("        Core - Nuclear attraction energy ", core_nuclear_attraction_energy);
+    print("              Core - Two-electron energy ", core_two_electron_energy);
+    print("                       Total core energy ", core_total_energy);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "UpdateIntegrals took " << duration.count() << " seconds" << std::endl;
+    std::cout << "CalculateCoreEnergy took " << duration.count() << " seconds" << std::endl;
 }
 
 void Optimization::CalculateEnergies()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
-    int dim = full_one_rdm.rows();
 
-    double kinetic_energy = 0.0;
-    double nuclear_attraction_energy = 0.0;
+    //Active Space Part
+
+    double as_one_electron_energy = 0.0;
 
     //One Particle Part
-    for(int k = 0; k < dim; k++)
+    for(int k = 0; k < as_dim; k++)
     {
-        for(int l = 0; l < dim; l++)
+        for(int l = 0; l < as_dim; l++)
         {
-            //Kinetic
-            for (int axis=0; axis<3; axis++) {
-                kinetic_energy += full_one_rdm(k, l) * integrals_kinetic[axis](k, l);
-            }
-            //Nuclear
-            nuclear_attraction_energy += full_one_rdm(k, l) * integrals_potential(k, l);
+            as_one_electron_energy += as_one_rdm(k, l) * as_integrals_one_body(k, l);
         }
     }
 
     //Two Particle Part
-    double two_electron_energy = 0.0;
-    for(int k = 0; k < dim; k++)
+    double as_two_electron_energy = 0.0;
+    for(int k = 0; k < as_dim; k++)
     {
-        for(int l = 0; l < dim; l++)
+        for(int l = 0; l < as_dim; l++)
         {
-            for(int m = 0; m < dim; m++)
+            for(int m = 0; m < as_dim; m++)
             {
-                for(int n = 0; n < dim; n++)
+                for(int n = 0; n < as_dim; n++)
                 {
-                    two_electron_energy += full_two_rdm(k, l, m, n) * 0.5 * integrals_two_body(k, m, l, n); 
+                    as_two_electron_energy += as_two_rdm(k, l, m, n) * 0.5 * as_integrals_two_body(k, l, m, n); 
                 }
             }
         }
     }
 
-    double total_energy = kinetic_energy + two_electron_energy + nuclear_attraction_energy + nuclear_repulsion_energy;
+    //Core Part
+    double as_core_energy = 0.0;
+    for(int a = 0; a < core_dim; a++)
+    {
+        for(int k = 0; k < as_dim; k++)
+        {
+            for(int l = 0; l < as_dim; l++)
+            {
+                as_core_energy += 2 * as_one_rdm(k, l) * core_as_integrals_two_body_akal(a,k,l); 
+                as_core_energy -= as_one_rdm(k, l) * core_as_integrals_two_body_akla(a,k,l); 
+            }
+        }
+    }
 
-    print("            Kinetic energy ", kinetic_energy);
-    print(" Nuclear attraction energy ", nuclear_attraction_energy);
-    print("       Two-electron energy ", two_electron_energy);
-    print(" Nuclear  repulsion energy ", nuclear_repulsion_energy);
-    print("              Total energy ", total_energy);
+    as_core_energy = 0.5 * nocc * as_core_energy;
+
+
+    
+    //Print results
+    double total_energy = as_one_electron_energy + as_two_electron_energy + as_core_energy + nuclear_repulsion_energy +  core_total_energy;
+
+    print("      Active Space - One electron energy ", as_one_electron_energy);
+    print("      Active Space - Two-electron energy ", as_two_electron_energy);
+    print("              AS-Core correlation energy ", as_core_energy);
+    print("                       Total core energy ", core_total_energy);
+    print("                Nuclear repulsion energy ", nuclear_repulsion_energy);
+    print("                            Total energy ", total_energy);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
@@ -652,13 +524,22 @@ void Optimization::CalculateLagrangeMultiplier()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    int dim = all_orbitals.size();
-    LagrangeMultiplier = Eigen::MatrixXd::Zero(dim, dim);
-    for(int a = 0; a < dim; a++)
+    LagrangeMultiplier_AS_AS = Eigen::MatrixXd::Zero(as_dim, as_dim);
+    LagrangeMultiplier_AS_Core = Eigen::MatrixXd::Zero(core_dim, as_dim);
+
+    for(int z = 0; z < as_dim; z++)
     {
-        for(int i = 0; i < dim; i++)
+        for(int i = 0; i < as_dim; i++)
         {
-            LagrangeMultiplier(a, i) = CalculateLagrangeMultiplierElement(dim, a, i);
+            LagrangeMultiplier_AS_AS(z, i) = CalculateLagrangeMultiplierElement_AS_AS(z, i);
+        }
+    }
+
+    for(int z = 0; z < core_dim; z++)
+    {
+        for(int i = 0; i < as_dim; i++)
+        {
+            LagrangeMultiplier_AS_Core(z, i) = CalculateLagrangeMultiplierElement_AS_Core(z, i);
         }
     }
 
@@ -667,22 +548,54 @@ void Optimization::CalculateLagrangeMultiplier()
     std::cout << "CalculateLagrangeMultiplier took " << duration.count() << " seconds" << std::endl;
 }
 
-double Optimization::CalculateLagrangeMultiplierElement(int dim, int a, int i)
-{
-    double element = integrals_potential(a, i);
-    for (int axis=0; axis<3; axis++) {
-        element += integrals_kinetic[axis](a, i);
-    }
-    element = full_one_rdm(i,i) * element;
-
-    for(int l = 0; l < dim; l++)
+double Optimization::CalculateLagrangeMultiplierElement_AS_AS(int z, int i)
+{    
+    double element = as_one_rdm(i,i) * as_integrals_one_body(z,i);
+    for(int l = 0; l < as_dim; l++)
     {
-        for(int n = 0; n < dim; n++)
+        for(int n = 0; n < as_dim; n++)
         {
-            for(int k = 0; k < dim; k++)
+            for(int k = 0; k < as_dim; k++)
             {
-                element += full_two_rdm(k, l, i, n) * integrals_two_body(a, k, l, n);
+                element += as_two_rdm(k, l, i, n) * as_integrals_two_body(z, l, k, n);
             }
+        }
+    }
+
+    for(int k = 0; k < as_dim; k++)
+    {
+        for(int a = 0; a < core_dim; a++)
+        {
+            element += 0.5 * nocc * 2 * as_one_rdm(k, i) * core_as_integrals_two_body_akal(a,z,k);
+            element -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_akla(a,k,z);
+        }
+    }
+    return element;
+
+
+}
+
+double Optimization::CalculateLagrangeMultiplierElement_AS_Core(int z, int i)
+{
+    double element = as_one_rdm(i,i) * core_as_integrals_one_body_ak(z,i);
+
+    for(int l = 0; l < as_dim; l++)
+    {
+        for(int n = 0; n < as_dim; n++)
+        {
+            for(int k = 0; k < as_dim; k++)
+            {
+                element += as_two_rdm(k, l, i, n) * core_as_integrals_two_body_akln(z, k, l, n);
+            }
+        }
+    }
+
+    for(int k = 0; k < as_dim; k++)
+    {
+        for(int a = 0; a < core_dim; a++)
+        {           
+            element += 0.5 * nocc * 2 * as_one_rdm(k, i) * core_as_integrals_two_body_abak(a,z,k);
+            element -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_baak(a,z,k);
         }
     }
     return element;
@@ -690,22 +603,6 @@ double Optimization::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 
 void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupation_thresh)
 {
-    int number_active_orbitals = active_orbital_indicies.size();
-    std::vector<real_function_3d> frozen_orbs;
-    for (auto const& frozenIdx : frozen_occupied_orbital_indicies)
-    {
-        frozen_orbs.push_back(all_orbitals[frozenIdx].function);
-    }
-    std::vector<real_function_3d> orbitals;
-    for (auto const& orb : all_orbitals)
-    {
-        orbitals.push_back(orb.function);
-    }
-
-    //Initialize KAIN Solver
-    int kain_subspace = 3;
-    std::shared_ptr<XNonlinearSolver<vector_real_function_3d, double, KAIN_allocator>> solver  = std::make_shared<XNonlinearSolver<vector_real_function_3d, double, KAIN_allocator>>(KAIN_allocator(*world, number_active_orbitals), true);
-    solver->set_maxsub(kain_subspace);
 
     bool converged = false;
     int iterstep = 0;
@@ -722,228 +619,273 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();
         highest_error = 0;
 
-        //Solver update
-        //std::vector<real_function_3d> rs;
-        //for(int i = number_frozen_orbs; i < number_orbitals; i++) {
-        //    rs.push_back(GetOrbitalUpdate(i));
-        //}
-        //orbitals = solver->update(orbitals, rs);
-
-        //Fixed-Point update new
-        std::vector<int> orbital_indicies_for_update;
-        for (int idx = 0; idx < active_orbital_indicies.size(); idx++)
+        std::vector<int> as_orbital_indicies_for_update;
+        for (int idx = 0; idx < active_orbs.size(); idx++)
         {
-            int actIdx = active_orbital_indicies[idx];
-            if(abs(full_one_rdm(actIdx, actIdx)) >= NO_occupation_thresh)
+            if(abs(as_one_rdm(idx, idx)) >= NO_occupation_thresh)
             {
-                orbital_indicies_for_update.push_back(actIdx);
+                as_orbital_indicies_for_update.push_back(idx);
             }
             else
             {
-                std::cout << "Skip optimization of orbital " << actIdx << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
+                std::cout << "Skip refinement of active space orbital " << idx << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
             }
         }
 
-        std::vector<real_function_3d> AllActiveOrbitalUpdates = GetAllActiveOrbitalUpdates(orbital_indicies_for_update);
-        for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+        std::vector<real_function_3d> AllActiveOrbitalUpdates = GetAllActiveOrbitalUpdates(as_orbital_indicies_for_update);
+
+        for (int idx = 0; idx < as_orbital_indicies_for_update.size(); idx++)
         {
-            int actIdx = orbital_indicies_for_update[idx];
-            orbitals[actIdx] = orbitals[actIdx] - AllActiveOrbitalUpdates[idx];
+            int actIdx = as_orbital_indicies_for_update[idx];
+            active_orbs[actIdx] = active_orbs[actIdx] - AllActiveOrbitalUpdates[idx];
         }
 
         auto end_orb_update_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
         std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
-        std::cout << "Orthonormalize orbitals" << std::endl;
-        //Project out FrozenOrbitals
-        if(frozen_orbs.size() > 0)
-        {
-            auto Q = QProjector(*world, frozen_orbs);
-            for (auto const& actIdx : active_orbital_indicies)
-            {
-                orbitals[actIdx] = Q(orbitals[actIdx]);
-            }
-        }
-
-        //Project orbitals out of inactive virtual orbitals
-        if(inactive_virtual_orbital_indicies.size() > 0)
-        {
-            if(frozen_orbs.size() > 0)
-            {
-                auto Q_frozen = QProjector(*world, frozen_orbs);
-                for (auto const& Idx : inactive_virtual_orbital_indicies)
-                {
-                    orbitals[Idx] = Q_frozen(orbitals[Idx]);
-                }
-            }
-            
-            std::vector<real_function_3d> act_orbs_for_projection;
-            for (auto const& actIdx : active_orbital_indicies)
-            {
-                act_orbs_for_projection.push_back(orbitals[actIdx]);
-            }
-            auto Q_active = QProjector(*world, act_orbs_for_projection);
-            for (auto const& Idx : inactive_virtual_orbital_indicies)
-            {
-                orbitals[Idx] = Q_active(orbitals[Idx]);
-            }
-        }
-
-
         //Orthonormalize orbitals
-        orbitals = orthonormalize_symmetric(orbitals);
+        active_orbs = orthonormalize_symmetric(active_orbs);
         //orbitals = orthonormalize_cd(orbitals);
-        for(int i = 0; i < orbitals.size(); i++)
-        {
-            orbitals[i] = orbitals[i].truncate(1e-5);
-        }
-
-        //Update all_orbitals
-        for (int i = 0; i < all_orbitals.size(); i++)
-        {
-            all_orbitals[i].function = orbitals[i];
-        }
-
-        std::cout << "Update Integrals" << std::endl;
-        //Update integrals for new orbitals
-        UpdateIntegrals();
-        //CalculateAllIntegrals();
-
-        //Calculate new energy
-        CalculateEnergies();
+        active_orbs = truncate(active_orbs, truncation_tol);
 
         //Check convergence
         std::cout << "Highest error: " << highest_error << std::endl;
         if(highest_error < optimization_thresh){converged = true;}
+
+        std::cout << "Update Integrals" << std::endl;
+        //Update integrals for new orbitals
+        CalculateAllIntegrals();
+
+        //Calculate new energy
+        CalculateEnergies();
     }
 }
 
 std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update)
 {
-    auto t1 = std::chrono::high_resolution_clock::now();
-    int dim = all_orbitals.size();
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<real_function_3d> AllOrbitalUpdates;
     
+    auto t1 = std::chrono::high_resolution_clock::now();
     //Calculate rdm_ii_inv values
     std::vector<double> rdm_ii_inv;
     for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
     {
         int i = orbital_indicies_for_update[idx];
-        rdm_ii_inv.push_back(1 / full_one_rdm(i,i));
+        rdm_ii_inv.push_back(1 / as_one_rdm(i,i));
     }
+    auto t2 = std::chrono::high_resolution_clock::now();
 
     //1e Part
     for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
     {
         int i = orbital_indicies_for_update[idx];
-        real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
-        real_function_3d rhs = (*Vnuc)(all_orbitals[i].function);
-        for(int k = 0; k < dim; k++)
+
+        real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
+        real_function_3d rhs = (*Vnuc)(active_orbs[i]);
+        for(int k = 0; k < core_dim; k++)
+        {
+            rhs -= rdm_ii_inv[idx] * LagrangeMultiplier_AS_Core(k, i) * frozen_occ_orbs[k];
+        }
+        for(int k = 0; k < as_dim; k++)
         {
             if(k != i)
             {
-                rhs -= rdm_ii_inv[idx] * LagrangeMultiplier(k,i) * all_orbitals[k].function;
+                rhs -= rdm_ii_inv[idx] * LagrangeMultiplier_AS_AS(k, i) * active_orbs[k];
             }
         }
         AllOrbitalUpdates.push_back(rhs);
     }
-    AllOrbitalUpdates = truncate(AllOrbitalUpdates, 1e-5);
+    AllOrbitalUpdates = truncate(AllOrbitalUpdates, truncation_tol);
+    auto t3 = std::chrono::high_resolution_clock::now();
 
-    //2e Part
-    //auto t2 = std::chrono::high_resolution_clock::now();
-    for(int k = 0; k < dim; k++)
+    // AS Part
+    for(int k = 0; k < as_dim; k++)
     {
-        std::vector<real_function_3d> lnk = coul_orbs_mn * all_orbitals[k].function;
-        lnk = truncate(lnk, 1e-5);
+        std::vector<real_function_3d> lnk = coul_orbs_mn * active_orbs[k];
+        lnk = truncate(lnk, truncation_tol);
         for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
         {
             int i = orbital_indicies_for_update[idx];
             std::vector<real_function_3d> lnk_copy = copy(*world, lnk, false);
-            for(int l = 0; l < dim; l++)
+            for(int l = 0; l < as_dim; l++)
             {
-                for(int n = 0; n < dim; n++)
+                for(int n = 0; n < as_dim; n++)
                 {
-                    lnk_copy[l*dim + n] *= full_two_rdm(k, l, i, n) * rdm_ii_inv[idx];
+                    lnk_copy[l*as_dim + n] *= as_two_rdm(k, l, i, n) * rdm_ii_inv[idx];
                 }
             }
             AllOrbitalUpdates[idx] += sum(*world, lnk_copy);
         }
     }
-    //auto t3 = std::chrono::high_resolution_clock::now();
+    auto t4 = std::chrono::high_resolution_clock::now();
+
+    // Core - AS interaction
+
+    //Part 1
+    std::vector<real_function_3d> orbs_aa;
+    for (int a = 0; a < core_dim; a++)
+    {
+        orbs_aa.push_back(frozen_occ_orbs[a] * frozen_occ_orbs[a]);
+    }
+    orbs_aa = truncate(orbs_aa, truncation_tol);
+    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, 0.001, 1e-6));
+    std::vector<real_function_3d> coul_orbs_aa = apply(*world, *coul_op_parallel, orbs_aa);
+    coul_orbs_aa = truncate(coul_orbs_aa, truncation_tol);
+
+    for(int k = 0; k < as_dim; k++)
+    {
+        std::vector<real_function_3d> aak = coul_orbs_aa * active_orbs[k];
+        aak = truncate(aak, truncation_tol);
+        for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+        {
+            int i = orbital_indicies_for_update[idx];
+            std::vector<real_function_3d> aak_copy = copy(*world, aak, false);
+            for(int a = 0; a < core_dim; a++)
+            {
+                aak_copy[a] *= 0.5 * nocc * 2 * as_one_rdm(k, i) * rdm_ii_inv[idx];
+                //AllOrbitalUpdates[idx] += 0.5 * 2 * rdm_ii_inv[idx] * as_one_rdm(k, i) * 2 * coul_orbs_aa[a] * active_orbs[k];
+            }
+            AllOrbitalUpdates[idx] += sum(*world, aak_copy);
+        }
+    }
+    auto t5 = std::chrono::high_resolution_clock::now();
+
+    //Part 2
+    for(int a = 0; a < core_dim; a++)
+    {
+        std::vector<real_function_3d> orbs_ak = frozen_occ_orbs[a] * active_orbs;
+        orbs_ak = truncate(orbs_ak, truncation_tol);
+        std::vector<real_function_3d> coul_orbs_ak = apply(*world, *coul_op_parallel, orbs_ak);
+        coul_orbs_ak = truncate(coul_orbs_ak, truncation_tol);
+
+        std::vector<real_function_3d> aka = coul_orbs_ak * frozen_occ_orbs[a];
+        aka = truncate(aka, truncation_tol);
+
+        for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+        {
+            int i = orbital_indicies_for_update[idx];
+            std::vector<real_function_3d> aka_copy = copy(*world, aka, false);
+            for(int k = 0; k < as_dim; k++)
+            {
+                aka_copy[k] *= -0.5 * nocc * as_one_rdm(k, i) * rdm_ii_inv[idx];
+                //AllOrbitalUpdates[idx] -= 0.5 * rdm_ii_inv[idx] * as_one_rdm(k, i) * 2 * coul_orbs_ak[k] * frozen_occ_orbs[a];
+            }
+            AllOrbitalUpdates[idx] += sum(*world, aka_copy);
+        }
+    }
+    auto t6 = std::chrono::high_resolution_clock::now();
 
     //BSH part
     for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
     {
         int i = orbital_indicies_for_update[idx];
-        double en = LagrangeMultiplier(i,i) * rdm_ii_inv[idx];
-        SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), 0.01, 1e-6);
-        real_function_3d r = all_orbitals[i].function + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
+        double en = LagrangeMultiplier_AS_AS(i, i) * rdm_ii_inv[idx];
+        SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), BSH_lo, BSH_eps);
+        real_function_3d r = active_orbs[i] + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
         double err = r.norm2();
-        std::cout << "Error of Orbital " << i << ": " << err << std::endl; 
+        std::cout << "Error of active space orbital " << i << ": " << err << std::endl; 
         if(err > highest_error){highest_error = err; }
         AllOrbitalUpdates[idx] = r;
     }
-    
+    auto t7 = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
 
-    auto t4 = std::chrono::high_resolution_clock::now();
-    auto t41 = std::chrono::duration_cast<std::chrono::seconds>(t4 - t1);
-    //auto t32 = std::chrono::duration_cast<std::chrono::seconds>(t3 - t2);
-    std::cout << "GetAllActiveOrbitalUpdates took " << t41.count() << " seconds" << std::endl;
-    //std::cout << "t32 took " << t32.count() << " seconds" << std::endl;
+    std::cout << "Refinement timings:" << std::endl;
+    std::cout << "rdm_ii_inv calculation: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count() << " seconds" << std::endl;
+    std::cout << "one electron part: " << std::chrono::duration_cast<std::chrono::seconds>(t3 - t2).count() << " seconds" << std::endl;
+    std::cout << "AS two electron part: " << std::chrono::duration_cast<std::chrono::seconds>(t4 - t3).count() << " seconds" << std::endl;
+    std::cout << "Core-AS two electron part 1: " << std::chrono::duration_cast<std::chrono::seconds>(t5 - t4).count() << " seconds" << std::endl;
+    std::cout << "Core-AS two electron part 2: " << std::chrono::duration_cast<std::chrono::seconds>(t6 - t5).count() << " seconds" << std::endl;
+    std::cout << "BSH part: " << std::chrono::duration_cast<std::chrono::seconds>(t7 - t6).count() << " seconds" << std::endl;
+    std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << " seconds" << std::endl;
 
     return AllOrbitalUpdates;
 } 
 
-void Optimization::SaveNOs(std::string OutputPath)
+void Optimization::RotateOrbitalsBackAndUpdateIntegrals()
 {
-    for(int i = 0; i < all_orbitals.size(); i++)
-    {
-        save(all_orbitals[i].function, OutputPath + "/NO_" + std::to_string(i)); // ohne das .00000 im filename
+    //Create Full RotationMatrix
+    Eigen::MatrixXd RotationMatrixBack = ActiveSpaceRotationMatrix.transpose();
+
+    //Transform RDMs
+    TransformMatrix(&as_one_rdm, RotationMatrixBack);
+    TransformTensor(&as_two_rdm, RotationMatrixBack);
+
+    //Transform active Orbitals
+    madness::Tensor<double> T(as_dim, as_dim);
+    for (int i = 0; i < as_dim; i++) {
+        for (int j = 0; j < as_dim; j++) {
+            T(i,j) = RotationMatrixBack(i,j);
+        }
     }
+    active_orbs = transform(*world, active_orbs, T);
+    CalculateAllIntegrals();
 }
 
 void Optimization::SaveOrbitals(std::string OutputPath)
 {
-    for(int i = 0; i < all_orbitals.size(); i++)
+    for(int i = 0; i < core_dim; i++)
     {
-        std::string base_filename = all_orbitals[i].orbital_file_name.substr(all_orbitals[i].orbital_file_name.find_last_of("/\\") + 1);
-        save(all_orbitals[i].function, OutputPath + "/" + base_filename); // ohne das .00000 im filename
+        std::string base_filename = frozen_occ_orbs_files[i].substr(frozen_occ_orbs_files[i].find_last_of("/\\") + 1);
+        save(frozen_occ_orbs[i], OutputPath + "/" + base_filename);
+    }
+    for(int i = 0; i < as_dim; i++)
+    {
+        std::string base_filename = active_orbs_files[i].substr(active_orbs_files[i].find_last_of("/\\") + 1);
+        save(active_orbs[i], OutputPath + "/" + base_filename);
+    }
+    for(int i = 0; i < froz_virt_dim; i++)
+    {
+        std::string base_filename = frozen_virt_orb_files[i].substr(frozen_virt_orb_files[i].find_last_of("/\\") + 1);
+        save(frozen_virt_orb[i], OutputPath + "/" + base_filename);
     }
 }
 
-void Optimization::SaveIntegralsToNumpy(std::string OutputPath)
+void Optimization::SaveEffectiveHamiltonian(std::string OutputPath)
 {
-    int number_orbitals = all_orbitals.size();
+    std::vector<double> effective_one_body_integrals_elements;
+    std::vector<double> effective_two_body_integrals_elements;
 
-    std::vector<double> one_e_integrals_elements;
-    for(int i = 0; i < number_orbitals; i++)
+    Eigen::MatrixXd effective_one_body_integrals = as_integrals_one_body;
+    for(int k = 0; k < as_dim; k++)
     {
-        for(int j = 0; j < number_orbitals; j++)
+        for(int l = 0; l < as_dim; l++)
         {
-            one_e_integrals_elements.push_back(integrals_one_body(i,j));
+            for(int a = 0; a < core_dim; a++)
+            {
+                effective_one_body_integrals(k, l) += 0.5 * nocc * (2 * core_as_integrals_two_body_akal(a,k,l) - core_as_integrals_two_body_akla(a,k,l));
+            }
+            effective_one_body_integrals_elements.push_back(effective_one_body_integrals(k,l));
         }
     }
-    std::vector<unsigned long> one_e_ints_shape{(unsigned long)number_orbitals, (unsigned long)number_orbitals};
-    const npy::npy_data<double> one_e_data{one_e_integrals_elements, one_e_ints_shape, false};
-    npy::write_npy(OutputPath + "/htensor.npy", one_e_data);
-
-    std::vector<double> two_e_integrals_elements;
-    for(int i = 0; i < number_orbitals; i++)
+    
+    for(int k = 0; k < as_dim; k++)
     {
-        for(int j = 0; j < number_orbitals; j++)
+        for(int l = 0; l < as_dim; l++)
         {
-            for(int k = 0; k < number_orbitals; k++)
+            for(int m = 0; m < as_dim; m++)
             {
-                for(int l = 0; l < number_orbitals; l++)
+                for(int n = 0; n < as_dim; n++)
                 {
-                    two_e_integrals_elements.push_back(integrals_two_body(i,j,k,l));
+                    effective_two_body_integrals_elements.push_back(as_integrals_two_body(k,l,m,n));
                 }
             }
         }
     }
-    std::vector<unsigned long> two_e_ints_shape{(unsigned long)number_orbitals, (unsigned long)number_orbitals, (unsigned long)number_orbitals, (unsigned long)number_orbitals};
-    const npy::npy_data<double> two_e_data{two_e_integrals_elements, two_e_ints_shape, false};
+
+    std::ofstream c_file;
+    c_file.open(OutputPath + "/c.txt");
+    c_file << std::setprecision (15) << (core_total_energy + nuclear_repulsion_energy);
+    c_file.close();
+
+    std::vector<unsigned long> one_e_ints_shape{(unsigned long)as_dim, (unsigned long)as_dim};
+    const npy::npy_data<double> one_e_data{effective_one_body_integrals_elements, one_e_ints_shape, false};
+    npy::write_npy(OutputPath + "/htensor.npy", one_e_data);
+
+    std::vector<unsigned long> two_e_ints_shape{(unsigned long)as_dim, (unsigned long)as_dim, (unsigned long)as_dim, (unsigned long)as_dim};
+    const npy::npy_data<double> two_e_data{effective_two_body_integrals_elements, two_e_ints_shape, false};
     npy::write_npy(OutputPath + "/gtensor.npy", two_e_data);
 }
