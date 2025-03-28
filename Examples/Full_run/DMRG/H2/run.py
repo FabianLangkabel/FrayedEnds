@@ -13,10 +13,10 @@ from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 '''
 Definitions/Parameters
 '''                       
-distance = 8.0
+distance = 6.0
 iteration_energies = [] #Stores the energies at the beginning of each iteration step after the VQE
 iterations = 6
-molecule_name = "nah"
+molecule_name = "h2"
 box_size = 50.0
 wavelet_order = 7 #Default parameter of Orbital-generation, do not change without changing in Orbital-generation!!!
 madness_thresh = 0.0001
@@ -25,17 +25,17 @@ NO_occupation_thresh = 0.001
 
 distance = distance/2
 geometry_bohr = '''
-Na 0.0 0.0 ''' + distance.__str__() + '''
+H 0.0 0.0 ''' + distance.__str__() + '''
 H 0.0 0.0 ''' + (-distance).__str__()
 
 geometry_angstrom = OrbOpt_helper.convert_geometry_from_bohr_to_angstrom(geometry_bohr)
 
 
 OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
-mol = tq.Molecule(geometry_angstrom, dft={"L":box_size}, name=molecule_name, n_pno=2) # Important here geometry in Angstrom
-all_orbitals = [0,1,2,3,4,5,6,7]
-frozen_occupied_orbitals = [0,1,2,3,4]
-active_orbitals = [5,6,7]
+mol = tq.Molecule(geometry_angstrom, dft={"L":box_size}, name=molecule_name, n_pno=3) # Important here geometry in Angstrom
+all_orbitals = [0,1,2,3]
+frozen_occupied_orbitals = []
+active_orbitals = [0,1,2,3]
 
 
 
