@@ -7,12 +7,11 @@ Integrals::Integrals(int argc, char** argv, double L, long k, double thresh)
 {
     int arg = 0;
     char **a = new char*[0]();
-    initialize(arg, a);
-    world = new World(SafeMPI::COMM_WORLD);
 
+    world = &initialize(argc, argv);
     startup(*world,argc,argv);
-    std::cout.precision(6);
 
+    std::cout.precision(6);
     FunctionDefaults<3>::set_k(k);
     FunctionDefaults<3>::set_thresh(thresh);
     FunctionDefaults<3>::set_refine(true);
@@ -23,7 +22,11 @@ Integrals::Integrals(int argc, char** argv, double L, long k, double thresh)
 
 Integrals::~Integrals()
 {
-
+    std::cout << "Finalize madness env" << std::endl;
+    orbitals.clear();
+    world->gop.fence();
+    world->gop.fence();
+    finalize();
 }
 
 

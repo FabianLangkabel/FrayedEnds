@@ -99,3 +99,7 @@ RUN \
 
 RUN \
     python -m pip install nanobind
+
+RUN \
+    conda install -c conda-forge micromamba  && \
+    micromamba install -c conda-forge nwchem
