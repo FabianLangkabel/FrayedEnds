@@ -116,7 +116,7 @@ for it in range(iterations):
     shutil.copy("madness_input.json", it_str + "/madness_input.json")
 
     # Execute orbital optimization
-    programm = sp.call("/workspaces/MRA-OrbitalOptimization/build/OrbitalOptimization madness_input.json", stdout=open(it_str + '/log', 'w'), stderr=open(it_str + '/err_log', 'w'), shell = True)
+    programm = sp.call("/workspaces/MRA-OrbitalOptimization/build/orbital_optimization/OrbitalOptimization madness_input.json", stdout=open(it_str + '/log', 'w'), stderr=open(it_str + '/err_log', 'w'), shell = True)
 
     
 # Write energies to the hard disk

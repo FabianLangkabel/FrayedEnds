@@ -1,17 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(OrbitalOptimization)
 set(CMAKE_CXX_STANDARD 17)
-set(MADNESS_DIR "/usr/local/madness/lib/cmake/madness")
-include_directories(
-    "${CMAKE_SOURCE_DIR}/eigen"
-)
 
-find_package(MADNESS CONFIG REQUIRED)
-
-set(SOURCE_FILES
-"orbital_optimization/main.cpp"
-"orbital_optimization/optimization.cpp"
-)
-
-add_executable(OrbitalOptimization ${SOURCE_FILES})
-target_link_libraries(OrbitalOptimization madness)
+add_subdirectory(orbital_optimization)
+add_subdirectory(integrals_ref)
+add_subdirectory(integrals_nanobind)
+add_subdirectory(nwchem_to_orbopt)
