@@ -16,11 +16,10 @@ molecule_name = "h2"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-#number_occ_in_as = 2
-number_occ_in_as = 0
-number_virt_in_as = 1
+number_occ_in_as = 1
+number_virt_in_as = 3
 number_occupied_orbitals = 1
-basisset = '6-31g**'
+basisset = 'cc-pvdz'
 
 # GEOMETRY IN ANGSTROM
 nwchem_input = '''
@@ -75,7 +74,6 @@ h1 = np.load("output" + "/htensor.npy")
 g2 = np.load("output" + "/gtensor.npy")
 g2 = np.swapaxes(g2,1,2) # Integrals are in physics notation, Block2 uses chemistry notation
 
-'''
 #### First DMRG calculation
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=threads, stack_mem=int(ram_gb*1024**3), restart_dir="./restart")
 driver.initialize_system(n_sites=len(active_space), n_elec=number_occ_in_as * 2, spin=0)
@@ -83,4 +81,3 @@ mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=1)
 ket = driver.get_random_mps(tag="GS", bond_dim=250, nroots=1)
 energy = driver.dmrg(mpo, ket, n_sweeps=500, bond_dims=[bd_pre], iprint=1)
 print('DMRG energy = %20.15f' % energy)
-'''

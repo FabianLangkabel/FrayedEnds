@@ -60,9 +60,9 @@ void Converter::create_mos(std::string nwchem_file)
     nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
 
     // Transform ao's now
+    normalize(*world, aos);
     mos = transform(*world, aos, nwchem.MOs);
     truncate(*world, mos);
-
 }
 
 
@@ -343,7 +343,7 @@ void Converter::save_orbitals(std::string output_folder)
     }
     for(int i = 0; i < as_dim; i++)
     {
-        std::string filename = "orbital_" + std::to_string(i);
+        std::string filename = "orbital_" + std::to_string(orb_idx);
         save(active_orbs[i], output_folder + "/" + filename); // ohne das .00000 im filename
         orb_idx++;
     }

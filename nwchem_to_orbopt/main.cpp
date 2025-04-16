@@ -118,10 +118,15 @@ int main(int argc, char** argv)
     }
 
     Converter* conv = new Converter(argc, argv, box_size, wavelet_order, madness_thresh);
+    std::cout << "Create MOs" << std::endl;
     conv->create_mos(nwchem_file);
+    std::cout << "Define AS" << std::endl;
     conv->define_as(number_occupied_orbitals, active_orbitals);
+    std::cout << "Calculate all Integrals" << std::endl;
     conv->CalculateAllIntegrals();
+    std::cout << "Calculate Core Energy" << std::endl;
     conv->CalculateCoreEnergy();
+    std::cout << "Save Hamiltonian and Orbitals" << std::endl;
     conv->SaveEffectiveHamiltonian(output_folder);
     conv->save_orbitals(output_folder);
 
