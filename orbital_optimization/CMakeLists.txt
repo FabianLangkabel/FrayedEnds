@@ -1,7 +1,9 @@
-set(MADNESS_DIR "/usr/local/madness/lib/cmake/madness")
+set(MADNESS_DIR "/usr/local/lib/cmake/madness")
 include_directories(
     "${CMAKE_SOURCE_DIR}/eigen"
 )
+
+message(STATUS "Using MADNESS installation at: ${MADNESS_DIR}")
 
 find_package(MADNESS CONFIG REQUIRED)
 

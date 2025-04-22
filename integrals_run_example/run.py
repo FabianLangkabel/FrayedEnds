@@ -1,6 +1,6 @@
 import subprocess as sp
 import sys
-sys.path.append('/workspaces/MRA-OrbitalOptimization/build/integrals_nanobind')
+sys.path.append('/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/integrals_nanobind')
 import MRA_integrals
 
 for i in range(3):
@@ -11,4 +11,4 @@ for i in range(3):
     del Integrator
 # Referenz
 print("Reference run:")
-programm = sp.call("/workspaces/MRA-OrbitalOptimization/build/integrals_ref/IntegralsRef", shell = True)
+programm = sp.call("/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/integrals_ref/IntegralsRef", shell = True)

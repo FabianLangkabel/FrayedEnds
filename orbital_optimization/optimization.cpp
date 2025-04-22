@@ -2,6 +2,14 @@
 
 using namespace madness;
 
+const std::string path_to_plots="/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/Examples/Full_run/temp_files/"; //change this file path according to your folder structure
+template<int NDIM>
+void plot(const char* filename, const Function<double,NDIM>& f, double L) {
+    Vector<double,NDIM> lo(0.0), hi(0.0);
+    lo[NDIM-1] = -L; hi[NDIM-1] = L;
+    std::string full_path=path_to_plots+filename;
+    plot_line(full_path.c_str(),2001,lo,hi,f);
+}
 
 Optimization::Optimization(int argc, char** argv, double L, long k, double thresh)
 {
@@ -54,6 +62,7 @@ void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_
     {
         real_function_3d orb = real_factory_3d(*world);
         load(orb, active_orbs_files[i]);
+        plot<3>(("orb_"+std::to_string(i)+".dat").c_str(),orb, 50.0);
         active_orbs.push_back(orb);
     }
 

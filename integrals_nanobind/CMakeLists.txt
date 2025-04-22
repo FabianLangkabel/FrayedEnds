@@ -1,5 +1,7 @@
-set(MADNESS_DIR "/usr/local/madness/lib/cmake/madness")
+set(MADNESS_DIR "/usr/local/lib/cmake/madness")
 find_package(MADNESS CONFIG REQUIRED)
+
+message(STATUS "Using MADNESS installation at: ${MADNESS_DIR}")
 
 set(DEV_MODULE Development.Module)
 find_package(Python 3.11 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
