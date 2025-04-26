@@ -24,6 +24,11 @@ public:
 
     Function<double,3> loadfct(const SavedFct& Sf);
 
+    //input
+    void GiveInitialOrbitals(std::vector<SavedFct> all_orbs);
+    void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements); //TODO
+
+    //output
     double GetC();
     std::vector<double> GetHTensor();
     std::vector<double> GetGTensor();

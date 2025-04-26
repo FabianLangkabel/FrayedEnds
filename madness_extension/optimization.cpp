@@ -18,7 +18,7 @@ Optimization::Optimization(double L, long k, double thresh)
 
     world = &initialize(arg, a);
     startup(*world,arg,a);
-    this->atoms = atoms;
+    this->atoms = atoms; //what does this do?
     delete[] a;
     
     std::cout.precision(6);
@@ -46,7 +46,7 @@ Optimization::~Optimization()
 
 //load a function from a SavedFct object
 Function<double,3> Optimization::loadfct(const SavedFct& Sf) {
-    std::string filename = "saved_fct2.00000";
+    std::string filename = "saved_fct2.00000"; //TODO: check if filename is unique
     write_binary_file(Sf,filename);
     Function<double,3> f1 = real_factory_3d(*world);
     load(f1,filename);
@@ -100,6 +100,30 @@ void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_
     std::cout << "ReadOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
+
+void Optimization::GiveInitialOrbitals(std::vector<SavedFct> all_orbs) 
+{
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    for(SavedFct orb : all_orbs) {
+        if (orb.info == "frozen_occ") {
+            frozen_occ_orbs.push_back(loadfct(orb));
+        } else if (orb.info == "active") {
+            active_orbs.push_back(loadfct(orb));
+        } else if (orb.info == "frozen_virt") {
+            frozen_virt_orb.push_back(loadfct(orb));
+        }
+    }
+    core_dim = frozen_occ_orbs.size();
+    as_dim = active_orbs.size();
+    froz_virt_dim = frozen_virt_orb.size();
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "GiveInitialOrbitals took " << duration.count() << " seconds" << std::endl;
+}
+
+
 void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -133,6 +157,65 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
                 for(int l = 0; l < as_dim; l++)
                 {
                     as_two_rdm(i,j,k,l) = two_rdm_data[x];
+                    x++;
+                }
+            }
+        }
+    }
+
+    //****************************************
+    // Rotate active Space Orbitals
+    //****************************************
+    {
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+        es.compute(as_one_rdm);
+        ActiveSpaceRotationMatrix = es.eigenvectors().rowwise().reverse();
+        TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
+        TransformTensor(&as_two_rdm, ActiveSpaceRotationMatrix);
+        madness::Tensor<double> T(as_dim, as_dim);
+        for (int i = 0; i < as_dim; i++) {
+            for (int j = 0; j < as_dim; j++) {
+                T(i,j) = ActiveSpaceRotationMatrix(i,j);
+            }
+        }
+        active_orbs = transform(*world, active_orbs, T);
+    }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "ReadRDMFiles took " << duration.count() << " seconds" << std::endl;
+}
+
+void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements)
+{
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    //****************************************
+    // Read active space RDMs
+    //****************************************
+    as_one_rdm = Eigen::MatrixXd::Zero(as_dim, as_dim);
+    as_two_rdm = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
+
+    int x = 0;
+    for(int i = 0; i < as_dim; i++)
+    {
+        for(int j = 0; j < as_dim; j++)
+        {
+            as_one_rdm(i,j) = one_rdm_elements[x];
+            x++;
+        }
+    }
+
+    x = 0;
+    for(int i = 0; i < as_dim; i++)
+    {
+        for(int j = 0; j < as_dim; j++)
+        {
+            for(int k = 0; k < as_dim; k++)
+            {
+                for(int l = 0; l < as_dim; l++)
+                {
+                    as_two_rdm(i,j,k,l) = two_rdm_elements[x];
                     x++;
                 }
             }
@@ -893,21 +976,21 @@ std::vector<SavedFct> Optimization::GetOrbitals()
     for(int i = 0; i < core_dim; i++)
     {
         SavedFct orb(frozen_occ_orbs[i]);
-        orb.info="forzen occupied orbital " + std::to_string(i)+ ", overall orbital " + std::to_string(j);
+        orb.info="frozen_occ";
         all_orbs.push_back(orb);
         j++;
     }
     for(int i = 0; i < as_dim; i++)
     {
         SavedFct orb(active_orbs[i]);
-        orb.info="active orbital " + std::to_string(i)+ ", overall orbital " + std::to_string(j);
+        orb.info="active";
         all_orbs.push_back(orb);
         j++;
     }
     for(int i = 0; i < froz_virt_dim; i++)
     {
         SavedFct orb(active_orbs[i]);
-        orb.info="forzen virtual orbital " + std::to_string(i)+ ", overall orbital " + std::to_string(j);
+        orb.info="frozen_virt";
         all_orbs.push_back(orb);
         j++;
     }
@@ -965,7 +1048,7 @@ void Optimization::SaveEffectiveHamiltonian(std::string OutputPath)
 
 //the following three functions correspond to SaveEffectiveHamiltonian
 
-double GetC() {
+double Optimization::GetC() {
     return core_total_energy + nuclear_repulsion_energy;
 }
 
