@@ -82,6 +82,7 @@ RUN \
     cd /opt && \
     git clone https://github.com/m-a-d-n-e-s-s/madness.git && \
     cd madness && \
+    git checkout 54baf1c4f6cb5af7ec710a976cfc1fddf340691e && \
     mkdir build && \
     cd build && \
     cmake -DENABLE_MPI=OFF -DENABLE_MKL=ON -DCMAKE_INSTALL_PREFIX=/usr/local/madness -DLAPACK_LIBRARIES=/opt/intel/oneapi/mkl/2025.0/lib/libmkl_rt.so -DLAPACK_INCLUDE_DIRS=/opt/intel/oneapi/mkl/2025.0/include/ -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" .. && \
