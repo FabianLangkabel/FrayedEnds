@@ -23,6 +23,7 @@ public:
     ~Optimization();
 
     Function<double,3> loadfct(const SavedFct& Sf);
+    Function<double,3> loadfct_from_file(const std::string& filename);
 
     //input
     void GiveInitialOrbitals(std::vector<SavedFct> all_orbs);
@@ -33,6 +34,9 @@ public:
     std::vector<double> GetHTensor();
     std::vector<double> GetGTensor();
     std::vector<SavedFct> GetOrbitals();
+
+    //plotting function
+    void plot(const std::string filename, const Function<double,3>& f, const double L);
 
     void CreateNuclearPotentialAndRepulsion(std::string GeometryFile);
     void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files);

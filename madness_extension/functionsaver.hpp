@@ -60,11 +60,12 @@ class SavedFct {
 
 //Helper function to convert a string into a binary .00000 file
 inline void write_binary_file(const SavedFct& Sf, const std::string& filename) { //TODO: make sure the filename is unique
+    std::string filename2 = filename + ".00000";
     // Open the file in binary mode
     std::string content=Sf.saved_str;
-    std::ofstream file(filename, std::ios::binary);
+    std::ofstream file(filename2, std::ios::binary);
     if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
+        throw std::runtime_error("Failed to open file: " + filename2);
     }
 
     // Write the string content to the file

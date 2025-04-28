@@ -71,9 +71,9 @@ shutil.move(molecule_name + "_htensor.npy", "0/htensor.npy")
 shutil.move(molecule_name + "_gtensor.npy", "0/gtensor.npy")
 
 
-'''
-Iteration Loop
-'''
+
+# Iteration Loop
+
 for it in range(iterations):
     it_str = it.__str__()
     print("Iteration-Step: " + it_str)
@@ -83,7 +83,7 @@ for it in range(iterations):
             shutil.copy(it_str + "/htensor.npy", molecule_name + "_htensor.npy")
             shutil.copy(it_str + "/gtensor.npy", molecule_name + "_gtensor.npy")
             mol = tq.Molecule(geometry_angstrom, n_pno="read", name=molecule_name) #Important here geometry in Angstrom
-            c, h1, h2 = mol.get_integrals(ordering="chem")
+            c, h1, g2 = mol.get_integrals(ordering="chem")
             print(c)
             print(mol.compute_energy("fci"))
             print(mol.compute_energy("hf"))

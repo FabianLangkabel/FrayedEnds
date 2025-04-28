@@ -3,10 +3,10 @@
 using namespace madness;
 
 const std::string path_to_plots="/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/Examples/Full_run/temp_files/"; //change this file path according to your folder structure
-template<int NDIM>
-void plot(const char* filename, const Function<double,NDIM>& f, double L) {
-    Vector<double,NDIM> lo(0.0), hi(0.0);
-    lo[NDIM-1] = -L; hi[NDIM-1] = L;
+
+void Optimization::plot(const std::string filename, const Function<double,3>& f, const double L) {
+    Vector<double,3> lo(0.0), hi(0.0);
+    lo[2] = -L; hi[2] = L;
     std::string full_path=path_to_plots+filename;
     plot_line(full_path.c_str(),2001,lo,hi,f);
 }
@@ -46,11 +46,18 @@ Optimization::~Optimization()
 
 //load a function from a SavedFct object
 Function<double,3> Optimization::loadfct(const SavedFct& Sf) {
-    std::string filename = "saved_fct2.00000"; //TODO: check if filename is unique
+    std::string filename = "saved_fct2"; //TODO: check if filename is unique
     write_binary_file(Sf,filename);
     Function<double,3> f1 = real_factory_3d(*world);
     load(f1,filename);
     delete_file(filename+".00000");
+    return f1;
+}
+
+//load a function from a binary file
+Function<double,3> Optimization::loadfct_from_file(const std::string& filename) {
+    Function<double,3> f1 = real_factory_3d(*world);
+    load(f1,filename);
     return f1;
 }
 
@@ -81,7 +88,6 @@ void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_
     {
         real_function_3d orb = real_factory_3d(*world);
         load(orb, active_orbs_files[i]);
-        plot<3>(("orb_"+std::to_string(i)+".dat").c_str(),orb, 50.0);
         active_orbs.push_back(orb);
     }
 
@@ -186,7 +192,8 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
     std::cout << "ReadRDMFiles took " << duration.count() << " seconds" << std::endl;
 }
 
-void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements)
+//this function just takes two lists of doubles, without any information about the shape, might be better to change that
+void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -242,7 +249,7 @@ void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "ReadRDMFiles took " << duration.count() << " seconds" << std::endl;
+    std::cout << "GiveRDMFiles took " << duration.count() << " seconds" << std::endl;
 }
 
 void Optimization::TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix)

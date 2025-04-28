@@ -104,7 +104,6 @@ class PNOInterface{
 	private:
 		World* world;
 		commandlineparser parser;
-		PNOParameters
 };
 
 
