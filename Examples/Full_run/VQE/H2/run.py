@@ -8,9 +8,10 @@ import logging
 import subprocess as sp
 import pyscf
 from pyscf import fci
+import time
 import OrbOpt_helper
 
-
+start_time = time.time()
 '''
 Definitions/Parameters
 '''                       
@@ -149,3 +150,5 @@ with open(r'Energies.txt', 'w') as fp:
 # Write NO-Occupations to the hard disk
 all_occ_number_matrix = np.column_stack(all_occ_number)
 np.savetxt('all_occ_number.txt', all_occ_number_matrix)
+end_time = time.time()
+print("Total time: " + (end_time - start_time).__str__())

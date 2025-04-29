@@ -7,11 +7,14 @@ import logging
 import subprocess as sp
 import pyscf
 from pyscf import fci
+import time
 import OrbOpt_helper
 import sys
 sys.path.append('/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/madness_extension')
 import MadPy as mad
 
+
+start_time = time.time()
 distance = 2.5 # Distance between the two hydrogen atoms in Bohr 
 iteration_energies = [] #Stores the energies at the beginning of each iteration step after the VQE
 all_occ_number = [] #Stores the orbital occupations at the beginning of each iteration step after the VQE
@@ -55,8 +58,15 @@ as_dim=len(active_orbitals)
 ##################
 #Add PNO part here
 ##################
+'''
+OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
+pnotest=mad.PNOInterface(2,"pno input=input", box_size, wavelet_order, madness_thresh) #how to create the input file?
+pnotest.run()
 
+'''
 
+OrbOpt_helper.create_molecule_file(geometry_bohr)
+mol = tq.Molecule(geometry_angstrom, dft={"L":box_size}, name=molecule_name)
 
 for it in range(iterations):
     print("---------------------------------------------------")
@@ -133,27 +143,7 @@ for it in range(iterations):
     g2_elements=opti.GetGTensor()
 
     del opti
-    '''
-    print("---------------------------------------------------")
-    print("---------------------------------------------------")
-    print("---------------------------------------------------")
-    print("---------------------------------------------------")
-    print("---------------------------------------------------")
-    print(h1)
-    print("\n comp:")
-    h_comp=np.load("../../H2/files3/1/htensor.npy")
-    print(h_comp)
-    print("---------------------------------------------------")
-    print(g2)
-    print("\n comp:")
-    g_comp=np.load("../../H2/files3/1/gtensor.npy")
-    print(g_comp)
 
-    for i in range(len(all_orbs)):
-        opti.plot("new_orbital" + str(i), opti.loadfct(all_orbs[i]), box_size)
-    for i in range(len(all_orbs)):
-        opti.plot("old_orbital" + str(i), opti.loadfct_from_file("0/mra_orbital_"+str(i)), box_size)
-    '''
 # Write energies to the hard disk
 with open(r'Energies.txt', 'w') as fp:
     fp.write('\n'.join(iteration_energies))
@@ -161,3 +151,6 @@ with open(r'Energies.txt', 'w') as fp:
 # Write NO-Occupations to the hard disk
 all_occ_number_matrix = np.column_stack(all_occ_number)
 np.savetxt('all_occ_number.txt', all_occ_number_matrix)
+end_time = time.time()
+
+print("Total time: " + (end_time - start_time).__str__())
