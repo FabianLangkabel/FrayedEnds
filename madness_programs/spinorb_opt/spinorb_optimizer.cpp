@@ -129,8 +129,8 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
     std::vector<double> data_alpha_beta = alpha_beta_rdm_npy.data;
     std::vector<double> data_beta_beta = beta_beta_rdm_npy.data;
     
-    //int dim_alpha = all_alpha_orbitals.size();
-    //int dim_beta = all_beta_orbitals.size();
+    int dim_alpha = active_alpha_orbital_indicies.size();
+    int dim_beta = active_beta_orbital_indicies.size();
     int max_dim = active_alpha_beta_orbs.size();
 
     //Transform the std::vector to Eigen::Matrix
@@ -141,19 +141,22 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
     Eigen::VectorXd Beta_Beta_Rdm_Vector = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(data_beta_beta.data(), data_beta_beta.size());
 
 
-    //Insert the rdm vectors into the blownup matrix and tensor, both are in phys notation
+    //Insert the rdm vectors into the matrices and tensor, both are in phys notation
     
-    Alpha_Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(max_dim, max_dim);
+    Alpha_Rdm_Matrix = Eigen::MatrixXd::Zero(dim_alpha, dim_alpha);
+    Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(dim_beta, dim_beta);
+
     int x = 0;
     int y = 0;
-    for (int i = 0; i < max_dim; i+=2) {
-        for (int j = 0; j < max_dim; j+=2) {
-            Alpha_Beta_Rdm_Matrix(i, j) = Alpha_Rdm_Vector(x++);
+    for (int i = 0; i < dim_alpha; ++i) {
+        for (int j = 0; j < dim_alpha; ++j) {
+            Alpha_Rdm_Matrix(i, j) = Alpha_Rdm_Vector(x++);
         }
     }
-    for (int i = 1; i < max_dim; i+=2) {
-        for (int j = 1; j < max_dim; j+=2) {
-            Alpha_Beta_Rdm_Matrix(i, j) = Beta_Rdm_Vector(y++);
+    
+    for (int i = 0; i < dim_beta; ++i) {
+        for (int j = 0; j < dim_beta; ++j) {
+            Beta_Rdm_Matrix(i, j) = Beta_Rdm_Vector(y++);
         }
     }
 
@@ -206,6 +209,7 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
                     if (Alpha_Beta_Rdm_Tensor(i, j, k, l) != 0) {
                         std::cout << "Alpha_Beta_rdms[" << i << "][" << j << "][" << k << "][" << l << "] = " 
                                   << Alpha_Beta_Rdm_Tensor(i, j, k, l) << std::endl;
+                        
                     }
                 }
             }
@@ -218,7 +222,7 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
 }
 
 
-/*void SpinorbOpt::TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix)
+void SpinorbOpt::TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix)
 {
     *ObjectMatrix = TransformationMatrix.transpose() * *ObjectMatrix * TransformationMatrix;
 }
@@ -286,15 +290,59 @@ void SpinorbOpt::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::
         }
     }
     *ObjectTensor = temp4;
-}*/
+}
 
-/void SpinorbOpt::TransformToNObasis()
+//void SpinorbOpt::CreateActiveSpaceRotationMatrix();
+//idea to make this a seperate function perhaps?!
+
+void SpinorbOpt::TransformToNObasis()
 {
+    //std::cout << "Alpha rdm matrox before " << Alpha_Rdm_Matrix << std::endl;
+    
     int num_active_orbs = active_alpha_beta_orbs.size();
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-    es.compute(Alpha_Beta_Rdm_Matrix);
-    ActiveSpaceRotationMatrix = es.eigenvectors().rowwise().reverse();
-    TransformMatrix(&Alpha_Beta_Rdm_Matrix, ActiveSpaceRotationMatrix);
+    int dim_alpha = active_alpha_orbital_indicies.size();
+    int dim_beta = active_beta_orbital_indicies.size();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es_alpha;
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es_beta;
+
+    es_alpha.compute(Alpha_Rdm_Matrix);
+    es_beta.compute(Beta_Rdm_Matrix);
+
+    Eigen::MatrixXd Alpha_Rotation_Matrix = es_alpha.eigenvectors().rowwise().reverse();
+    Eigen::MatrixXd Beta_Rotation_Matrix = es_beta.eigenvectors().rowwise().reverse();
+
+    std::cout << "Alpha Rotation Matrix " << Alpha_Rotation_Matrix << std::endl;
+    std::cout << "Beta Rotation Matrix " << Beta_Rotation_Matrix << std::endl;
+
+    TransformMatrix(&Alpha_Rdm_Matrix, Alpha_Rotation_Matrix);
+    TransformMatrix(&Beta_Rdm_Matrix, Beta_Rotation_Matrix);
+
+    //std::cout << "Alpha rdms after " << Alpha_Rdm_Matrix << std::endl;
+
+    //create blown up 1-body rdm and Active Space Rotation Matrix
+
+    Alpha_Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(num_active_orbs, num_active_orbs); //already in NO basis
+    ActiveSpaceRotationMatrix = Eigen::MatrixXd::Zero(num_active_orbs, num_active_orbs);
+    
+    for (int i = 0; i < dim_alpha; i+=1) {
+        for (int j = 0; j < dim_alpha; j+=1) {
+            Alpha_Beta_Rdm_Matrix(i*2,j*2) = Alpha_Rdm_Matrix(i,j);
+            ActiveSpaceRotationMatrix(i*2,j*2) = Alpha_Rotation_Matrix(i,j);
+
+        }
+    }
+    for (int i = 0; i < dim_beta; i+=1) {
+        for (int j = 0; j < dim_beta; j+=1) {
+            Alpha_Beta_Rdm_Matrix(i*2 + 1,j*2 + 1) = Beta_Rdm_Matrix(i,j);
+            ActiveSpaceRotationMatrix(i*2 + 1,j*2 + 1) = Beta_Rotation_Matrix(i,j);
+        }
+    }
+
+    std::cout << "Alpha Beta rdms " << Alpha_Beta_Rdm_Matrix << std::endl;
+    std::cout << "Active space rotation matrix " << ActiveSpaceRotationMatrix << std::endl;
+
+
     TransformTensor(&Alpha_Beta_Rdm_Tensor, ActiveSpaceRotationMatrix);
     madness::Tensor<double> T(num_active_orbs, num_active_orbs);
     for (int i = 0; i < num_active_orbs; i++) {
@@ -302,9 +350,6 @@ void SpinorbOpt::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::
             T(i,j) = ActiveSpaceRotationMatrix(i,j);
         }
     }
-    
-    
-    std::cout << "dim alpha beta " << num_active_orbs << std::endl;
     
     std::vector<real_function_3d> orbitals_rotate; 
     for (int i = 0; i < num_active_orbs; i++)

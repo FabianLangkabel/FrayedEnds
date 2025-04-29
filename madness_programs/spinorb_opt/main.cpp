@@ -204,7 +204,7 @@ int main(int argc, char** argv)
     opti->CreateNuclearPotentialAndRepulsion(molecule_file);
     opti->ReadInitialOrbitals(all_alpha_orbitals, all_beta_orbitals, number_alpha_active_orbitals, number_beta_active_orbitals);
     opti->ReadRDMFiles(one_body_rdm_files, two_body_rdm_files);
-    //opti->TransformToNObasis();
+    opti->TransformToNObasis();
     opti->CalculateAllIntegrals();
     opti->CalculateEnergy();
     

@@ -25,9 +25,9 @@ public:
     void CreateNuclearPotentialAndRepulsion(std::string GeometryFile);
     void ReadInitialOrbitals(std::vector<Orbital> all_alpha_orbitals, std::vector<Orbital> all_beta_orbitals, int number_alpha_active_orbitals, int number_beta_active_orbitals);
     void ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::vector<std::string> two_body_rdm_files);
-    //void TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix);
-    //void TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::MatrixXd TransformationMatrix);
-    //void TransformToNObasis();
+    void TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix);
+    void TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::MatrixXd TransformationMatrix);
+    void TransformToNObasis();
     void CalculateAllIntegrals();
     void CalculateEnergy();
     //void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh);
@@ -45,8 +45,8 @@ private:
     double nuclear_repulsion_energy;
     Nuclear<double,3>* Vnuc;
 
-    std::vector<Orbital> all_alpha_orbitals;
-    std::vector<Orbital> all_beta_orbitals;
+    //std::vector<Orbital> all_alpha_orbitals;
+    //std::vector<Orbital> all_beta_orbitals;
     std::vector<int> active_alpha_orbital_indicies;
     std::vector<int> active_beta_orbital_indicies;
     std::vector<int> frozen_occupied_alpha_orbital_indicies;
@@ -54,6 +54,8 @@ private:
     std::vector<real_function_3d> active_alpha_beta_orbs;
     //std::vector<real_function_3d> orbitals_rotate;
 
+    Eigen::MatrixXd Alpha_Rdm_Matrix;
+    Eigen::MatrixXd Beta_Rdm_Matrix;
     Eigen::MatrixXd Alpha_Beta_Rdm_Matrix;
     Eigen::Tensor<double, 4> Alpha_Beta_Rdm_Tensor;
     
