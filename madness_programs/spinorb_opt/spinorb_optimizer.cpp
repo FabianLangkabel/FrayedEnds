@@ -39,19 +39,26 @@ void SpinorbOpt::ReadInitialOrbitals(std::vector<Orbital> alpha_orbs, std::vecto
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    std::vector<Orbital> all_alpha_orbitals = alpha_orbs;
+    /*std::vector<Orbital> all_alpha_orbitals = alpha_orbs;
     active_alpha_orbital_indicies.resize(num_alpha_orbs);
     std::fill(active_alpha_orbital_indicies.begin(), active_alpha_orbital_indicies.end(), -1);
     frozen_occupied_alpha_orbital_indicies.clear();
 
     std::vector<Orbital> all_beta_orbitals = beta_orbs;
     active_beta_orbital_indicies.resize(num_beta_orbs);
-    std::fill(active_beta_orbital_indicies.begin(), active_beta_orbital_indicies.end(), -1);
-    frozen_occupied_beta_orbital_indicies.clear();
+    std::fill(active_beta_orbital_indicies.begin(), active_beta_orbital_indicies.end(), -1d);
+    frozen_occupied_beta_orbital_indicies.clear();*/
+    
+    std::vector<Orbital> all_alpha_orbitals = alpha_orbs;
+    std::vector<Orbital> all_beta_orbitals = beta_orbs;
+    //int dim_ab = num_alpha_orbs + num_beta_orbs;
+    //active_spin_orb_indicies.resize(dim_ab);
+    //std::fill(active_spin_orb_indicies.begin(), active_spin_orb_indicies.end(), -1);
+    frozen_occ_spin_orb_indices.clear();
 
     int max_dim = std::max(num_alpha_orbs, num_beta_orbs);
     
-    for(int i = 0; i < max_dim; ++i) {
+    /*for(int i = 0; i < max_dim; ++i) {
         real_function_3d orb = real_factory_3d(*world);
         if (i < num_alpha_orbs) {
             load(orb, all_alpha_orbitals[i].orbital_file_name);
@@ -75,10 +82,41 @@ void SpinorbOpt::ReadInitialOrbitals(std::vector<Orbital> alpha_orbs, std::vecto
             frozen_occupied_beta_orbital_indicies.push_back(i);
             }
         }
+    }*/
+
+    num_active_alpha = 0;
+    num_active_beta = 0;
+    
+    for(int i = 0; i < max_dim; ++i) {
+        real_function_3d orb = real_factory_3d(*world);
+        if (i < num_alpha_orbs) {
+            load(orb, all_alpha_orbitals[i].orbital_file_name);
+            all_alpha_orbitals[i].function = orb;
+            if(all_alpha_orbitals[i].orbital_type == "active") {
+                active_spin_orb_indices.push_back(all_alpha_orbitals[i].active_space_index);
+                active_alpha_beta_orbs.push_back(all_alpha_orbitals[i].function);
+                ++num_active_alpha;
+            }
+            else if(all_alpha_orbitals[i].orbital_type == "frozen_occupied") {
+                frozen_occ_spin_orb_indices.push_back(i); //needs to be revisited
+            }
+        }
+        if (i < num_beta_orbs) {
+            load(orb, all_beta_orbitals[i].orbital_file_name);
+            all_beta_orbitals[i].function = orb;
+            if(all_beta_orbitals[i].orbital_type == "active") {
+                active_spin_orb_indices.push_back(all_beta_orbitals[i].active_space_index);
+                active_alpha_beta_orbs.push_back(all_beta_orbitals[i].function);
+                ++num_active_beta;
+                }
+            else if(all_beta_orbitals[i].orbital_type == "frozen_occupied") {
+            frozen_occ_spin_orb_indices.push_back(i);
+            }
+        }
     }
 
     //Print frozen occupied indicies
-    std::cout << "Frozen occupied alpha orbitals: ";
+    /*std::cout << "Frozen occupied alpha orbitals: ";
     for (auto const& FroIdxa : frozen_occupied_alpha_orbital_indicies)
     {
         std::cout << FroIdxa << " ";
@@ -89,10 +127,17 @@ void SpinorbOpt::ReadInitialOrbitals(std::vector<Orbital> alpha_orbs, std::vecto
     {
         std::cout << FroIdxb << " ";
     }
+    std::cout << std::endl;*/
+
+    std::cout << "Frozen occupied spin orbitals: ";
+    for (auto const& FroIdx : frozen_occ_spin_orb_indices)
+    {
+        std::cout << FroIdx << " ";
+    }
     std::cout << std::endl;
 
     //Print active space indicies
-    std::cout << "Active space alpha indicies: ";
+    /*std::cout << "Active space alpha indicies: ";
     for (auto const& AIdxa : active_alpha_orbital_indicies)
     {
         std::cout << AIdxa << " ";
@@ -103,7 +148,15 @@ void SpinorbOpt::ReadInitialOrbitals(std::vector<Orbital> alpha_orbs, std::vecto
     {
         std::cout << AIdxb << " ";
     }
+    std::cout << std::endl;*/
+
+    std::cout << "Active space spin orbitals indicies: ";
+    for (auto const& AIdx : active_spin_orb_indices)
+    {
+        std::cout << AIdx << " ";
+    }
     std::cout << std::endl;
+
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
@@ -129,8 +182,8 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
     std::vector<double> data_alpha_beta = alpha_beta_rdm_npy.data;
     std::vector<double> data_beta_beta = beta_beta_rdm_npy.data;
     
-    int dim_alpha = active_alpha_orbital_indicies.size();
-    int dim_beta = active_beta_orbital_indicies.size();
+    //int dim_alpha = active_alpha_orbital_indicies.size();
+    //int dim_beta = active_beta_orbital_indicies.size();
     int max_dim = active_alpha_beta_orbs.size();
 
     //Transform the std::vector to Eigen::Matrix
@@ -143,22 +196,37 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
 
     //Insert the rdm vectors into the matrices and tensor, both are in phys notation
     
-    Alpha_Rdm_Matrix = Eigen::MatrixXd::Zero(dim_alpha, dim_alpha);
-    Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(dim_beta, dim_beta);
-
+    Alpha_Rdm_Matrix = Eigen::MatrixXd::Zero(num_active_alpha, num_active_alpha);
+    Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(num_active_beta, num_active_beta);
+    
     int x = 0;
     int y = 0;
-    for (int i = 0; i < dim_alpha; ++i) {
-        for (int j = 0; j < dim_alpha; ++j) {
+    for (int i = 0; i < num_active_alpha; ++i) {
+        for (int j = 0; j < num_active_alpha; ++j) {
             Alpha_Rdm_Matrix(i, j) = Alpha_Rdm_Vector(x++);
         }
     }
-    
-    for (int i = 0; i < dim_beta; ++i) {
-        for (int j = 0; j < dim_beta; ++j) {
+
+    for (int i = 0; i < num_active_beta; ++i) {
+        for (int j = 0; j < num_active_beta; ++j) {
             Beta_Rdm_Matrix(i, j) = Beta_Rdm_Vector(y++);
         }
     }
+    
+    //old implementation of initialising Alpha_Beta_Rdm_Matrix already here
+    
+    /*Alpha_Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(max_dim, max_dim);
+    for (int i = 0; i < max_dim; i+=2){
+        for (int j = 0; j < max_dim; j+=2) {
+            Alpha_Beta_Rdm_Matrix(i, j) = Alpha_Rdm_Vector(x++);
+        }
+    }
+    for (int i = 1; i < max_dim; i+=2){
+        for (int j = 1; j < max_dim; j+=2) {
+            Alpha_Beta_Rdm_Matrix(i, j) = Beta_Rdm_Vector(y++);
+        }
+    }*/
+    
 
     Alpha_Beta_Rdm_Tensor = Eigen::Tensor<double, 4>(max_dim, max_dim, max_dim, max_dim);
     Alpha_Beta_Rdm_Tensor.setZero();
@@ -195,8 +263,7 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
         }
     }
 
-   
-    //reshape the Tensor into chemical notation
+
 
     //std::cout << "Alpha Beta Rdms Matrix: " << endl << Alpha_Beta_Rdm_Matrix << endl;
     //std::cout << "Alpha Beta combined Rdms size: " << endl << Alpha_Beta_Rdm_Tensor.size() << endl;
@@ -297,11 +364,11 @@ void SpinorbOpt::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::
 
 void SpinorbOpt::TransformToNObasis()
 {
-    //std::cout << "Alpha rdm matrox before " << Alpha_Rdm_Matrix << std::endl;
+    //std::cout << "Alpha rdm matrix before " << Alpha_Rdm_Matrix << std::endl;
     
     int num_active_orbs = active_alpha_beta_orbs.size();
-    int dim_alpha = active_alpha_orbital_indicies.size();
-    int dim_beta = active_beta_orbital_indicies.size();
+    //int dim_alpha = active_alpha_orbital_indicies.size();
+    //int dim_beta = active_beta_orbital_indicies.size();
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es_alpha;
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es_beta;
@@ -325,22 +392,22 @@ void SpinorbOpt::TransformToNObasis()
     Alpha_Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(num_active_orbs, num_active_orbs); //already in NO basis
     ActiveSpaceRotationMatrix = Eigen::MatrixXd::Zero(num_active_orbs, num_active_orbs);
     
-    for (int i = 0; i < dim_alpha; i+=1) {
-        for (int j = 0; j < dim_alpha; j+=1) {
+    for (int i = 0; i < num_active_alpha; i+=1) {
+        for (int j = 0; j < num_active_alpha; j+=1) {
             Alpha_Beta_Rdm_Matrix(i*2,j*2) = Alpha_Rdm_Matrix(i,j);
             ActiveSpaceRotationMatrix(i*2,j*2) = Alpha_Rotation_Matrix(i,j);
 
         }
     }
-    for (int i = 0; i < dim_beta; i+=1) {
-        for (int j = 0; j < dim_beta; j+=1) {
+    for (int i = 0; i < num_active_beta; i+=1) {
+        for (int j = 0; j < num_active_beta; j+=1) {
             Alpha_Beta_Rdm_Matrix(i*2 + 1,j*2 + 1) = Beta_Rdm_Matrix(i,j);
             ActiveSpaceRotationMatrix(i*2 + 1,j*2 + 1) = Beta_Rotation_Matrix(i,j);
         }
     }
 
-    std::cout << "Alpha Beta rdms " << Alpha_Beta_Rdm_Matrix << std::endl;
-    std::cout << "Active space rotation matrix " << ActiveSpaceRotationMatrix << std::endl;
+    //std::cout << "Alpha Beta rdms " << Alpha_Beta_Rdm_Matrix << std::endl;
+    //std::cout << "Active space rotation matrix " << ActiveSpaceRotationMatrix << std::endl;
 
 
     TransformTensor(&Alpha_Beta_Rdm_Tensor, ActiveSpaceRotationMatrix);
@@ -517,7 +584,7 @@ void SpinorbOpt::CalculateEnergy()
     auto start_time = std::chrono::high_resolution_clock::now();
 
     int dim_ab = Alpha_Beta_Rdm_Matrix.rows();
-    std::cout << "dim ab calc en" << dim_ab << std::endl;
+    //std::cout << "dim ab calc en" << dim_ab << std::endl;
     double kinetic_energy = 0.0;
     double nuclear_attraction_energy = 0.0;
 
@@ -561,11 +628,11 @@ void SpinorbOpt::CalculateEnergy()
     std::cout << "CalculateEnergies took " << duration.count() << " seconds" << std::endl;
 }
 
-/*void SpinorbOpt::CalculateLagrangeMultiplier()
+void SpinorbOpt::CalculateLagrangeMultiplier()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    int dim = all_alpha_orbitals.size() + all_beta_orbitals.size();
+    int dim = active_alpha_beta_orbs.size();
     LagrangeMultiplier = Eigen::MatrixXd::Zero(dim, dim);
     for(int a = 0; a < dim; a++)
     {
@@ -578,15 +645,12 @@ void SpinorbOpt::CalculateEnergy()
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "CalculateLagrangeMultiplier took " << duration.count() << " seconds" << std::endl;
-}*/
+    std::cout << "Lagrange Multiplier: " << LagrangeMultiplier << std::endl;
+}
 
-/*double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
+double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 {
-    double element = integrals_potential(a, i);
-    for (int axis=0; axis<3; axis++) {
-        element += integrals_kinetic[axis](a, i);
-    }
-    element = full_one_rdm(i,i) * element;
+    double element = Alpha_Beta_Rdm_Matrix(i,i) * integrals_one_body(a, i);
 
     for(int l = 0; l < dim; l++)
     {
@@ -594,26 +658,104 @@ void SpinorbOpt::CalculateEnergy()
         {
             for(int k = 0; k < dim; k++)
             {
-                element += full_two_rdm(k, l, i, n) * integrals_two_body(a, k, l, n);
+                element += Alpha_Beta_Rdm_Tensor(k, l, i, n) * integrals_two_body(a, k, l, n);
             }
         }
     }
     return element;
-}*/
+}
+
+void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
+// function for doing only one iteration to test if stuff works
+{
+    int num_active_orbs = active_alpha_beta_orbs.size();
+
+    std::vector<real_function_3d> orbitals;
+    for (int i = 0; i < num_active_orbs; i++)
+    {
+        orbitals.push_back(active_alpha_beta_orbs[i]);
+    }
+
+    auto start_orb_update_time = std::chrono::high_resolution_clock::now();
+    highest_error = 0;
+
+    CalculateLagrangeMultiplier();
+
+    std::vector<int> spin_orbs_indices_for_update;
+    for (int idx = 0; idx < num_active_orbs; idx++) {
+        if(abs(Alpha_Beta_Rdm_Matrix(idx, idx)) >= NO_occupation_thresh) {
+                spin_orbs_indices_for_update.push_back(active_spin_orb_indices[idx]);
+                }
+            else {
+                std::cout << "Skip optimization of spin orbital " << active_spin_orb_indices[idx] << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
+            }    
+        } 
+    
+    std::cout << "Spin orbital indices list for update : ";
+    for (auto const& Idx : spin_orbs_indices_for_update) {
+        std::cout << Idx << " ";
+        }
+    std::cout << std::endl;
+    
+    std::vector<real_function_3d> AllActiveSpinOrbitalUpdates = GetAllActiveSpinorbitalUpdates(spin_orbs_indices_for_update);
+        
+        for (int idx = 0; idx < spin_orbs_indices_for_update.size(); idx++)
+        {
+            int i = spin_orbs_indices_for_update[idx];
+            orbitals[i] = orbitals[i] - AllActiveSpinOrbitalUpdates[idx];
+        }
+    
+    auto end_orb_update_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
+    std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
+
+    std::cout << "Orthonormalize orbitals" << std::endl;
+    orbitals = orthonormalize_symmetric(orbitals);
+
+    for(int i = 0; i < orbitals.size(); i++)
+    {
+        orbitals[i] = orbitals[i].truncate(1e-5);
+    }
+
+    //Update all_orbitals
+    for (int i = 0; i < num_active_orbs; i++)
+    {
+        active_alpha_beta_orbs[i] = orbitals[i];
+    }
+
+
+    std::cout << "Update Integrals" << std::endl;
+    //Update integrals for new orbitals
+    CalculateAllIntegrals();
+
+    //Calculate new energy
+    CalculateEnergy();
+
+    //Check convergence
+    std::cout << "Highest error: " << highest_error << std::endl;
+    
+}
+
+
+
+
 
 /*void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
 {
-    int number_active_orbitals = active_orbital_indicies.size();
-    std::vector<real_function_3d> frozen_orbs;
-    for (auto const& frozenIdx : frozen_occupied_orbital_indicies)
+    int num_active_orbs = active_alpha_beta_orbs.size();
+    //ignore frozen orbitals for now
+    /*std::vector<real_function_3d> frozen_orbs; 
+    for (auto const& frozenIdx : frozen_occ_spin_orb_indicies)
     {
         frozen_orbs.push_back(all_orbitals[frozenIdx].function);
     }
+    
     std::vector<real_function_3d> orbitals;
-    for (auto const& orb : all_orbitals)
+    for (int i = 0; i < num_active_orbs; i++)
     {
-        orbitals.push_back(orb.function);
+        orbitals.push_back(active_alpha_beta_orbs[i]);
     }
+    
 
     bool converged = false;
     int iterstep = 0;
@@ -630,42 +772,39 @@ void SpinorbOpt::CalculateEnergy()
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();
         highest_error = 0;
 
-        //Solver update
-        //std::vector<real_function_3d> rs;
-        //for(int i = number_frozen_orbs; i < number_orbitals; i++) {
-        //    rs.push_back(GetOrbitalUpdate(i));
-        //}
-        //orbitals = solver->update(orbitals, rs);
-
         //Fixed-Point update new
-        std::vector<int> orbital_indicies_for_update;
-        for (int idx = 0; idx < active_orbital_indicies.size(); idx++)
-        {
-            int actIdx = active_orbital_indicies[idx];
-            if(abs(full_one_rdm(actIdx, actIdx)) >= NO_occupation_thresh)
-            {
-                orbital_indicies_for_update.push_back(actIdx);
+        std::vector<int> spin_orbs_indices_for_update;
+        for (int idx = 0; idx < num_active_orbs; idx++) {
+            if(abs(Alpha_Beta_Rdm_Matrix(idx, idx)) >= NO_occupation_thresh) {
+                spin_orbs_indices_for_update.push_back(active_spin_orb_indices[idx]);
+                }
+            else {
+                std::cout << "Skip optimization of spin orbital " << active_spin_orb_indices[idx] << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
+            }    
+        } 
+    
+        std::cout << "Spin orbital indices list for update : ";
+        for (auto const& Idx : spin_orbs_indices_for_update) {
+            std::cout << Idx << " ";
             }
-            else
-            {
-                std::cout << "Skip optimization of orbital " << actIdx << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")" << std::endl;
-            }
-        }
+        std::cout << std::endl;
 
-        std::vector<real_function_3d> AllActiveOrbitalUpdates = GetAllActiveOrbitalUpdates(orbital_indicies_for_update);
-        for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+        
+        std::vector<real_function_3d> AllActiveSpinOrbitalUpdates = GetAllActiveSpinorbitalUpdates(spin_orbs_indices_for_update);
+        
+        for (int idx = 0; idx < spin_orbs_indices_for_update.size(); idx++)
         {
-            int actIdx = orbital_indicies_for_update[idx];
-            orbitals[actIdx] = orbitals[actIdx] - AllActiveOrbitalUpdates[idx];
+            int actIdx = spin_orbs_indices_for_update[idx];
+            orbitals[actIdx] = orbitals[actIdx] - AllActiveSpinOrbitalUpdates[idx];
         }
-
+      
         auto end_orb_update_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
         std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
         std::cout << "Orthonormalize orbitals" << std::endl;
-        //Project out FrozenOrbitals
-        if(frozen_orbs.size() > 0)
+        //Project out FrozenOrbitals; to be ignored currently
+        /*if(frozen_orbs.size() > 0)
         {
             auto Q = QProjector(*world, frozen_orbs);
             for (auto const& actIdx : active_orbital_indicies)
@@ -676,97 +815,103 @@ void SpinorbOpt::CalculateEnergy()
 
         //Orthonormalize orbitals
         orbitals = orthonormalize_symmetric(orbitals);
-        //orbitals = orthonormalize_cd(orbitals);
+
         for(int i = 0; i < orbitals.size(); i++)
         {
             orbitals[i] = orbitals[i].truncate(1e-5);
         }
 
         //Update all_orbitals
-        for (int i = 0; i < all_orbitals.size(); i++)
+        for (int i = 0; i < active_alpha_beta_orbs.size(); i++)
         {
-            all_orbitals[i].function = orbitals[i];
+            active_alpha_beta_orbs[i] = orbitals[i];
         }
 
         std::cout << "Update Integrals" << std::endl;
         //Update integrals for new orbitals
-        UpdateIntegrals();
-        //CalculateAllIntegrals();
+        //UpdateIntegrals();
+        CalculateAllIntegrals();
 
         //Calculate new energy
-        CalculateEnergies();
+        CalculateEnergy();
 
         //Check convergence
         std::cout << "Highest error: " << highest_error << std::endl;
-        if(highest_error < optimization_thresh){converged = true;}
+        if(highest_error < optimization_thresh){
+            converged = true;
+            std::cout << "Convergence has been reached :-)" << std::endl;
+        }
+
     }
 }*/
 
-/*std::vector<real_function_3d> SpinorbOpt::GetAllActiveSpinorbitalUpdates(std::vector<int> orbital_indicies_for_update)
+std::vector<real_function_3d> SpinorbOpt::GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
-    int dim = all_orbitals.size();
+    int dim = active_alpha_beta_orbs.size();
 
-    std::vector<real_function_3d> AllOrbitalUpdates;
+    std::vector<real_function_3d> AllSpinorbitalUpdates;
+    int dim_update = spin_orbs_indices_for_update.size();
     
-    //Calculate rdm_ii_inv values
+    //Calculate inverse_onebody_rdm values
     std::vector<double> rdm_ii_inv;
-    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+    for (int idx = 0; idx < dim_update; idx++)
     {
-        int i = orbital_indicies_for_update[idx];
-        rdm_ii_inv.push_back(1 / full_one_rdm(i,i));
+        int i = spin_orbs_indices_for_update[idx];
+        rdm_ii_inv.push_back(1 / Alpha_Beta_Rdm_Matrix(i,i));
     }
-
-    //1e Part
-    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+   
+    //1 electron Part
+    for (int idx = 0; idx < dim_update; idx++)
     {
-        int i = orbital_indicies_for_update[idx];
+        int i = spin_orbs_indices_for_update[idx];
         real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
-        real_function_3d rhs = (*Vnuc)(all_orbitals[i].function);
+        real_function_3d rhs = (*Vnuc)(active_alpha_beta_orbs[i]);
         for(int k = 0; k < dim; k++)
         {
             if(k != i)
             {
-                rhs -= rdm_ii_inv[idx] * LagrangeMultiplier(k,i) * all_orbitals[k].function;
+                rhs -= rdm_ii_inv[idx] * LagrangeMultiplier(k,i) * active_alpha_beta_orbs[k];
             }
         }
-        AllOrbitalUpdates.push_back(rhs);
+        AllSpinorbitalUpdates.push_back(rhs);
     }
-    AllOrbitalUpdates = truncate(AllOrbitalUpdates, 1e-5);
+    AllSpinorbitalUpdates = truncate(AllSpinorbitalUpdates, 1e-5);
 
-    //2e Part
+    //2 electron Part
     //auto t2 = std::chrono::high_resolution_clock::now();
     for(int k = 0; k < dim; k++)
     {
-        std::vector<real_function_3d> lnk = coul_orbs_mn * all_orbitals[k].function;
+        std::vector<real_function_3d> lnk = ab_coul_orbs_mn * active_alpha_beta_orbs[k];
         lnk = truncate(lnk, 1e-5);
-        for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+        for(int idx = 0; idx < dim_update; idx++)
         {
-            int i = orbital_indicies_for_update[idx];
+            
+            int i = spin_orbs_indices_for_update[idx];
             std::vector<real_function_3d> lnk_copy = copy(*world, lnk, false);
             for(int l = 0; l < dim; l++)
             {
                 for(int n = 0; n < dim; n++)
                 {
-                    lnk_copy[l*dim + n] *= full_two_rdm(k, l, i, n) * rdm_ii_inv[idx];
+                    lnk_copy[l*dim + n] *= Alpha_Beta_Rdm_Tensor(k, l, i, n) * rdm_ii_inv[idx];
                 }
             }
-            AllOrbitalUpdates[idx] += sum(*world, lnk_copy);
+            AllSpinorbitalUpdates[idx] += sum(*world, lnk_copy);
         }
     }
     //auto t3 = std::chrono::high_resolution_clock::now();
 
     //BSH part
-    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
+    for (int idx = 0; idx < dim_update; idx++)
     {
-        int i = orbital_indicies_for_update[idx];
+        int i = spin_orbs_indices_for_update[idx];
         double en = LagrangeMultiplier(i,i) * rdm_ii_inv[idx];
         SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), 0.01, 1e-6);
-        real_function_3d r = all_orbitals[i].function + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
+        real_function_3d r = active_alpha_beta_orbs[i] + 2.0 * bsh_op(AllSpinorbitalUpdates[idx]); // the residual
         double err = r.norm2();
         std::cout << "Error of Orbital " << i << ": " << err << std::endl; 
         if(err > highest_error){highest_error = err; }
-        AllOrbitalUpdates[idx] = r;
+        AllSpinorbitalUpdates[idx] = r;
     }
     
 
@@ -777,19 +922,22 @@ void SpinorbOpt::CalculateEnergy()
     //std::cout << "t32 took " << t32.count() << " seconds" << std::endl;
 
     return AllSpinorbitalUpdates;
-} */
+} 
 
 
  /*void SpinorbOpt::SaveNOs(std::string OutputPath)
 {
-    for(int i = 0; i < all_alpha_orbitals.size(); i++)
+    for(int i = 0; i < active_alpha_beta_orbs.size(); i++)
     {
-        save(all_alpha_orbitals[i].function, OutputPath + "/alpha_NO_" + std::to_string(i)); // ohne das .00000 im filename
-    }
-    
-    for(int i = 0; i < all_beta_orbitals.size(); i++)
-    {
-        save(all_beta_orbitals[i].function, OutputPath + "/beta_NO_" + std::to_string(i)); // ohne das .00000 im filename
+        if (i % 2 == 0 ) {
+            int a = i / 2
+            save(active_alpha_beta_orbs[i], OutputPath + "/alpha_NO_" + std::to_string(idx)); // ohne das .00000 im filename
+        }
+        if (i % 2 == 1) {
+        int b = 
+        save(active_alpha_beta_orbs[i], OutputPath + "/beta_NO_" + std::to_string(i)); // ohne das .00000 im filename
+        }
+        
     }
 }
 
@@ -806,13 +954,11 @@ void SpinorbOpt::SaveSpinorbitals(std::string OutputPath)
         std::string base_filename = all_beta_orbitals[i].orbital_file_name.substr(all_beta_orbitals[i].orbital_file_name.find_last_of("/\\") + 1);
         save(all_beta_orbitals[i].function, OutputPath + "/beta_" + base_filename); // ohne das .00000 im filename
     }
-}
+}*/
 
-void SpinorbOpt::SaveIntegralsToNumpy(std::string OutputPath)
+/*void SpinorbOpt::SaveIntegralsToNumpy(std::string OutputPath)
 {
-    int num_alpha_orbs = all_alpha_orbitals.size();
-    int num_beta_orbs = all_beta_orbitals.size();
-    int dim_ab = num_alpha_orbs + num_beta_orbs;
+    int dim_ab = active_alpha_beta_orbs.size();
 
     std::vector<double> one_alpha_e_int_elements;
     for(int i = 0; i < dim_ab; i+=2)
@@ -876,24 +1022,26 @@ void SpinorbOpt::SaveIntegralsToNumpy(std::string OutputPath)
         }
     }
 
+    int dim_alpha = active_alpha_orbital_indicies.size();
+    int dim_beta = active_beta_orbital_indicies.size();    
 
-    std::vector<unsigned long> one_alpha_e_ints_shape{(unsigned long)num_alpha_orbs, (unsigned long)num_alpha_orbs};
+    std::vector<unsigned long> one_alpha_e_ints_shape{(unsigned long)dim_alpha, (unsigned long)dim_alpha};
     const npy::npy_data<double> one_alpha_e_data{one_alpha_e_int_elements, one_alpha_e_ints_shape, false};
     npy::write_npy(OutputPath + "/alpha_htensor.npy", one_alpha_e_data);
 
-    std::vector<unsigned long> one_beta_e_ints_shape{(unsigned long)num_beta_orbs, (unsigned long)num_beta_orbs};
+    std::vector<unsigned long> one_beta_e_ints_shape{(unsigned long)dim_beta, (unsigned long)dim_beta};
     const npy::npy_data<double> one_beta_e_data{one_beta_e_int_elements, one_beta_e_ints_shape, false};
     npy::write_npy(OutputPath + "/beta_htensor.npy", one_beta_e_data);
 
-    std::vector<unsigned long> two_e_integrals_aa_elements_shape{(unsigned long)num_alpha_orbs, (unsigned long)num_alpha_orbs, (unsigned long)num_alpha_orbs, (unsigned long)num_alpha_orbs};
+    std::vector<unsigned long> two_e_integrals_aa_elements_shape{(unsigned long)dim_alpha, (unsigned long)dim_alpha, (unsigned long)dim_alpha, (unsigned long)dim_alpha};
     const npy::npy_data<double> two_alpha_alpha_e_data{two_e_integrals_aa_elements, two_e_integrals_aa_elements_shape, false};
     npy::write_npy(OutputPath + "/alpha_alpha_gtensor.npy", two_alpha_alpha_e_data);
 
-    std::vector<unsigned long> two_e_integrals_bb_elements_shape{(unsigned long)num_beta_orbs, (unsigned long)num_beta_orbs, (unsigned long)num_beta_orbs, (unsigned long)num_beta_orbs};
+    std::vector<unsigned long> two_e_integrals_bb_elements_shape{(unsigned long)dim_beta, (unsigned long)dim_beta, (unsigned long)dim_beta, (unsigned long)dim_beta};
     const npy::npy_data<double> two_beta_beta_e_data{two_e_integrals_bb_elements, two_e_integrals_bb_elements_shape, false};
     npy::write_npy(OutputPath + "/beta_beta_gtensor.npy", two_beta_beta_e_data);
 
-    std::vector<unsigned long> two_e_integrals_ab_elements_shape{(unsigned long)num_alpha_orbs, (unsigned long)num_alpha_orbs, (unsigned long)num_beta_orbs, (unsigned long)num_beta_orbs};
+    std::vector<unsigned long> two_e_integrals_ab_elements_shape{(unsigned long)dim_alpha, (unsigned long)dim_alpha, (unsigned long)dim_beta, (unsigned long)dim_beta};
     const npy::npy_data<double> two_alpha_beta_e_data{two_e_integrals_ab_elements, two_e_integrals_ab_elements_shape, false};
     npy::write_npy(OutputPath + "/alpha_beta_gtensor.npy", two_alpha_beta_e_data);
 

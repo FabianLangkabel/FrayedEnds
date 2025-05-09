@@ -30,10 +30,11 @@ public:
     void TransformToNObasis();
     void CalculateAllIntegrals();
     void CalculateEnergy();
+    void OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh);
     //void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh);
-    //std::vector<real_function_3d> GetAllActiveSpinorbitalUpdates(std::vector<int> orbital_indicies_for_update);
-    //void CalculateLagrangeMultiplier();
-    //double CalculateLagrangeMultiplierElement(int dim, int a, int i);
+    std::vector<real_function_3d> GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update);
+    void CalculateLagrangeMultiplier();
+    double CalculateLagrangeMultiplierElement(int dim, int a, int i);
     //void SaveNOs(std::string OutputPath);
     //void SaveSpinorbitals(std::string OutputPath); 
     //void SaveIntegralsToNumpy(std::string OutputPath);
@@ -47,10 +48,14 @@ private:
 
     //std::vector<Orbital> all_alpha_orbitals;
     //std::vector<Orbital> all_beta_orbitals;
-    std::vector<int> active_alpha_orbital_indicies;
-    std::vector<int> active_beta_orbital_indicies;
-    std::vector<int> frozen_occupied_alpha_orbital_indicies;
-    std::vector<int> frozen_occupied_beta_orbital_indicies;
+    int num_active_alpha;
+    int num_active_beta;
+    std::vector<int> active_spin_orb_indices;
+    std::vector<int> frozen_occ_spin_orb_indices;
+    //std::vector<int> active_alpha_orbital_indices;
+    //std::vector<int> active_beta_orbital_indices;
+    //std::vector<int> frozen_occupied_alpha_orbital_indices;
+    //std::vector<int> frozen_occupied_beta_orbital_indices;
     std::vector<real_function_3d> active_alpha_beta_orbs;
     //std::vector<real_function_3d> orbitals_rotate;
 
@@ -70,5 +75,5 @@ private:
     std::vector<real_function_3d> ab_coul_orbs_mn; // 1/r|mn)
 
     Eigen::MatrixXd LagrangeMultiplier;
-    //double highest_error;
+    double highest_error;
 };

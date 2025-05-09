@@ -207,6 +207,12 @@ int main(int argc, char** argv)
     opti->TransformToNObasis();
     opti->CalculateAllIntegrals();
     opti->CalculateEnergy();
+    //opti->CalculateLagrangeMultiplier();
+    
+    
+    std::cout << "---------------------------------------------------" << std::endl;
+    std::cout << "Start spin orbital optimization" << std::endl;
+    opti->OptimizeSpinorbitals_Test(optimization_thresh, NO_occupation_thresh);
     
 
     //----------------------- Write Output -----------------------
