@@ -37,7 +37,7 @@ public:
     double CalculateLagrangeMultiplierElement(int dim, int a, int i);
     //void SaveNOs(std::string OutputPath);
     //void SaveSpinorbitals(std::string OutputPath); 
-    //void SaveIntegralsToNumpy(std::string OutputPath);
+    void SaveIntegralsToNumpy(std::string OutputPath);
 
 private:
 //World& world;

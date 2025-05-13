@@ -1,7 +1,7 @@
 {
     "box_size": 50.0,
-    "wavelet_order": 9,
-    "madness_thresh": 0.000001,
+    "wavelet_order": 7,
+    "madness_thresh": 0.0001,
     "optimization_thresh": 0.001,
     "NO_occupation_thresh": 0.001,
     "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H2m_min_sto3g.mol",

@@ -26,7 +26,6 @@ public:
 
     void create_aos(std::string GeometryFile);
     void read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta_coeff_file);
-    //void fill_Matrix_col_from_inporb(int orb_idx, std::vector<std::string> coeffs);
     void create_mo_orbitals();
     void print_mo_orbitals(std::string output_folder);
 

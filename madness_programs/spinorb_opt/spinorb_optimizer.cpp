@@ -215,7 +215,9 @@ void SpinorbOpt::ReadRDMFiles(std::vector<std::string> one_body_rdm_files, std::
     
     //old implementation of initialising Alpha_Beta_Rdm_Matrix already here
     
-    /*Alpha_Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(max_dim, max_dim);
+    /*int x = 0;
+    int y = 0;
+    Alpha_Beta_Rdm_Matrix = Eigen::MatrixXd::Zero(max_dim, max_dim);
     for (int i = 0; i < max_dim; i+=2){
         for (int j = 0; j < max_dim; j+=2) {
             Alpha_Beta_Rdm_Matrix(i, j) = Alpha_Rdm_Vector(x++);
@@ -379,8 +381,8 @@ void SpinorbOpt::TransformToNObasis()
     Eigen::MatrixXd Alpha_Rotation_Matrix = es_alpha.eigenvectors().rowwise().reverse();
     Eigen::MatrixXd Beta_Rotation_Matrix = es_beta.eigenvectors().rowwise().reverse();
 
-    std::cout << "Alpha Rotation Matrix " << Alpha_Rotation_Matrix << std::endl;
-    std::cout << "Beta Rotation Matrix " << Beta_Rotation_Matrix << std::endl;
+    //std::cout << "Alpha Rotation Matrix " << Alpha_Rotation_Matrix << std::endl;
+    //std::cout << "Beta Rotation Matrix " << Beta_Rotation_Matrix << std::endl;
 
     TransformMatrix(&Alpha_Rdm_Matrix, Alpha_Rotation_Matrix);
     TransformMatrix(&Beta_Rdm_Matrix, Beta_Rotation_Matrix);
@@ -475,6 +477,8 @@ void SpinorbOpt::CalculateAllIntegrals()
     }
 
     integrals_one_body = integrals_potential + integrals_kinetic[0] + integrals_kinetic[1] + integrals_kinetic[2];
+
+    std::cout << "One body integrals: " << integrals_one_body << std::endl;
 
     //Construct (kl| orbitals; be aware of the indices, not all elements are meaningful and will be neglected
 
@@ -1018,8 +1022,8 @@ void SpinorbOpt::SaveSpinorbitals(std::string OutputPath)
         }
     }
 
-    int dim_alpha = active_alpha_orbital_indicies.size();
-    int dim_beta = active_beta_orbital_indicies.size();    
+    int dim_alpha = num_active_alpha;
+    int dim_beta = num_active_beta;    
 
     std::vector<unsigned long> one_alpha_e_ints_shape{(unsigned long)dim_alpha, (unsigned long)dim_alpha};
     const npy::npy_data<double> one_alpha_e_data{one_alpha_e_int_elements, one_alpha_e_ints_shape, false};

@@ -808,8 +808,8 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
 
         std::cout << "Update Integrals" << std::endl;
         //Update integrals for new orbitals
-        UpdateIntegrals();
-        //CalculateAllIntegrals();
+        //UpdateIntegrals();
+        CalculateAllIntegrals();
 
         //Calculate new energy
         CalculateEnergies();

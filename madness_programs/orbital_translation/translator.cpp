@@ -56,18 +56,25 @@ void Translator::create_aos(std::string GeometryFile)
 void Translator::read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta_coeff_file) 
 //Reading the coefficients from .npy files
 {  
-    auto numpy_data_alpha = npy::read_npy<double>(calpha_coeff_file); //read the files
-    auto numpy_data_beta = npy::read_npy<double>(cbeta_coeff_file);
+    npy::npy_data d_alpha = npy::read_npy<double>(calpha_coeff_file); //read the files
+    npy::npy_data d_beta = npy::read_npy<double>(cbeta_coeff_file);
 
-    std::vector<double> data_alpha = numpy_data_alpha.data; //extract the data and recast as std::vector
-    std::vector<double> data_beta = numpy_data_beta.data;
     
-    auto alpha_shape = numpy_data_alpha.shape; //extract the shape of the matrices
-    auto beta_shape = numpy_data_beta.shape;
+    std::vector<double> alpha_elements= d_alpha.data; //extract the data and recast as std::vector
+    std::vector<double> beta_elements = d_beta.data;
 
-    //Transform the std::vector to Eigen::Matrix
-    Eigen::VectorXd Alpha_Coeff_Vector = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(data_alpha.data(), data_alpha.size());
-    Eigen::VectorXd Beta_Coeff_Vector = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(data_beta.data(), data_beta.size());
+    std::vector<unsigned long> alpha_shape = d_alpha.shape; //extract the shape of the matrices
+    std::vector<unsigned long> beta_shape = d_beta.shape;
+
+    /*for (int i = 0; i < alpha_elements.size(); i++) {
+        double el = alpha_elements[i];
+        std::cout << "Alpha element [" << i << "] = " << el << std::endl; 
+    }
+
+    for (int j = 0; j < beta_elements.size(); j++) {
+        double el = beta_elements[j];
+        std::cout << "Beta element [" << j << "] = " << el << std::endl; 
+    }*/
     
     //Reshape the coefficient vectors to proper matrices
     Alpha_Coeff_Matrix = Eigen::MatrixXd::Zero(alpha_shape[0], alpha_shape[1]);
@@ -75,7 +82,8 @@ void Translator::read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta
     int a = 0;
     for (int b = 0; b < alpha_shape[0]; ++b) {
         for (int c = 0; c < alpha_shape[1]; ++c) {
-            Alpha_Coeff_Matrix(b, c) = Alpha_Coeff_Vector(a++);
+            Alpha_Coeff_Matrix(c, b) = alpha_elements[a];
+            a++;
         }
     }
     
@@ -84,7 +92,8 @@ void Translator::read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta
     int d = 0;
     for (int e = 0; e < beta_shape[0]; ++e) {
         for (int f = 0; f < beta_shape[1]; ++f) {
-            Beta_Coeff_Matrix(e, f) = Beta_Coeff_Vector(d++);
+            Beta_Coeff_Matrix(f, e) = beta_elements[d];
+            d++;
         }
     }
 

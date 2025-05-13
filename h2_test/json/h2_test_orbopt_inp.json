@@ -1,7 +1,7 @@
 {
     "box_size": 50.0,
-    "wavelet_order": 9,
-    "madness_thresh": 0.000001,
+    "wavelet_order": 7,
+    "madness_thresh": 0.0001,
     "optimization_thresh": 0.001,
     "NO_occupation_thresh": 0.001,
     "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H2m_min_sto3g.mol",
@@ -12,12 +12,12 @@
     "print_final_integrals": true,
     "orbitals": [
       {
-        "orbital_file_name": "/workspaces/MRA-OrbitalOptimization/h2_test/coeff/orbital_k9_0",
+        "orbital_file_name": "/workspaces/MRA-OrbitalOptimization/coefficients/h2_sto3g_coeffs/h2_minimum/output/alpha_orbital_0",
         "orbital_type": "active",
         "active_space_index": 0
       },
       {
-        "orbital_file_name": "/workspaces/MRA-OrbitalOptimization/h2_test/coeff/orbital_k9_1",
+        "orbital_file_name": "/workspaces/MRA-OrbitalOptimization/coefficients/h2_sto3g_coeffs/h2_minimum/output/alpha_orbital_1",
         "orbital_type": "active",
         "active_space_index": 1
       }
