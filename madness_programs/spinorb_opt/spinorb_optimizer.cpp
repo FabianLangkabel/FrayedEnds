@@ -736,10 +736,6 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
     
 }
 
-
-
-
-
 /*void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
