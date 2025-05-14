@@ -55,18 +55,25 @@ frozen_occupied_orbitals = []
 active_orbitals = [0,1]
 as_dim=len(active_orbitals)
 
-##################
-#Add PNO part here
-##################
-'''
+#PNO calculation to get an initial guess for the molecular orbitals
+geometry_str = "\"source_type=inputfile; source_name=molecule\""
+
+pno_str="\"maxrank=1; f12=false; thresh=0.0001; diagonal=True\""
+
+dft_str="\"charge=0; print_level=0; xc=hf; k=7; econv=0.0001; dconv=0.0005; localize=boys; ncf=(none,1.0); L=50.0\""
+
+pnoint_str="\"n_pno=1; n_virt=0; orthog=symmetric\"" 
+
 OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
-pnotest=mad.PNOInterface(2,"pno input=input", box_size, wavelet_order, madness_thresh) #how to create the input file?
-pnotest.run()
+pno=mad.PNOInterface("pno --geometry="+geometry_str+" --dft="+dft_str+" --pno="+pno_str+" --pnoint="+pnoint_str, box_size, wavelet_order, madness_thresh) #how to create the input file?
+pno.DeterminePNOsAndIntegrals()
+all_orbs=pno.GetPNOs(len(frozen_occupied_orbitals),as_dim,0) # input: dimensions of (frozen_occ, active, forzen_virt) space
+h1=pno.GetHTensor()
+g2=pno.GetGTensor()
+c=pno.GetNuclearRepulsion()
+del pno
+OrbOpt_helper.PNO_cleanup()
 
-'''
-
-OrbOpt_helper.create_molecule_file(geometry_bohr)
-mol = tq.Molecule(geometry_angstrom, dft={"L":box_size}, name=molecule_name)
 
 for it in range(iterations):
     print("---------------------------------------------------")
@@ -76,9 +83,9 @@ for it in range(iterations):
     print("---------------------------------------------------")
 
     if it == 0:
-        mol = tq.Molecule(geometry_angstrom, n_pno="read", name=molecule_name)
-        c, h1, g2 = mol.get_integrals(ordering="chem")
+        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
     else:
+        #todo: transfer nb::ndarray objects directly
         h1=np.array(h1_elements).reshape(as_dim,as_dim)
         g2=np.array(g2_elements).reshape(as_dim,as_dim,as_dim,as_dim)
         g2=tq.quantumchemistry.NBodyTensor(g2, ordering="dirac")
@@ -122,10 +129,7 @@ for it in range(iterations):
     # This only makes sense for H2
     print("Read rdms, create initial guess and calculate initial energy")
     opti.CreateNuclearPotentialAndRepulsion("molecule")
-    if it==0:
-        opti.ReadInitialOrbitals([], ["mra_orbital_0","mra_orbital_1"], [])
-    else:
-        opti.GiveInitialOrbitals(all_orbs)
+    opti.GiveInitialOrbitals(all_orbs)
     opti.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)
     opti.CalculateAllIntegrals()
     opti.CalculateCoreEnergy()

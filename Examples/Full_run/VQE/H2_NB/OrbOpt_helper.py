@@ -3,6 +3,7 @@ import os
 import shutil
 import json
 from pathlib import Path
+import glob
 
                         
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
@@ -127,3 +128,85 @@ def create_orbital_opt_input(FilePath, it, all_orbitals, frozen_occupied_orbital
     json.dump(mad_input, mad_input_file)
     mad_input_file.close()
     
+def PNO_cleanup():
+    # Define the patterns for the files to delete
+    patterns = [
+        "*.00000",                # Files ending with .00000
+        "N7madness*",             # Files starting with N7madness
+        "mad.calc_info.json",     # Specific file
+        "mad.restartaodata",      # Specific file
+        "pnoinfo.txt"             # Specific file
+    ]
+
+    # Iterate over each pattern and delete matching files
+    for pattern in patterns:
+        for file in glob.glob(pattern):
+            try:
+                os.remove(file)
+                print(f"Deleted: {file}")
+            except OSError as e:
+                print(f"Error deleting {file}: {e}")
+
+
+def PNO_input(**kwargs):
+    if n_pno is not None and n_orbitals is not None:
+        raise TequilaMadnessException(
+            "n_pno={} and n_orbitals={} given ... please pick one".format(n_pno, n_orbitals))
+
+    n_electrons = self.parameters.n_electrons
+    if self.parameters.frozen_core:
+            # only count active electrons (will not compute pnos for frozen pairs)
+        n_core_electrons = self.parameters.get_number_of_core_electrons()
+        n_electrons -= n_core_electrons
+
+    n_pairs = n_electrons // 2
+    if n_orbitals is None:
+        n_orbitals = n_electrons  # minimal correlated (each active pair will have one virtual)
+
+    if n_pno is None:
+        n_pno = n_orbitals - n_pairs
+
+    if maxrank is None:
+        # need at least maxrank=1, otherwise no PNOs are computed
+        # this was a bug in <=v1.8.5 
+        maxrank = max(1, int(numpy.ceil(n_pno // n_pairs)))
+
+    if maxrank <= 0:
+        warnings.warn(
+            "maxrank={} in tequila madness backend! No PNOs will be computed. Set the value when initializing the Molecule as tq.Molecule(..., pno={\"maxrank\":1, ...})".format(
+                maxrank), TequilaWarning)
+
+    data = {}
+    if :
+        raise TequilaMadnessException(
+            "Currently only closed shell supported for MRA-PNO-MP2, you demanded multiplicity={} for the surrogate".format(
+                    self.parameters.multiplicity))
+    data["dft"] = {"charge": self.parameters.charge, "xc": "hf", "k": 7, "econv": 1.e-4, "dconv": 5.e-4,
+                       "localize": "boys",
+                       "ncf": "( none , 1.0 )"}
+    data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": True}
+    if not self.parameters.frozen_core:            
+        data["pno"]["freeze"] = 0
+    data["pnoint"] = {"n_pno": n_pno, "n_virt": n_virt, "orthog": "symmetric"}
+    data["plot"] = {}
+    data["f12"] = {}
+    for key in data.keys():
+        if key in kwargs:
+            data[key] = {**data[key], **kwargs[key]}
+
+    if filename is not None:
+        with open(filename, "w") as f:
+            for k1, v1 in data.items():
+                print(k1, file=f)
+                for k2, v2 in v1.items():
+                    print("{} {}".format(k2, v2), file=f)
+                print("end\n", file=f)
+
+            print("geometry", file=f)
+            print("units angstrom", file=f)
+            print("eprec 1.e-6", file=f)
+            for line in self.parameters.get_geometry_string().split("\n"):
+                line = line.strip()
+                if line != "":
+                    print(line, file=f)
+            print("end", file=f)

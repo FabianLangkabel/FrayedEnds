@@ -50,6 +50,11 @@ NB_MODULE(MadPy, m) {
         .def_rw("BSH_eps", &Optimization::BSH_eps);
     
     nb::class_<PNOInterface>(m, "PNOInterface")
-        .def(nb::init<const int &, const std::string &, const double &, const int &, const double &>())
-        .def("run", &PNOInterface::run);
+        .def(nb::init<const std::string &, const double &, const int &, const double &>())
+        .def("DeterminePNOsAndIntegrals", &PNOInterface::DeterminePNOsAndIntegrals)
+        .def("GetPNOs", &PNOInterface::GetPNOs)
+        .def("GetHTensor", &PNOInterface::GetHTensor)
+        .def("GetGTensor", &PNOInterface::GetGTensor)
+        .def("GetF12Tensor", &PNOInterface::GetF12Tensor)
+        .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
 }
