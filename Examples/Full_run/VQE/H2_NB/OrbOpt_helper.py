@@ -4,6 +4,7 @@ import shutil
 import json
 from pathlib import Path
 import glob
+from tequila.quantumchemistry import ParametersQC
 
                         
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
@@ -148,65 +149,63 @@ def PNO_cleanup():
                 print(f"Error deleting {file}: {e}")
 
 
-def PNO_input(**kwargs):
-    if n_pno is not None and n_orbitals is not None:
-        raise TequilaMadnessException(
-            "n_pno={} and n_orbitals={} given ... please pick one".format(n_pno, n_orbitals))
-
-    n_electrons = self.parameters.n_electrons
-    if self.parameters.frozen_core:
+def PNO_input(params: ParametersQC, molecule_file, **kwargs) -> str:
+    n_electrons = params.n_electrons
+    if params.frozen_core:
             # only count active electrons (will not compute pnos for frozen pairs)
-        n_core_electrons = self.parameters.get_number_of_core_electrons()
+        n_core_electrons = params.get_number_of_core_electrons()
         n_electrons -= n_core_electrons
 
     n_pairs = n_electrons // 2
-    if n_orbitals is None:
-        n_orbitals = n_electrons  # minimal correlated (each active pair will have one virtual)
+    n_pno = n_electrons - n_pairs
 
-    if n_pno is None:
-        n_pno = n_orbitals - n_pairs
-
-    if maxrank is None:
-        # need at least maxrank=1, otherwise no PNOs are computed
-        # this was a bug in <=v1.8.5 
-        maxrank = max(1, int(numpy.ceil(n_pno // n_pairs)))
-
-    if maxrank <= 0:
-        warnings.warn(
-            "maxrank={} in tequila madness backend! No PNOs will be computed. Set the value when initializing the Molecule as tq.Molecule(..., pno={\"maxrank\":1, ...})".format(
-                maxrank), TequilaWarning)
+    maxrank = max(1, int(np.ceil(n_pno // n_pairs)))
 
     data = {}
-    if :
-        raise TequilaMadnessException(
-            "Currently only closed shell supported for MRA-PNO-MP2, you demanded multiplicity={} for the surrogate".format(
-                    self.parameters.multiplicity))
-    data["dft"] = {"charge": self.parameters.charge, "xc": "hf", "k": 7, "econv": 1.e-4, "dconv": 5.e-4,
+    if params.multiplicity != 1:
+        raise Exception(
+            "Currently only closed shell supported for MRA-PNO-MP2, you demanded multiplicity={} for the surrogate".format(params.multiplicity))
+    
+    data["dft"] = {"charge": params.charge, "xc": "hf", "k": 7, "econv": 1.e-4, "dconv": 5.e-4,
                        "localize": "boys",
                        "ncf": "( none , 1.0 )"}
     data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": True}
-    if not self.parameters.frozen_core:            
+    if not params.frozen_core:            
         data["pno"]["freeze"] = 0
-    data["pnoint"] = {"n_pno": n_pno, "n_virt": n_virt, "orthog": "symmetric"}
+    data["pnoint"] = {"n_pno": n_pno, "n_virt": 0, "orthog": "symmetric"}
     data["plot"] = {}
     data["f12"] = {}
     for key in data.keys():
         if key in kwargs:
             data[key] = {**data[key], **kwargs[key]}
+    
+    if data["pno"]["maxrank"] <= 0:
+        raise Exception(
+            "maxrank={} in tequila madness backend! No PNOs will be computed. Set the value when initializing the Molecule as tq.Molecule(..., pno={\"maxrank\":1, ...})".format(
+                data["pnoint"]["maxrank"]))
 
-    if filename is not None:
-        with open(filename, "w") as f:
-            for k1, v1 in data.items():
-                print(k1, file=f)
-                for k2, v2 in v1.items():
-                    print("{} {}".format(k2, v2), file=f)
-                print("end\n", file=f)
-
-            print("geometry", file=f)
-            print("units angstrom", file=f)
-            print("eprec 1.e-6", file=f)
-            for line in self.parameters.get_geometry_string().split("\n"):
-                line = line.strip()
-                if line != "":
-                    print(line, file=f)
-            print("end", file=f)
+    input_str="pno --geometry=\"source_type=inputfile; source_name="+molecule_file+"\""
+    input_str += " --dft=\""
+    for k, v in data["dft"].items():
+        input_str += "{}={}; ".format(k, v)
+    input_str = input_str[:-2] + "\""
+    input_str += " --pno=\""
+    for k, v in data["pno"].items():
+        input_str += "{}={}; ".format(k, v)
+    input_str = input_str[:-2] + "\""
+    input_str += " --pnoint=\""
+    for k, v in data["pnoint"].items():
+        input_str += "{}={}; ".format(k, v)
+    input_str = input_str[:-2] + "\""
+    if data["plot"] != {}:
+        input_str += " --plot=\""
+        for k, v in data["plot"].items():
+            input_str += "{}={}; ".format(k, v)
+        input_str = input_str[:-2] + "\""
+    if data["f12"] != {}:
+        input_str += " --f12=\""
+        for k, v in data["f12"].items():
+            input_str += "{}={}; ".format(k, v)
+        input_str = input_str[:-2] + "\""
+    
+    return input_str

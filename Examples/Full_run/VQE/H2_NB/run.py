@@ -56,16 +56,9 @@ active_orbitals = [0,1]
 as_dim=len(active_orbitals)
 
 #PNO calculation to get an initial guess for the molecular orbitals
-geometry_str = "\"source_type=inputfile; source_name=molecule\""
-
-pno_str="\"maxrank=1; f12=false; thresh=0.0001; diagonal=True\""
-
-dft_str="\"charge=0; print_level=0; xc=hf; k=7; econv=0.0001; dconv=0.0005; localize=boys; ncf=(none,1.0); L=50.0\""
-
-pnoint_str="\"n_pno=1; n_virt=0; orthog=symmetric\"" 
-
+params=tq.quantumchemistry.ParametersQC(name=molecule_name, geometry=geometry_angstrom, basis_set=None, multiplicity=1)
 OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
-pno=mad.PNOInterface("pno --geometry="+geometry_str+" --dft="+dft_str+" --pno="+pno_str+" --pnoint="+pnoint_str, box_size, wavelet_order, madness_thresh) #how to create the input file?
+pno=mad.PNOInterface(OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}), box_size, wavelet_order, madness_thresh) #how to create the input file?
 pno.DeterminePNOsAndIntegrals()
 all_orbs=pno.GetPNOs(len(frozen_occupied_orbitals),as_dim,0) # input: dimensions of (frozen_occ, active, forzen_virt) space
 h1=pno.GetHTensor()
