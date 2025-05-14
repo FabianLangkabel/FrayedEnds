@@ -30,14 +30,14 @@ public:
     void TransformToNObasis();
     void CalculateAllIntegrals();
     void CalculateEnergy();
-    void OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh);
-    //void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh);
+    //void OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh);
+    void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh);
     std::vector<real_function_3d> GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update);
     void CalculateLagrangeMultiplier();
     double CalculateLagrangeMultiplierElement(int dim, int a, int i);
     //void SaveNOs(std::string OutputPath);
     //void SaveSpinorbitals(std::string OutputPath); 
-    void SaveIntegralsToNumpy(std::string OutputPath);
+    //void SaveIntegralsToNumpy(std::string OutputPath);
 
 private:
 //World& world;

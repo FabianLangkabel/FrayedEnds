@@ -7,7 +7,7 @@
     "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H2m_min_sto3g.mol",
     "output_folder": "/workspaces/MRA-OrbitalOptimization/h2_test/output",
     "active_space_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/h2_test/rdms/h2_test_1rdm.txt",
-    "active_space_two_rdm_file": "/workspaces/MRA-OrbitalOptimization/h2_test/json/h2_test_2rdm.txt",
+    "active_space_two_rdm_file": "/workspaces/MRA-OrbitalOptimization/h2_test/rdms/h2_test_2rdm.txt",
     "print_final_orbitals": true,
     "print_final_integrals": true,
     "orbitals": [

@@ -662,14 +662,14 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
         {
             for(int k = 0; k < dim; k++)
             {
-                element += Alpha_Beta_Rdm_Tensor(k, l, i, n) * integrals_two_body(a, k, l, n);
+                element += Alpha_Beta_Rdm_Tensor(k, l, i, n) * integrals_two_body(a, l, k, n);
             }
         }
     }
     return element;
 }
 
-void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
+/*void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
 // function for doing only one iteration to test if stuff works
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
@@ -714,17 +714,44 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
     std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
     std::cout << "Orthonormalize orbitals" << std::endl;
-    orbitals = orthonormalize_symmetric(orbitals);
 
-    for(int i = 0; i < orbitals.size(); i++)
+    std::vector<real_function_3d> alpha_orbs;
+    std::vector<real_function_3d> beta_orbs;
+    
+    for(int i = 0; i < orbitals.size(); i++) {
+        if (i % 2 == 0){
+            alpha_orbs.push_back(orbitals[i]);
+        }
+        if (i % 2 == 1) {
+            beta_orbs.push_back(orbitals[i]);
+        }
+    }
+
+
+    alpha_orbs = orthonormalize_symmetric(alpha_orbs);
+    beta_orbs = orthonormalize_symmetric(beta_orbs);
+
+    for(int i = 0; i < alpha_orbs.size(); i++)
     {
-        orbitals[i] = orbitals[i].truncate(1e-5);
+        alpha_orbs[i] = alpha_orbs[i].truncate(1e-5);
+    }
+     for(int j = 0; j < beta_orbs.size(); j++)
+    {
+        beta_orbs[j] = beta_orbs[j].truncate(1e-5);
     }
 
     //Update all_orbitals
-    for (int i = 0; i < num_active_orbs; i++)
-    {
-        active_alpha_beta_orbs[i] = orbitals[i];
+    int x = 0;
+    int y = 0;
+    for (int i = 0; i < num_active_orbs; i++){
+        if (i % 2 == 0){
+            active_alpha_beta_orbs[i] = alpha_orbs[x];
+            x++;
+        }
+        if (i % 2 == 1) {
+            active_alpha_beta_orbs[i] = beta_orbs[y];
+            y++;
+        }
     }
 
 
@@ -738,9 +765,9 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
     //Check convergence
     std::cout << "Highest error: " << highest_error << std::endl;
     
-}
+}*/
 
-/*void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
+void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
     //ignore frozen orbitals for now
@@ -748,7 +775,7 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
     for (auto const& frozenIdx : frozen_occ_spin_orb_indicies)
     {
         frozen_orbs.push_back(all_orbitals[frozenIdx].function);
-    }
+    }*/
     
     std::vector<real_function_3d> orbitals;
     for (int i = 0; i < num_active_orbs; i++)
@@ -811,25 +838,49 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
             {
                 orbitals[actIdx] = Q(orbitals[actIdx]);
             }
-        }
+        }*/
 
         //Orthonormalize orbitals
-        orbitals = orthonormalize_symmetric(orbitals);
-
-        for(int i = 0; i < orbitals.size(); i++)
-        {
-            orbitals[i] = orbitals[i].truncate(1e-5);
+        std::vector<real_function_3d> alpha_orbs;
+        std::vector<real_function_3d> beta_orbs;
+    
+        for(int i = 0; i < orbitals.size(); i++) {
+            if (i % 2 == 0){
+                alpha_orbs.push_back(orbitals[i]);
+            }
+            if (i % 2 == 1) {
+                beta_orbs.push_back(orbitals[i]);
+            }
         }
 
-        //Update all_orbitals
-        for (int i = 0; i < active_alpha_beta_orbs.size(); i++)
+
+        alpha_orbs = orthonormalize_symmetric(alpha_orbs);
+        beta_orbs = orthonormalize_symmetric(beta_orbs);
+
+        for(int i = 0; i < alpha_orbs.size(); i++)
         {
-            active_alpha_beta_orbs[i] = orbitals[i];
+            alpha_orbs[i] = alpha_orbs[i].truncate(1e-5);
+        }
+        for(int j = 0; j < beta_orbs.size(); j++)
+        {
+            beta_orbs[j] = beta_orbs[j].truncate(1e-5);
+        }
+        //Update all_orbitals
+        int x = 0;
+        int y = 0;
+        for (int i = 0; i < num_active_orbs; i++){
+            if (i % 2 == 0){
+                active_alpha_beta_orbs[i] = alpha_orbs[x];
+                x++;
+            }
+            if (i % 2 == 1) {
+                active_alpha_beta_orbs[i] = beta_orbs[y];
+                y++;
+            }
         }
 
         std::cout << "Update Integrals" << std::endl;
         //Update integrals for new orbitals
-        //UpdateIntegrals();
         CalculateAllIntegrals();
 
         //Calculate new energy
@@ -843,7 +894,7 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
         }
 
     }
-}*/
+}
 
 std::vector<real_function_3d> SpinorbOpt::GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update)
 {
