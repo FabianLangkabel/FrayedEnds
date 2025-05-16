@@ -2,13 +2,11 @@
 
 using namespace madness;
 
-const std::string path_to_plots="/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/Examples/Full_run/temp_files/"; //change this file path according to your folder structure
 
-void Optimization::plot(const std::string filename, const Function<double,3>& f, const double L) {
+void Optimization::plot(const std::string filename, const SavedFct f, const double L) {
     Vector<double,3> lo(0.0), hi(0.0);
     lo[2] = -L; hi[2] = L;
-    std::string full_path=path_to_plots+filename;
-    plot_line(full_path.c_str(),2001,lo,hi,f);
+    plot_line(filename.c_str(),2001,lo,hi,loadfct(f));
 }
 
 Optimization::Optimization(double L, long k, double thresh)
@@ -35,6 +33,7 @@ Optimization::~Optimization()
 {
     std::cout << "Finalize madness env" << std::endl;
     delete Vnuc;
+    delete custom_potential;
     frozen_occ_orbs.clear();
     active_orbs.clear();
     frozen_virt_orb.clear();
@@ -67,6 +66,12 @@ void Optimization::CreateNuclearPotentialAndRepulsion(std::string GeometryFile)
     molecule.read_file(GeometryFile);
     Vnuc = new Nuclear<double,3>(*world, molecule);
     nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
+}
+
+void Optimization::GiveCustomPotential(SavedFct custom_pot)
+{   
+    custom_potential = new real_function_3d(loadfct(custom_pot));
+    use_custom_potential = true;
 }
 
 void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files)
@@ -357,7 +362,12 @@ void Optimization::CalculateAllIntegrals()
                 as_integrals_one_body(k, l) += 0.5 * inner(d_orb_k,d_orb_l);
             }
             //Nuclear
-            real_function_3d Vnuc_orb_l = (*Vnuc)(active_orbs[l]);
+            real_function_3d Vnuc_orb_l;
+            if (use_custom_potential){
+                Vnuc_orb_l = (*custom_potential)*active_orbs[l];
+            } else {
+                Vnuc_orb_l = (*Vnuc)(active_orbs[l]);
+            }
             as_integrals_one_body(k, l) += inner(active_orbs[k], Vnuc_orb_l);
         }
     }
@@ -395,7 +405,12 @@ void Optimization::CalculateAllIntegrals()
                 core_as_integrals_one_body_ak(a, k) += 0.5 * inner(d_orb_a, d_orb_k);
             }
             //Nuclear
-            real_function_3d Vnuc_orb_k = (*Vnuc)(active_orbs[k]);
+            real_function_3d Vnuc_orb_k;
+            if (use_custom_potential){
+                Vnuc_orb_k = (*custom_potential)*active_orbs[k];
+            } else {
+                Vnuc_orb_k = (*Vnuc)(active_orbs[k]);
+            }
             core_as_integrals_one_body_ak(a, k) += inner(frozen_occ_orbs[a], Vnuc_orb_k);
         }
     }
@@ -519,7 +534,12 @@ void Optimization::CalculateCoreEnergy()
                 core_kinetic_energy += 0.5 * inner(d_orb, d_orb);
             }
             //Nuclear
-            real_function_3d Vnuc_orb = (*Vnuc)(frozen_occ_orbs[i]);
+            real_function_3d Vnuc_orb;
+            if (use_custom_potential){
+                Vnuc_orb = (*custom_potential)*frozen_occ_orbs[i];
+            } else {
+                Vnuc_orb = (*Vnuc)(frozen_occ_orbs[i]);
+            }
             core_nuclear_attraction_energy += inner(frozen_occ_orbs[i], Vnuc_orb);
         }
         core_kinetic_energy = nocc * core_kinetic_energy;
@@ -810,7 +830,12 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
         int i = orbital_indicies_for_update[idx];
 
         real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
-        real_function_3d rhs = (*Vnuc)(active_orbs[i]);
+        real_function_3d rhs;
+        if (use_custom_potential){
+            rhs = (*custom_potential)*active_orbs[i];
+        } else {
+            rhs = (*Vnuc)(active_orbs[i]);
+        }
         for(int k = 0; k < core_dim; k++)
         {
             rhs -= rdm_ii_inv[idx] * LagrangeMultiplier_AS_Core(k, i) * frozen_occ_orbs[k];

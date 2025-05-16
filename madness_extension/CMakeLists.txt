@@ -4,6 +4,9 @@ include_directories(
 )
 find_package(MADNESS CONFIG REQUIRED)
 
+message(STATUS "MadPy using MADNESS installation at: ${MADNESS_DIR}")
+
+
 set(DEV_MODULE Development.Module)
 
 # TODO: adapt for other venvs and dev container
@@ -35,9 +38,9 @@ set(SOURCE_FILES
 "optimization.cpp"
 "functionsaver.hpp"
 "pno_interface.hpp"
+"sum_of_gaussians.hpp"
 )
 
 nanobind_add_module(MadPy ${SOURCE_FILES})
 target_link_libraries(MadPy PRIVATE madness)
-
 

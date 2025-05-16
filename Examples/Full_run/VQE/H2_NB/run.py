@@ -58,15 +58,21 @@ as_dim=len(active_orbitals)
 #PNO calculation to get an initial guess for the molecular orbitals
 params=tq.quantumchemistry.ParametersQC(name=molecule_name, geometry=geometry_angstrom, basis_set=None, multiplicity=1)
 OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
-pno=mad.PNOInterface(OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}), box_size, wavelet_order, madness_thresh) #how to create the input file?
+pno=mad.PNOInterface(OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}), box_size, wavelet_order, madness_thresh)
 pno.DeterminePNOsAndIntegrals()
 all_orbs=pno.GetPNOs(len(frozen_occupied_orbitals),as_dim,0) # input: dimensions of (frozen_occ, active, forzen_virt) space
 h1=pno.GetHTensor()
 g2=pno.GetGTensor()
 c=pno.GetNuclearRepulsion()
 del pno
-OrbOpt_helper.PNO_cleanup()
+#OrbOpt_helper.PNO_cleanup()
 
+peak_loc=[[0.0,0.0,-distance/2],[0.0,0.0,distance/2]]
+sharpness_list=[10.0,10.0]
+Q=2
+PotMaker = mad.CoulombPotentialFromCustomChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
+custom_pot=PotMaker.CreatePotential()
+del PotMaker
 
 for it in range(iterations):
     print("---------------------------------------------------")
@@ -119,7 +125,6 @@ for it in range(iterations):
     opti.BSH_lo = 0.01
     opti.BSH_eps = 1e-6
 
-    # This only makes sense for H2
     print("Read rdms, create initial guess and calculate initial energy")
     opti.CreateNuclearPotentialAndRepulsion("molecule")
     opti.GiveInitialOrbitals(all_orbs)

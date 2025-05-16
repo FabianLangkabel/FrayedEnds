@@ -36,9 +36,10 @@ public:
     std::vector<SavedFct> GetOrbitals();
 
     //plotting function
-    void plot(const std::string filename, const Function<double,3>& f, const double L);
+    void plot(const std::string filename, const SavedFct f, const double L);
 
     void CreateNuclearPotentialAndRepulsion(std::string GeometryFile);
+    void GiveCustomPotential(SavedFct custom_pot);
     void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files);
     void ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file);
     void TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix);
@@ -68,8 +69,11 @@ private:
     //Madness + Molecule
     World* world;
     std::vector<std::vector<double>> atoms;
-    double nuclear_repulsion_energy;
-    Nuclear<double,3>* Vnuc;
+    double nuclear_repulsion_energy=0.0;
+    Nuclear<double,3>* Vnuc=nullptr;
+    bool use_custom_potential=false;
+    real_function_3d* custom_potential=nullptr;
+
 
     //Orbitals
     std::vector<std::string> frozen_occ_orbs_files;

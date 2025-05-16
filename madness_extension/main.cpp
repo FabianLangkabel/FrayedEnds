@@ -3,6 +3,7 @@
 #include <nanobind/stl/vector.h>
 #include "optimization.hpp"
 #include "pno_interface.hpp"
+#include "sum_of_gaussians.hpp"
 
 namespace nb = nanobind;
 
@@ -23,6 +24,7 @@ NB_MODULE(MadPy, m) {
         .def("GiveInitialOrbitals", &Optimization::GiveInitialOrbitals)
         .def("GiveRDMsAndRotateOrbitals", &Optimization::GiveRDMsAndRotateOrbitals)
         .def("CreateNuclearPotentialAndRepulsion", &Optimization::CreateNuclearPotentialAndRepulsion)
+        .def("GiveCustomPotential", &Optimization::GiveCustomPotential)
         .def("ReadInitialOrbitals", &Optimization::ReadInitialOrbitals)
         .def("ReadRDMFilesAndRotateOrbitals", &Optimization::ReadRDMFilesAndRotateOrbitals)
         .def("TransformMatrix", &Optimization::TransformMatrix)
@@ -57,4 +59,8 @@ NB_MODULE(MadPy, m) {
         .def("GetGTensor", &PNOInterface::GetGTensor)
         .def("GetF12Tensor", &PNOInterface::GetF12Tensor)
         .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
+
+    nb::class_<CoulombPotentialFromCustomChargeDensity>(m, "CoulombPotentialFromCustomChargeDensity")
+        .def(nb::init<const double &, const long &, const double &, const std::vector<double> &, const double &, const std::vector<std::vector<double> > &>())
+        .def("CreatePotential", &CoulombPotentialFromCustomChargeDensity::CreatePotential);
 }
