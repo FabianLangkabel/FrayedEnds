@@ -40,9 +40,9 @@ class MadnessProcess
         }
         void plot(const char* filename, SavedFct f, int points=2001){
             Vector<double,3> lo(0.0), hi(0.0);
-            double L = FunctionDefaults<3>::get
+            double L = FunctionDefaults<3>::get_cell_width()[0];
             lo[2] = -L; hi[2] = L;
-            plot_line(filename.c_str(),points,lo,hi,loadfct(f));
+            plot_line(filename,points,lo,hi,loadfct(f));
         }
 };
 
