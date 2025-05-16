@@ -39,6 +39,7 @@ set(SOURCE_FILES
 "functionsaver.hpp"
 "pno_interface.hpp"
 "sum_of_gaussians.hpp"
+"MadnessProcess.hpp"
 )
 
 nanobind_add_module(MadPy ${SOURCE_FILES})

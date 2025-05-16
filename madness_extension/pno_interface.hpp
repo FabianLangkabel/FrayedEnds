@@ -16,6 +16,7 @@
 #include <tuple>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include "MadnessProcess.hpp"
 
 using namespace madness;
 namespace nb = nanobind;
@@ -213,27 +214,11 @@ inline void freeCharPointerArray(char** charArray, size_t size) {
 }
 
 
-class PNOInterface{
+class PNOInterface: public MadnessProcess{
 	public:
-		PNOInterface(std::string argv, double L, long k, double thresh)
+		PNOInterface(std::string argv, double L, long k, double thresh) : MadnessProcess(L,k,thresh)
 		{
-			int arg = 0;
-			char **a = new char*[0]();
-		
-			world = &initialize(arg, a);
-			startup(*world,arg,a);
-			delete[] a;
 			
-			std::cout.precision(6);
-		
-			FunctionDefaults<3>::set_k(k);
-			FunctionDefaults<3>::set_thresh(thresh);
-			FunctionDefaults<3>::set_refine(true);
-			FunctionDefaults<3>::set_initial_level(5);
-			FunctionDefaults<3>::set_truncate_mode(1);
-			FunctionDefaults<3>::set_cubic_cell(-L, L);
-			FunctionDefaults<3>::set_pmap(pmapT(new LevelPmap< Key<3> >(*world)));
-
 			auto [argc, charArray] = stringToCharPointerArray(argv);
 			
 			for (int i; i < argc; i++){
@@ -245,14 +230,12 @@ class PNOInterface{
 		}
 		~PNOInterface()
 		{	
-			std::cout << "Finalize madness env" << std::endl;
 			basis.clear();
-			world->gop.fence();
-			finalize();
 		}
 		
 		void DeterminePNOsAndIntegrals() 
-		{
+		{	
+			World* world = this->world;
 			std::cout.precision(6);
 			if(world->rank()==0){
 				std::cout << "\n\n";
@@ -889,7 +872,6 @@ class PNOInterface{
 		}
 
 	private:
-		World* world;
 		commandlineparser parser;
 		vecfuncT basis;
 		madness::Tensor<double> g;
