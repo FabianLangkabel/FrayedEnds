@@ -1,4 +1,3 @@
-
 #pragma once
 
 
@@ -46,6 +45,7 @@ class SavedFct {
     public:
         std::string saved_str=""; //should this be private?
         std::string info="";
+        std::string type="";
 
         SavedFct(Function<double,3> f) {
             std::string filename = "saved_fct"; //TO DO: make sure this filename is unique
@@ -53,7 +53,6 @@ class SavedFct {
             saved_str = read_binary_file(filename+".00000");
             delete_file(filename+".00000");
         }
-
 };
 
 
@@ -74,68 +73,3 @@ inline void write_binary_file(const SavedFct& Sf, const std::string& filename) {
     // Close the file
     file.close();
 }
-
-/*
-class MadnessProcess {
-    public:
-        //Constructor
-        MadnessProcess(double L, long k, double thresh) : thresh(thresh), L(L){
-            int arg = 0;
-            char **a = new char*[0]();
-
-            world = &initialize(arg, a);
-            startup(*world,arg,a);
-            delete[] a;
-
-            FunctionDefaults<3>::set_k(k);
-            FunctionDefaults<3>::set_thresh(thresh);
-            FunctionDefaults<3>::set_cubic_cell(-L,L);
-        }
-        //Destructor
-        ~MadnessProcess() {
-            std::cout << "Finalize madness env" << std::endl;
-            world->gop.fence();
-            finalize(); 
-        }
-        //Plotting function
-        void plot(const char* filename, const Function<double,3>& f) {
-            coord_3d lo(0.0), hi(0.0);
-            lo[2] = -L; hi[2] = L;
-            plot_line(filename,401,lo,hi,f);
-        }
-        //load a function from a SavedFct object
-        Function<double,3> loadfct(const SavedFct& Sf) {
-            std::string filename = "saved_fct2.00000";
-            write_binary_file(Sf,filename);
-            Function<double,3> f1 = real_factory_3d(*world);
-            load(f1,filename);
-            delete_file(filename+".00000");
-            return f1;
-        }
-
-        
-        private:
-            World* world;
-            double L;
-            double thresh;
-};
-
-
-
-
-
-
-NB_MODULE(functionsaver, m) {
-    nb::class_<real_function_3d>(m,"real_function_3d")
-    .def(nb::init<>());
-
-    nb::class_<MadnessProcess>(m, "MadnessProcess")
-    .def(nb::init<const double &, const int &, const double &>())
-    .def("get_guess", &MadnessProcess::get_guess)
-    .def("loadfunction", &MadnessProcess::loadfunction)
-    .def("plot", &MadnessProcess::plot);
-
-    nb::class_<SavedFct>(m, "SavedFct")
-    .def(nb::init<const Function<double,3> &>());
-}
-*/

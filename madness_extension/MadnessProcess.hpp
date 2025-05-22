@@ -2,11 +2,33 @@
 
 #include "functionsaver.hpp"
 #include <madness/mra/mra.h>
+#include <cstdio>
+#include <unistd.h>
 
 using namespace madness;
 
-class MadnessProcess 
-{
+class RedirectOutput{
+    public:
+        RedirectOutput(const std::string& filename) {
+            // Open the file for writing
+            originalStdout = dup(STDOUT_FILENO);
+
+            // Redirect stdout to a new file
+            freopen(filename.c_str(), "w", stdout);
+        }
+
+        ~RedirectOutput() {
+            // Restore the original stdout
+            fflush(stdout);
+            dup2(originalStdout, STDOUT_FILENO);
+            close(originalStdout);
+        }
+
+    private:
+        int originalStdout;
+};
+
+class MadnessProcess {
     public:
         World* world;
         MadnessProcess(double L, long k, double thresh, int initial_level=5, int truncate_mode=1, bool refine=true){
@@ -30,6 +52,7 @@ class MadnessProcess
             world->gop.fence();
             finalize();
         }
+        //load a function from a SavedFct object
         Function<double,3> loadfct(const SavedFct& Sf){
             std::string filename = "saved_fct2"; //TODO: check if filename is unique
             write_binary_file(Sf,filename);
@@ -38,11 +61,18 @@ class MadnessProcess
             delete_file(filename+".00000");
             return f1;
         }
-        void plot(const char* filename, SavedFct f, int points=2001){
+        //load a function from a binary file
+        Function<double,3> loadfct_from_file(const std::string& filename) {
+            Function<double,3> f1 = real_factory_3d(*world);
+            load(f1,filename);
+            return f1;
+        }
+
+        void plot(std::string filename, SavedFct f, int datapoints=2001){
             Vector<double,3> lo(0.0), hi(0.0);
-            double L = FunctionDefaults<3>::get_cell_width()[0];
+            double L = FunctionDefaults<3>::get_cell_width()[0]/2;
             lo[2] = -L; hi[2] = L;
-            plot_line(filename,points,lo,hi,loadfct(f));
+            plot_line(filename.c_str(),datapoints,lo,hi,loadfct(f));
         }
 };
 

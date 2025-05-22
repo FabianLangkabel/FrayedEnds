@@ -14,16 +14,14 @@
 #include <madness/external/nlohmann_json/json.hpp>
 #include "npy.hpp"
 #include "functionsaver.hpp"
+#include "MadnessProcess.hpp"
 
 using namespace madness;
 
-class Optimization{
+class Optimization: public MadnessProcess{
 public:
     Optimization(double L, long k, double thresh);
     ~Optimization();
-
-    Function<double,3> loadfct(const SavedFct& Sf);
-    Function<double,3> loadfct_from_file(const std::string& filename);
 
     //input
     void GiveInitialOrbitals(std::vector<SavedFct> all_orbs);
@@ -34,9 +32,6 @@ public:
     std::vector<double> GetHTensor();
     std::vector<double> GetGTensor();
     std::vector<SavedFct> GetOrbitals();
-
-    //plotting function
-    void plot(const std::string filename, const SavedFct f, const double L);
 
     void CreateNuclearPotentialAndRepulsion(std::string GeometryFile);
     void GiveCustomPotential(SavedFct custom_pot);
@@ -64,10 +59,8 @@ public:
     double BSH_eps = 1e-6;
     
 private:
-//World& world;
 
     //Madness + Molecule
-    World* world;
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy=0.0;
     Nuclear<double,3>* Vnuc=nullptr;

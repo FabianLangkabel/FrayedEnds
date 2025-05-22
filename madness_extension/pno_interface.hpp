@@ -221,10 +221,6 @@ class PNOInterface: public MadnessProcess{
 			
 			auto [argc, charArray] = stringToCharPointerArray(argv);
 			
-			for (int i; i < argc; i++){
-				std::cout << "charArray[" << i << "] = " << charArray[i] << std::endl;
-			}
-			
 			parser = commandlineparser(argc,charArray);
 			freeCharPointerArray(charArray,argc);
 		}
@@ -235,7 +231,6 @@ class PNOInterface: public MadnessProcess{
 		
 		void DeterminePNOsAndIntegrals() 
 		{	
-			World* world = this->world;
 			std::cout.precision(6);
 			if(world->rank()==0){
 				std::cout << "\n\n";
@@ -510,13 +505,6 @@ class PNOInterface: public MadnessProcess{
 			// keeping dummies here for now
 			vecfuncT virtuals;
 			std::vector<double> veps;
-			
-			/*
-			if (parameters.save_pnos()) {
-				for(auto i=0; i<basis.size(); ++i){
-					madness::save(basis[i], "mra_orbital_"+std::to_string(i));
-				}
-			}*/
 	 
 			// Save pair information to file after having picked the cherries
 			std::ofstream pairwriter ("pnoinfo.txt", std::ofstream::out|std::ofstream::trunc);
@@ -801,39 +789,6 @@ class PNOInterface: public MadnessProcess{
 				if (cabs_switch) std::cout << "non zero elements:\n f : " << non_zero_f;
 				std::cout << std::endl;
 			}
-			/*
-			// save integrals to binary files
-			h = h.flat();
-			nc::NdArray<double> hh(h.ptr(), h.size(), 1);
-			hh.tofile(name+"_htensor.bin");
-	
-			g = g.flat();
-			nc::NdArray<double> gg(g.ptr(), g.size(), 1);
-			gg.tofile(name+"_gtensor.bin");
-	
-	
-			if (cabs_switch) {
-				f = f.flat();
-				nc::NdArray<double> ff(f.ptr(), f.size(), 1);
-				ff.tofile(name+"_f12tensor.bin");
-			}
-	
-			if (not orthogonalize || paramsint.print_pno_overlap()){
-				auto S = madness::matrix_inner(*world, basis, basis, true);
-				if(paramsint.print_pno_overlap()) {
-					if(world->rank()==0) std::cout << "Overlap over whole basis\n" << S << "\n";
-				}
-				for (auto x=0;x<basis.size();++x){
-					S(x,x) -=1.0;
-				}
-				const double offdiag=S.normf();
-				if (world->rank()==0) std::cout << "||S-1||=" << offdiag << "\n";
-				if (not orthogonalize) {
-					S = S.flat();
-					nc::NdArray<double> gg(S.ptr(), S.size(), 1);
-					gg.tofile(name+"_overlap.bin");
-				}
-			}*/
 		}
 		std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const
 		{
@@ -841,11 +796,11 @@ class PNOInterface: public MadnessProcess{
 			for (auto i=0; i<basis.size(); ++i){
 				SavedFct pnorb(basis[i]);
 				if (i<core_dim){
-					pnorb.info="frozen_occ";
+					pnorb.type="frozen_occ";
 				}else if (i<core_dim+as_dim){
-					pnorb.info="active";
+					pnorb.type="active";
 				}else if (i<core_dim+as_dim+froz_virt_dim){
-					pnorb.info="frozen_virt";
+					pnorb.type="frozen_virt";
 				}
 				pnos.push_back(pnorb);
 			}

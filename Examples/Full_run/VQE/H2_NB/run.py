@@ -56,31 +56,37 @@ active_orbitals = [0,1]
 as_dim=len(active_orbitals)
 
 #PNO calculation to get an initial guess for the molecular orbitals
+print("Starting PNO calculation")
+red=mad.RedirectOutput("PNO.log")
 params=tq.quantumchemistry.ParametersQC(name=molecule_name, geometry=geometry_angstrom, basis_set=None, multiplicity=1)
 OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
 pno=mad.PNOInterface(OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}), box_size, wavelet_order, madness_thresh)
-
 pno.DeterminePNOsAndIntegrals()
 all_orbs=pno.GetPNOs(len(frozen_occupied_orbitals),as_dim,0) # input: dimensions of (frozen_occ, active, forzen_virt) space
 h1=pno.GetHTensor()
 g2=pno.GetGTensor()
 c=pno.GetNuclearRepulsion()
 del pno
+del red
 OrbOpt_helper.PNO_cleanup()
 
-peak_loc=[[0.0,0.0,-distance/2],[0.0,0.0,distance/2]]
-sharpness_list=[10.0,10.0]
+peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]]
+sharpness_list=[100.0,100.0]
 Q=2
-PotMaker = mad.CoulombPotentialFromCustomChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
+PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
 custom_pot=PotMaker.CreatePotential()
 del PotMaker
 
+ploten=mad.Optimization(box_size, wavelet_order, madness_thresh)
+ploten.plot("potential",custom_pot)
+for i in range(len(all_orbs)):
+        ploten.plot("pno_orbital_" + i.__str__(), all_orbs[i])
+del ploten
+
+print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
     print("---------------------------------------------------")
-    print("---------------------------------------------------")
     print("Iteration: " + it.__str__())
-    print("---------------------------------------------------")
-    print("---------------------------------------------------")
 
     if it == 0:
         mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
@@ -109,7 +115,7 @@ for it in range(iterations):
     print("VQE energy: " + (str)(result.energy))
     iteration_energies.append(result.energy.__str__())
 
-    # Write 1rdm and 2rdm for iteration step
+    # Compute 1rdm and 2rdm
     rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables, use_hcb=True)
     rdm1, rdm2 = OrbOpt_helper.transform_rdms(opt.mo_coeff.transpose(), rdm1, rdm2)
     
@@ -118,6 +124,7 @@ for it in range(iterations):
     all_occ_number.append(np.sort(np.linalg.eig(rdm1)[0])[::-1])
     
     #Orbital-Optimization
+    red=mad.RedirectOutput("OrbOpt"+str(it)+".log")
     opti = mad.Optimization(box_size, wavelet_order, madness_thresh)
     opti.nocc = 2; # spatial orbital = 2; spin orbitals = 1
     opti.truncation_tol = 1e-6
@@ -127,7 +134,8 @@ for it in range(iterations):
     opti.BSH_eps = 1e-6
 
     print("Read rdms, create initial guess and calculate initial energy")
-    opti.CreateNuclearPotentialAndRepulsion("molecule")
+    #opti.CreateNuclearPotentialAndRepulsion("molecule")
+    opti.GiveCustomPotential(custom_pot)
     opti.GiveInitialOrbitals(all_orbs)
     opti.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)
     opti.CalculateAllIntegrals()
@@ -144,8 +152,10 @@ for it in range(iterations):
     c=opti.GetC()
     h1_elements=opti.GetHTensor()
     g2_elements=opti.GetGTensor()
-
+    for i in range(len(all_orbs)):
+        opti.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
     del opti
+    del red
 
 # Write energies to the hard disk
 with open(r'Energies.txt', 'w') as fp:

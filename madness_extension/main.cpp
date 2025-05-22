@@ -14,11 +14,12 @@ NB_MODULE(MadPy, m) {
 
     nb::class_<SavedFct>(m, "SavedFct")
         .def(nb::init<const Function<double,3> &>())
-        .def_rw("info", &SavedFct::info);
+        .def_rw("info", &SavedFct::info)
+        .def_rw("type", &SavedFct::type);
 
     nb::class_<Optimization>(m, "Optimization")
         .def(nb::init<const double &, const int &, const double &>())
-        .def("plot", &Optimization::plot)
+        .def("plot", &Optimization::plot, nb::arg("filename"), nb::arg("f"), nb::arg("datapoints") = 2001)
         .def("loadfct", &Optimization::loadfct)
         .def("loadfct_from_file", &Optimization::loadfct_from_file)
         .def("GiveInitialOrbitals", &Optimization::GiveInitialOrbitals)
@@ -60,7 +61,10 @@ NB_MODULE(MadPy, m) {
         .def("GetF12Tensor", &PNOInterface::GetF12Tensor)
         .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
 
-    nb::class_<CoulombPotentialFromCustomChargeDensity>(m, "CoulombPotentialFromCustomChargeDensity")
+    nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<const double &, const long &, const double &, const std::vector<double> &, const double &, const std::vector<std::vector<double> > &>())
-        .def("CreatePotential", &CoulombPotentialFromCustomChargeDensity::CreatePotential);
+        .def("CreatePotential", &CoulombPotentialFromChargeDensity::CreatePotential);
+
+    nb::class_<RedirectOutput>(m, "RedirectOutput")
+        .def(nb::init<const std::string &>());
 }

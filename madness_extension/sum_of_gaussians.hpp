@@ -1,8 +1,7 @@
-#include <fstream>
-#include <iostream>
 #include <madness/mra/mra.h>
 #include <madness/mra/operator.h>
 #include "functionsaver.hpp"
+#include "MadnessProcess.hpp"
 
 using namespace madness;
 
@@ -46,41 +45,21 @@ Function<double,3> make_potential(World & world,std::vector<double> sl, double Q
     return -4.0*constants::pi*V; //conversion into atomic units
 }
 
-class CoulombPotentialFromCustomChargeDensity
+class CoulombPotentialFromChargeDensity : public MadnessProcess
 {
     public:
         std::vector<double> sharpness_list;
         double Q;
         std::vector<std::vector<double> > charge_locations;
 
-        CoulombPotentialFromCustomChargeDensity(double L, long k, double thresh, std::vector<double> sl, double Q, std::vector<std::vector<double> > cl) : sharpness_list(sl), Q(Q), charge_locations(cl) {
-            int arg = 0;
-            char **a = new char*[0]();
+        CoulombPotentialFromChargeDensity(double L, long k, double thresh, std::vector<double> sl, double Q, std::vector<std::vector<double> > cl) : MadnessProcess(L,k,thresh), sharpness_list(sl), Q(Q), charge_locations(cl) {std::cout.precision(6);}
+        
+        ~CoulombPotentialFromChargeDensity() {}
 
-            world = &initialize(arg, a);
-            startup(*world,arg,a);
-            delete[] a;
-            
-            std::cout.precision(6);
-
-            FunctionDefaults<3>::set_k(k);
-            FunctionDefaults<3>::set_thresh(thresh);
-            FunctionDefaults<3>::set_refine(true);
-            FunctionDefaults<3>::set_initial_level(5);
-            FunctionDefaults<3>::set_truncate_mode(1);
-            FunctionDefaults<3>::set_cubic_cell(-L, L);
-        }
-        ~CoulombPotentialFromCustomChargeDensity() {
-            std::cout << "Finalize madness env" << std::endl;
-            world->gop.fence();
-            finalize();
-        }
         SavedFct CreatePotential() {
             Function<double,3> Vnuc = make_potential(*world,sharpness_list,Q,charge_locations);
             return SavedFct(Vnuc);
         }
-    private:
-        World* world;
 };
 
 

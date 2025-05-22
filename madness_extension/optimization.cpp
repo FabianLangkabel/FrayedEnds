@@ -3,35 +3,11 @@
 using namespace madness;
 
 
-void Optimization::plot(const std::string filename, const SavedFct f, const double L) {
-    Vector<double,3> lo(0.0), hi(0.0);
-    lo[2] = -L; hi[2] = L;
-    plot_line(filename.c_str(),2001,lo,hi,loadfct(f));
-}
 
-Optimization::Optimization(double L, long k, double thresh)
-{
-    int arg = 0;
-    char **a = new char*[0]();
-
-    world = &initialize(arg, a);
-    startup(*world,arg,a);
-    this->atoms = atoms; //what does this do?
-    delete[] a;
-    
-    std::cout.precision(6);
-
-    FunctionDefaults<3>::set_k(k);
-    FunctionDefaults<3>::set_thresh(thresh);
-    FunctionDefaults<3>::set_refine(true);
-    FunctionDefaults<3>::set_initial_level(5);
-    FunctionDefaults<3>::set_truncate_mode(1);
-    FunctionDefaults<3>::set_cubic_cell(-L, L);
-}
+Optimization::Optimization(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
 
 Optimization::~Optimization()
 {
-    std::cout << "Finalize madness env" << std::endl;
     delete Vnuc;
     delete custom_potential;
     frozen_occ_orbs.clear();
@@ -39,26 +15,8 @@ Optimization::~Optimization()
     frozen_virt_orb.clear();
     orbs_kl.clear();
     coul_orbs_mn.clear();
-    world->gop.fence();
-    finalize();
 }
 
-//load a function from a SavedFct object
-Function<double,3> Optimization::loadfct(const SavedFct& Sf) {
-    std::string filename = "saved_fct2"; //TODO: check if filename is unique
-    write_binary_file(Sf,filename);
-    Function<double,3> f1 = real_factory_3d(*world);
-    load(f1,filename);
-    delete_file(filename+".00000");
-    return f1;
-}
-
-//load a function from a binary file
-Function<double,3> Optimization::loadfct_from_file(const std::string& filename) {
-    Function<double,3> f1 = real_factory_3d(*world);
-    load(f1,filename);
-    return f1;
-}
 
 void Optimization::CreateNuclearPotentialAndRepulsion(std::string GeometryFile)
 {
@@ -117,12 +75,14 @@ void Optimization::GiveInitialOrbitals(std::vector<SavedFct> all_orbs)
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for(SavedFct orb : all_orbs) {
-        if (orb.info == "frozen_occ") {
+        if (orb.type == "frozen_occ") {
             frozen_occ_orbs.push_back(loadfct(orb));
-        } else if (orb.info == "active") {
+        } else if (orb.type == "active") {
             active_orbs.push_back(loadfct(orb));
-        } else if (orb.info == "frozen_virt") {
+        } else if (orb.type == "frozen_virt") {
             frozen_virt_orb.push_back(loadfct(orb));
+        } else {
+            std::cerr << "Unknown orbital type: " << orb.type << ". Recognized types are frozen_occ, active and frozen_virt." << std::endl;
         }
     }
     core_dim = frozen_occ_orbs.size();
@@ -1008,21 +968,21 @@ std::vector<SavedFct> Optimization::GetOrbitals()
     for(int i = 0; i < core_dim; i++)
     {
         SavedFct orb(frozen_occ_orbs[i]);
-        orb.info="frozen_occ";
+        orb.type="frozen_occ";
         all_orbs.push_back(orb);
         j++;
     }
     for(int i = 0; i < as_dim; i++)
     {
         SavedFct orb(active_orbs[i]);
-        orb.info="active";
+        orb.type="active";
         all_orbs.push_back(orb);
         j++;
     }
     for(int i = 0; i < froz_virt_dim; i++)
     {
         SavedFct orb(active_orbs[i]);
-        orb.info="frozen_virt";
+        orb.type="frozen_virt";
         all_orbs.push_back(orb);
         j++;
     }
