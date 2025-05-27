@@ -789,9 +789,15 @@ class PNOInterface: public MadnessProcess{
 				if (cabs_switch) std::cout << "non zero elements:\n f : " << non_zero_f;
 				std::cout << std::endl;
 			}
+			std::cout << FunctionDefaults<3>::get_cell_width()[0] << std::endl;
+			std::cout << FunctionDefaults<3>::get_cell_width()[1] << std::endl;
+			std::cout << FunctionDefaults<3>::get_cell_width()[2] << std::endl;
 		}
 		std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const
-		{
+		{	
+			if (core_dim+as_dim+froz_virt_dim != basis.size()){
+				std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << std::endl;
+			}
 			std::vector<SavedFct> pnos;
 			for (auto i=0; i<basis.size(); ++i){
 				SavedFct pnorb(basis[i]);

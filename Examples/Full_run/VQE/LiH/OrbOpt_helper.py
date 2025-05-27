@@ -149,7 +149,7 @@ def PNO_cleanup():
                 print(f"Error deleting {file}: {e}")
 
 
-def PNO_input(params: ParametersQC, molecule_file, **kwargs) -> str:
+def PNO_input(params: ParametersQC, molecule_file, n_pno=None, n_virt=0, maxrank=None, **kwargs) -> str:
     n_electrons = params.n_electrons
     if params.frozen_core:
             # only count active electrons (will not compute pnos for frozen pairs)
@@ -157,9 +157,11 @@ def PNO_input(params: ParametersQC, molecule_file, **kwargs) -> str:
         n_electrons -= n_core_electrons
 
     n_pairs = n_electrons // 2
-    n_pno = n_electrons - n_pairs
+    if n_pno is None:
+        n_pno = n_electrons - n_pairs
 
-    maxrank = max(1, int(np.ceil(n_pno // n_pairs)))
+    if maxrank is None:
+        maxrank = max(1, int(np.ceil(n_pno / n_pairs)))
 
     data = {}
     if params.multiplicity != 1:
@@ -172,7 +174,7 @@ def PNO_input(params: ParametersQC, molecule_file, **kwargs) -> str:
     data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": True}
     if not params.frozen_core:            
         data["pno"]["freeze"] = 0
-    data["pnoint"] = {"n_pno": n_pno, "n_virt": 0, "orthog": "symmetric"}
+    data["pnoint"] = {"n_pno": n_pno, "n_virt": n_virt, "orthog": "symmetric"}
     data["plot"] = {}
     data["f12"] = {}
     for key in data.keys():
@@ -184,7 +186,7 @@ def PNO_input(params: ParametersQC, molecule_file, **kwargs) -> str:
             "maxrank={} in tequila madness backend! No PNOs will be computed. Set the value when initializing the Molecule as tq.Molecule(..., pno={\"maxrank\":1, ...})".format(
                 data["pnoint"]["maxrank"]))
 
-    input_str="pno --geometry=\"source_type=inputfile; source_name="+molecule_file+"\""
+    input_str="pno --geometry=\"source_type=inputfile; no_orient=1; source_name="+molecule_file+"\""
     input_str += " --dft=\""
     for k, v in data["dft"].items():
         input_str += "{}={}; ".format(k, v)

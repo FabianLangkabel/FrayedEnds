@@ -71,17 +71,11 @@ del red
 OrbOpt_helper.PNO_cleanup()
 
 peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]]
-sharpness_list=[100.0,100.0]
+sharpness_list=[5.0,5.0]
 Q=2
 PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
 custom_pot=PotMaker.CreatePotential()
 del PotMaker
-
-ploten=mad.Optimization(box_size, wavelet_order, madness_thresh)
-ploten.plot("potential",custom_pot)
-for i in range(len(all_orbs)):
-        ploten.plot("pno_orbital_" + i.__str__(), all_orbs[i])
-del ploten
 
 print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
@@ -134,7 +128,6 @@ for it in range(iterations):
     opti.BSH_eps = 1e-6
 
     print("Read rdms, create initial guess and calculate initial energy")
-    #opti.CreateNuclearPotentialAndRepulsion("molecule")
     opti.GiveCustomPotential(custom_pot)
     opti.GiveInitialOrbitals(all_orbs)
     opti.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)

@@ -15,7 +15,7 @@ import MadPy as mad
 
 
 start_time = time.time()
-distance = 2.5 # Distance between the Li and H atom in Bohr
+distance = 4.0 # Distance between the Li and H atom in Bohr
 iteration_energies = [] #Stores the energies at the beginning of each iteration step after the VQE
 all_occ_number = [] #Stores the orbital occupations at the beginning of each iteration step after the VQE
 iterations = 6
@@ -45,14 +45,14 @@ def get_best_initial_values(mol):
 
 distance = distance/2
 geometry_bohr = '''
-H 0.0 0.0 ''' + distance.__str__() + '''
+Li 0.0 0.0 ''' + distance.__str__() + '''
 H 0.0 0.0 ''' + (-distance).__str__()
 
 geometry_angstrom = OrbOpt_helper.convert_geometry_from_bohr_to_angstrom(geometry_bohr)
 
-all_orbitals = [0,1]
-frozen_occupied_orbitals = []
-active_orbitals = [0,1]
+all_orbitals = [0,1,2]
+frozen_occupied_orbitals = [0]
+active_orbitals = [1,2]
 as_dim=len(active_orbitals)
 
 #PNO calculation to get an initial guess for the molecular orbitals
@@ -70,35 +70,24 @@ del pno
 del red
 OrbOpt_helper.PNO_cleanup()
 
-peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]]
-sharpness_list=[100.0,100.0]
-Q=2
-PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
-custom_pot=PotMaker.CreatePotential()
-del PotMaker
-
-ploten=mad.Optimization(box_size, wavelet_order, madness_thresh)
-ploten.plot("potential",custom_pot)
-for i in range(len(all_orbs)):
-        ploten.plot("pno_orbital_" + i.__str__(), all_orbs[i])
-del ploten
-
 print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
     print("---------------------------------------------------")
     print("Iteration: " + it.__str__())
 
     if it == 0:
-        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
+        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name) #Important here geometry in Angstrom
+        params=mol.parameters
+
     else:
         #todo: transfer nb::ndarray objects directly
         h1=np.array(h1_elements).reshape(as_dim,as_dim)
         g2=np.array(g2_elements).reshape(as_dim,as_dim,as_dim,as_dim)
         g2=tq.quantumchemistry.NBodyTensor(g2, ordering="dirac")
         g2=g2.reorder(to="openfermion")
-        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name) #Important here geometry in Angstrom
-        
-
+        params.frozen_core = False
+        mol = tq.Molecule(parameters=params, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, frozen_core=False, n_electrons=as_dim) #TODO: replace charge with n_electrons
+       
     
     #VQE
     U = mol.make_ansatz(name="HCB-UpCCGD")
@@ -118,7 +107,7 @@ for it in range(iterations):
     # Compute 1rdm and 2rdm
     rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables, use_hcb=True)
     rdm1, rdm2 = OrbOpt_helper.transform_rdms(opt.mo_coeff.transpose(), rdm1, rdm2)
-    
+
     rdm1_list=rdm1.reshape(-1).tolist()
     rdm2_list=rdm2.reshape(-1).tolist()
     all_occ_number.append(np.sort(np.linalg.eig(rdm1)[0])[::-1])
@@ -135,7 +124,6 @@ for it in range(iterations):
 
     print("Read rdms, create initial guess and calculate initial energy")
     opti.CreateNuclearPotentialAndRepulsion("molecule")
-    opti.GiveCustomPotential(custom_pot)
     opti.GiveInitialOrbitals(all_orbs)
     opti.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)
     opti.CalculateAllIntegrals()

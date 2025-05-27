@@ -3,7 +3,9 @@ import os
 import shutil
 import json
 from pathlib import Path
-                        
+import glob
+from tequila.quantumchemistry import ParametersQC
+
                         
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
     new_rdm1 = np.dot(np.dot(TransformationMatrix.transpose(), rdm1),TransformationMatrix)
@@ -88,6 +90,7 @@ no_orient 1
 eprec 1.e-6"""
     molecule_file_str += geometry_bohr
     molecule_file_str += "\nend"
+    molecule_file_str = os.linesep.join([s for s in molecule_file_str.splitlines() if s])
     f = open("molecule", "w")
     f.write(molecule_file_str)
     f.close()
@@ -126,3 +129,85 @@ def create_orbital_opt_input(FilePath, it, all_orbitals, frozen_occupied_orbital
     json.dump(mad_input, mad_input_file)
     mad_input_file.close()
     
+def PNO_cleanup():
+    # Define the patterns for the files to delete
+    patterns = [
+        "*.00000",                # Files ending with .00000
+        "N7madness*",             # Files starting with N7madness
+        "mad.calc_info.json",     # Specific file
+        "mad.restartaodata",      # Specific file
+        "pnoinfo.txt"             # Specific file
+    ]
+
+    # Iterate over each pattern and delete matching files
+    for pattern in patterns:
+        for file in glob.glob(pattern):
+            try:
+                os.remove(file)
+                print(f"Deleted: {file}")
+            except OSError as e:
+                print(f"Error deleting {file}: {e}")
+
+
+def PNO_input(params: ParametersQC, molecule_file, n_pno=None, n_virt=0, maxrank=None, **kwargs) -> str:
+    n_electrons = params.n_electrons
+    if params.frozen_core:
+            # only count active electrons (will not compute pnos for frozen pairs)
+        n_core_electrons = params.get_number_of_core_electrons()
+        n_electrons -= n_core_electrons
+
+    n_pairs = n_electrons // 2
+    if n_pno is None:
+        n_pno = n_electrons - n_pairs
+
+    if maxrank is None:
+        maxrank = max(1, int(np.ceil(n_pno / n_pairs)))
+
+    data = {}
+    if params.multiplicity != 1:
+        raise Exception(
+            "Currently only closed shell supported for MRA-PNO-MP2, you demanded multiplicity={} for the surrogate".format(params.multiplicity))
+    
+    data["dft"] = {"charge": params.charge, "xc": "hf", "k": 7, "econv": 1.e-4, "dconv": 5.e-4,
+                       "localize": "boys",
+                       "ncf": "( none , 1.0 )"}
+    data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": True}
+    if not params.frozen_core:            
+        data["pno"]["freeze"] = 0
+    data["pnoint"] = {"n_pno": n_pno, "n_virt": n_virt, "orthog": "symmetric"}
+    data["plot"] = {}
+    data["f12"] = {}
+    for key in data.keys():
+        if key in kwargs:
+            data[key] = {**data[key], **kwargs[key]}
+    
+    if data["pno"]["maxrank"] <= 0:
+        raise Exception(
+            "maxrank={} in tequila madness backend! No PNOs will be computed. Set the value when initializing the Molecule as tq.Molecule(..., pno={\"maxrank\":1, ...})".format(
+                data["pnoint"]["maxrank"]))
+
+    input_str="pno --geometry=\"source_type=inputfile; no_orient=1; source_name="+molecule_file+"\""
+    input_str += " --dft=\""
+    for k, v in data["dft"].items():
+        input_str += "{}={}; ".format(k, v)
+    input_str = input_str[:-2] + "\""
+    input_str += " --pno=\""
+    for k, v in data["pno"].items():
+        input_str += "{}={}; ".format(k, v)
+    input_str = input_str[:-2] + "\""
+    input_str += " --pnoint=\""
+    for k, v in data["pnoint"].items():
+        input_str += "{}={}; ".format(k, v)
+    input_str = input_str[:-2] + "\""
+    if data["plot"] != {}:
+        input_str += " --plot=\""
+        for k, v in data["plot"].items():
+            input_str += "{}={}; ".format(k, v)
+        input_str = input_str[:-2] + "\""
+    if data["f12"] != {}:
+        input_str += " --f12=\""
+        for k, v in data["f12"].items():
+            input_str += "{}={}; ".format(k, v)
+        input_str = input_str[:-2] + "\""
+    
+    return input_str

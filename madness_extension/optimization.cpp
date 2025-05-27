@@ -21,7 +21,7 @@ Optimization::~Optimization()
 void Optimization::CreateNuclearPotentialAndRepulsion(std::string GeometryFile)
 {
     auto molecule = madness::Molecule();
-    molecule.read_file(GeometryFile);
+    molecule.read_file(GeometryFile); //TODO: read_file is deprecated, use commandlineparser to set up molecule otherwise trouble awaits...
     Vnuc = new Nuclear<double,3>(*world, molecule);
     nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
 }

@@ -2,7 +2,6 @@ import tequila as tq
 import numpy as np
 import os
 import shutil
-import json
 from pathlib import Path
 import logging
 import subprocess as sp
@@ -10,11 +9,12 @@ import pyscf
 from pyscf import fci
 import time
 import OrbOpt_helper
+import sys
+sys.path.append('/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/madness_extension')
+import MadPy as mad
+
 
 start_time = time.time()
-'''
-Definitions/Parameters
-'''                       
 distance = 2.5 # Distance between the two hydrogen atoms in Bohr 
 iteration_energies = [] #Stores the energies at the beginning of each iteration step after the VQE
 all_occ_number = [] #Stores the orbital occupations at the beginning of each iteration step after the VQE
@@ -50,55 +50,43 @@ H 0.0 0.0 ''' + (-distance).__str__()
 
 geometry_angstrom = OrbOpt_helper.convert_geometry_from_bohr_to_angstrom(geometry_bohr)
 
-
-OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
-
-mol = tq.Molecule(geometry_angstrom, dft={"L":box_size}, name=molecule_name) # Important here geometry in Angstrom           
-
-print(mol.compute_energy("fci"))
-print(mol.compute_energy("hf"))
- 
 all_orbitals = [0,1]
 frozen_occupied_orbitals = []
 active_orbitals = [0,1]
+as_dim=len(active_orbitals)
+
+#PNO calculation to get an initial guess for the molecular orbitals
+print("Starting PNO calculation")
+red=mad.RedirectOutput("PNO.log")
+params=tq.quantumchemistry.ParametersQC(name=molecule_name, geometry=geometry_angstrom, basis_set=None, multiplicity=1)
+OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
+pno=mad.PNOInterface(OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}), box_size, wavelet_order, madness_thresh)
+pno.DeterminePNOsAndIntegrals()
+all_orbs=pno.GetPNOs(len(frozen_occupied_orbitals),as_dim,0) # input: dimensions of (frozen_occ, active, forzen_virt) space
+h1=pno.GetHTensor()
+g2=pno.GetGTensor()
+c=pno.GetNuclearRepulsion()
+del pno
+del red
+OrbOpt_helper.PNO_cleanup()
 
 
 
-# Copy initial orbitals and intergals to folder for first step
-os.mkdir("0")
-for orb in all_orbitals:
-    shutil.move("mra_orbital_" + str(orb) + ".00000", "0/mra_orbital_" + str(orb) + ".00000")
-shutil.move(molecule_name + "_htensor.npy", "0/htensor.npy")
-shutil.move(molecule_name + "_gtensor.npy", "0/gtensor.npy")
-
-
-
-# Iteration Loop
-
+print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
-    it_str = it.__str__()
-    print("Iteration-Step: " + it_str)
-    
+    print("---------------------------------------------------")
+    print("Iteration: " + it.__str__())
+
     if it == 0:
-            # Copy h and g tensors for VQE to current folder to read molecule
-            shutil.copy(it_str + "/htensor.npy", molecule_name + "_htensor.npy")
-            shutil.copy(it_str + "/gtensor.npy", molecule_name + "_gtensor.npy")
-            mol = tq.Molecule(geometry_angstrom, n_pno="read", name=molecule_name) #Important here geometry in Angstrom
-            c, h1, g2 = mol.get_integrals(ordering="chem")
-            print(c)
-            print(mol.compute_energy("fci"))
-            print(mol.compute_energy("hf"))
+        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
     else:
-        with open(it_str + '/c.txt') as f:
-            c = float(f.readline())
-            print(c)
-        h1 = np.load(it_str + "/htensor.npy")
-        g2 = np.load(it_str + "/gtensor.npy")
+        #todo: transfer nb::ndarray objects directly
+        h1=np.array(h1_elements).reshape(as_dim,as_dim)
+        g2=np.array(g2_elements).reshape(as_dim,as_dim,as_dim,as_dim)
         g2=tq.quantumchemistry.NBodyTensor(g2, ordering="dirac")
         g2=g2.reorder(to="openfermion")
         mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name) #Important here geometry in Angstrom
-        print(mol.compute_energy("fci"))
-        print(mol.compute_energy("hf"))
+        
 
     
     #VQE
@@ -107,7 +95,7 @@ for it in range(iterations):
         opt = get_best_initial_values(mol)
     else:
         opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=opt.mo_coeff)
-
+    
     mol_new = opt.molecule
     H = mol_new.make_hardcore_boson_hamiltonian()
     U = mol_new.make_ansatz(name="HCB-UpCCGD")
@@ -116,32 +104,47 @@ for it in range(iterations):
     print("VQE energy: " + (str)(result.energy))
     iteration_energies.append(result.energy.__str__())
 
-    # Write 1rdm and 2rdm for iteration step
+    # Compute 1rdm and 2rdm
     rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables, use_hcb=True)
     rdm1, rdm2 = OrbOpt_helper.transform_rdms(opt.mo_coeff.transpose(), rdm1, rdm2)
     
-    #OrbOpt_helper.write_rdms(rdm1, rdm2, it_str + "/" + molecule_name)
-    np.save(it_str + "/" + molecule_name + "_1rdm.npy", rdm1)
-    np.save(it_str + "/" + molecule_name + "_2rdm.npy", rdm2)
+    rdm1_list=rdm1.reshape(-1).tolist()
+    rdm2_list=rdm2.reshape(-1).tolist()
     all_occ_number.append(np.sort(np.linalg.eig(rdm1)[0])[::-1])
     
-    # Delete h and g tensors from the current folder and create folder for next iteration step
-    if it == 0:
-        os.remove(molecule_name + "_htensor.npy")
-        os.remove(molecule_name + "_gtensor.npy")
-    
-    os.mkdir((it + 1).__str__())
+    #Orbital-Optimization
+    red=mad.RedirectOutput("OrbOpt"+str(it)+".log")
+    opti = mad.Optimization(box_size, wavelet_order, madness_thresh)
+    opti.nocc = 2; # spatial orbital = 2; spin orbitals = 1
+    opti.truncation_tol = 1e-6
+    opti.coulomb_lo = 0.001
+    opti.coulomb_eps = 1e-6
+    opti.BSH_lo = 0.01
+    opti.BSH_eps = 1e-6
 
-    # Create OrbitalOptimization input file
-    OrbOptFilePath = "madness_input.json"
-    OrbOpt_helper.create_orbital_opt_input(OrbOptFilePath, it, all_orbitals, frozen_occupied_orbitals, active_orbitals, 
-                                 box_size, wavelet_order, madness_thresh, optimization_thresh, NO_occupation_thresh,
-                                 molecule_name)
-    
-    shutil.copy("madness_input.json", it_str + "/madness_input.json")
+    print("Read rdms, create initial guess and calculate initial energy")
+    opti.CreateNuclearPotentialAndRepulsion("molecule")
+    opti.GiveInitialOrbitals(all_orbs)
+    opti.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)
+    opti.CalculateAllIntegrals()
+    opti.CalculateCoreEnergy()
+    opti.CalculateEnergies()
 
-    # Execute orbital optimization
-    programm = sp.call("/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/orbital_optimization/OrbitalOptimization madness_input.json", stdout=open(it_str + '/log', 'w'), stderr=open(it_str + '/err_log', 'w'), shell = True)
+    print("---------------------------------------------------")
+    print("Start orbital optimization")
+    opti.OptimizeOrbitals(optimization_thresh, NO_occupation_thresh)
+    
+    opti.RotateOrbitalsBackAndUpdateIntegrals()
+
+    all_orbs=opti.GetOrbitals()
+    c=opti.GetC()
+    print("C: ", c)
+    h1_elements=opti.GetHTensor()
+    g2_elements=opti.GetGTensor()
+    for i in range(len(all_orbs)):
+        opti.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
+    del opti
+    del red
 
 # Write energies to the hard disk
 with open(r'Energies.txt', 'w') as fp:
@@ -151,4 +154,5 @@ with open(r'Energies.txt', 'w') as fp:
 all_occ_number_matrix = np.column_stack(all_occ_number)
 np.savetxt('all_occ_number.txt', all_occ_number_matrix)
 end_time = time.time()
+
 print("Total time: " + (end_time - start_time).__str__())

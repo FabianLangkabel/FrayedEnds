@@ -67,7 +67,6 @@ RUN conda install -y python=3.11 && \
     pip install pyscf && \
     pip install git+https://github.com/tequilahub/tequila.git@pr-no-orient && \
     pip install qulacs && \
-    conda install -y -c kottmann madtequila && \
     pip install block2 && \
     python -m pip install nanobind
 
