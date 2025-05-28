@@ -10,7 +10,7 @@ from pyscf import fci
 import time
 import OrbOpt_helper
 import sys
-sys.path.append('/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/madness_extension')
+sys.path.append('/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/madness_extension') #Adjust this path to your installation of MRA-OrbitalOptimization
 import MadPy as mad
 
 
@@ -56,11 +56,12 @@ del pno
 del red
 OrbOpt_helper.PNO_cleanup()
 
-peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]]
-sharpness_list=[5.0,5.0]
+peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]] #locations of the peaks
+sharpness_list=[5.0,5.0] #sharpness of the peaks 
 Q=2
 PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
 custom_pot=PotMaker.CreatePotential()
+PotMaker.plot("custom_potential.dat", custom_pot) #Plot the custom potential
 del PotMaker
 
 print("Starting VQE and Orbital-Optimization")
