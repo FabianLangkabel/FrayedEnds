@@ -466,6 +466,7 @@ void SpinorbOpt::CalculateAllIntegrals()
     integrals_two_body = Eigen::Tensor<double, 4>(dim_ab, dim_ab, dim_ab, dim_ab);
     integrals_two_body.setZero();
 
+    Eigen::MatrixXd overlap_matrix = Eigen::MatrixXd::Zero(dim_ab, dim_ab);
 
     //Calculate the one-body integrals
 
@@ -482,11 +483,20 @@ void SpinorbOpt::CalculateAllIntegrals()
         //Nuclear
         real_function_3d Vnuc_orb_l = (*Vnuc)(active_alpha_beta_orbs[k]);
         integrals_potential(k, k) = inner(active_alpha_beta_orbs[k], Vnuc_orb_l);
+        
     }
 
     integrals_one_body = integrals_potential + integrals_kinetic[0] + integrals_kinetic[1] + integrals_kinetic[2];
 
     std::cout << "One body integrals: " << integrals_one_body << std::endl;
+    
+    for (int i = 0; i < dim_ab; i++) {
+        for(int j = 0; j < dim_ab; j++) {
+            overlap_matrix(i, j) = inner(active_alpha_beta_orbs[i], active_alpha_beta_orbs[j]);
+        }
+    }
+    
+    std::cout << "Overlap matrix: " << overlap_matrix << std::endl;
 
     //Construct (kl| orbitals; be aware of the indices, not all elements are meaningful and will be neglected
 
@@ -680,7 +690,7 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 }
 
 
-/*void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
+void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
 // function for doing only one iteration to test if stuff works
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
@@ -731,7 +741,7 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
         std::cout << "Update Orbital " << idx << " took " << duration.count() << " seconds" << std::endl;
 
-        active_alpha_beta_orbs[idx] = 0.5 * active_alpha_beta_orbs[idx] + 0.5 * orbitals[idx];
+        active_alpha_beta_orbs[idx] = orbitals[idx];
 
         
         //std::cout << "Orthonormalize orbitals" << std::endl;
@@ -772,7 +782,7 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
                 active_alpha_beta_orbs[i] = beta_orbs[y];
                 y++;
             }
-        }
+        }*/
 
         std::cout << "Update Integrals" << std::endl;
         //Update integrals for new orbitals
@@ -780,7 +790,7 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 
         //Calculate new energy
         CalculateEnergy();
-    }*/
+    }
     
     //std::vector<real_function_3d> AllActiveSpinOrbitalUpdates = GetAllActiveSpinorbitalUpdates(spin_orbs_indices_for_update);
         
@@ -842,9 +852,9 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
     //Check convergence
     //std::cout << "Highest error: " << highest_error << std::endl;
     
-//}
+}
 
-void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
+/*void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
     //ignore frozen orbitals for now
@@ -854,7 +864,7 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
         frozen_orbs.push_back(all_orbitals[frozenIdx].function);
     }*/
     
-    std::vector<real_function_3d> orbitals;
+    /*std::vector<real_function_3d> orbitals;
     for (int i = 0; i < num_active_orbs; i++)
     {
         orbitals.push_back(active_alpha_beta_orbs[i]);
@@ -1000,10 +1010,10 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
         if(highest_error < optimization_thresh){
             converged = true;
             std::cout << "Convergence has been reached :-)" << std::endl;
-        }*/
+        }
 
     }
-}
+}*/
 
 real_function_3d SpinorbOpt::CalculateSpinorbitalUpdate(int idx)
 {
