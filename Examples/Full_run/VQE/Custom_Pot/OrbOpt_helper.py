@@ -6,6 +6,22 @@ from pathlib import Path
 import glob
 from tequila.quantumchemistry import ParametersQC
 
+def get_best_initial_values(mol):
+    tries = 20
+    U = mol.make_ansatz(name="HCB-UpCCGD")
+    best_opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
+    opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True)
+    if opt.energy < best_opt.energy:
+        best_opt = opt
+    
+    for _ in range(tries):
+        #opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
+        initial_guess = np.eye(mol.n_orbitals) + np.random.normal(scale=1.0, loc=0.0, size=mol.n_orbitals**2).reshape(mol.n_orbitals, mol.n_orbitals)
+        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=initial_guess)
+        if opt.energy < best_opt.energy:
+            best_opt = opt
+            
+    return best_opt
                         
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
     new_rdm1 = np.dot(np.dot(TransformationMatrix.transpose(), rdm1),TransformationMatrix)

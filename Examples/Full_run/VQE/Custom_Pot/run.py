@@ -15,34 +15,20 @@ import MadPy as mad
 
 
 start_time = time.time()
-distance = 2.5 # Distance between the two hydrogen atoms in Bohr 
 iteration_energies = [] #Stores the energies at the beginning of each iteration step after the VQE
 all_occ_number = [] #Stores the orbital occupations at the beginning of each iteration step after the VQE
-iterations = 6
-molecule_name = "h2"
+
+iterations = 6 #Iterations of the VQE and Orbital-Optimization algorithm
+
+#Parameters for the PNO and Orbital-Optimization calculations
 box_size = 50.0 # the system is in a volume of dimensions (box_size*2)^3
 wavelet_order = 7 #Default parameter of Orbital-generation, do not change without changing in Orbital-generation!!!
 madness_thresh = 0.0001
 optimization_thresh = 0.001
 NO_occupation_thresh = 0.001
 
-def get_best_initial_values(mol):
-    tries = 20
-    U = mol.make_ansatz(name="HCB-UpCCGD")
-    best_opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
-    opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True)
-    if opt.energy < best_opt.energy:
-        best_opt = opt
-    
-    for _ in range(tries):
-        #opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
-        initial_guess = np.eye(mol.n_orbitals) + np.random.normal(scale=1.0, loc=0.0, size=mol.n_orbitals**2).reshape(mol.n_orbitals, mol.n_orbitals)
-        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=initial_guess)
-        if opt.energy < best_opt.energy:
-            best_opt = opt
-            
-    return best_opt
-
+molecule_name = "h2"
+distance = 2.5 # Distance between the two hydrogen atoms in Bohr 
 distance = distance/2
 geometry_bohr = '''
 H 0.0 0.0 ''' + distance.__str__() + '''
@@ -97,7 +83,7 @@ for it in range(iterations):
     #VQE
     U = mol.make_ansatz(name="HCB-UpCCGD")
     if it == 0:
-        opt = get_best_initial_values(mol)
+        opt = OrbOpt_helper.get_best_initial_values(mol)
     else:
         opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=opt.mo_coeff)
     
