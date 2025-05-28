@@ -65,7 +65,7 @@ RUN cd /opt && \
 
 RUN conda install -y python=3.11 && \
     pip install pyscf && \
-    pip install git+https://github.com/tequilahub/tequila.git@pr-no-orient && \
+    pip install tequila-basic && \
     pip install qulacs && \
     pip install block2 && \
     python -m pip install nanobind
