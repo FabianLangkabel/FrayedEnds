@@ -4,6 +4,31 @@
 - The included devcontainer automatically installs all necessary system packages, madness, conda and all necessary python packages to compile the code and run it in combination with Tequila(VQE) or Block2(DMRG).
 - Information about development containers and their installation in combination with VSCode can be found at: [https://code.visualstudio.com/docs/devcontainers/containers](https://code.visualstudio.com/docs/devcontainers/containers).
 
+## Installation
+Two steps: 1. Install madness, 2. Install the package
+
+## Step 1: install madness
+```bash
+MADNESS_DIR=realpath madness
+git clone https://github.com/m-a-d-n-e-s-s/madness.git madness_source
+mkdir madness_build
+cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
+make -C madness_build -j8
+cmake --build madness_build/ --target install -j8
+```
+
+## Step 2: install the interface 
+```bash
+pip install pyscf
+pip install tequila-basic
+pip install qulacs
+pip install block2
+python -m pip install nanobind
+pip install -e .
+```
+
+# Old Instructions
+
 ## Installation / Compilation
 This repository implements the OrbitalOptimization Code described in [this paper](https://arxiv.org/pdf/2410.19116) and the theory section. The orbitals are optimized using [MADNESS](https://github.com/m-a-d-n-e-s-s/madness) and the variational quantum eigensolver (VQE) part is handled by [tequila](https://github.com/tequilahub/tequila) with a [qulacs](https://github.com/qulacs/qulacs) backend. The functions which create initial guess orbitals and optimize them are written in C++ and exposed in Python using [nanobind](https://github.com/wjakob/nanobind).
 
