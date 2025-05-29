@@ -19,12 +19,7 @@ cmake --build madness_build/ --target install -j8
 
 ## Step 2: install the interface 
 ```bash
-pip install pyscf
-pip install tequila-basic
-pip install qulacs
-pip install block2
-python -m pip install nanobind
-pip install -e .
+MADNESS_DIR=$MADNESS_DIR pip install -e .
 ```
 
 # Old Instructions

@@ -14,6 +14,9 @@ authors = [
 classifiers = [
     "License :: ???",
 ]
+dependencies = [
+    "numpy", "pyscf", "qulacs", "tequila-basic", "block2", "nanobind"
+]
 
 [project.urls]
 Homepage = "https://github.com/..."
