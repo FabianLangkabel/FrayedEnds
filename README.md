@@ -102,7 +102,7 @@ To start the VQE a molecule “mol” is initialized using tq.Molecule. tq.Molec
 
 In the first iteration step, the function get_best_initial_values is used to get an initial guess for the VQE, afterwards the values of the previous iteration are used. The results of the VQE are the one and two body reduced density matrizes rdm1 and rdm2. 
 
-**Second: Orbital Optimimzation**
+**Second: Orbital Optimization**
 The orbital optimization process is handled by the Optimization class. After initializing the class with the standard MADNESS parameters box_size, wavelet_order and madness_thresh, as well as setting some parameters the orbitals (all_orbs) and the rdms are set. With this input the orbital optimization algorithm is executed. The results of the algorithm are new orbitals, new tensors h and g and a (potentially) different nuclear repulsion c. A line plot along the z-axis of the orbitals is saved to orbital_*.dat files using the Optimization.plot() function. 
 
 With these results the algorithm is started again, until all iterations are done. 
