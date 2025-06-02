@@ -6,6 +6,7 @@ from pathlib import Path
 import glob
 from tequila.quantumchemistry import ParametersQC
 import tequila as tq
+
 def get_best_initial_values(mol):
     tries = 20
     U = mol.make_ansatz(name="HCB-UpCCGD")
