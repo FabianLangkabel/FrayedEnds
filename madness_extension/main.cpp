@@ -9,7 +9,7 @@
 namespace nb = nanobind;
 
 
-NB_MODULE(_madpy_impl, m) {
+NB_MODULE(MadPy, m) {
     nb::class_<real_function_3d>(m,"real_function_3d")
         .def(nb::init<>());
 
