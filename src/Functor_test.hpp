@@ -7,27 +7,28 @@
 using namespace madness;
 namespace nb = nanobind;
 
-class Functor: public FunctionFunctorInterface<double, 1> {
+//helper class to create a functor from a Python function
+class PyFunctor: public FunctionFunctorInterface<double, 3> {
     public:
-        std::function<double(double)> f; 
+        std::function<double(double, double, double)> f; 
 
-        Functor(std::function<double(double)> f): f(f) {}
+        PyFunctor(std::function<double(double, double, double)> pyfunc): f(pyfunc) {}
 
-        double operator()(const Vector<double,1> &r) const override {
-            return f(r[0]);
+        double operator()(const Vector<double,3> &r) const override {
+            return f(r[0],r[1],r[2]);
         }
 };
 
-class CreateFunc{
+class PyFuncFactory{
     public:
         World* world;
-        Function<double,1> f1;
+        Function<double,3> MRA_func;
 
-        CreateFunc(double L, long k, double thresh, std::function<double(double)> f) {
+        PyFuncFactory(double L, long k, double thresh, std::function<double(double, double, double)> pyfunc) {
             int arg = 0;
             char **a = new char*[0]();
 
-            world = &initialize(arg, a, 1);
+            world = &initialize(arg, a, 0);
             startup(*world,arg,a);
             delete[] a;
             
@@ -40,47 +41,24 @@ class CreateFunc{
 
             std::cout.precision(6);
             std::cout << "Creating function with functor" << std::endl;
-            Functor functor(f);
+            PyFunctor functor(pyfunc);
             std::cout << "Functor created" << std::endl;
-            f1 = FunctionFactory<double,1>(*world).functor(functor);
+            MRA_func = FunctionFactory<double,3>(*world).functor(functor);
             std::cout << "Function created" << std::endl;
         }
-        ~CreateFunc(){
-            f1.clear();
+        ~PyFuncFactory(){
+            MRA_func.clear();
             std::cout << "Finalize madness env" << std::endl;
             world->gop.fence();
             finalize();
         }
+        SavedFct GetMRAFunction() {
+            return SavedFct(MRA_func);
+        }
 };
 
-double f(double x) {
-    return std::sin(x);
-}
-std::function<double(double)> return_f(){
-    return f;
-}
 
 
 
-double call_python_function(std::function<double(double)> python_func, double x) {
-    // Call the Python function
-    return python_func(x);
-}
 
-
-
-/*
-class CreateFunct: public MadnessProcess{
-    CreateFunct(double L, long k, double thresh): MadnessProcess(L,k,thresh) {
-        std::cout.precision(6);
-        Function<double,1> f1 = FunctionFactory<double,1>(*world).functor(functor).special_level(initial_level).special_points({Vector<double,1>(-L), Vector<double,1>(L)}).truncate_mode(truncate_mode).refine(refine);
-        SavedFct sf(f1);
-        write_binary_file(sf,"saved_fct");
-    }
-}
-*/
-
-double test_function(Functor F, const double x) {
-    return F(Vector<double,1>(x));
-}
 

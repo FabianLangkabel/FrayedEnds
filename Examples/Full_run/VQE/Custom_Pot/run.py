@@ -57,7 +57,7 @@ del red
 OrbOpt_helper.PNO_cleanup()
 
 peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]] #locations of the peaks
-sharpness_list=[5.0,5.0] #sharpness of the peaks 
+sharpness_list=[100.0,100.0] #sharpness of the peaks 
 Q=2
 PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
 custom_pot=PotMaker.CreatePotential()
