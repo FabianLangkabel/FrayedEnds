@@ -70,15 +70,7 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<RedirectOutput>(m, "RedirectOutput")
         .def(nb::init<const std::string &>());
     
-    nb::class_<Functor>(m, "Functor")
-        .def(nb::init<std::function<double(double)> &>());
-
-    m.def("test_function", &test_function);
-
-    m.def("return_f", &return_f, nb::rv_policy::reference_internal);
-
-    m.def("call_python_function", &call_python_function);
-
-    nb::class_<CreateFunc>(m, "CreateFunc")
-        .def(nb::init<const double &, const long &, const double &, std::function<double(double)> &>());
+    nb::class_<PyFuncFactory>(m, "PyFuncFactory")
+        .def(nb::init<const double &, const long &, const double &, std::function<double(double, double, double)> &>())
+        .def("GetMRAFunction", &PyFuncFactory::GetMRAFunction);
 }
