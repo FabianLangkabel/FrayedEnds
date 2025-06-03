@@ -12,7 +12,7 @@ Eigensolver3D::~Eigensolver3D()
 
 // Function to solve the eigenvalue problem for the given potential
 void solve(SavedFct input_V, int num_levels, int max_iter) {
-    V = loadfct(input_V);
+    Function<double, 3> V = loadfct(input_V);
     // Create the guess generator
     GuessGenerator<double, 3> guess_generator(world);              // Guess generator for all potentials
     // Create the guess functions
@@ -44,7 +44,7 @@ void solve(SavedFct input_V, int num_levels, int max_iter) {
 
 // Function to solve the eigenvalue problem for the given potential with given guesses
 std::vector<Function<double, NDIM>> solve_with_input_guesses(SavedFct input_V, const std::vector<SavedFct>& input_guesses, int num_levels, int max_iter) {
-    V = loadfct(input_V);
+    Function<double, 3> V = loadfct(input_V);
     std::vector<Function<double, 3>> guesses;
 
     for (const auto& guess : input_guesses) {
