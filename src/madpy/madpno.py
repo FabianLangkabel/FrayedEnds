@@ -1,20 +1,28 @@
 from ._madpy_impl import PNOInterface
-from ._madpy_impl import RedirectOutput
-from .parameters import MadnessParameters, redirect_output
+from .parameters import redirect_output
+from .baseclass import MadPyBase
 
 import os
 
-class MadPNO:
+class MadPNO(MadPyBase):
 
-    madness_parameters: MadnessParameters = None
     _orbitals = None
     _h = None # one-body tensor
     _g = None # two-body tensor
     _c = 0.0 # constant term
 
-    frozen_occupied_orbitals = []
-    frozen_virtual_orbitals = []
-    active_orbitals = []
+    def __init__(self, geometry, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # check if geometry is given as a file
+        # if not write the file
+        if not os.path.exists(geometry):
+            self.create_molecule_file(geometry_bohr=geometry)
+            geometry="molecule"
+
+        pno_input_string = self.parameter_string(molecule_file=geometry, *args, **kwargs)
+        print(pno_input_string)
+        self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh)
 
 
     def get_orbitals(self, *args, **kwargs):
@@ -31,23 +39,11 @@ class MadPNO:
             self.compute_integrals(*args, **kwargs)
             return self.get_integrals(*args, **kwargs)
 
-    def __init__(self, geometry, parameters=None, *args, **kwargs):
-        if parameters is None:
-            parameters = MadnessParameters()
-            for k,v in kwargs.items():
-                if k in parameters.__dict__:
-                    parameters[k] = v
-        self.madness_parameters=parameters
+    def get_nuclear_potential(self, *args, **kwargs):
+        return self.impl.get_nuclear_potential()
 
-        # check if geometry is given as a file
-        # if not write the file
-        if not os.path.exists(geometry):
-            self.create_molecule_file(geometry_bohr=geometry)
-            geometry="molecule"
-
-        pno_input_string = self.parameter_string(molecule_file=geometry)
-        print(pno_input_string)
-        self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh)
+    def get_nuclear_repulsion(self, *args, **kwargs):
+        return self.impl.GetNuclearRepulsion()
 
     def __call__(self, *args, **kwargs):
         self._orbitals = self.compute_pnos()
@@ -57,7 +53,7 @@ class MadPNO:
     @redirect_output("madpno.log")
     def compute_pnos(self, *args, **kwargs):
         self.impl.DeterminePNOsAndIntegrals()
-        self._orbitals = self.impl.GetPNOs(len(self.frozen_occupied_orbitals), len(self.active_orbitals) , len(self.frozen_virtual_orbitals))  # input: dimensions of (frozen_occ, active, forzen_virt) space
+        self._orbitals = self.impl.GetPNOs(0,2,0)  # input: dimensions of (frozen_occ, active, forzen_virt) space
         return self._orbitals
 
     @redirect_output("madpno.log")
@@ -102,6 +98,7 @@ class MadPNO:
         for k, v in data["pno"].items():
             input_str += "{}={}; ".format(k, v)
         input_str = input_str[:-2] + "\""
+        input_str += " --pnoint=\""
         for k, v in data["pnoint"].items():
             input_str += "{}={}; ".format(k, v)
         input_str = input_str[:-2] + "\""
