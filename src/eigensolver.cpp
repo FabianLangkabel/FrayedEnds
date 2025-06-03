@@ -2,9 +2,9 @@
 
 using namespace madness;
 
-Eigensolver::Eigensolver(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
+Eigensolver3D::Eigensolver3D(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
 
-Eigensolver::~Eigensolver()
+Eigensolver3D::~Eigensolver3D()
 {
     V.clear();
     orbitals.clear();
@@ -43,7 +43,7 @@ void solve(SavedFct input_V, int num_levels, int max_iter) {
 }
 
 // Function to solve the eigenvalue problem for the given potential with given guesses
-std::vector<Function<double, NDIM>> solve(SavedFct input_V, const std::vector<SavedFct>& input_guesses, int num_levels, int max_iter) {
+std::vector<Function<double, NDIM>> solve_with_input_guesses(SavedFct input_V, const std::vector<SavedFct>& input_guesses, int num_levels, int max_iter) {
     V = loadfct(input_V);
     std::vector<Function<double, 3>> guesses;
 

@@ -15,7 +15,6 @@
 #include <ostream>
 #include <vector>
 #include "guesses.h"
-#include "plot.h"
 #include "MadnessProcess.hpp"
 #include "functionsaver.hpp"
 
@@ -23,15 +22,15 @@ using namespace madness;
 
 class Eigensolver3D: public MadnessProcess {
     public:     
-        Eigensolver(double L, long k, double thresh);
+        Eigensolver3D(double L, long k, double thresh);
 
-        ~Eigensolver();
+        ~Eigensolver3D();
 
         // Function to solve the eigenvalue problem for the given potential
         std::vector<Function<double, 3>> solve(Function<double, 3>& V, int num_levels, int max_iter);
 
         // Function to solve the eigenvalue problem for the given potential with given guesses
-        std::vector<Function<double, 3>> solve(Function<double, 3>& V, const std::vector<Function<double, 3>>& guesses, int num_levels, int max_iter);
+        std::vector<Function<double, 3>> solve_with_input_guesses(Function<double, 3>& V, const std::vector<Function<double, 3>>& guesses, int num_levels, int max_iter);
 
         // Function to calculate the energy
         double energy(World& world, const Function<double, 3>& phi, const Function<double, 3>& V);
