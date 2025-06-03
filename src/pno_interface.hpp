@@ -220,15 +220,19 @@ class PNOInterface: public MadnessProcess{
 		{
 			
 			auto [argc, charArray] = stringToCharPointerArray(argv);
-			
 			parser = commandlineparser(argc,charArray);
 			freeCharPointerArray(charArray,argc);
 		}
 		~PNOInterface()
 		{	
 			basis.clear();
+			Vnuc.clear();
 		}
-		
+
+		SavedFct get_nuclear_potential(){
+			return SavedFct(Vnuc);
+		}
+
 		void DeterminePNOsAndIntegrals() 
 		{	
 			std::cout.precision(6);
@@ -257,6 +261,10 @@ class PNOInterface: public MadnessProcess{
 			// assert that no nemo corrfactor is actually used (not yet supported in PNO-MP2)
 			if(nemo.ncf->type() != madness::NuclearCorrelationFactor::None){
 				MADNESS_EXCEPTION("Nuclear Correlation Factors not yet supported in MRA-PNOs. Add ncf (none,1.0) to your dft input",1);
+			}
+			{
+			Vnuc = nemo.ncf -> U2();
+			nuclear_repulsion = nemo.get_calc()->molecule.nuclear_repulsion_energy();
 			}
 	
 			// Compute MRA-PNO-MP2-F12
@@ -793,10 +801,11 @@ class PNOInterface: public MadnessProcess{
 			std::cout << FunctionDefaults<3>::get_cell_width()[1] << std::endl;
 			std::cout << FunctionDefaults<3>::get_cell_width()[2] << std::endl;
 		}
+
 		std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const
 		{	
 			if (core_dim+as_dim+froz_virt_dim != basis.size()){
-				std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << std::endl;
+				std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << core_dim << " "<< as_dim << " " << froz_virt_dim << " " << basis.size() << std::endl;
 			}
 			std::vector<SavedFct> pnos;
 			for (auto i=0; i<basis.size(); ++i){
@@ -839,6 +848,7 @@ class PNOInterface: public MadnessProcess{
 		madness::Tensor<double> f;
 		madness::Tensor<double> h;
 		double nuclear_repulsion;
+		real_function_3d Vnuc;
 };
 
 
