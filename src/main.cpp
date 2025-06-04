@@ -4,7 +4,7 @@
 #include "optimization.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
-#include "Functor_test.hpp"
+#include "PyFuncFactory.hpp"
 
 namespace nb = nanobind;
 
@@ -20,7 +20,8 @@ NB_MODULE(_madpy_impl, m) {
 
     nb::class_<Optimization>(m, "Optimization")
         .def(nb::init<const double &, const int &, const double &>())
-        .def("plot", &Optimization::plot, nb::arg("filename"), nb::arg("f"), nb::arg("datapoints") = 2001)
+        .def("plot", &Optimization::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
+        .def("plane_plot", &Optimization::plane_plot, nb::arg("filename"), nb::arg("f"), nb::arg("plane") = "yz", nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}))
         .def("loadfct", &Optimization::loadfct)
         .def("loadfct_from_file", &Optimization::loadfct_from_file)
         .def("GiveInitialOrbitals", &Optimization::GiveInitialOrbitals)
@@ -64,7 +65,7 @@ NB_MODULE(_madpy_impl, m) {
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<const double &, const long &, const double &, const std::vector<double> &, const double &, const std::vector<std::vector<double> > &>())
-        .def("plot", &CoulombPotentialFromChargeDensity::plot, nb::arg("filename"), nb::arg("f"), nb::arg("datapoints") = 2001)
+        .def("plot", &CoulombPotentialFromChargeDensity::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
         .def("CreatePotential", &CoulombPotentialFromChargeDensity::CreatePotential);
 
     nb::class_<RedirectOutput>(m, "RedirectOutput")
