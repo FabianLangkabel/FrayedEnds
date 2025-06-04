@@ -68,12 +68,29 @@ class MadnessProcess {
             return f1;
         }
 
-        void plot(std::string filename, SavedFct f, int datapoints=2001){
+        void plot(std::string filename, SavedFct f, int axis=2, int datapoints=2001){
             Vector<double,3> lo(0.0), hi(0.0);
             double L = FunctionDefaults<3>::get_cell_width()[0]/2;
-            lo[2] = -L; hi[2] = L;
+            lo[axis] = -L; hi[axis] = L;
             plot_line(filename.c_str(),datapoints,lo,hi,loadfct(f));
         }
+
+        void plane_plot(std::string filename, SavedFct f, std::string plane="yz", double zoom=1.0, int datapoints=151, std::vector<double> origin={0.0, 0.0, 0.0}) {
+            PlotParameters params;
+            if (plane=="xy" || plane=="yx") {
+                params.set_plane({"x1","x2"});
+            } else if (plane=="yz" || plane=="zy") {
+                params.set_plane({"x2","x3"});
+            } else if (plane=="zx" || plane=="xz") {
+                params.set_plane({"x1","x3"});
+            } else {std::cout << "Plane to plot not recognized.";}
+            params.set_zoom(zoom);
+            params.set_origin(origin);
+
+            params.set_npoints(datapoints);
+            std::vector<Function<double,3> > MRAf={loadfct(f)};
+            plot_plane<3>(*world,MRAf,filename,params);
+        }   
 };
 
 

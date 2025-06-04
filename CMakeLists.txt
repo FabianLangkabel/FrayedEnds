@@ -57,7 +57,7 @@ nanobind_add_module(
   src/pno_interface.hpp
   src/sum_of_gaussians.hpp
   src/MadnessProcess.hpp
-  src/Functor_test.hpp
+  src/PyFuncFactory.hpp
 )
 
 # Install directive for scikit-build-core
