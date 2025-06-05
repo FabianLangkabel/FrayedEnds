@@ -752,21 +752,6 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
         std::cout << "Update Orbital " << orb_idx << " took " << duration.count() << " seconds" << std::endl;
 
         active_alpha_beta_orbs[orb_idx] = orbitals[orb_idx];
-
-        if(i > 1) { //control here which orbitals are going be projected out
-            std::cout << "orbitals below orbital" << i << "are being projected out" <<std::endl;
-            std::vector<real_function_3d> orbs_for_projection;
-        
-            for (int p = 0; p < i; p++) {
-                orbs_for_projection.push_back(active_alpha_beta_orbs[p]);
-            }
-        
-            auto Q_project = QProjector(*world, orbs_for_projection);
-            for (int i = 0; i < spin_orbs_indices_for_update.size(); i++) {
-                active_alpha_beta_orbs[i] = Q_project(active_alpha_beta_orbs[i]);
-            }
-        }  
-        
         
         std::cout << "Orthonormalize orbitals" << std::endl;
 
@@ -782,6 +767,29 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
             }
         }
 
+        if(i > 1) { //control here which orbitals are going be projected out
+            std::cout << "orbitals below orbital 2 are being projected out" <<std::endl;
+            std::vector<real_function_3d> alpha_orbs_for_projection;
+            std::vector<real_function_3d> beta_orbs_for_projection;
+        
+            for (int p = 0; p < 1; p++) //also specify here the orbitals to be projected out
+            {
+                alpha_orbs_for_projection.push_back(alpha_orbs[p]);
+                beta_orbs_for_projection.push_back(beta_orbs[p]);
+            }
+        
+            auto Q_project_alpha = QProjector(*world, alpha_orbs_for_projection);
+            auto Q_project_beta = QProjector(*world, beta_orbs_for_projection);
+            
+            for (int q = 0; q < num_active_alpha; q++) {
+                alpha_orbs[q] = Q_project_alpha(alpha_orbs[q]);
+            }
+            for (int r = 0; r < num_active_beta; r++) {
+                beta_orbs[r] = Q_project_beta(beta_orbs[r]);
+            }
+        }  
+        
+        
         alpha_orbs = orthonormalize_symmetric(alpha_orbs);
         beta_orbs = orthonormalize_symmetric(beta_orbs);
 

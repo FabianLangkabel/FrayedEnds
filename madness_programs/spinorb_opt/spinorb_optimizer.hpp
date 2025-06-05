@@ -5,6 +5,7 @@
 #include <madness/mra/vmra.h>
 #include <madness/mra/operator.h>
 #include <madness/chem/oep.h>
+#include <madness/chem/projector.h>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <iostream>
