@@ -758,46 +758,27 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
         std::vector<real_function_3d> alpha_orbs;
         std::vector<real_function_3d> beta_orbs;
     
-        for(int i = 0; i < active_alpha_beta_orbs.size(); i++) {
-            if (i % 2 == 0){
-                alpha_orbs.push_back(active_alpha_beta_orbs[i]);
+        for(int a = 0; a < active_alpha_beta_orbs.size(); a++) {
+            if (a % 2 == 0){
+                alpha_orbs.push_back(active_alpha_beta_orbs[a]);
             }
-            if (i % 2 == 1) {
-                beta_orbs.push_back(active_alpha_beta_orbs[i]);
+            if (a % 2 == 1) {
+                beta_orbs.push_back(active_alpha_beta_orbs[a]);
             }
         }
 
-        if(i > 1) { //control here which orbitals are going be projected out
-            std::cout << "orbitals below orbital 2 are being projected out" <<std::endl;
-            std::vector<real_function_3d> alpha_orbs_for_projection;
-            std::vector<real_function_3d> beta_orbs_for_projection;
-        
-            for (int p = 0; p < 1; p++) //also specify here the orbitals to be projected out
-            {
-                alpha_orbs_for_projection.push_back(alpha_orbs[p]);
-                beta_orbs_for_projection.push_back(beta_orbs[p]);
-            }
-        
-            auto Q_project_alpha = QProjector(*world, alpha_orbs_for_projection);
-            auto Q_project_beta = QProjector(*world, beta_orbs_for_projection);
-            
-            for (int q = 0; q < num_active_alpha; q++) {
-                alpha_orbs[q] = Q_project_alpha(alpha_orbs[q]);
-            }
-            for (int r = 0; r < num_active_beta; r++) {
-                beta_orbs[r] = Q_project_beta(beta_orbs[r]);
-            }
-        }  
+        std::vector<real_function_3d> alpha_orbs_project = ProjectSpinorbitals(alpha_orbs);
+        std::vector<real_function_3d> beta_orbs_project = ProjectSpinorbitals(beta_orbs);
         
         
-        alpha_orbs = orthonormalize_symmetric(alpha_orbs);
-        beta_orbs = orthonormalize_symmetric(beta_orbs);
+        alpha_orbs_project = orthonormalize_symmetric(alpha_orbs_project);
+        beta_orbs_project = orthonormalize_symmetric(beta_orbs_project);
 
         for(int i = 0; i < alpha_orbs.size(); i++) {
-            alpha_orbs[i] = alpha_orbs[i].truncate(1e-5);
+            alpha_orbs[i] = alpha_orbs_project[i].truncate(1e-5);
         }
         for(int j = 0; j < beta_orbs.size(); j++) {
-            beta_orbs[j] = beta_orbs[j].truncate(1e-5);
+            beta_orbs[j] = beta_orbs_project[j].truncate(1e-5);
         }
 
         //Update all_orbitals
@@ -1099,6 +1080,26 @@ real_function_3d SpinorbOpt::CalculateSpinorbitalUpdate(int orb_idx)
 
     return r;
 
+}
+
+std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs)
+{
+    int dim_orbs = orbs.size();
+    
+    std::vector<real_function_3d> orb1_for_projection;
+    orb1_for_projection.push_back(orbs[0]);   
+    auto Q_project_1 = QProjector(*world, orb1_for_projection);
+      
+    for (int q = 1; q < dim_orbs; q++) {
+            orbs[q] = Q_project_1(orbs[q]);
+        }  
+    
+    std::vector<real_function_3d> orb2_for_projection;
+    orb2_for_projection.push_back(orbs[1]);   
+    auto Q_project_2 = QProjector(*world, orb2_for_projection);
+    orbs[2] = Q_project_2(orbs[2]);
+    
+    return orbs;
 }
 
 
