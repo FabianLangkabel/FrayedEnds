@@ -19,7 +19,7 @@ for iteration in range(2):
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
     del integrals
-
+    print("G:",G,"\nT:",T,"\nV:",V,"\nS:",S)
     mol = tq.Molecule(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=nuclear_repulsion)
     U = mol.make_ansatz(name="UpCCGD")
     H = mol.make_hamiltonian()

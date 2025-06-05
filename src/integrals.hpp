@@ -22,6 +22,11 @@ public:
     Integrals(double L, long k, double thresh);
     ~Integrals(){};
 
+    madness::Tensor<double> potential_integrals;
+    madness::Tensor<double> overlap_integrals;
+    madness::Tensor<double> kinetic_integrals;
+    madness::Tensor<double> two_body_integrals;
+
     nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_overlap_integrals(std::vector<SavedFct> all_orbs);
     nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_potential_integrals(std::vector<SavedFct> all_orbs, SavedFct potential);
     nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_kinetic_integrals(std::vector<SavedFct> all_orbs);

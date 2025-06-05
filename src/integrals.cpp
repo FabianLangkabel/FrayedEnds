@@ -13,16 +13,16 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_potential_integr
     real_function_3d V = loadfct(potential);
     for(SavedFct orb : all_orbs) orbitals.push_back(loadfct(orb));
     int as_dim = orbitals.size();
-    madness::Tensor<double> integrals= madness::matrix_inner(*world, orbitals, V*orbitals);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(integrals.ptr(), {orbitals.size(), orbitals.size()});
+    potential_integrals= madness::matrix_inner(*world, orbitals, V*orbitals);
+    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(potential_integrals.ptr(), {orbitals.size(), orbitals.size()});
     return numpy_array;
 }
 
 nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_overlap_integrals(std::vector<SavedFct> all_orbs){
     std::vector<real_function_3d> orbitals;
     for(SavedFct orb : all_orbs) orbitals.push_back(loadfct(orb));
-    madness::Tensor<double> integrals= madness::matrix_inner(*world, orbitals, orbitals);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(integrals.ptr(), {orbitals.size(), orbitals.size()});
+    overlap_integrals= madness::matrix_inner(*world, orbitals, orbitals);
+    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(overlap_integrals.ptr(), {orbitals.size(), orbitals.size()});
     return numpy_array;
 }
 nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integrals(std::vector<SavedFct> all_orbs){
@@ -30,7 +30,7 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integral
     for(SavedFct orb : all_orbs) orbitals.push_back(loadfct(orb));
     int as_dim = orbitals.size();
 
-    madness::Tensor<double> as_integrals_one_body(as_dim, as_dim);
+    kinetic_integrals = madness::Tensor<double>(as_dim, as_dim);
     for(int k = 0; k < as_dim; k++)
     {
         for(int l = 0; l < as_dim; l++)
@@ -40,12 +40,19 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integral
                 real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
                 real_function_3d d_orb_k = D(orbitals[k]);
                 real_function_3d d_orb_l = D(orbitals[l]);
-                as_integrals_one_body(k, l) += 0.5 * inner(d_orb_k,d_orb_l);
+                kinetic_integrals(k, l) += 0.5 * inner(d_orb_k,d_orb_l);
             }
         }
     }
-
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(as_integrals_one_body.ptr(), {orbitals.size(), orbitals.size()});
+    std::cout<<std::endl << "Kinetic integrals computed for " << as_dim << " orbitals." << std::endl;
+    for (int k = 0; k < as_dim; k++)
+    {
+        for(int l = 0; l < as_dim; l++)
+        {
+            std::cout << "Kinetic integral <" << k << "|" << l << "> = " << kinetic_integrals(k, l) << std::endl;
+        }
+    }
+    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(kinetic_integrals.ptr(), {orbitals.size(), orbitals.size()});
     return numpy_array;
 }
 
@@ -75,7 +82,7 @@ nb::ndarray<nb::numpy, double, nb::ndim<4> > Integrals::compute_two_body_integra
     coul_orbs_mn = truncate(coul_orbs_mn, truncation_tol);
 
     auto t3 = std::chrono::high_resolution_clock::now();
-    auto integrals = madness::Tensor<double>(as_dim, as_dim, as_dim, as_dim);
+    two_body_integrals = madness::Tensor<double>(as_dim, as_dim, as_dim, as_dim);
     madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
     std::vector<double> flat;
     for(int k = 0; k < as_dim; k++)
@@ -87,7 +94,7 @@ nb::ndarray<nb::numpy, double, nb::ndim<4> > Integrals::compute_two_body_integra
                 for(int n = 0; n < as_dim; n++)
                 {
                     auto tmp = Inner_prods(k*as_dim + l, m*as_dim + n);
-                    integrals(k, m, l, n) = tmp;
+                    two_body_integrals(k, m, l, n) = tmp;
                     flat.push_back(tmp);
                 }
             }
@@ -96,8 +103,8 @@ nb::ndarray<nb::numpy, double, nb::ndim<4> > Integrals::compute_two_body_integra
     auto t4 = std::chrono::high_resolution_clock::now();
     // todo: save timings from Fabian
 
-    nb::ndarray<nb::numpy, double, nb::ndim<4> > numpy_array(integrals.ptr(), {orbitals.size(), orbitals.size(), orbitals.size(), orbitals.size()});
+    nb::ndarray<nb::numpy, double, nb::ndim<4> > numpy_array(two_body_integrals.ptr(), {orbitals.size(), orbitals.size(), orbitals.size(), orbitals.size()});
     return numpy_array;
 }
-//*/
+
 
