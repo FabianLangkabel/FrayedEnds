@@ -207,7 +207,7 @@ int main(int argc, char** argv)
     opti->TransformToNObasis();
     opti->CalculateAllIntegrals();
     opti->CalculateEnergy();
-    //opti->CalculateLagrangeMultiplier();
+    opti->CalculateLagrangeMultiplier();
     
     
     std::cout << "---------------------------------------------------" << std::endl;
