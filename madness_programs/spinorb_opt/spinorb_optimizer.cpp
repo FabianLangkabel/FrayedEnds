@@ -700,7 +700,7 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 }
 
 
-void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
+/*void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh)
 // function for doing only one iteration to test if stuff works
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
@@ -866,9 +866,9 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
     //Check convergence
     //std::cout << "Highest error: " << highest_error << std::endl;
     
-}
+//}
 
-/*void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
+void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
 {
     int num_active_orbs = active_alpha_beta_orbs.size();
     //ignore frozen orbitals for now
@@ -878,7 +878,7 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
         frozen_orbs.push_back(all_orbitals[frozenIdx].function);
     }*/
     
-    /*std::vector<real_function_3d> orbitals;
+    std::vector<real_function_3d> orbitals;
     for (int i = 0; i < num_active_orbs; i++)
     {
         orbitals.push_back(active_alpha_beta_orbs[i]);
@@ -897,7 +897,7 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
        // auto start_orb_update_time = std::chrono::high_resolution_clock::now();
         highest_error = 0;
 
-        //Evauluate which orbitals are going to be updated
+        //Evaluate which orbitals are going to be updated
         std::vector<int> spin_orbs_indices_for_update;
         for (int idx = 0; idx < num_active_orbs; idx++) {
             if(abs(Alpha_Beta_Rdm_Matrix(idx, idx)) >= NO_occupation_thresh) {
@@ -928,12 +928,46 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
             orbitals[idx] = orbitals[idx] - active_spinorbital_update;
             orbitals[idx].truncate(1e-5);
 
+            active_alpha_beta_orbs[idx] = orbitals[idx];
+            
             auto end_orb_update_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
             std::cout << "Update Orbital " << idx << " took " << duration.count() << " seconds" << std::endl;
 
-            active_alpha_beta_orbs[idx] = 0.8 * active_alpha_beta_orbs[idx] + 0.2 * orbitals[idx];
-            
+            std::cout << "Orthonormalize orbitals" << std::endl;
+
+            std::vector<real_function_3d> alpha_orbs;
+            std::vector<real_function_3d> beta_orbs;
+    
+            for(int a = 0; a < active_alpha_beta_orbs.size(); a++) {
+                if (a % 2 == 0){
+                    alpha_orbs.push_back(active_alpha_beta_orbs[a]);
+                }
+                if (a % 2 == 1) {
+                    beta_orbs.push_back(active_alpha_beta_orbs[a]);
+                }
+            }
+
+            std::vector<real_function_3d> alpha_orbs_project = ProjectSpinorbitals(alpha_orbs);
+            std::vector<real_function_3d> beta_orbs_project = ProjectSpinorbitals(beta_orbs);
+        
+            alpha_orbs_project = orthonormalize_symmetric(alpha_orbs_project);
+            beta_orbs_project = orthonormalize_symmetric(beta_orbs_project);
+
+            //Update all_orbitals
+            int x = 0;
+            int y = 0;
+            for (int i = 0; i < num_active_orbs; i++){
+                if (i % 2 == 0){
+                    active_alpha_beta_orbs[i] = alpha_orbs_project[x].truncate(1e-5);
+                    x++;
+                }   
+                if (i % 2 == 1) {
+                    active_alpha_beta_orbs[i] = beta_orbs_project[y].truncate(1e-5);
+                    y++;
+                }
+            }
+
             std::cout << "Update Integrals" << std::endl;
             //Update integrals for new orbitals
             CalculateAllIntegrals();
@@ -1024,10 +1058,10 @@ void SpinorbOpt::OptimizeSpinorbitals_Test(double optimization_thresh, double NO
         if(highest_error < optimization_thresh){
             converged = true;
             std::cout << "Convergence has been reached :-)" << std::endl;
-        }
+        }*/
 
     }
-}*/
+}
 
 real_function_3d SpinorbOpt::CalculateSpinorbitalUpdate(int orb_idx)
 {
@@ -1082,23 +1116,21 @@ real_function_3d SpinorbOpt::CalculateSpinorbitalUpdate(int orb_idx)
 
 }
 
-std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs)
+std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
 {
     int dim_orbs = orbs.size();
     
-    std::vector<real_function_3d> orb1_for_projection;
-    orb1_for_projection.push_back(orbs[0]);   
-    auto Q_project_1 = QProjector(*world, orb1_for_projection);
-      
-    for (int q = 1; q < dim_orbs; q++) {
-            orbs[q] = Q_project_1(orbs[q]);
-        }  
-    
-    std::vector<real_function_3d> orb2_for_projection;
-    orb2_for_projection.push_back(orbs[1]);   
-    auto Q_project_2 = QProjector(*world, orb2_for_projection);
-    orbs[2] = Q_project_2(orbs[2]);
-    
+    for (int i = 0; i < dim_orbs-1; i++) {
+        std::vector<real_function_3d>  orb_for_projection;
+        orb_for_projection.push_back(orbs[i]);
+        auto Q_project = QProjector(*world, orb_for_projection);
+        
+        for (int q = i+1; q < dim_orbs; q++) {
+            orbs[q] = Q_project(orbs[q]);
+        }
+        orb_for_projection.clear();
+    }
+  
     return orbs;
 }
 
