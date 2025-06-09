@@ -10,8 +10,7 @@ from pyscf import fci
 import time
 import OrbOpt_helper
 import sys
-sys.path.append('/Users/timo/workspace/MRA_nanobind/MRA-OrbitalOptimization/build/madness_extension') #Adjust this path to your installation of MRA-OrbitalOptimization
-import MadPy as mad
+import madpy as mad
 
 
 start_time = time.time()
