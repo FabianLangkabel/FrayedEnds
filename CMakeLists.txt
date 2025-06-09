@@ -58,6 +58,7 @@ nanobind_add_module(
   src/sum_of_gaussians.hpp
   src/MadnessProcess.hpp
   src/PyFuncFactory.hpp
+  src/eigensolver.cpp
 )
 
 # Install directive for scikit-build-core
