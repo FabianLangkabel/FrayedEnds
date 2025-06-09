@@ -28,4 +28,5 @@ del PotMaker
 
 print("Custom potential created and plotted")
 eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
-eigensolver.solve(custom_pot, 3, 10)
+print("Eigensolver created")
+eigensolver.solve(custom_pot, 4, 10)
