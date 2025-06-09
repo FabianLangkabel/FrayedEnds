@@ -17,7 +17,7 @@ void Eigensolver3D::solve(SavedFct input_V, int num_levels, int max_iter) {
     Function<double, 3> V = loadfct(input_V);
     std::cout << "Potential loaded" << std::endl;
     // Create the guess generator
-    GuessGenerator<double, 3> guess_generator(L, k, thresh);              // Guess generator for all potentials
+    GuessGenerator<double, 3> guess_generator(*world);              // Guess generator for all potentials
     // Create the guess functions
     std::vector<Function<double,3>> guesses = guess_generator.create_guesses(num_levels, V);
 
