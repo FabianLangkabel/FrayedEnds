@@ -13,7 +13,7 @@ Eigensolver3D::~Eigensolver3D()
 }
 
 // Function to solve the eigenvalue problem for the given potential
-void solve(SavedFct input_V, int num_levels, int max_iter) {
+void Eigensolver3D::solve(SavedFct input_V, int num_levels, int max_iter) {
     Function<double, 3> V = loadfct(input_V);
     // Create the guess generator
     GuessGenerator<double, 3> guess_generator(L, k, thresh);              // Guess generator for all potentials
