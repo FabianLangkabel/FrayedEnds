@@ -19,7 +19,7 @@
 using namespace madness;
 
 template<typename T, std::size_t NDIM>
-class GuessGenerator : public MadnessProcess {
+class GuessGenerator{
     public:
         class GuessFunctor : public FunctionFunctorInterface<T, NDIM> {
         public:
@@ -41,11 +41,8 @@ class GuessGenerator : public MadnessProcess {
             }
         };
 
-        GuessGenerator(double L, long k, double thresh) : MadnessProcess(L, k, thresh) {
-        std::cout.precision(6);
+        GuessGenerator(World& world) : world(&world) {
         }
-
-        ~GuessGenerator() = default;
 
         // Function to create guesses
         std::vector<Function<T, NDIM>> create_guesses(int num, Function<T, NDIM>& V) {
@@ -130,5 +127,6 @@ class GuessGenerator : public MadnessProcess {
             return guesses; // return list of guess functions
         }
 
-        // private:
+        private:
+            World* world;  // pointer to the world
 };
