@@ -60,6 +60,7 @@ class GuessGenerator : public MadnessProcess {
                 std::cout << "Order of the first monomial: " << orders[0] << std::endl;
                 while (true) {
                     GuessFunctor guessfunction(orders, V);
+                    std::cout << "Guess function created with orders: " << orders << std::endl;
                     Function<T, NDIM> guess_function = FunctionFactory<T, NDIM>(*world).functor(guessfunction);  // create guess function
                     guesses.push_back(guess_function); // add guess function to list
 
