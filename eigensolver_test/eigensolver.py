@@ -30,3 +30,5 @@ print("Custom potential created and plotted")
 eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
 print("Eigensolver created")
 eigensolver.solve(custom_pot, 4, 10)
+
+del eigensolver
