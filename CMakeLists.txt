@@ -56,6 +56,7 @@ nanobind_add_module(
   src/functionsaver.hpp
   src/pno_interface.hpp
   src/sum_of_gaussians.hpp
+  src/integrals.cpp
   src/MadnessProcess.hpp
   src/PyFuncFactory.hpp
 )
