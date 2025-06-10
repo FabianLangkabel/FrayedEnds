@@ -5,6 +5,7 @@
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
 #include "PyFuncFactory.hpp"
+#include "integrals.hpp"
 
 namespace nb = nanobind;
 
@@ -17,6 +18,14 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<const Function<double,3> &>())
         .def_rw("info", &SavedFct::info)
         .def_rw("type", &SavedFct::type);
+
+    nb::class_<Integrals>(m, "Integrals")
+        .def(nb::init<const double &, const int &, const double &>())
+        .def("hello", &Integrals::hello)
+        .def("compute_overlap_integrals", &Integrals::compute_overlap_integrals, nb::arg("all_orbs"))
+        .def("compute_potential_integrals", &Integrals::compute_potential_integrals, nb::arg("all_orbs"), nb::arg("potential"))
+        .def("compute_kinetic_integrals", &Integrals::compute_kinetic_integrals, nb::arg("all_orbs"))
+        .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"));
 
     nb::class_<Optimization>(m, "Optimization")
         .def(nb::init<const double &, const int &, const double &>())
