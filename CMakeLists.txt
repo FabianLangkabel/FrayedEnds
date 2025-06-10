@@ -59,6 +59,7 @@ nanobind_add_module(
   src/integrals.cpp
   src/MadnessProcess.hpp
   src/PyFuncFactory.hpp
+  src/eigensolver.cpp
 )
 
 # Install directive for scikit-build-core
