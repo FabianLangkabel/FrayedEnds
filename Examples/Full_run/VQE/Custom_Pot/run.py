@@ -22,7 +22,7 @@ iterations = 6 #Iterations of the VQE and Orbital-Optimization algorithm
 #Parameters for the PNO and Orbital-Optimization calculations
 box_size = 50.0 # the system is in a volume of dimensions (box_size*2)^3
 wavelet_order = 7 #Default parameter of Orbital-generation, do not change without changing in Orbital-generation!!!
-madness_thresh = 0.0001
+madness_thresh = 0.00001
 optimization_thresh = 0.001
 NO_occupation_thresh = 0.001
 
@@ -40,6 +40,51 @@ frozen_occupied_orbitals = []
 active_orbitals = [0,1]
 as_dim=len(active_orbitals)
 
+'''
+#Custom potential is created here
+class ParamCoulomb: #class so that the function can be parameterized
+    epsilon = 0.0,
+    def __init__(self,epsilon):
+        self.epsilon=epsilon
+    def pot(self, x, y, z): #actual potential function
+        v=np.array([x, y, z])
+        q0=np.array([0.0,0.0,distance])
+        q1=np.array([0.0,0.0,-distance])
+        return -1/np.sqrt((v-q0)@(v-q0)+self.epsilon**2)-1/np.sqrt((v-q1)@(v-q1)+self.epsilon**2)
+
+Coul=ParamCoulomb(0.0)
+factory=mad.PyFuncFactory(box_size, wavelet_order, madness_thresh,Coul.pot)
+mra_pot=factory.GetMRAFunction()
+del factory
+'''
+peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]] #locations of the peaks
+sharpness_list=[10000.0,10000.0] #sharpness of the peaks 
+Q=2
+PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
+mra_pot=PotMaker.CreatePotential()
+PotMaker.plot("custom_potential.dat", mra_pot) #Plot the custom potential
+del PotMaker
+
+opti=mad.Optimization(box_size, wavelet_order, madness_thresh)
+opti.plot("custom_pot.dat",mra_pot)
+opti.plane_plot(".dat",mra_pot,plane="xz",zoom=5.0,datapoints=81,origin=[0.0,0.0,0.0])
+del opti
+
+eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
+eigensolver.solve(mra_pot, len(all_orbitals), 25)
+all_orbs=eigensolver.GetOrbitals(len(frozen_occupied_orbitals),as_dim,0)
+del eigensolver
+
+integrals = mad.Integrals(box_size, wavelet_order, madness_thresh)
+G = integrals.compute_two_body_integrals(all_orbs)
+T = integrals.compute_kinetic_integrals(all_orbs)
+V = integrals.compute_potential_integrals(all_orbs, mra_pot)
+S = integrals.compute_overlap_integrals(all_orbs)
+del integrals
+
+c=0.0
+
+'''
 #PNO calculation to get an initial guess for the molecular orbitals
 print("Starting PNO calculation")
 red=mad.RedirectOutput("PNO.log")
@@ -54,14 +99,8 @@ c=pno.GetNuclearRepulsion()
 del pno
 del red
 OrbOpt_helper.PNO_cleanup()
+'''
 
-peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]] #locations of the peaks
-sharpness_list=[100.0,100.0] #sharpness of the peaks 
-Q=2
-PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
-custom_pot=PotMaker.CreatePotential()
-PotMaker.plot("custom_potential.dat", custom_pot) #Plot the custom potential
-del PotMaker
 
 print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
@@ -69,7 +108,7 @@ for it in range(iterations):
     print("Iteration: " + it.__str__())
 
     if it == 0:
-        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
+        mol = tq.Molecule(geometry_angstrom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c, name=molecule_name)
     else:
         #todo: transfer nb::ndarray objects directly
         h1=np.array(h1_elements).reshape(as_dim,as_dim)
@@ -114,7 +153,7 @@ for it in range(iterations):
     opti.BSH_eps = 1e-6
 
     print("Read rdms, create initial guess and calculate initial energy")
-    opti.GiveCustomPotential(custom_pot)
+    opti.GiveCustomPotential(mra_pot)
     opti.GiveInitialOrbitals(all_orbs)
     opti.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)
     opti.CalculateAllIntegrals()

@@ -214,3 +214,22 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
     print("Final energy without shift: ", E);
     return phi;
 }
+
+std::vector<SavedFct> Eigensolver3D::GetOrbitals(int core_dim, int as_dim, int froz_virt_dim) const {
+    if (core_dim+as_dim+froz_virt_dim != orbitals.size()){
+        std::cerr << "Core dimension (" << core_dim <<"), active space dimension (" << as_dim << ") and frozen virtual dimension (" << froz_virt_dim << ") do not add up to the number of calculated orbitals (" << orbitals.size() <<")" << std::endl;
+    }
+    std::vector<SavedFct> sav_orbs;
+    for (auto i=0; i<orbitals.size(); ++i){
+        SavedFct sav_orb(orbitals[i]);
+        if (i<core_dim){
+            sav_orb.type="frozen_occ";
+        }else if (i<core_dim+as_dim){
+            sav_orb.type="active";
+        }else if (i<core_dim+as_dim+froz_virt_dim){
+            sav_orb.type="frozen_virt";
+        }
+        sav_orbs.push_back(sav_orb);
+    }
+    return sav_orbs;
+}
