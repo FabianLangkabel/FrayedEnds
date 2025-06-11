@@ -27,5 +27,7 @@ del PotMaker
 
 eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
 eigensolver.solve(custom_pot, 4, 100)
-
+orbs=eigensolver.GetOrbitals(0,2,0)
 del eigensolver
+print(type(orbs))
+print(type(orbs[0]))

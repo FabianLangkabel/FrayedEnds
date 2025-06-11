@@ -35,6 +35,7 @@ class Eigensolver3D: public MadnessProcess {
 
         // Function to calculate the energy
         double energy(const Function<double, 3>& phi, const Function<double, 3>& V);
+        std::vector<SavedFct> GetOrbitals(int core_dim, int as_dim, int froz_virt_dim) const;
 
     private:
         Function<double, 3> V;
