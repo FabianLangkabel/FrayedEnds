@@ -4,9 +4,9 @@
     "madness_thresh": 0.0001,
     "optimization_thresh": 0.001,
     "NO_occupation_thresh": 0.001,
-    "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H3_tri.mol",
-    "calpha_coeff_file": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_sto3g_coeffs/h3tri_diss/400_alphacoeffs.npy",
-    "cbeta_coeff_file": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_sto3g_coeffs/h3tri_diss/400_betacoeffs.npy",
-    "output_folder": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_sto3g_coeffs/h3tri_diss/output",
+    "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H3_tri_min.mol",
+    "calpha_coeff_file": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_sto3g_coeffs/h3tri_087/H3tri_087_alphacoeffs.npy",
+    "cbeta_coeff_file": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_sto3g_coeffs/h3tri_087/H3tri_087_betacoeffs.npy",
+    "output_folder": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_sto3g_coeffs/h3tri_087",
     "print_final_orbitals": true
 }
