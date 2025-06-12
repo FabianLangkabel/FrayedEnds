@@ -214,5 +214,57 @@ void SpinorbOpt::CalculateTwoElectronIntegrals()
     //std::cout << "Alpha Alpha tensor: " << integrals_two_body_aa << std::endl; //optional to print the tensors out
     //std::cout << "Beta Beta tensor: " << integrals_two_body_bb << std::endl;
     //std::cout << "Alpha Beta tensor: " << integrals_two_body_ab << std::endl;
+}
+
+real_function_3d SpinorbOpt::CalculateSpinorbitalUpdate(int orb_idx)
+{
+    auto t1 = std::chrono::high_resolution_clock::now();
+    int dim = active_alpha_beta_orbs.size();
+
+    //Calculate inverse rdm element
+    double rdm_ii_inv = 1 / Alpha_Beta_Rdm_Matrix(orb_idx,orb_idx);
+
+    //1 electron part
+    real_convolution_3d coul_op = CoulombOperator(*world, 0.001, 1e-6);
+    real_function_3d rhs = (*Vnuc)(active_alpha_beta_orbs[orb_idx]);
+    for(int k = 0; k < dim; k++)
+    {
+        if(k != orb_idx)
+        {
+                rhs -= rdm_ii_inv * LagrangeMultiplier(k,orb_idx) * active_alpha_beta_orbs[k];
+        }
+    }
+    rhs.truncate(1e-5);
+
+    //2 electron part
+    for(int l = 0; l < dim; l++)
+    {
+        for(int n = 0; n < dim; n++)
+        {
+            for(int k = 0; k < dim; k++)
+            {
+                rhs += rdm_ii_inv * ab_coul_orbs_mn[l*dim + n] * Alpha_Beta_Rdm_Tensor(k, l, orb_idx, n) * active_alpha_beta_orbs[k];
+            }
+        }
+    }
+    rhs.truncate(1e-5);
+
+    //BSH part
+
+    double en = LagrangeMultiplier(orb_idx,orb_idx) * rdm_ii_inv;
+    SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), 0.01, 1e-6);
+    real_function_3d r = active_alpha_beta_orbs[orb_idx] + 2.0 * bsh_op(rhs); // the residual
+    double err = r.norm2();
+    std::cout << "Error of Orbital " << orb_idx << ": " << err << std::endl; 
+    if(err > highest_error){highest_error = err; }
+    
+    
+    auto t4 = std::chrono::high_resolution_clock::now();
+    auto t41 = std::chrono::duration_cast<std::chrono::seconds>(t4 - t1);
+    //auto t32 = std::chrono::duration_cast<std::chrono::seconds>(t3 - t2);
+    std::cout << "CalculateSpinorbitalUpdate took " << t41.count() << " seconds" << std::endl;
+    //std::cout << "t32 took " << t32.count() << " seconds" << std::endl;
+
+    return r;
 
 }
