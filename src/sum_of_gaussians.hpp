@@ -55,7 +55,13 @@ class CoulombPotentialFromChargeDensity : public MadnessProcess
         CoulombPotentialFromChargeDensity(double L, long k, double thresh, std::vector<double> sl, double Q, std::vector<std::vector<double> > cl) : MadnessProcess(L,k,thresh), sharpness_list(sl), Q(Q), charge_locations(cl) {std::cout.precision(6);}
         
         ~CoulombPotentialFromChargeDensity() {}
-
+        SavedFct CreateChargeDens() {
+            SumOfGaussians Rho(sharpness_list,Q,charge_locations); //charge density
+            Function<double,3> f=FunctionFactory<double,3>(*world).special_level(10).special_points(Rho.charge_locations).functor(Rho);
+            double norm=f.trace();
+            f=Rho.Q/norm*f; //renormalize such that Q=\int dV rho
+            return SavedFct(f);
+        }
         SavedFct CreatePotential() {
             Function<double,3> Vnuc = make_potential(*world,sharpness_list,Q,charge_locations);
             return SavedFct(Vnuc);

@@ -26,21 +26,29 @@ madness_thresh = 0.00001
 optimization_thresh = 0.001
 NO_occupation_thresh = 0.001
 
-molecule_name = "h2"
-distance = 40 # Distance between the two hydrogen atoms in Bohr 
+molecule_name = "H6"
+distance = 4.0 # Distance between the two hydrogen atoms in Bohr 
 distance = distance/2
 geometry_bohr = '''
 H 0.0 0.0 ''' + distance.__str__() + '''
+H 0.0 0.0 ''' + (-distance).__str__() + '''
 H 0.0 0.0 ''' + (-distance).__str__()
 
+
+geometry_bohr=""
+for i in range(6):
+    geometry_bohr+='''
+H 0.0 ''' + str(distance*np.sin(2*i*np.pi/6)) + " " + str(distance*np.cos(2*i*np.pi/6))
+
+print(geometry_bohr)
 geometry_angstrom = OrbOpt_helper.convert_geometry_from_bohr_to_angstrom(geometry_bohr)
 
-all_orbitals = [0,1]
+all_orbitals = [0,1,2,3,4,5]
 frozen_occupied_orbitals = []
-active_orbitals = [0,1]
+active_orbitals = [0,1,2,3,4,5]
 as_dim=len(active_orbitals)
 
-
+"""
 #Custom potential is created here
 class ParamCoulomb: #class so that the function can be parameterized
     epsilon = 0.0,
@@ -52,37 +60,57 @@ class ParamCoulomb: #class so that the function can be parameterized
         q1=np.array([0.0,0.0,-distance])
         return -1/np.sqrt((v-q0)@(v-q0)+self.epsilon**2)-1/np.sqrt((v-q1)@(v-q1)+self.epsilon**2)
 
-Coul=ParamCoulomb(0.0)
-factory=mad.PyFuncFactory(box_size, wavelet_order, madness_thresh,Coul.pot)
+class MorsePot:
+    D=5.0
+    a=1.0
+    R=0.75
+    def __init__(self):
+         pass
+    def pot(self,x,y,z):
+        sum = x**2+y**2+z**2
+        sum = np.sqrt(sum)
+        ex = np.exp(-self.a * (sum - self.R))
+        potential = self.D * (1 - ex)**2
+        return potential - self.D
+                    
+
+
+MP=MorsePot()
+factory=mad.PyFuncFactory(box_size, wavelet_order, madness_thresh,MP.pot)
 mra_pot=factory.GetMRAFunction()
 del factory
 """
-peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]] #locations of the peaks
-sharpness_list=[1000.0,1000.0] #sharpness of the peaks 
-Q=2
+peak_loc=[] #locations of the peaks
+for i in range(6):
+    peak_loc.append([0.0,distance*np.sin(2*i*np.pi/6),distance*np.cos(2*i*np.pi/6)])
+sharpness_list=[1000.0,1000.0,1000.0,1000.0,1000.0,1000.0] #sharpness of the peaks 
+Q=6
 PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
 mra_pot=PotMaker.CreatePotential()
-PotMaker.plot("custom_potential.dat", mra_pot) #Plot the custom potential
+mra_cd=PotMaker.CreateChargeDens()
 del PotMaker
-"""
+
 opti=mad.Optimization(box_size, wavelet_order, madness_thresh)
 opti.plot("custom_pot.dat",mra_pot)
-opti.plane_plot(".dat",mra_pot,plane="xz",zoom=5.0,datapoints=81,origin=[0.0,0.0,0.0])
+opti.plane_plot("pot.dat",mra_pot,plane="yz",zoom=10.0,datapoints=81,origin=[0.0,0.0,0.0])
+opti.plane_plot("cdens.dat",mra_cd,plane="yz",zoom=10.0,datapoints=321,origin=[0.0,0.0,0.0])
 del opti
 
-
+"""
 eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
-eigensolver.solve(mra_pot, 4, 5)
+eigensolver.solve(mra_pot, 10, 10)
 all_orbs=eigensolver.GetOrbitals(len(frozen_occupied_orbitals),as_dim,0)
 del eigensolver
 
 integrals = mad.Integrals(box_size, wavelet_order, madness_thresh)
-G = integrals.compute_two_body_integrals(all_orbs)
+G_elems = integrals.compute_two_body_integrals(all_orbs)
+G = tq.quantumchemistry.NBodyTensor(elems=G_elems, ordering="phys").elems
 T = integrals.compute_kinetic_integrals(all_orbs)
 V = integrals.compute_potential_integrals(all_orbs, mra_pot)
 S = integrals.compute_overlap_integrals(all_orbs)
 del integrals
-
+h1=T+V
+g2=G
 c=0.0
 
 """
@@ -100,8 +128,9 @@ c=pno.GetNuclearRepulsion()
 del pno
 del red
 OrbOpt_helper.PNO_cleanup()
-"""
-
+print(np.shape(h1))
+print(np.shape(g2))
+print(c)
 
 print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
@@ -109,8 +138,8 @@ for it in range(iterations):
     print("Iteration: " + it.__str__())
 
     if it == 0:
-        mol = tq.Molecule(geometry_angstrom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c, name=molecule_name)
-        #mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
+        mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
+        print('done mol')
     else:
         #todo: transfer nb::ndarray objects directly
         h1=np.array(h1_elements).reshape(as_dim,as_dim)
@@ -123,16 +152,17 @@ for it in range(iterations):
     
     #VQE
     U = mol.make_ansatz(name="HCB-UpCCGD")
+    print('done with U')
     if it == 0:
         opt = OrbOpt_helper.get_best_initial_values(mol)
     else:
-        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=opt.mo_coeff)
-    
+        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=False, use_hcb=True, initial_guess=opt.mo_coeff)
+    print('done with opt')
     mol_new = opt.molecule
     H = mol_new.make_hardcore_boson_hamiltonian()
     U = mol_new.make_ansatz(name="HCB-UpCCGD")
     E = tq.ExpectationValue(H=H, U=U)
-    result = tq.minimize(E, silent=True, use_hcb=True)
+    result = tq.minimize(E, silent=False, use_hcb=True)
     print("VQE energy: " + (str)(result.energy))
     iteration_energies.append(result.energy.__str__())
 
@@ -174,6 +204,7 @@ for it in range(iterations):
     g2_elements=opti.GetGTensor()
     for i in range(len(all_orbs)):
         opti.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
+        opti.plane_plot(i.__str__()+"orb.dat",all_orbs[i],plane="yz",zoom=10.0,datapoints=81,origin=[0.0,0.0,0.0])
     del opti
     del red
 
