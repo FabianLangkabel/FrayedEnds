@@ -971,6 +971,7 @@ std::vector<SavedFct> Optimization::GetOrbitals()
         orb.type="frozen_occ";
         all_orbs.push_back(orb);
         j++;
+        std::cout<< "Norm orb " << i << ":" << frozen_occ_orbs[i].norm2() << std::endl;
     }
     for(int i = 0; i < as_dim; i++)
     {
@@ -978,13 +979,15 @@ std::vector<SavedFct> Optimization::GetOrbitals()
         orb.type="active";
         all_orbs.push_back(orb);
         j++;
+        std::cout<< "Norm orb " << i << ":" << active_orbs[i].norm2() << std::endl;
     }
     for(int i = 0; i < froz_virt_dim; i++)
     {
-        SavedFct orb(active_orbs[i]);
+        SavedFct orb(frozen_virt_orb[i]);
         orb.type="frozen_virt";
         all_orbs.push_back(orb);
         j++;
+        std::cout<< "Norm orb " << i << ":" << frozen_virt_orb[i].norm2() << std::endl;
     }
     return all_orbs;
 }

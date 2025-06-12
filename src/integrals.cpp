@@ -44,14 +44,7 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integral
             }
         }
     }
-    std::cout<<std::endl << "Kinetic integrals computed for " << as_dim << " orbitals." << std::endl;
-    for (int k = 0; k < as_dim; k++)
-    {
-        for(int l = 0; l < as_dim; l++)
-        {
-            std::cout << "Kinetic integral <" << k << "|" << l << "> = " << kinetic_integrals(k, l) << std::endl;
-        }
-    }
+    
     nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(kinetic_integrals.ptr(), {orbitals.size(), orbitals.size()});
     return numpy_array;
 }

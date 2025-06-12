@@ -76,7 +76,8 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<const double &, const long &, const double &, const std::vector<double> &, const double &, const std::vector<std::vector<double> > &>())
         .def("plot", &CoulombPotentialFromChargeDensity::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
-        .def("CreatePotential", &CoulombPotentialFromChargeDensity::CreatePotential);
+        .def("CreatePotential", &CoulombPotentialFromChargeDensity::CreatePotential)
+        .def("CreateChargeDens", &CoulombPotentialFromChargeDensity::CreateChargeDens);
 
     nb::class_<RedirectOutput>(m, "RedirectOutput")
         .def(nb::init<const std::string &>());

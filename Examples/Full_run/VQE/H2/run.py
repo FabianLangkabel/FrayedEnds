@@ -22,7 +22,7 @@ iterations = 6 #Iterations of the VQE and Orbital-Optimization algorithm
 #Parameters for the PNO and Orbital-Optimization calculations
 box_size = 50.0 # the system is in a volume of dimensions (box_size*2)^3
 wavelet_order = 7 #Default parameter of Orbital-generation, do not change without changing in Orbital-generation!!!
-madness_thresh = 0.0001
+madness_thresh = 0.00001
 optimization_thresh = 0.001
 NO_occupation_thresh = 0.001
 
