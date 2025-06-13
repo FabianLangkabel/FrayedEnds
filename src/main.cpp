@@ -66,6 +66,7 @@ NB_MODULE(_madpy_impl, m) {
     
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<const std::string &, const double &, const int &, const double &>())
+        .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
         .def("DeterminePNOsAndIntegrals", &PNOInterface::DeterminePNOsAndIntegrals)
         .def("GetPNOs", &PNOInterface::GetPNOs)
         .def("GetHTensor", &PNOInterface::GetHTensor)
