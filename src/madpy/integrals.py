@@ -1,0 +1,26 @@
+from ._madpy_impl import Integrals as IntegralsInterface
+from .baseclass import MadPyBase
+
+from tequila.quantumchemistry import NBodyTensor
+
+class Integrals(MadPyBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.impl = IntegralsInterface(self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh)
+
+    def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
+        g = self.impl.compute_two_body_integrals(orbitals)
+        return NBodyTensor(elems=g, ordering=ordering)
+
+    def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
+        return self.impl.compute_kinetic_integrals(orbitals)
+
+    def compute_potential_integrals(self, orbitals, Vnuc, *args, **kwargs):
+        return self.impl.compute_potential_integrals(orbitals, Vnuc)
+
+    def compute_overlap_integrals(self, orbitals, *args, **kwargs):
+        return self.impl.compute_overlap_integrals(orbitals)
+
+    def hello(self):
+        self.impl.hello()
