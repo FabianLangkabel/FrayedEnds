@@ -8,12 +8,10 @@ from tequila.quantumchemistry import ParametersQC
 import tequila as tq
 
 def get_best_initial_values(mol):
-    tries = 20
+    tries = 5
     U = mol.make_ansatz(name="HCB-UpCCGD")
-    print("\n \n \n calculating best_opt")
-    best_opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=False, use_hcb=True, initial_guess="random")
-    print("\n \n \n calculating opt")
-    opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=False, use_hcb=True)
+    best_opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
+    opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True)
     if opt.energy < best_opt.energy:
         best_opt = opt
     
@@ -21,8 +19,7 @@ def get_best_initial_values(mol):
         #opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
         initial_guess = np.eye(mol.n_orbitals) + np.random.normal(scale=1.0, loc=0.0, size=mol.n_orbitals**2).reshape(mol.n_orbitals, mol.n_orbitals)
         
-        print("\n \n \n calculating iter_opt")
-        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=False, use_hcb=True, initial_guess=initial_guess)
+        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=initial_guess)
         if opt.energy < best_opt.energy:
             best_opt = opt
             
