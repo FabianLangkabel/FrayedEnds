@@ -39,16 +39,16 @@ as_dim=len(active_orbitals)
 #Custom potential is created here
 class DoubleWellPot:
     a=-10.0
-    mu=np.array([0.0,0.0,-2.0])
+    mu=np.array([0.0,0.0,-2.5])
     sigma=np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     b=-5.0
-    mu2=np.array([0.0,0.0,2.0])
+    mu2=np.array([0.0,0.0,2.5])
     sigma2=np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     c=-7.5
-    mu3=np.array([0.0,0.0,-4.0])
+    mu3=np.array([0.0,-2.5,0.0])
     sigma3=np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     d=-2.5
-    mu4=np.array([0.0,0.0,4.0])
+    mu4=np.array([0.0,2.5,0.0])
     sigma4=np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     def __init__(self):
         pass
