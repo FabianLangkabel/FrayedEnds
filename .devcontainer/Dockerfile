@@ -70,13 +70,22 @@ RUN conda install -y python=3.11 && \
     pip install block2 && \
     python -m pip install nanobind
 
-RUN conda install -c conda-forge micromamba && \
-    micromamba install -c conda-forge nwchem
+RUN conda install -c conda-forge nwchem && \
+    conda install -c conda-forge openmpi && \
+    conda install ipykernel --update-deps --force-reinstall
+
+ENV MADNESS_DIR=/usr/local/madness
+COPY . /workspaces/MRA-OrbitalOptimization
+WORKDIR /workspaces/MRA-OrbitalOptimization
+
+RUN pip install -e .
 
 RUN groupadd --gid 900 conda && \
     useradd -m -s /bin/bash -u 1000 -g conda ${USERNAME} && \
     usermod -aG sudo ${USERNAME} && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+ENV LD_LIBRARY_PATH="/opt/intel/oneapi/mkl/2025.1/lib:${LD_LIBRARY_PATH}"
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
