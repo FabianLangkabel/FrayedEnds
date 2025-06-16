@@ -33,11 +33,11 @@ public:
     void CalculateEnergy();
     //void OptimizeSpinorbitals_Test(double optimization_thresh, double NO_occupation_thresh);
     void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh);
-    real_function_3d CalculateSpinorbitalUpdate(int idx);
-    //std::vector<real_function_3d> GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update);
+    std::vector<real_function_3d> GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update);
     void CalculateLagrangeMultiplier();
     double CalculateLagrangeMultiplierElement(int dim, int a, int i);
     std::vector<real_function_3d> ProjectSpinorbitals(std::vector<real_function_3d> orbs);
+    //void CalculateTotalSpin();
     //void SaveNOs(std::string OutputPath);
     //void SaveSpinorbitals(std::string OutputPath); 
     //void SaveIntegralsToNumpy(std::string OutputPath);

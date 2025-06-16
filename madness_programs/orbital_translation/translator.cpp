@@ -32,7 +32,7 @@ void Translator::create_aos(std::string GeometryFile)
     //Define AO BasisSet
     AtomicBasisSet aobasis;
     aobasis = AtomicBasisSet();
-    aobasis.read_file("sto-3g");
+    aobasis.read_file("6-31g");
 
     //Define Molecule
     molecule = madness::Molecule();
@@ -82,7 +82,7 @@ void Translator::read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta
     int a = 0;
     for (int b = 0; b < alpha_shape[0]; ++b) {
         for (int c = 0; c < alpha_shape[1]; ++c) {
-            Alpha_Coeff_Matrix(c, b) = alpha_elements[a];
+            Alpha_Coeff_Matrix(b, c) = alpha_elements[a];
             a++;
         }
     }
@@ -92,7 +92,7 @@ void Translator::read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta
     int d = 0;
     for (int e = 0; e < beta_shape[0]; ++e) {
         for (int f = 0; f < beta_shape[1]; ++f) {
-            Beta_Coeff_Matrix(f, e) = beta_elements[d];
+            Beta_Coeff_Matrix(e, f) = beta_elements[d];
             d++;
         }
     }
