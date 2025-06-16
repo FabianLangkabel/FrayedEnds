@@ -5,8 +5,5 @@
 - Information about development containers and their installation in combination with VSCode can be found at: [https://code.visualstudio.com/docs/devcontainers/containers](https://code.visualstudio.com/docs/devcontainers/containers).
 
 ## Execution of examples
-- In order to execute the script, the spin orbital refinement code (spinorb_optimizer.cpp) must first be compiled in the /workspaces/MRA-OrbitalOptimization/build folder. Then the script can be executed from the terminal with a json file, at the moment only two examples are provided. The command is either 
-/workspaces/MRA-OrbitalOptimization/build/madness_programs/spinorb_opt/SpinorbOpt /workspaces/MRA-OrbitalOptimization/Json_files/input_spinorbt/h2_sto3g_inp.json 
-or 
-/workspaces/MRA-OrbitalOptimization/build/madness_programs/spinorb_opt/SpinorbOpt /workspaces/MRA-OrbitalOptimization/Json_files/input_spinorbt/h3lin_sto3g_inp.json 
-depending on the json file selected.
+- In order to execute the script, the spin orbital refinement code (spinorb_optimizer.cpp) must first be compiled in the /workspaces/MRA-OrbitalOptimization/build folder. Then the script can be executed from the terminal with a json file, they can be found under /workspaces/MRA-OrbitalOptimization/Json_files/input_spinorbt or for the H2 closed shell testcase under /workspaces/MRA-OrbitalOptimization/h2_test/json/ . 
+The command is then /workspaces/MRA-OrbitalOptimization/build/madness_programs/spinorb_opt/SpinorbOpt /workspaces/MRA-OrbitalOptimization/Json_files/input_spinorbt/*.json and the output will be shown in the terminal.
