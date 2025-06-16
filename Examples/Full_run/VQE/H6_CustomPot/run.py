@@ -139,7 +139,6 @@ for it in range(iterations):
 
     if it == 0:
         mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
-        print('done mol')
     else:
         #todo: transfer nb::ndarray objects directly
         h1=np.array(h1_elements).reshape(as_dim,as_dim)
@@ -152,17 +151,15 @@ for it in range(iterations):
     
     #VQE
     U = mol.make_ansatz(name="HCB-UpCCGD")
-    print('done with U')
     if it == 0:
         opt = OrbOpt_helper.get_best_initial_values(mol)
     else:
-        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=False, use_hcb=True, initial_guess=opt.mo_coeff)
-    print('done with opt')
+        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=opt.mo_coeff)
     mol_new = opt.molecule
     H = mol_new.make_hardcore_boson_hamiltonian()
     U = mol_new.make_ansatz(name="HCB-UpCCGD")
     E = tq.ExpectationValue(H=H, U=U)
-    result = tq.minimize(E, silent=False, use_hcb=True)
+    result = tq.minimize(E, silent=True, use_hcb=True)
     print("VQE energy: " + (str)(result.energy))
     iteration_energies.append(result.energy.__str__())
 
