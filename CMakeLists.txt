@@ -63,7 +63,6 @@ nanobind_add_module(
 )
 
 # Install directive for scikit-build-core
-target_include_directories(_madpy_impl PRIVATE "${CMAKE_SOURCE_DIR}/eigen")
 target_link_libraries(_madpy_impl PRIVATE MADchem)
 install(TARGETS _madpy_impl LIBRARY DESTINATION madpy)
 

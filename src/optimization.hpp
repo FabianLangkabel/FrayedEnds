@@ -5,12 +5,11 @@
 #include <madness/mra/vmra.h>
 #include <madness/mra/operator.h>
 #include <madness/chem/oep.h>
-#include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <iostream>
 #include <fstream>
 #include <chrono>
 #include <algorithm>
+#include <utility> 
 #include <madness/external/nlohmann_json/json.hpp>
 #include "npy.hpp"
 #include "functionsaver.hpp"
@@ -37,8 +36,8 @@ public:
     void GiveCustomPotential(SavedFct custom_pot);
     void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files);
     void ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file);
-    void TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix);
-    void TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::MatrixXd TransformationMatrix);
+    void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
+    void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);
     void CalculateAllIntegrals();
     void CalculateCoreEnergy();
     void CalculateEnergies();
@@ -50,6 +49,10 @@ public:
     void RotateOrbitalsBackAndUpdateIntegrals();
     void SaveOrbitals(std::string OutputPath);
     void SaveEffectiveHamiltonian(std::string OutputPath);
+
+    //helper
+    void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
+    madness::Tensor<double> matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B, std::size_t n);
 
     int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
@@ -80,28 +83,28 @@ private:
     int froz_virt_dim;
 
     //RDMs
-    Eigen::MatrixXd ActiveSpaceRotationMatrix;
-    Eigen::MatrixXd as_one_rdm;
-    Eigen::Tensor<double, 4> as_two_rdm;
+    madness::Tensor<double> ActiveSpaceRotationMatrix;
+    madness::Tensor<double> as_one_rdm;
+    madness::Tensor<double> as_two_rdm;
 
     //Integrals
-    Eigen::MatrixXd as_integrals_one_body; // (k,l)
-    Eigen::Tensor<double, 4> as_integrals_two_body; // (k,l,m,n)
+    madness::Tensor<double> as_integrals_one_body; // (k,l)
+    madness::Tensor<double> as_integrals_two_body; // (k,l,m,n)
 
-    Eigen::MatrixXd core_as_integrals_one_body_ak; // (a,k)
-    Eigen::Tensor<double, 4> core_as_integrals_two_body_akln; // (a,k,l,n)
-    Eigen::Tensor<double, 3> core_as_integrals_two_body_akal; // (a,k,l)
-    Eigen::Tensor<double, 3> core_as_integrals_two_body_akla; // (a,k,l)
-    Eigen::Tensor<double, 3> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
-    Eigen::Tensor<double, 3> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
+    madness::Tensor<double> core_as_integrals_one_body_ak; // (a,k)
+    madness::Tensor<double> core_as_integrals_two_body_akln; // (a,k,l,n)
+    madness::Tensor<double> core_as_integrals_two_body_akal; // (a,k,l)
+    madness::Tensor<double> core_as_integrals_two_body_akla; // (a,k,l)
+    madness::Tensor<double> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
+    madness::Tensor<double> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
 
     //Energies
     double core_total_energy;
 
     //Refinement
     double highest_error;
-    Eigen::MatrixXd LagrangeMultiplier_AS_AS;       
-    Eigen::MatrixXd LagrangeMultiplier_AS_Core;
+    madness::Tensor<double> LagrangeMultiplier_AS_AS;       
+    madness::Tensor<double> LagrangeMultiplier_AS_Core;
 
     //Stored AS orbital combinations
     std::vector<real_function_3d> orbs_kl; // |kl>

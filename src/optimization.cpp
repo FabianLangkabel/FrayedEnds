@@ -94,6 +94,49 @@ void Optimization::GiveInitialOrbitals(std::vector<SavedFct> all_orbs)
     std::cout << "GiveInitialOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
+void Optimization::sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues)
+{
+    std::size_t n = eigenvalues.dim(0);
+
+    std::vector<std::pair<double, std::size_t>> pairs;
+    for (std::size_t i = 0; i < n; ++i)
+        pairs.emplace_back(eigenvalues(i), i);
+
+
+    std::sort(pairs.begin(), pairs.end(),
+              [](const auto& a, const auto& b) { return a.first > b.first; });
+
+
+    madness::Tensor<double> sorted_eigenvalues(n);
+    madness::Tensor<double> sorted_eigenvectors(n, n);
+
+    for (std::size_t i = 0; i < n; ++i) {
+        std::size_t orig_idx = pairs[i].second;
+        sorted_eigenvalues(i) = eigenvalues(orig_idx);
+
+        for (std::size_t j = 0; j < n; ++j)
+            sorted_eigenvectors(j, i) = eigenvectors(j, orig_idx);
+    }
+
+    eigenvalues = sorted_eigenvalues;
+    eigenvectors = sorted_eigenvectors;
+}
+
+madness::Tensor<double> Optimization::matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B, std::size_t n)
+{
+    madness::Tensor<double> C(n, n);
+
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t j = 0; j < n; ++j) {
+            double sum = 0.0;
+            for (std::size_t k = 0; k < n; ++k) {
+                sum += A(i, k) * B(k, j);
+            }
+            C(i, j) = sum;
+        }
+    }
+    return C;
+}
 
 void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file)
 {
@@ -102,8 +145,8 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
     //****************************************
     // Read active space RDMs
     //****************************************
-    as_one_rdm = Eigen::MatrixXd::Zero(as_dim, as_dim);
-    as_two_rdm = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
+    as_one_rdm = madness::Tensor<double>(as_dim, as_dim);
+    as_two_rdm = madness::Tensor<double>(as_dim, as_dim);
 
     std::vector<double> one_rdm_data = npy::read_npy<double>(one_rdm_file).data;
     std::vector<double> two_rdm_data = npy::read_npy<double>(two_rdm_file).data;
@@ -134,9 +177,11 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
         }
     }
 
+
     //****************************************
     // Rotate active Space Orbitals
     //****************************************
+    /*
     {
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
         es.compute(as_one_rdm);
@@ -151,6 +196,17 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
         }
         active_orbs = transform(*world, active_orbs, T);
     }
+    */
+    ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
+    Tensor<double> evals(as_dim);
+    syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
+    sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
+    std::cout << evals << std::endl;
+    TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
+    TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
+    active_orbs = transform(*world, active_orbs, ActiveSpaceRotationMatrix);
+
+
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
@@ -165,8 +221,8 @@ void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_element
     //****************************************
     // Read active space RDMs
     //****************************************
-    as_one_rdm = Eigen::MatrixXd::Zero(as_dim, as_dim);
-    as_two_rdm = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
+    as_one_rdm = madness::Tensor<double>(as_dim, as_dim);
+    as_two_rdm = madness::Tensor<double>(as_dim, as_dim, as_dim, as_dim);
 
     int x = 0;
     for(int i = 0; i < as_dim; i++)
@@ -197,7 +253,9 @@ void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_element
     //****************************************
     // Rotate active Space Orbitals
     //****************************************
+    /*
     {
+        
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
         es.compute(as_one_rdm);
         ActiveSpaceRotationMatrix = es.eigenvectors().rowwise().reverse();
@@ -210,29 +268,39 @@ void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_element
             }
         }
         active_orbs = transform(*world, active_orbs, T);
-    }
+    }*/
+    ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
+    Tensor<double> evals(as_dim);
+    syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
+    sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
+    std::cout << evals << std::endl;
+    TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
+    TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
+    active_orbs = transform(*world, active_orbs, ActiveSpaceRotationMatrix);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "GiveRDMFiles took " << duration.count() << " seconds" << std::endl;
 }
 
-void Optimization::TransformMatrix(Eigen::MatrixXd* ObjectMatrix, Eigen::MatrixXd TransformationMatrix)
+void Optimization::TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix)
 {
-    *ObjectMatrix = TransformationMatrix.transpose() * *ObjectMatrix * TransformationMatrix;
+    int n = TransformationMatrix.dim(0);
+    madness::Tensor<double> temp = matmul_mxm(*ObjectMatrix, TransformationMatrix, n);
+    *ObjectMatrix = matmul_mxm(transpose(TransformationMatrix), temp, n);
 }
 
-void Optimization::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::MatrixXd TransformationMatrix)
+void Optimization::TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix)
 {
-    int n = TransformationMatrix.rows();
-    Eigen::Tensor<double, 4> temp1(n, n, n, n);
+    int n = TransformationMatrix.dim(0);
+    madness::Tensor<double> temp1(n, n, n, n);
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             for (int k2 = 0; k2 < n; k2++) {
                 for (int l = 0; l < n; l++) {
                     double k_value = 0;
                     for (int k = 0; k < n; k++) {
-                        k_value += TransformationMatrix(k, k2) * ObjectTensor->coeff(i, j, k, l);
+                        k_value += TransformationMatrix(k, k2) * ObjectTensor(i, j, k, l);
                     }
                     temp1(i, j, k2, l) = k_value;
                 }
@@ -240,7 +308,7 @@ void Optimization::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen
         }
     }
 
-    Eigen::Tensor<double, 4> temp2(n, n, n, n);
+    madness::Tensor<double> temp2(n, n, n, n);
     for (int i2 = 0; i2 < n; i2++) {
         for (int j = 0; j < n; j++) {
             for (int k2 = 0; k2 < n; k2++) {
@@ -255,7 +323,7 @@ void Optimization::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen
         }
     }
 
-    Eigen::Tensor<double, 4> temp3(n, n, n, n);
+    madness::Tensor<double> temp3(n, n, n, n);
     for (int i2 = 0; i2 < n; i2++) {
         for (int j = 0; j < n; j++) {
             for (int k2 = 0; k2 < n; k2++) {
@@ -270,7 +338,7 @@ void Optimization::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen
         }
     }
 
-    Eigen::Tensor<double, 4> temp4(n, n, n, n);
+    madness::Tensor<double> temp4(n, n, n, n);
     for (int i2 = 0; i2 < n; i2++) {
         for (int j2 = 0; j2 < n; j2++) {
             for (int k2 = 0; k2 < n; k2++) {
@@ -284,7 +352,7 @@ void Optimization::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen
             }
         }
     }
-    *ObjectTensor = temp4;
+    ObjectTensor = temp4;
 }
 
 void Optimization::CalculateAllIntegrals()
@@ -309,7 +377,7 @@ void Optimization::CalculateAllIntegrals()
     auto t2 = std::chrono::high_resolution_clock::now();
 
     // AS-AS one electron integrals
-    as_integrals_one_body = Eigen::MatrixXd::Zero(as_dim, as_dim);
+    as_integrals_one_body = madness::Tensor<double>(as_dim, as_dim);
     for(int k = 0; k < as_dim; k++)
     {
         for(int l = 0; l < as_dim; l++)
@@ -334,7 +402,7 @@ void Optimization::CalculateAllIntegrals()
     auto t3 = std::chrono::high_resolution_clock::now();
 
     // AS two electron integrals
-    as_integrals_two_body = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
+    as_integrals_two_body = madness::Tensor<double>(as_dim, as_dim, as_dim, as_dim);
     madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
     for(int k = 0; k < as_dim; k++)
     {
@@ -352,7 +420,7 @@ void Optimization::CalculateAllIntegrals()
     auto t4 = std::chrono::high_resolution_clock::now();
 
     // Core-AS one electron integrals
-    core_as_integrals_one_body_ak = Eigen::MatrixXd::Zero(core_dim, as_dim);
+    core_as_integrals_one_body_ak = madness::Tensor<double>(as_dim, as_dim);
     for(int a = 0; a < core_dim; a++)
     {
         for(int k = 0; k < as_dim; k++)
@@ -379,7 +447,7 @@ void Optimization::CalculateAllIntegrals()
     // Core-AS two electron integrals <ak|al>
     if(core_dim > 0)
     {
-        core_as_integrals_two_body_akal = Eigen::Tensor<double, 3>(core_dim, as_dim, as_dim);
+        core_as_integrals_two_body_akal = madness::Tensor<double>(core_dim, as_dim, as_dim);
         std::vector<real_function_3d> orbs_aa;
         for (int a = 0; a < core_dim; a++)
         {
@@ -402,10 +470,10 @@ void Optimization::CalculateAllIntegrals()
     // Core-AS two electron integrals <ak|la>, <ak|ln>, <ab|ak> and <ba|ak>
     if(core_dim > 0)
     {
-        core_as_integrals_two_body_akla = Eigen::Tensor<double, 3>(core_dim, as_dim, as_dim);
-        core_as_integrals_two_body_akln = Eigen::Tensor<double, 4>(core_dim, as_dim, as_dim, as_dim);
-        core_as_integrals_two_body_abak = Eigen::Tensor<double, 3>(core_dim, core_dim, as_dim);
-        core_as_integrals_two_body_baak = Eigen::Tensor<double, 3>(core_dim, core_dim, as_dim);
+        core_as_integrals_two_body_akla = madness::Tensor<double>(core_dim, as_dim, as_dim);
+        core_as_integrals_two_body_akln = madness::Tensor<double>(core_dim, as_dim, as_dim, as_dim);
+        core_as_integrals_two_body_abak = madness::Tensor<double>(core_dim, core_dim, as_dim);
+        core_as_integrals_two_body_baak = madness::Tensor<double>(core_dim, core_dim, as_dim);
         for (int a = 0; a < core_dim; a++) //One core orbital after the other -> Slightly less efficient than all a at the same time, but reduces memory
         {
             std::vector<real_function_3d> orbs_ak = frozen_occ_orbs[a] * active_orbs;
@@ -627,7 +695,7 @@ void Optimization::CalculateLagrangeMultiplier()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    LagrangeMultiplier_AS_AS = Eigen::MatrixXd::Zero(as_dim, as_dim);
+    LagrangeMultiplier_AS_AS = madness::Tensor<double>(as_dim, as_dim);
 
     for(int z = 0; z < as_dim; z++)
     {
@@ -639,7 +707,7 @@ void Optimization::CalculateLagrangeMultiplier()
 
     if(core_dim > 0)
     {
-        LagrangeMultiplier_AS_Core = Eigen::MatrixXd::Zero(core_dim, as_dim);
+        LagrangeMultiplier_AS_Core = madness::Tensor<double>(core_dim, as_dim);
         for(int z = 0; z < core_dim; z++)
         {
             for(int i = 0; i < as_dim; i++)
@@ -924,6 +992,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
 
 void Optimization::RotateOrbitalsBackAndUpdateIntegrals()
 {
+    /*
     //Create Full RotationMatrix
     Eigen::MatrixXd RotationMatrixBack = ActiveSpaceRotationMatrix.transpose();
 
@@ -939,6 +1008,7 @@ void Optimization::RotateOrbitalsBackAndUpdateIntegrals()
         }
     }
     active_orbs = transform(*world, active_orbs, T);
+    */
     CalculateAllIntegrals();
 }
 
@@ -998,7 +1068,7 @@ void Optimization::SaveEffectiveHamiltonian(std::string OutputPath)
     std::vector<double> effective_one_body_integrals_elements;
     std::vector<double> effective_two_body_integrals_elements;
 
-    Eigen::MatrixXd effective_one_body_integrals = as_integrals_one_body;
+    madness::Tensor<double> effective_one_body_integrals = as_integrals_one_body;
     for(int k = 0; k < as_dim; k++)
     {
         for(int l = 0; l < as_dim; l++)
@@ -1052,7 +1122,7 @@ double Optimization::GetC() {
 std::vector<double> Optimization::GetHTensor() {
     std::vector<double> effective_one_body_integrals_elements;
 
-    Eigen::MatrixXd effective_one_body_integrals = as_integrals_one_body;
+    madness::Tensor<double> effective_one_body_integrals = as_integrals_one_body;
     for(int k = 0; k < as_dim; k++)
     {
         for(int l = 0; l < as_dim; l++)
