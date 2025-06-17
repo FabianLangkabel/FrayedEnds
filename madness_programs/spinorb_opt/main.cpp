@@ -211,7 +211,7 @@ int main(int argc, char** argv)
     
     std::cout << "---------------------------------------------------" << std::endl;
     std::cout << "Start spin orbital optimization" << std::endl;
-    opti->OptimizeSpinorbitals(optimization_thresh, NO_occupation_thresh);
+    opti->OptimizeSpinorbitals_Test(optimization_thresh, NO_occupation_thresh);
     
 
     //----------------------- Write Output -----------------------
