@@ -40,6 +40,7 @@ frozen_occupied_orbitals = []
 active_orbitals = [0,1]
 as_dim=len(active_orbitals)
 
+pno_start = time.time()
 #PNO calculation to get an initial guess for the molecular orbitals
 print("Starting PNO calculation")
 red=mad.RedirectOutput("PNO.log")
@@ -54,7 +55,8 @@ c=pno.GetNuclearRepulsion()
 del pno
 del red
 OrbOpt_helper.PNO_cleanup()
-
+pno_end = time.time()
+print("PNO time: " + str(pno_end - pno_start))
 
 
 print("Starting VQE and Orbital-Optimization")
@@ -62,6 +64,7 @@ for it in range(iterations):
     print("---------------------------------------------------")
     print("Iteration: " + it.__str__())
 
+    start = time.time()
     if it == 0:
         mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name)
     else:
@@ -72,7 +75,6 @@ for it in range(iterations):
         g2=g2.reorder(to="openfermion")
         mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name) #Important here geometry in Angstrom
         
-
     
     #VQE
     U = mol.make_ansatz(name="HCB-UpCCGD")
@@ -97,6 +99,10 @@ for it in range(iterations):
     rdm2_list=rdm2.reshape(-1).tolist()
     all_occ_number.append(np.sort(np.linalg.eig(rdm1)[0])[::-1])
     
+    end = time.time()
+    print("VQE iteration {} time: {:.2f} seconds".format(it, end-start))
+
+    start = time.time()
     #Orbital-Optimization
     red=mad.RedirectOutput("OrbOpt"+str(it)+".log")
     opti = mad.Optimization(box_size, wavelet_order, madness_thresh)
@@ -130,6 +136,9 @@ for it in range(iterations):
         opti.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
     del opti
     del red
+
+    end = time.time()
+    print("It "+str(it)+" Optimization time: ", end-start)
 
 # Write energies to the hard disk
 with open(r'Energies.txt', 'w') as fp:
