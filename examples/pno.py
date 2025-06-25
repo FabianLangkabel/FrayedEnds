@@ -1,39 +1,49 @@
-import numpy
+import numpy as np
 import madpy
 import tequila as tq
+from time import time
 
+true_start=time()
+start = time()
 # initialize the PNO interface
-geom = "H 0.0 0.0 0.0\nH 0.0 0.0 15.0"
+geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"
 madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno":1})
 orbitals = madpno.get_orbitals()
 param = madpno.madness_parameters
-Vnuc = madpno.get_nuclear_potential()
-nuclear_repulsion = madpno.get_nuclear_repulsion()
+c, h, g = madpno.get_integrals()
 del madpno
+#todo: add cleanup
 
-for iteration in range(2):
+end=time()
+print("PNO time: ", end-start)
 
-    integrals = madpy.Integrals(param)
-    G = integrals.compute_two_body_integrals(orbitals).elems
-    T = integrals.compute_kinetic_integrals(orbitals)
-    V = integrals.compute_potential_integrals(orbitals, Vnuc)
-    S = integrals.compute_overlap_integrals(orbitals)
-    del integrals
-    print("G:",G,"\nT:",T,"\nV:",V,"\nS:",S)
-    mol = tq.Molecule(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=nuclear_repulsion)
+for iteration in range(6):
+    start = time()
+    mol = tq.Molecule(geometry=geom, one_body_integrals=h, two_body_integrals=g, nuclear_repulsion=c)
     U = mol.make_ansatz(name="UpCCGD")
     H = mol.make_hamiltonian()
     E = tq.ExpectationValue(H=H, U=U)
     result = tq.minimize(E, silent=True)
     rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
+    end = time()
+    print("VQE iteration {} time: {:.2f} seconds".format(iteration, end-start))
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
-
+    
+    start = time()
     opt = madpy.Optimization(param)
     orbitals = opt(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2)
+    c,h_el,g_el = opt.get_integrals()
     del opt
 
-
+    h=np.array(h_el).reshape(2,2)
+    g=np.array(g_el).reshape(2,2,2,2)
+    g=tq.quantumchemistry.NBodyTensor(g, ordering="dirac")
+    g=g.reorder(to="openfermion")
+    end = time()
+    print("It "+str(iteration)+" Optimization time: ", end-start)
+true_end=time()
+print("Total time: ", true_end-true_start)
 
 
 

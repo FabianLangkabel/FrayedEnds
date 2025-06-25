@@ -271,8 +271,8 @@ class PNOInterface: public MadnessProcess{
 			const double time_pno_start = wall_time();
 			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
 			F12Parameters paramf12(*world, parser, parameters, TAG_F12);
-			PNOIntParameters paramsint(*world, parser, parameters, TAG_PNOInt);
-			paramsint.print("PNO Integrals evaluated as:\npnoint","end");
+			PNOIntParameters paramsint(*world, parser, parameters, TAG_PNOInt); //should be removed eventually
+			paramsint.print("PNO Integrals evaluated as:\npnoint","end"); //ditto
 			PNO pno(*world, nemo, parameters, paramf12);
 			pno.solve();
 			const double time_pno_end = wall_time();
@@ -328,7 +328,7 @@ class PNOInterface: public MadnessProcess{
 			std::cout << std::fixed;
 			std::cout << std::showpos;
 	
-			const std::string orthogonalization = paramsint.orthogonalization();
+			const std::string orthogonalization = paramsint.orthogonalization(); // need to get ortho method elsewhere
 			if (world->rank()==0) std::cout << "Orthonormalization technique used: " << orthogonalization << std::endl;
 			const bool orthogonalize = orthogonalization != "none";
 			const double h_thresh = 1.e-7; // neglect integrals
@@ -446,6 +446,9 @@ class PNOInterface: public MadnessProcess{
 	
 			basis = obs_pnos;
 	
+
+			// ungefaehr alles ab hier sollte separat sein und nicht mehr teil des PNO codes, (ab orthonormalizierung)
+
 			// compute overlap of all PNOs before orthogonalization
 			if (paramsint.print_pno_overlap()) {
 				const auto S = madness::matrix_inner(*world, obs_pnos, obs_pnos, true);

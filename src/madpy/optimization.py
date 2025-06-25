@@ -23,3 +23,9 @@ class Optimization(MadPyBase):
         self.impl.RotateOrbitalsBackAndUpdateIntegrals()
 
         return self.impl.GetOrbitals()
+    
+    def get_integrals(self):
+        c = self.impl.GetC()
+        h = self.impl.GetHTensor()
+        g = self.impl.GetGTensor()
+        return c, h, g

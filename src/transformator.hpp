@@ -22,7 +22,7 @@ class Transformator: public MadnessProcess {
             for(SavedFct fct : input_functions) basis.push_back(loadfct(fct));
             
             auto S = madness::matrix_inner(*world, basis, basis, true);
-
+            
             auto out_basis = basis;
             if (orthogonalization == "cholesky"){
                 out_basis = madness::orthonormalize_cd(basis, S);
