@@ -5,12 +5,12 @@
     "optimization_thresh": 0.001,
     "NO_occupation_thresh": 0.001,
     "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H3_tri_min.mol",
-    "output_folder": "/workspaces/MRA-OrbitalOptimization/output_folder/h3tri_631g_min_k7",
-    "alpha_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/alpha_rdms.npy",
-    "beta_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/beta_rdms.npy",
-    "alpha_alpha_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/alpha_alpha_rdms.npy",
-    "alpha_beta_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/alpha_beta_rdms.npy",
-    "beta_beta_rdm_file":"/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/beta_beta_rdms.npy",
+    "output_folder": "/workspaces/MRA-OrbitalOptimization/output_folder/h3tri_631g_min_k8",
+    "alpha_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/142379912_alpha_1rdm.npy",
+    "beta_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/142379912_beta_1rdm.npy",
+    "alpha_alpha_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/142379912_alpha_alpha_2rdm.npy",
+    "alpha_beta_rdm_file": "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/142379912_alpha_beta_2rdm.npy",
+    "beta_beta_rdm_file":"/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3tri_631g_min/142379912_beta_beta_2rdm.npy",
     "alpha_orbitals": [
       {
         "alpha_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/coefficients/h3tri_631g_coeffs/h3tri_cusp/output_k8/alpha_orbital_0",
