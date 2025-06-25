@@ -56,7 +56,7 @@ class MadPNO(MadPyBase):
         self._orbitals = self.impl.GetPNOs(0,2,0)  # input: dimensions of (frozen_occ, active, forzen_virt) space
         return self._orbitals
 
-    @redirect_output("madpno.log")
+    @redirect_output("madpno2.log")
     def compute_integrals(self, *args, **kwargs):
         if self._orbitals is None:
             self.compute_pnos()

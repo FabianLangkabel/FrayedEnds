@@ -17,5 +17,6 @@ def redirect_output(filename="madness.out"):
 @dataclass
 class MadnessParameters:
     k: int=7 # wavelet order
-    L: float=50.0 # simulation box size
+    L: float=50.0 # simulation box size is (L*2)^3
     thresh: float=1.e-5 # MRA threshold
+    #todo initial level, truncate_mode, refine, threads

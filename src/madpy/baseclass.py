@@ -6,8 +6,9 @@ class MadPyBase:
 
     def __init__(self, parameters=None, *args, **kwargs):
         if parameters is None:
-            parameters = MadnessParameters()
+            keyvals={}
             for k,v in kwargs.items():
-                if k in parameters.__dict__:
-                    parameters[k] = v
+                if k in MadnessParameters.__dict__.keys():
+                    keyvals[k] = v
+            parameters = MadnessParameters(**keyvals)
         self.madness_parameters=parameters
