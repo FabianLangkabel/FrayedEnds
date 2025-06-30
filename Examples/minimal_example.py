@@ -44,7 +44,8 @@ del eigensolver
 
 integrals = mad.Integrals(box_size, wavelet_order, madness_thresh)
 G_elems = integrals.compute_two_body_integrals(all_orbs)
-G = tq.quantumchemistry.NBodyTensor(elems=G_elems, ordering="phys").elems
+G = tq.quantumchemistry.NBodyTensor(elems=G_elems, ordering="phys")
+G.reorder(to="chem")  # Reorder to chemical ordering for pyscf compatibility
 T = integrals.compute_kinetic_integrals(all_orbs)
 V = integrals.compute_potential_integrals(all_orbs, mra_pot)
 S = integrals.compute_overlap_integrals(all_orbs)
@@ -55,7 +56,7 @@ c=0.0
 print("done")
 for it in range(iterations):
     mol = tq.Molecule(dummy_molecule, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c)
-    e, fcivec = fci.direct_spin0.kernel(h1, g2, mol.n_orbitals, mol.n_electrons)
+    e, fcivec = fci.direct_spin0.kernel(h1, g2.elems, mol.n_orbitals, mol.n_electrons)
     rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, mol.n_orbitals, mol.n_electrons)
     rdm2 = np.swapaxes(rdm2, 1, 2)
     print("FCI energy: " + str(e))
@@ -99,8 +100,8 @@ for it in range(iterations):
 
     h1=np.array(h1_elements).reshape(as_dim,as_dim)
     g2=np.array(g2_elements).reshape(as_dim,as_dim,as_dim,as_dim)
-    g2=tq.quantumchemistry.NBodyTensor(g2, ordering="dirac")
-    g2=g2.reorder(to="phys").elems
+    g2=tq.quantumchemistry.NBodyTensor(g2, ordering="phys")
+    g2=g2.reorder(to="chem")
 
 
 
