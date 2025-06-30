@@ -48,7 +48,7 @@ for iteration in range(6):
     rdm2_list = rdm2.reshape(-1).tolist()
 
 
-    print("iteration {} FCI energy {:+2.5f}".format(iteration, e))
+    print("iteration {} FCI energy {:+2.8f}".format(iteration, e))
     
     opti = mad.Optimization(mra_pot, nuc_repulsion=0.0, parameters=param)
     orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
