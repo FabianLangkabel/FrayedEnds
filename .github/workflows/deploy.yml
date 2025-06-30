@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
@@ -29,6 +29,9 @@ jobs:
       - name: 🏗️ Build Jupyter Book
         run: jupyter-book build docs/
 
+      - name: 🚫 Add .nojekyll file
+        run: touch docs/_build/html/.nojekyll
+        
       - name: 🚀 Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
