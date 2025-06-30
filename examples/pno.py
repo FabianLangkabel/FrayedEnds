@@ -4,70 +4,52 @@ import tequila as tq
 from time import time
 
 
-def get_best_initial_values(mol):
-    tries = 20
-    U = mol.make_ansatz(name="HCB-UpCCGD")
-    best_opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
-    opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True)
-    if opt.energy < best_opt.energy:
-        best_opt = opt
-    
-    for _ in range(tries):
-        #opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
-        initial_guess = np.eye(mol.n_orbitals) + np.random.normal(scale=1.0, loc=0.0, size=mol.n_orbitals**2).reshape(mol.n_orbitals, mol.n_orbitals)
-        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=initial_guess)
-        if opt.energy < best_opt.energy:
-            best_opt = opt
-            
-    return best_opt
-
-
 true_start=time()
-start = time()
 # initialize the PNO interface
-geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"
+geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25" # geometry in Angstrom
 madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno":1})
-orbitals = madpno.get_orbitals()
+orbitals = madpno.get_orbitals(0,2,0)
 param = madpno.madness_parameters
-c, h, g = madpno.get_integrals()
+nuc_repulsion= madpno.get_nuclear_repulsion()
+Vnuc = madpno.get_nuclear_potential()
 del madpno
-#todo: add cleanup
 
-end=time()
-print("PNO time: ", end-start)
+plt=madpy.Plotter()
+for i in range(len(orbitals)):
+    plt.line_plot(f"pnoorb{i}.dat",orbitals[i])
+del plt
 
-for iteration in range(1):
-    start = time()
-    mol = tq.Molecule(geometry=geom, one_body_integrals=h, two_body_integrals=g, nuclear_repulsion=c)
-    U = mol.make_ansatz(name="HCB-UpCCGD")
-    if iteration == 0:
-        opt = get_best_initial_values(mol)
-    else:
-        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess=opt.mo_coeff)
+c=nuc_repulsion
+for iteration in range(6):
+
+    integrals = madpy.Integrals(param)
+    G = integrals.compute_two_body_integrals(orbitals).elems
+    T = integrals.compute_kinetic_integrals(orbitals)
+    V = integrals.compute_potential_integrals(orbitals, Vnuc)
+    S = integrals.compute_overlap_integrals(orbitals)
+    del integrals
+
+    mol = tq.Molecule(geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c)
     
-    mol_new = opt.molecule
-    H = mol_new.make_hardcore_boson_hamiltonian()
-    U = mol_new.make_ansatz(name="HCB-UpCCGD")
+    U = mol.make_ansatz(name="UpCCGD")
+    H = mol.make_hamiltonian()
     E = tq.ExpectationValue(H=H, U=U)
-    result = tq.minimize(E, silent=True, use_hcb=True)
+    result = tq.minimize(E, silent=True)
     rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
-    end = time()
-    print("VQE iteration {} time: {:.2f} seconds".format(iteration, end-start))
+    
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
     
-    start = time()
-    opti = madpy.Optimization(param)
-    orbitals = opti(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2)
-    c,h_el,g_el = opti.get_integrals()
+    opti = madpy.Optimization(Vnuc, nuc_repulsion, parameters=param)
+    orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+    c = opti.get_c() #if there are no frozen core electrons, this should always be equal to the nuclear repulsion
     del opti
 
-    h=np.array(h_el).reshape(2,2)
-    g=np.array(g_el).reshape(2,2,2,2)
-    g=tq.quantumchemistry.NBodyTensor(g, ordering="dirac")
-    g=g.reorder(to="openfermion")
-    end = time()
-    print("It "+str(iteration)+" Optimization time: ", end-start)
+    plt=madpy.Plotter()
+    for i in range(len(orbitals)):
+        plt.line_plot(f"orb{i}.dat",orbitals[i])
+    del plt
+
 true_end=time()
 print("Total time: ", true_end-true_start)
 

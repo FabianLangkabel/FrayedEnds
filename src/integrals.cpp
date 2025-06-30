@@ -3,7 +3,7 @@
 using namespace madness;
 
 
-Integrals::Integrals(double L, long k, double thresh) : MadnessProcess(L,k,thresh)
+Integrals::Integrals(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads)
 {
     std::cout << "starting\n";
 }

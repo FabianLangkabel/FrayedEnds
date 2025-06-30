@@ -19,7 +19,7 @@ namespace nb = nanobind;
 
 class Integrals: public MadnessProcess{
 public:
-    Integrals(double L, long k, double thresh);
+    Integrals(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
     ~Integrals(){};
 
     madness::Tensor<double> potential_integrals;

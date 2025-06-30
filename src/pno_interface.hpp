@@ -216,7 +216,7 @@ inline void freeCharPointerArray(char** charArray, size_t size) {
 
 class PNOInterface: public MadnessProcess{
 	public:
-		PNOInterface(std::string argv, double L, long k, double thresh) : MadnessProcess(L,k,thresh)
+		PNOInterface(std::string argv, double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads)
 		{
 			
 			auto [argc, charArray] = stringToCharPointerArray(argv);
@@ -800,9 +800,6 @@ class PNOInterface: public MadnessProcess{
 				if (cabs_switch) std::cout << "non zero elements:\n f : " << non_zero_f;
 				std::cout << std::endl;
 			}
-			std::cout << FunctionDefaults<3>::get_cell_width()[0] << std::endl;
-			std::cout << FunctionDefaults<3>::get_cell_width()[1] << std::endl;
-			std::cout << FunctionDefaults<3>::get_cell_width()[2] << std::endl;
 		}
 
 		std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const

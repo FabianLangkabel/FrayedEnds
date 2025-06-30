@@ -4,12 +4,11 @@ using namespace madness;
 
 
 
-Optimization::Optimization(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
+Optimization::Optimization(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads): MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads) {std::cout.precision(6);}
 
 Optimization::~Optimization()
 {
-    delete Vnuc;
-    delete custom_potential;
+    Vnuc.clear();
     frozen_occ_orbs.clear();
     active_orbs.clear();
     frozen_virt_orb.clear();
@@ -18,19 +17,12 @@ Optimization::~Optimization()
 }
 
 
-void Optimization::CreateNuclearPotentialAndRepulsion(std::string GeometryFile)
+void Optimization::GivePotentialAndRepulsion(SavedFct potential, double nuclear_repulsion)
 {
-    auto molecule = madness::Molecule();
-    molecule.read_file(GeometryFile); //TODO: read_file is deprecated, use commandlineparser to set up molecule otherwise trouble awaits...
-    Vnuc = new Nuclear<double,3>(*world, molecule);
-    nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
+    Vnuc = loadfct(potential);
+    nuclear_repulsion_energy = nuclear_repulsion;
 }
 
-void Optimization::GiveCustomPotential(SavedFct custom_pot)
-{   
-    custom_potential = new real_function_3d(loadfct(custom_pot));
-    use_custom_potential = true;
-}
 
 void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files)
 {
@@ -323,11 +315,8 @@ void Optimization::CalculateAllIntegrals()
             }
             //Nuclear
             real_function_3d Vnuc_orb_l;
-            if (use_custom_potential){
-                Vnuc_orb_l = (*custom_potential)*active_orbs[l];
-            } else {
-                Vnuc_orb_l = (*Vnuc)(active_orbs[l]);
-            }
+            Vnuc_orb_l = Vnuc*active_orbs[l];
+
             as_integrals_one_body(k, l) += inner(active_orbs[k], Vnuc_orb_l);
         }
     }
@@ -366,11 +355,8 @@ void Optimization::CalculateAllIntegrals()
             }
             //Nuclear
             real_function_3d Vnuc_orb_k;
-            if (use_custom_potential){
-                Vnuc_orb_k = (*custom_potential)*active_orbs[k];
-            } else {
-                Vnuc_orb_k = (*Vnuc)(active_orbs[k]);
-            }
+            Vnuc_orb_k = Vnuc*active_orbs[k];
+
             core_as_integrals_one_body_ak(a, k) += inner(frozen_occ_orbs[a], Vnuc_orb_k);
         }
     }
@@ -495,11 +481,8 @@ void Optimization::CalculateCoreEnergy()
             }
             //Nuclear
             real_function_3d Vnuc_orb;
-            if (use_custom_potential){
-                Vnuc_orb = (*custom_potential)*frozen_occ_orbs[i];
-            } else {
-                Vnuc_orb = (*Vnuc)(frozen_occ_orbs[i]);
-            }
+            Vnuc_orb = Vnuc*frozen_occ_orbs[i];
+            
             core_nuclear_attraction_energy += inner(frozen_occ_orbs[i], Vnuc_orb);
         }
         core_kinetic_energy = nocc * core_kinetic_energy;
@@ -791,11 +774,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
 
         real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
         real_function_3d rhs;
-        if (use_custom_potential){
-            rhs = (*custom_potential)*active_orbs[i];
-        } else {
-            rhs = (*Vnuc)(active_orbs[i]);
-        }
+        rhs = Vnuc*active_orbs[i];
         for(int k = 0; k < core_dim; k++)
         {
             rhs -= rdm_ii_inv[idx] * LagrangeMultiplier_AS_Core(k, i) * frozen_occ_orbs[k];
@@ -922,7 +901,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
     return AllOrbitalUpdates;
 } 
 
-void Optimization::RotateOrbitalsBackAndUpdateIntegrals()
+void Optimization::RotateOrbitalsBack()
 {
     //Create Full RotationMatrix
     Eigen::MatrixXd RotationMatrixBack = ActiveSpaceRotationMatrix.transpose();
@@ -939,7 +918,6 @@ void Optimization::RotateOrbitalsBackAndUpdateIntegrals()
         }
     }
     active_orbs = transform(*world, active_orbs, T);
-    CalculateAllIntegrals();
 }
 
 void Optimization::SaveOrbitals(std::string OutputPath)

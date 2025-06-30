@@ -19,4 +19,7 @@ class MadnessParameters:
     k: int=7 # wavelet order
     L: float=50.0 # simulation box size is (L*2)^3
     thresh: float=1.e-5 # MRA threshold
-    #todo initial level, truncate_mode, refine, threads
+    initial_level: int=5 
+    truncate_mode: int=1
+    refine: bool=True
+    n_threads: int=-1 # use all available threads by default
