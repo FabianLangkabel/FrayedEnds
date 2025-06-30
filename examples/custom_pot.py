@@ -33,14 +33,14 @@ c = 0.0
 
 for iteration in range(6):
     integrals = mad.Integrals(param)
-    G = integrals.compute_two_body_integrals(orbitals).elems
+    G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, mra_pot)
     S = integrals.compute_overlap_integrals(orbitals)
     del integrals
 
     mol = tq.Molecule(dummy_molecule, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c)
-    e, fcivec = fci.direct_spin0.kernel(T+V, G, mol.n_orbitals, mol.n_electrons)
+    e, fcivec = fci.direct_spin0.kernel(T+V, G.elems, mol.n_orbitals, mol.n_electrons)
     rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, mol.n_orbitals, mol.n_electrons)
     rdm2 = np.swapaxes(rdm2, 1, 2)
 
