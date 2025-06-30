@@ -12,7 +12,7 @@ class Transformator: public MadnessProcess {
     public:
         double thresh;
 
-        Transformator(double L, long k, double thresh) : thresh(thresh), MadnessProcess(L, k, thresh) {}
+        Transformator(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : thresh(thresh), MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads) {}
         ~Transformator() {}
 
         std::vector<SavedFct> orthorgonalize(const std::vector<SavedFct>& input_functions, const std::string& technique,  const bool print_out = false) {

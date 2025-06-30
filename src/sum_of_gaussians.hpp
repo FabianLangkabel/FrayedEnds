@@ -52,7 +52,7 @@ class CoulombPotentialFromChargeDensity : public MadnessProcess
         double Q;
         std::vector<std::vector<double> > charge_locations;
 
-        CoulombPotentialFromChargeDensity(double L, long k, double thresh, std::vector<double> sl, double Q, std::vector<std::vector<double> > cl) : MadnessProcess(L,k,thresh), sharpness_list(sl), Q(Q), charge_locations(cl) {std::cout.precision(6);}
+        CoulombPotentialFromChargeDensity(std::vector<double> sl, double Q, std::vector<std::vector<double> > cl, double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads), sharpness_list(sl), Q(Q), charge_locations(cl) {std::cout.precision(6);}
         
         ~CoulombPotentialFromChargeDensity() {}
         SavedFct CreateChargeDens() {

@@ -4,7 +4,7 @@
 
 using namespace madness;
 
-Eigensolver3D::Eigensolver3D(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
+Eigensolver3D::Eigensolver3D(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads): MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads) {std::cout.precision(6);}
 
 Eigensolver3D::~Eigensolver3D()
 {
@@ -22,9 +22,9 @@ void Eigensolver3D::solve(SavedFct input_V, int num_levels, int max_iter) {
     std::vector<Function<double,3>> guesses = guess_generator.create_guesses(num_levels, V);
 
     // plot guess functions
-    for (int i = 0; i < guesses.size(); i++) {
-        plot("g-" + std::to_string(i) + ".dat", SavedFct(guesses[i]));
-    }
+    //for (int i = 0; i < guesses.size(); i++) {
+    //    plot("g-" + std::to_string(i) + ".dat", SavedFct(guesses[i]));
+    //}
 
     // Diagonalize the Hamiltonian matrix
     std::pair<Tensor<double>, std::vector<Function<double, 3>>> tmp = diagonalize(guesses, V);
@@ -205,7 +205,7 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
         if (err < 5e-4) break;
     }
 
-    plot("phi-" + std::to_string(N)+ ".dat", phi);
+    //plot("phi-" + std::to_string(N)+ ".dat", phi);
 
     if (count_shift != 0) {
         std::cout << "Potential was shifted " << count_shift << " times" << std::endl;
