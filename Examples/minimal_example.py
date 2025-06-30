@@ -97,6 +97,10 @@ for it in range(iterations):
     del opti
     del red2
 
+    h1=np.array(h1_elements).reshape(as_dim,as_dim)
+    g2=np.array(g2_elements).reshape(as_dim,as_dim,as_dim,as_dim)
+    g2=tq.quantumchemistry.NBodyTensor(g2, ordering="dirac")
+    g2=g2.reorder(to="phys").elems
 
 
 

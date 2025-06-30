@@ -68,7 +68,7 @@ private:
     double nuclear_repulsion_energy=0.0;
     Nuclear<double,3>* Vnuc=nullptr;
     bool use_custom_potential=false;
-    real_function_3d* custom_potential;
+    real_function_3d* custom_potential=nullptr;
 
 
     //Orbitals
