@@ -206,7 +206,7 @@ int main(int argc, char** argv)
     opti->ReadRDMFiles(one_body_rdm_files, two_body_rdm_files);
     opti->TransformToNObasis();
     opti->CalculateAllIntegrals();
-    opti->CalculateEnergy();
+    //opti->CalculateEnergy();
     
     
     std::cout << "---------------------------------------------------" << std::endl;

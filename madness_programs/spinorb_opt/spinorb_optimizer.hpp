@@ -17,6 +17,7 @@
 #include "orbital.hpp"
 
 using namespace madness;
+using json = nlohmann::json;
 
 class SpinorbOpt{
 public:
@@ -30,12 +31,12 @@ public:
     void TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::MatrixXd TransformationMatrix);
     void TransformToNObasis();
     void CalculateAllIntegrals();
-    void CalculateEnergy();
-    void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh);
+    std::vector<double> CalculateEnergy();
+    void OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh, std::string OutputPath);
     std::vector<real_function_3d> GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update);
     void CalculateLagrangeMultiplier();
     double CalculateLagrangeMultiplierElement(int dim, int a, int i);
-    //std::vector<real_function_3d> ProjectSpinorbitals(std::vector<real_function_3d> orbs);
+    std::vector<real_function_3d> ProjectSpinorbitals(std::vector<real_function_3d> orbs);
     //void CalculateTotalSpin();
     //void SaveNOs(std::string OutputPath);
     //void SaveSpinorbitals(std::string OutputPath); 
@@ -48,18 +49,13 @@ private:
     double nuclear_repulsion_energy;
     Nuclear<double,3>* Vnuc;
 
-    //std::vector<Orbital> all_alpha_orbitals;
-    //std::vector<Orbital> all_beta_orbitals;
+    json SpinorbOpt_data;
+
     int num_active_alpha;
     int num_active_beta;
     std::vector<int> active_spin_orb_indices;
     std::vector<int> frozen_occ_spin_orb_indices;
-    //std::vector<int> active_alpha_orbital_indices;
-    //std::vector<int> active_beta_orbital_indices;
-    //std::vector<int> frozen_occupied_alpha_orbital_indices;
-    //std::vector<int> frozen_occupied_beta_orbital_indices;
     std::vector<real_function_3d> active_alpha_beta_orbs;
-    //std::vector<real_function_3d> orbitals_rotate;
 
     Eigen::MatrixXd Alpha_Rdm_Matrix;
     Eigen::MatrixXd Beta_Rdm_Matrix;

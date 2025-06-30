@@ -1,4 +1,5 @@
 #include "spinorb_optimizer.hpp"
+using json = nlohmann::json;
 
 using namespace madness;
 
@@ -662,9 +663,11 @@ void SpinorbOpt::CalculateAllIntegrals()
 }
 
 
-void SpinorbOpt::CalculateEnergy()
+std::vector<double> SpinorbOpt::CalculateEnergy()
 {
     auto start_time = std::chrono::high_resolution_clock::now();
+
+    std::vector<double> energies;
 
     int dim_ab = Alpha_Beta_Rdm_Matrix.rows();
     //std::cout << "dim ab calc en" << dim_ab << std::endl;
@@ -684,6 +687,8 @@ void SpinorbOpt::CalculateEnergy()
             nuclear_attraction_energy += Alpha_Beta_Rdm_Matrix(k, l) * integrals_potential(k, l);
         }
     }
+    energies.push_back(kinetic_energy);
+    energies.push_back(nuclear_attraction_energy);
     
     //Two Particle Part
     double two_electron_energy = 0.0;    
@@ -697,18 +702,24 @@ void SpinorbOpt::CalculateEnergy()
         }
     }
 
+    energies.push_back(two_electron_energy);
+
     double total_energy = kinetic_energy + two_electron_energy + nuclear_attraction_energy + nuclear_repulsion_energy;
-    
+
+    energies.push_back(nuclear_repulsion_energy);
+    energies.push_back(total_energy);
+
     print("            Kinetic energy ", kinetic_energy);
     print(" Nuclear attraction energy ", nuclear_attraction_energy);
     print("       Two-electron energy ", two_electron_energy);
     print(" Nuclear  repulsion energy ", nuclear_repulsion_energy);
     print("              Total energy ", total_energy);
 
-
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "CalculateEnergies took " << duration.count() << " seconds" << std::endl;
+
+    return energies;
 }
 
 void SpinorbOpt::CalculateLagrangeMultiplier()
@@ -746,8 +757,10 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 }
 
 
-void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh)
+void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh, std::string OutputPath)
 {
+    
+    
     int num_active_orbs = active_alpha_beta_orbs.size();
     //ignore frozen orbitals for now
     /*std::vector<real_function_3d> frozen_orbs; 
@@ -765,6 +778,21 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
 
     bool converged = false;
     int iterstep = 0;
+    std::cout << "Calculate initial energies: " << std::endl;
+    std::vector<double> initial_energies = CalculateEnergy();
+    
+    //Save the energetic values in a json file
+    json energies_array = json::array();
+    json initial_energies_forjson;
+
+    initial_energies_forjson["Iteration"] = iterstep;
+    initial_energies_forjson["Kinetic energy"] = initial_energies[0];
+    initial_energies_forjson["Nuclear attraction energy"] = initial_energies[1];
+    initial_energies_forjson["Two-electron energy"] = initial_energies[2];
+    initial_energies_forjson["Nuclear repulsion energy"] = initial_energies[3];
+    initial_energies_forjson["Total energy"] = initial_energies[4];
+    energies_array.push_back(initial_energies_forjson);
+    
     while(!converged)
     {
         iterstep++;
@@ -862,7 +890,17 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
         CalculateAllIntegrals();
 
         //Calculate new energy
-        CalculateEnergy();
+        std::vector<double> energies = CalculateEnergy();
+        json energy_iter;
+
+        energy_iter["Iteration"] = iterstep;
+        energy_iter["Kinetic energy"] = energies[0];
+        energy_iter["Nuclear attraction energy"] = energies[1];
+        energy_iter["Two-electron energy"] = energies[2];
+        energy_iter["Nuclear repulsion energy"] = energies[3];
+        energy_iter["Total energy"] = energies[4];
+        energies_array.push_back(energy_iter);
+
 
         //Check convergence
         std::cout << "Highest error: " << highest_error << std::endl;
@@ -871,10 +909,18 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
             std::cout << "Convergence has been reached :-)" << std::endl;
         }
     }
+
+    SpinorbOpt_data["SpinorbOpt output"] = energies_array;
+
+    std::cout << "Save energies to a json file" << std::endl;
+    std::ofstream file(OutputPath + "/SpinorbOpt_energies.json");
+    file << SpinorbOpt_data.dump(4);
+    file.close();
+
 }
 
 
-/*std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
+std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
 {
     int dim_orbs = orbs.size();
     
@@ -890,7 +936,7 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
     }
   
     return orbs;
-}*/
+}
 
 
 /*void SpinorbOpt::CalculateTotalSpin()
