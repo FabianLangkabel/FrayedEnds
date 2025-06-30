@@ -7,6 +7,7 @@
 #include "PyFuncFactory.hpp"
 #include "integrals.hpp"
 #include "eigensolver.hpp"
+#include "nwchem_converter.hpp"
 
 namespace nb = nanobind;
 
@@ -91,4 +92,10 @@ NB_MODULE(_madpy_impl, m) {
         .def("solve", &Eigensolver3D::solve, nb::arg("input_V"), nb::arg("num_levels"), nb::arg("max_iter"))
         .def("solve_with_guesses", &Eigensolver3D::solve_with_input_guesses, nb::arg("input_V"), nb::arg("input_guesses"), nb::arg("num_levels"), nb::arg("max_iter"))
         .def("GetOrbitals", &Eigensolver3D::GetOrbitals);
+
+    nb::class_<NWChem_Converter>(m, "NWChem_Converter")
+        .def(nb::init<const double &, const int &, const double &>())
+        .def("Read_NWChem_File", &NWChem_Converter::read_nwchem_file)
+        .def("GetNormalizedAOs", &NWChem_Converter::GetNormalizedAOs)
+        .def("GetMOs", &NWChem_Converter::GetMOs);
 }
