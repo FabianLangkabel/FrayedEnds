@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
 project(OrbitalOptimization)
-add_subdirectory("madness_programs/orb_opt")
+#add_subdirectory("madness_programs/orb_opt")
 add_subdirectory("madness_programs/orbital_translation")
 add_subdirectory("madness_programs/spinorb_opt")

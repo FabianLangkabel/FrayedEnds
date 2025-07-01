@@ -58,10 +58,26 @@ def dict_spinorbopt(rdms_path, orb_path, output_json, output_spinorbopt, x, num_
         file.write(dict_json)
 
 
-rdms_path = "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3lin_631g_min"
-orb_path = "/workspaces/MRA-OrbitalOptimization/coefficients/h3lin_631g_coeffs/h3lin_min/output_k8"
+def make_geometry_file_HeH(directory, position):
+    pos = position.replace(".", "")
+    filename = f"{directory}/{pos}_geometry_HeH.mol"
+    with open(filename, "a") as file:
+        l1 = "geometry \n"
+        l2 = "units Bohr \n"
+        l3 = "no orient 1 \n"
+        l4 = "eprec 1e-6 \n"
+        l5 = "He 0.00000000 0.00000000 0.00000000 \n"
+        l6 = f"H {position} 0.00000000 0.00000000 \n"
+        l7 = "end"
+        file.writelines([l1, l2, l3, l4, l5, l6, l7])
+
+
+H_pos_HeH = str(2.2676711863)
+#rdms_path = "/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3lin_631g_min"
+#orb_path = "/workspaces/MRA-OrbitalOptimization/coefficients/h3lin_631g_coeffs/h3lin_min/output_k8"
 output_jsonfile = "/workspaces/MRA-OrbitalOptimization/automate_process"
-output_spinorbopt="/workspaces/MRA-OrbitalOptimization/output_folder/h3lin_631g_min_k8"
-x = str(1.75743603)
-dict_spinorbopt(rdms_path, orb_path, output_jsonfile, output_spinorbopt, x, 6)
+#output_spinorbopt="/workspaces/MRA-OrbitalOptimization/output_folder/h3lin_631g_min_k8"
+#x = str(1.75743603)
+#dict_spinorbopt(rdms_path, orb_path, output_jsonfile, output_spinorbopt, x, 6)
+make_geometry_file_HeH(output_jsonfile, H_pos_HeH)
 

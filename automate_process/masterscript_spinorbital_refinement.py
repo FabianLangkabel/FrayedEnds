@@ -1,9 +1,14 @@
+#This will become the master script which includes the whole workflow of spinorbital refinement. It contains all the necessary python functions and is linked to the OrbitalTranslator
+# and SpinorbOpt programs. There are also Python functions who can create the json input files for the C++ programs.
+
+
 from pyscf import gto, scf
 import numpy as np
 from pyblock2._pyscf.ao2mo import integrals as itg
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 import os
 import json
+import subprocess
 
 
 #this is for deleting the temporary files so that each dmrg calculation can be run fresh
@@ -44,7 +49,9 @@ def define_H3tri_mole_object(number, basisset):
 
 #define here the input for the uhf calculation which includes the geometry in Bohr, the basisset, charge and spin for He-H
 def define_HeH_mole_object(number, basisset): 
+    #number = number.replace("_", ".")
     x = float(number)
+    print(x)
     mol = gto.Mole()
     mol.atom = [["He", 0, 0, 0], ["H", x, 0, 0]]
     mol.unit = 'Bohr'
@@ -66,8 +73,8 @@ def calculate_alpha_beta_coeffs(mol):
 
 #export the alpha and beta coefficients of a certain bondlength in npy files, so that they can be read by OrbitalTranslator
 def save_mocoeffs(alpha_coeff, beta_coeff, folderpath, x):
-    x = str(x)
-    x = x.replace(".", "")
+    #x = str(x)
+    #x = x.replace(".", "")
     alpha_path = f"{folderpath}/{x}_alpha_coeffs.npy"
     beta_path = f"{folderpath}/{x}_beta_coeffs.npy"
     np.save(alpha_path, alpha_coeff)
@@ -96,8 +103,8 @@ def run_dmrg_and_get_rdms(ncas, n_elec, spin, ecore, h1e, g2e, orb_sym):
 
 #export the 1-body and 2-body rdms of a certain bondlength in npy files, so that they can be read by SpinorbOpt
 def save_rdms(alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm, folderpath, x):
-    x = str(x)
-    x = x.replace(".", "")
+    #x = str(x)
+    #x = x.replace(".", "")
     alpha_1rdm_path = f"{folderpath}/{x}_alpha_1rdm.npy"
     beta_1_rdm_path = f"{folderpath}/{x}_beta_1rdm.npy"
     alpha_alpha_2rdm_path = f"{folderpath}/{x}_alpha_alpha_2rdm.npy"
@@ -110,78 +117,70 @@ def save_rdms(alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm, folderpath, x):
     np.save(beta_beta_2rdm_path, bb_2rdm)
 
 
-#using this primarily to update the geometry file, but can be in priniciple used for any file that needs one line modified
-def modify_geometry_file(filename, old_geom, new_geom):
-    try:
-        with open(filename, 'r') as file:
-            lines = file.readlines()
+#use this to make the geometry file for He-H
+def make_geometry_file_HeH(directory, position):
+    x = position.replace(".", "_")
+    #position = float(position)
+    filename = f"{directory}/{x}_geometry_HeH.mol"
+    with open(filename, "w") as file:
+        l1 = "geometry \n"
+        l2 = "units Bohr \n"
+        l3 = "no_orient 1 \n"
+        l4 = "eprec 1e-6 \n"
+        l5 = "He 0.00000000 0.00000000 0.00000000 \n"
+        l6 = f"H {position} 0.00000000 0.00000000 \n"
+        l7 = "end"
+        file.writelines([l1, l2, l3, l4, l5, l6, l7])
 
-        modified = False
-        for i, line in enumerate(lines):
-            if old_geom in line:
-                lines[i] = new_geom + '\n'
-                modified = True
-                break  
-
-        if not modified:
-            print(f"No line containing '{old_geom}' was found.")
-            return
-
-        with open(filename, 'w') as file:
-            file.writelines(lines)
-
-        print(f"Line containing '{new_geom}' has been updated.")
-
-    except FileNotFoundError:
-        print(f"Error: File '{filename}' not found.")
 
 #this function creates the json files with all the necessary information for the Orbital Translator programm; k and madness_thresh need to be adjusted manually
-def make_orbitaltranslator_json(coeff_path, output_json, x):
-    x = x.replace(".", "")
-    output_path = f"{coeff_path}"
-    alpha_path = f"{coeff_path}/{x}_alpha_coeffs.npy"
-    beta_path = f"{coeff_path}/{x}_beta_coeffs.npy"
+#currently set for HeH
+def make_orbitaltranslator_json(directory, pos):
+    #pos = pos.replace(".", "")
+    alpha_path = f"{directory}/{pos}_alpha_coeffs.npy"
+    beta_path = f"{directory}/{pos}_beta_coeffs.npy"
     dict = {
         "box_size": 50.0,
         "wavelet_order": 8,
         "madness_thresh": 0.00001,
         "optimization_thresh": 0.001,
         "NO_occupation_thresh": 0.001,
-        "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H3_tri_min.mol",
+        "molecule_file": f"{directory}/{pos}_geometry_HeH.mol",
         "calpha_coeff_file": alpha_path,
         "cbeta_coeff_file": beta_path,
-        "output_folder": output_path,
+        "output_folder": directory,
     }
     dict_json = json.dumps(dict, indent=4)
-    output_jsonfile = f"{output_json}/{x}_H3lin.json"
-    print(dict_json)
-    print(output_jsonfile)
+    output_jsonfile = f"{directory}/{pos}_HeH_OrbitalTranslator.json"
+    print("Save OrbitalTranslator Json file")
     with open(output_jsonfile, "w") as file:
         file.write(dict_json)
+    return output_jsonfile
     
 
-#this function creates the Json Files with all the information that the SpinorbitalOptimizer needs
-def make_spinorbopt_json(rdms_path, orb_path, output_json, output_spinorbopt, x, num_orbs): 
-    x = x.replace(".", "")
+#this function creates the Json Files with all the information that the SpinorbitalOptimizer needs, one needs to modify k, madness_thresh and the geometry_file_path manually
+#currently set for HeH
+def make_spinorbopt_json(directory, pos, num_orbs): 
+    #pos = pos.replace(".", "")
     dict_1 = {
         "box_size": 50.0,
-        "wavelet_order": 7,
-        "madness_thresh": 0.0001,
+        "wavelet_order": 8,
+        "madness_thresh": 0.00001,
         "optimization_thresh": 0.001,
         "NO_occupation_thresh": 0.001,
-        "molecule_file": "/workspaces/MRA-OrbitalOptimization/geometry/H3_lin_min.mol",
-        "output_folder": output_spinorbopt,
-        "alpha_one_rdm_file": f"{rdms_path}/{x}_alpha_1rdm.npy",
-        "beta_one_rdm_file": f"{rdms_path}/{x}_beta_1rdm.npy",
-        "alpha_alpha_rdm_file": f"{rdms_path}/{x}_alpha_alpha_2rdm.npy",
-        "alpha_beta_rdm_file": f"{rdms_path}/{x}_alpha_beta_2rdm.npy",
-        "beta_beta_rdm_file": f"{rdms_path}/{x}_beta_beta_2rdm.npy",
+        "molecule_file": f"{directory}/{pos}_geometry_HeH.mol",
+        "output_folder": directory,
+        "alpha_one_rdm_file": f"{directory}/{pos}_alpha_1rdm.npy",
+        "beta_one_rdm_file": f"{directory}/{pos}_beta_1rdm.npy",
+        "alpha_alpha_rdm_file": f"{directory}/{pos}_alpha_alpha_2rdm.npy",
+        "alpha_beta_rdm_file": f"{directory}/{pos}_alpha_beta_2rdm.npy",
+        "beta_beta_rdm_file": f"{directory}/{pos}_beta_beta_2rdm.npy",
     }
     alpha_entries=[]
     beta_entries=[]
     for i in np.arange(0,num_orbs, 1):
-        alpha_filename = f"{orb_path}/alpha_orbital_{i}"
-        beta_filename = f"{orb_path}/beta_orbital_{i}"
+        alpha_filename = f"{directory}/alpha_orbital_{i}"
+        beta_filename = f"{directory}/beta_orbital_{i}"
         orb_type = "active"
         alpha_idx = int(2*i)
         beta_idx =int(2*i+1)
@@ -192,7 +191,7 @@ def make_spinorbopt_json(rdms_path, orb_path, output_json, output_spinorbopt, x,
     alpha_dict = {
         "alpha_orbitals": [
             {
-              "alpha_orbital_file_name:": alpha_file,
+              "alpha_orbital_file_name": alpha_file,
               "alpha_orbital_type": alpha_orb_type,
               "alpha_active_space_index": alpha_idx,
             } for alpha_file, alpha_orb_type, alpha_idx in alpha_entries
@@ -201,7 +200,7 @@ def make_spinorbopt_json(rdms_path, orb_path, output_json, output_spinorbopt, x,
     beta_dict = {
         "beta_orbitals": [
             {
-              "beta_orbital_file_name:": beta_file,
+              "beta_orbital_file_name": beta_file,
               "beta_orbital_type": beta_orb_type,
               "beta_active_space_index": beta_idx,
             } for beta_file, beta_orb_type, beta_idx in beta_entries
@@ -209,34 +208,82 @@ def make_spinorbopt_json(rdms_path, orb_path, output_json, output_spinorbopt, x,
     }
 
     combined_data = {**dict_1, **alpha_dict, **beta_dict}
-    dict_json = json.dumps(combined_data, indent=4)
-    output_jsonfile = f"{output_json}_{x}.json"
-    #print(dict_json)
-    #print(output_jsonfile)
+    dict_json = json.dumps(combined_data, indent=2)
+    output_jsonfile = f"{directory}/{pos}_HeH_SpinorbOpt.json"
+    print("Save SpinorbOpt Json file")
     with open(output_jsonfile, "w") as file:
         file.write(dict_json)
+    return output_jsonfile
 
 
 
 
 #use os.mkdir("directory_name") to make a new directory for the new bondlength
 
+
 #delete_tmp_file('/workspaces/MRA-OrbitalOptimization/automate_process/tmp2')
 delete_tmp_file('/workspaces/MRA-OrbitalOptimization/automate_process/tmp4')
 
-new_pos = str(1.75743603) #the next lines are going to incorporated into the loop
-new_geom = f'H {new_pos} 0.00000000 0.00000000'
-old_pos = str(1.85192233)
-old_geom = f'H {old_pos} 0.00000000 0.00000000'
+#new_pos = str(1.75743603) #the next lines are going to incorporated into the loop
+#new_geom = f'H {new_pos} 0.00000000 0.00000000'
+#old_pos = str(1.85192233)
+#old_geom = f'H {old_pos} 0.00000000 0.00000000'
 
-H_pos = str(1.75743603)
+#H_pos = str(1.75743603)
+
 #modify_geometry_file('/workspaces/MRA-OrbitalOptimization/geometry/H3_lin_min.mol', old_geom, new_geom)
-H3_lin_geom = define_H3lin_mole_object(1.75743603, 'sto-3g')
-#HeH_geom = define_HeH_mole_object(2.2676711863, '6-31g')
+#H3_lin_geom = define_H3lin_mole_object(1.75743603, 'sto-3g')
+
 #H3_tri_geom = define_H3tri_mole_object(1.42379912, '6-31g')
-H3lin_alpha_coeffs, H3lin_beta_coeffs, ncas, n_elec, spin, ecore, h1e, g2e, orb_sym = calculate_alpha_beta_coeffs(H3_lin_geom)
-#HeH_alpha_coeffs, HeH_beta_coeffs, ncas, n_elec, spin, ecore, h1e, g2e, orb_sym = calculate_alpha_beta_coeffs(HeH_geom)
+#H3lin_alpha_coeffs, H3lin_beta_coeffs, ncas, n_elec, spin, ecore, h1e, g2e, orb_sym = calculate_alpha_beta_coeffs(H3_lin_geom)
+
 #H3tri_alpha_coeffs, H3tri_beta_coeffs, ncas, n_elec, spin, ecore, h1e, g2e, orb_sym = calculate_alpha_beta_coeffs(H3_tri_geom)
-save_mocoeffs(H3lin_alpha_coeffs, H3lin_beta_coeffs, '/workspaces/MRA-OrbitalOptimization/coefficients/h3lin_sto3g_coeffs', 1.75743603)
-energy, alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm = run_dmrg_and_get_rdms(ncas, n_elec, spin, ecore, h1e, g2e, orb_sym)
-save_rdms(alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm, '/workspaces/MRA-OrbitalOptimization/reduced_density_matrices/h3lin_sto3g_min', 1.75743603)
+#save_mocoeffs(H3lin_alpha_coeffs, H3lin_beta_coeffs, '/workspaces/MRA-OrbitalOptimization/coefficients/h3lin_sto3g_coeffs', 1.75743603)
+
+
+
+
+H_pos_HeH_num = str(2.26767119) #specify H position, I can change this in the loop
+H_pos_HeH_str = H_pos_HeH_num.replace(".", "_")
+
+outputfolder = f"/workspaces/MRA-OrbitalOptimization/automate_process/{H_pos_HeH_str}_HeH_test" #specify output_dir
+os.mkdir(outputfolder) #make output_dir
+HeH_geom = define_HeH_mole_object(H_pos_HeH_num, 'sto-3g') #make mole object
+make_geometry_file_HeH(outputfolder, H_pos_HeH_num) #make geometry file
+HeH_alpha_coeffs, HeH_beta_coeffs, ncas, n_elec, spin, ecore, h1e, g2e, orb_sym = calculate_alpha_beta_coeffs(HeH_geom) #run UHf and get the coefficients
+save_mocoeffs(HeH_alpha_coeffs, HeH_beta_coeffs, outputfolder, H_pos_HeH_str) #save the rdms in npy files
+energy, alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm = run_dmrg_and_get_rdms(ncas, n_elec, spin, ecore, h1e, g2e, orb_sym) #run dmrg and get the rdms
+save_rdms(alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm, outputfolder, H_pos_HeH_str) #save the rdms
+
+#print(HeH_alpha_coeffs)
+#print(HeH_beta_coeffs)
+
+orbtrans_file = make_orbitaltranslator_json(outputfolder, H_pos_HeH_str) #make orbitaltranslator json file
+OrbitalTranslator_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/orbital_translation/OrbitalTranslation", orbtrans_file] #make command for 
+
+
+try: 
+    run_orbtrans = subprocess.run(OrbitalTranslator_cmd, capture_output=True, text=True, check=True)
+    print("Orbital Translator output:")
+    print(run_orbtrans.stdout)
+except subprocess.CalledProcessError as e:
+    print("Error occurred:")
+    print(e.stderr)
+
+spinorbopt_file = make_spinorbopt_json(outputfolder, H_pos_HeH_str, 2) #make spinorbopt json file
+SpinorbOpt_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/spinorb_opt/SpinorbOpt", spinorbopt_file]
+print("Run Spin orbital refinement:")
+try: 
+    run_spinorbopt = subprocess.Popen(SpinorbOpt_cmd, stdout=subprocess.PIPE, text=True)
+    for line in run_spinorbopt.stdout:
+        print(line, end='')
+    
+    run_spinorbopt.wait()
+except subprocess.CalledProcessError as e:
+    print("Error occurred:")
+    print(e.stderr)
+
+
+
+
+
