@@ -4,6 +4,7 @@
 #include <madness/mra/mra.h>
 #include <cstdio>
 #include <unistd.h>
+#include "molecule.hpp"
 
 using namespace madness;
 
@@ -90,7 +91,19 @@ class MadnessProcess {
             params.set_npoints(datapoints);
             std::vector<Function<double,3> > MRAf={loadfct(f)};
             plot_plane<3>(*world,MRAf,filename,params);
-        }   
+        }  
+
+        void cube_plot(std::string filename, SavedFct f, molecule molecule, double zoom=1.0, int datapoints=151, std::vector<double> origin={0.0, 0.0, 0.0}) {
+            PlotParameters params;
+            std::string outfile=filename+".cube";
+
+            params.set_zoom(zoom);
+            params.set_origin(origin);
+            params.set_npoints(datapoints);
+
+            plot_cubefile<3>(*world, loadfct(f), outfile, molecule.mol.cubefile_header(params.origin<3>()),
+                params.npoints(),params.zoom(),params.origin<3>());
+        }
 };
 
 
