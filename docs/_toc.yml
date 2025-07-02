@@ -3,7 +3,9 @@
 
 format: jb-book
 root: intro
-chapters:
-- file: markdown
-- file: notebooks
-- file: markdown-notebooks
+parts:
+#  - caption: Installation
+#    chapters:
+  - caption: Examples
+    chapters:
+    - file: NWChem_BeH2
