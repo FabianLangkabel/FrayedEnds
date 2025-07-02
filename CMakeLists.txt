@@ -60,6 +60,7 @@ nanobind_add_module(
   src/MadnessProcess.hpp
   src/PyFuncFactory.hpp
   src/eigensolver.cpp
+  src/nwchem_converter.cpp
 )
 
 # Install directive for scikit-build-core
