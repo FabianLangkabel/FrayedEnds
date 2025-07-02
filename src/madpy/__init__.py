@@ -6,3 +6,5 @@ from ._madpy_impl import CoulombPotentialFromChargeDensity
 from ._madpy_impl import Integrals
 from ._madpy_impl import Eigensolver
 from ._madpy_impl import NWChem_Converter
+from ._madpy_impl import molecule
+from ._madpy_impl import Plot

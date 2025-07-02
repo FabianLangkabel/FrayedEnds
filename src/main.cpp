@@ -8,6 +8,8 @@
 #include "integrals.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
+#include "molecule.hpp"
+#include "plot.hpp"
 
 namespace nb = nanobind;
 
@@ -15,6 +17,11 @@ namespace nb = nanobind;
 NB_MODULE(_madpy_impl, m) {
     nb::class_<real_function_3d>(m,"real_function_3d")
         .def(nb::init<>());
+
+    nb::class_<molecule>(m,"molecule")
+        .def(nb::init<>())
+        .def("add_atom", &molecule::add_atom)
+        .def("to_json", &molecule::to_json);
 
     nb::class_<SavedFct>(m, "SavedFct")
         .def(nb::init<const Function<double,3> &>())
@@ -98,4 +105,11 @@ NB_MODULE(_madpy_impl, m) {
         .def("Read_NWChem_File", &NWChem_Converter::read_nwchem_file)
         .def("GetNormalizedAOs", &NWChem_Converter::GetNormalizedAOs)
         .def("GetMOs", &NWChem_Converter::GetMOs);
+
+    nb::class_<Plot>(m, "Plot")
+        .def(nb::init<const double &, const int &, const double &>())
+        .def("plot", &Plot::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
+        .def("plane_plot", &Plot::plane_plot, nb::arg("filename"), nb::arg("f"), nb::arg("plane") = "yz", nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}))
+        .def("cube_plot", &Plot::cube_plot, nb::arg("filename"), nb::arg("f"), nb::arg("molecule"), nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}));
+
 }
