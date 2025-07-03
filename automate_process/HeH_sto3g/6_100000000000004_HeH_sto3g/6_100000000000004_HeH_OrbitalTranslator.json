@@ -1,0 +1,11 @@
+{
+    "box_size": 50.0,
+    "wavelet_order": 8,
+    "madness_thresh": 1e-05,
+    "optimization_thresh": 0.001,
+    "NO_occupation_thresh": 0.001,
+    "molecule_file": "/workspaces/MRA-OrbitalOptimization/automate_process/6_100000000000004_HeH_sto3g/6_100000000000004_geometry_HeH.mol",
+    "calpha_coeff_file": "/workspaces/MRA-OrbitalOptimization/automate_process/6_100000000000004_HeH_sto3g/6_100000000000004_alpha_coeffs.npy",
+    "cbeta_coeff_file": "/workspaces/MRA-OrbitalOptimization/automate_process/6_100000000000004_HeH_sto3g/6_100000000000004_beta_coeffs.npy",
+    "output_folder": "/workspaces/MRA-OrbitalOptimization/automate_process/6_100000000000004_HeH_sto3g"
+}

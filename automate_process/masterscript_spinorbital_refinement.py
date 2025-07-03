@@ -241,12 +241,43 @@ delete_tmp_file('/workspaces/MRA-OrbitalOptimization/automate_process/tmp4')
 #save_mocoeffs(H3lin_alpha_coeffs, H3lin_beta_coeffs, '/workspaces/MRA-OrbitalOptimization/coefficients/h3lin_sto3g_coeffs', 1.75743603)
 
 
+#for i in np.arange(1.2, 7.0, 0.1):
+#    atom_pos_num = str(i)
+#    atom_pos_str = atom_pos_num.replace(".", "_")
+#    outputfolder = f"/workspaces/MRA-OrbitalOptimization/automate_process/{atom_pos_str}_HeH_sto3g" #specify output_dir
+#    os.mkdir(outputfolder) #make output_dir
+#    HeH_geom = define_HeH_mole_object(atom_pos_num, 'sto-3g') #make mole object
+#    make_geometry_file_HeH(outputfolder, atom_pos_num) #make geometry file
+#    HeH_alpha_coeffs, HeH_beta_coeffs, ncas, n_elec, spin, ecore, h1e, g2e, orb_sym = calculate_alpha_beta_coeffs(HeH_geom) #run UHf and get the coefficients
+#    save_mocoeffs(HeH_alpha_coeffs, HeH_beta_coeffs, outputfolder, atom_pos_str) #save the rdms in npy files
+#    energy, alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm = run_dmrg_and_get_rdms(ncas, n_elec, spin, ecore, h1e, g2e, orb_sym) #run dmrg and get the rdms
+#    save_rdms(alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm, outputfolder, atom_pos_str) #save the rdms
+#    orbtrans_file = make_orbitaltranslator_json(outputfolder, atom_pos_str) #make orbitaltranslator json file
+#    OrbitalTranslator_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/orbital_translation/OrbitalTranslation", orbtrans_file] #make cmd for OrbitalTranslator
+#    try: 
+#        run_orbtrans = subprocess.run(OrbitalTranslator_cmd, capture_output=True, text=True, check=True)
+#        print("Orbital Translator output:")
+#        print(run_orbtrans.stdout)
+#    except subprocess.CalledProcessError as e:
+#        print("Error occurred:")
+#        print(e.stderr)
+#    spinorbopt_file = make_spinorbopt_json(outputfolder, atom_pos_str, 2) #make spinorbopt json file
+#    SpinorbOpt_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/spinorb_opt/SpinorbOpt", spinorbopt_file]
+#    print("Run Spin orbital refinement at bondlength ", i)
+#    try: 
+#        run_spinorbopt = subprocess.Popen(SpinorbOpt_cmd, stdout=subprocess.PIPE, text=True)
+#        for line in run_spinorbopt.stdout:
+#            print(line, end='')
+#        run_spinorbopt.wait()
+#    except subprocess.CalledProcessError as e:
+#        print("Error occurred:")
+#        print(e.stderr)
 
 
-H_pos_HeH_num = str(2.26767119) #specify H position, I can change this in the loop
+H_pos_HeH_num = str(7.0) #specify H position, I can change this in the loop
 H_pos_HeH_str = H_pos_HeH_num.replace(".", "_")
 
-outputfolder = f"/workspaces/MRA-OrbitalOptimization/automate_process/{H_pos_HeH_str}_HeH_test" #specify output_dir
+outputfolder = f"/workspaces/MRA-OrbitalOptimization/automate_process/{H_pos_HeH_str}_HeH_sto3g" #specify output_dir
 os.mkdir(outputfolder) #make output_dir
 HeH_geom = define_HeH_mole_object(H_pos_HeH_num, 'sto-3g') #make mole object
 make_geometry_file_HeH(outputfolder, H_pos_HeH_num) #make geometry file
@@ -255,11 +286,8 @@ save_mocoeffs(HeH_alpha_coeffs, HeH_beta_coeffs, outputfolder, H_pos_HeH_str) #s
 energy, alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm = run_dmrg_and_get_rdms(ncas, n_elec, spin, ecore, h1e, g2e, orb_sym) #run dmrg and get the rdms
 save_rdms(alpha_1rdm, beta_1rdm, aa_2rdm, ab_2rdm, bb_2rdm, outputfolder, H_pos_HeH_str) #save the rdms
 
-#print(HeH_alpha_coeffs)
-#print(HeH_beta_coeffs)
-
 orbtrans_file = make_orbitaltranslator_json(outputfolder, H_pos_HeH_str) #make orbitaltranslator json file
-OrbitalTranslator_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/orbital_translation/OrbitalTranslation", orbtrans_file] #make command for 
+OrbitalTranslator_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/orbital_translation/OrbitalTranslation", orbtrans_file] #make cmd for OrbitalTranslator
 
 
 try: 

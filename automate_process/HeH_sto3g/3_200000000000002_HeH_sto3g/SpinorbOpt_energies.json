@@ -1,0 +1,84 @@
+{
+    "SpinorbOpt output": [
+        {
+            "Iteration": 0,
+            "Kinetic energy": 3.6083285035665003,
+            "Nuclear attraction energy": -9.169556068726644,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.264492664008085,
+            "Two-electron energy": 1.6717349011520586
+        },
+        {
+            "Iteration": 1,
+            "Kinetic energy": 3.386272639278979,
+            "Nuclear attraction energy": -8.980419062081145,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.3431996346469206,
+            "Two-electron energy": 1.6259467881552463
+        },
+        {
+            "Iteration": 2,
+            "Kinetic energy": 3.4027265994194,
+            "Nuclear attraction energy": -9.002541006524638,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.3492370290718037,
+            "Two-electron energy": 1.6255773780334346
+        },
+        {
+            "Iteration": 3,
+            "Kinetic energy": 3.411858171404558,
+            "Nuclear attraction energy": -9.013711433867247,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.350311201708155,
+            "Two-electron energy": 1.626542060754534
+        },
+        {
+            "Iteration": 4,
+            "Kinetic energy": 3.4130387837275764,
+            "Nuclear attraction energy": -9.015363770633869,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.3505523474794967,
+            "Two-electron energy": 1.6267726394267963
+        },
+        {
+            "Iteration": 5,
+            "Kinetic energy": 3.411718011020578,
+            "Nuclear attraction energy": -9.013995150302591,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.350615568542717,
+            "Two-electron energy": 1.626661570739297
+        },
+        {
+            "Iteration": 6,
+            "Kinetic energy": 3.4101930420941367,
+            "Nuclear attraction energy": -9.012315453134818,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.3506337522955616,
+            "Two-electron energy": 1.6264886587451195
+        },
+        {
+            "Iteration": 7,
+            "Kinetic energy": 3.409051351003695,
+            "Nuclear attraction energy": -9.0110367364115,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.3506392366642577,
+            "Two-electron energy": 1.6263461487435475
+        },
+        {
+            "Iteration": 8,
+            "Kinetic energy": 3.408310086879875,
+            "Nuclear attraction energy": -9.010198856515316,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.350640928794878,
+            "Two-electron energy": 1.626247840840564
+        },
+        {
+            "Iteration": 9,
+            "Kinetic energy": 3.4078595296100835,
+            "Nuclear attraction energy": -9.009686133896729,
+            "Nuclear repulsion energy": 0.6249999999999997,
+            "Total energy": -3.3506414564569122,
+            "Two-electron energy": 1.6261851478297331
+        }
+    ]
+}
