@@ -1,15 +1,7 @@
 import tequila as tq
 import numpy as np
-import os
-import shutil
-from pathlib import Path
-import logging
-import subprocess as sp
-import pyscf
-from pyscf import fci
 import time
 import OrbOpt_helper
-import sys
 import madpy as mad
 
 
@@ -41,12 +33,16 @@ active_orbitals = [0,1]
 as_dim=len(active_orbitals)
 
 pno_start = time.time()
+
+mad_process = mad.MadnessProcess(box_size, wavelet_order, madness_thresh) # Initialize the Madness process
+
 #PNO calculation to get an initial guess for the molecular orbitals
 print("Starting PNO calculation")
+
 red=mad.RedirectOutput("PNO.log")
 params=tq.quantumchemistry.ParametersQC(name=molecule_name, geometry=geometry_angstrom, basis_set=None, multiplicity=1)
 OrbOpt_helper.create_molecule_file(geometry_bohr) # Important here geometry in Bohr
-pno=mad.PNOInterface(OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}), box_size, wavelet_order, madness_thresh)
+pno=mad.PNOInterface(mad_process, OrbOpt_helper.PNO_input(params,"molecule",dft={"L":box_size}))
 pno.DeterminePNOsAndIntegrals()
 all_orbs=pno.GetPNOs(len(frozen_occupied_orbitals),as_dim,0) # input: dimensions of (frozen_occ, active, forzen_virt) space
 h1=pno.GetHTensor()
@@ -104,9 +100,9 @@ for it in range(iterations):
 
     start = time.time()
     #Orbital-Optimization
-    red=mad.RedirectOutput("OrbOpt"+str(it)+".log")
-    opti = mad.Optimization(box_size, wavelet_order, madness_thresh)
-    opti.nocc = 2; # spatial orbital = 2; spin orbitals = 1
+    red = mad.RedirectOutput("OrbOpt"+str(it)+".log")
+    opti = mad.Optimization(mad_process)
+    opti.nocc = 2  # spatial orbital = 2; spin orbitals = 1
     opti.truncation_tol = 1e-6
     opti.coulomb_lo = 0.001
     opti.coulomb_eps = 1e-6
@@ -133,7 +129,7 @@ for it in range(iterations):
     h1_elements=opti.GetHTensor()
     g2_elements=opti.GetGTensor()
     for i in range(len(all_orbs)):
-        opti.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
+        mad_process.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
     del opti
     del red
 
@@ -150,3 +146,5 @@ np.savetxt('all_occ_number.txt', all_occ_number_matrix)
 end_time = time.time()
 
 print("Total time: " + (end_time - start_time).__str__())
+
+del mad_process

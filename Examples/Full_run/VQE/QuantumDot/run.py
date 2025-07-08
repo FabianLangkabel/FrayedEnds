@@ -26,7 +26,6 @@ He 0.0 0.0 ''' + distance.__str__() + '''
 He 0.0 0.0 ''' + (-distance).__str__()
 
 
-
 print(geometry_bohr)
 geometry_angstrom = OrbOpt_helper.convert_geometry_from_bohr_to_angstrom(geometry_bohr)
 
@@ -114,19 +113,20 @@ factory=mad.PyFuncFactory(box_size, wavelet_order, madness_thresh,MP.pot)
 mra_pot=factory.GetMRAFunction()
 del factory
 
+mad_process = mad.MadnessProcess(box_size, wavelet_order, madness_thresh)
 
-opti=mad.Optimization(box_size, wavelet_order, madness_thresh)
-opti.plot("custom_pot.dat",mra_pot)
-opti.plane_plot("pot.dat",mra_pot,plane="yz",zoom=10.0,datapoints=71,origin=[0.0,0.0,0.0])
+opti=mad.Optimization(mad_process)
+mad_process.plot("custom_pot.dat",mra_pot)
+mad_process.plane_plot("pot.dat",mra_pot,plane="yz",zoom=10.0,datapoints=71,origin=[0.0,0.0,0.0])
 del opti
 
 
-eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
+eigensolver = mad.Eigensolver(mad_process)
 eigensolver.solve(mra_pot, 10, 10)
 all_orbs=eigensolver.GetOrbitals(len(frozen_occupied_orbitals),as_dim,0)
 del eigensolver
 
-integrals = mad.Integrals(box_size, wavelet_order, madness_thresh)
+integrals = mad.Integrals(mad_process)
 G_elems = integrals.compute_two_body_integrals(all_orbs)
 G = tq.quantumchemistry.NBodyTensor(elems=G_elems, ordering="phys").elems
 T = integrals.compute_kinetic_integrals(all_orbs)
@@ -172,7 +172,6 @@ for it in range(iterations):
         mol = tq.Molecule(geometry_angstrom, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, name=molecule_name) #Important here geometry in Angstrom
         
 
-    
     #VQE
     U = mol.make_ansatz(name="HCB-UpCCGD")
     if it == 0:
@@ -197,8 +196,8 @@ for it in range(iterations):
     
     #Orbital-Optimization
     red=mad.RedirectOutput("OrbOpt"+str(it)+".log")
-    opti = mad.Optimization(box_size, wavelet_order, madness_thresh)
-    opti.nocc = 2; # spatial orbital = 2; spin orbitals = 1
+    opti = mad.Optimization(mad_process)
+    opti.nocc = 2 # spatial orbital = 2; spin orbitals = 1
     opti.truncation_tol = 1e-6
     opti.coulomb_lo = 0.001
     opti.coulomb_eps = 1e-6
@@ -224,8 +223,8 @@ for it in range(iterations):
     h1_elements=opti.GetHTensor()
     g2_elements=opti.GetGTensor()
     for i in range(len(all_orbs)):
-        opti.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
-        opti.plane_plot(i.__str__()+"orb.dat",all_orbs[i],plane="yz",zoom=10.0,datapoints=71,origin=[0.0,0.0,0.0])
+        mad_process.plot("orbital_" + i.__str__()+".dat", all_orbs[i])
+        mad_process.plane_plot(i.__str__()+"orb.dat",all_orbs[i],plane="yz",zoom=10.0,datapoints=71,origin=[0.0,0.0,0.0])
     del opti
     del red
 
@@ -239,3 +238,5 @@ np.savetxt('all_occ_number.txt', all_occ_number_matrix)
 end_time = time.time()
 
 print("Total time: " + (end_time - start_time).__str__())
+
+del mad_process
