@@ -214,9 +214,9 @@ inline void freeCharPointerArray(char** charArray, size_t size) {
 }
 
 
-class PNOInterface: public MadnessProcess{
+class PNOInterface {
 	public:
-		PNOInterface(std::string argv, double L, long k, double thresh) : MadnessProcess(L,k,thresh)
+		PNOInterface(MadnessProcess& mp, std::string argv): madness_process(mp)
 		{
 			
 			auto [argc, charArray] = stringToCharPointerArray(argv);
@@ -232,7 +232,7 @@ class PNOInterface: public MadnessProcess{
 		void DeterminePNOsAndIntegrals() 
 		{	
 			std::cout.precision(6);
-			if(world->rank()==0){
+			if(madness_process.world->rank()==0){
 				std::cout << "\n\n";
 				std::cout << "-------------------------------------------------------------------------------------\n";
 				std::cout << "SOLVING MRA-PNO-F12 as described in \n";
@@ -248,11 +248,11 @@ class PNOInterface: public MadnessProcess{
 	
 			// Compute the SCF Reference
 			const double time_scf_start = wall_time();
-					Nemo nemo(*world,parser);
+					Nemo nemo(*(madness_process.world),parser);
 					nemo.get_calc()->param.print();
 			const double scf_energy = nemo.value();
-			if (world->rank() == 0) print("nemo energy: ", scf_energy);
-			if (world->rank() == 0) printf(" at time %.1f\n", wall_time());
+			if (madness_process.world->rank() == 0) print("nemo energy: ", scf_energy);
+			if (madness_process.world->rank() == 0) printf(" at time %.1f\n", wall_time());
 			const double time_scf_end = wall_time();
 			// assert that no nemo corrfactor is actually used (not yet supported in PNO-MP2)
 			if(nemo.ncf->type() != madness::NuclearCorrelationFactor::None){
@@ -261,16 +261,16 @@ class PNOInterface: public MadnessProcess{
 	
 			// Compute MRA-PNO-MP2-F12
 			const double time_pno_start = wall_time();
-			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
-			F12Parameters paramf12(*world, parser, parameters, TAG_F12);
-			PNOIntParameters paramsint(*world, parser, parameters, TAG_PNOInt);
+			PNOParameters parameters(*(madness_process.world),parser,nemo.get_calc()->molecule,TAG_PNO);
+			F12Parameters paramf12(*(madness_process.world), parser, parameters, TAG_F12);
+			PNOIntParameters paramsint(*(madness_process.world), parser, parameters, TAG_PNOInt);
 			paramsint.print("PNO Integrals evaluated as:\npnoint","end");
-			PNO pno(*world, nemo, parameters, paramf12);
+			PNO pno(*(madness_process.world), nemo, parameters, paramf12);
 			pno.solve();
 			const double time_pno_end = wall_time();
 	
 	
-			if(world->rank()==0){
+			if(madness_process.world->rank()==0){
 				std::cout << std::setfill(' ');
 				std::cout << "\n\n\n";
 				std::cout << "--------------------------------------------------\n";
@@ -281,7 +281,7 @@ class PNOInterface: public MadnessProcess{
 				std::cout << "--------------------------------------------------\n";
 			}
 	
-			if(world->rank()==0){
+			if(madness_process.world->rank()==0){
 				std::cout << "restarting PNO to reload pairs that converged before and were frozen\n";
 			}
 			pno.param.set_user_defined_value<std::string>("restart", "all");
@@ -292,13 +292,13 @@ class PNOInterface: public MadnessProcess{
 			pno.solve(all_pairs);
 	
 			double mp2_energy = 0.0;
-			if(world->rank()==0) std::cout<< std::setw(25) << "time pno" << " = " << time_pno_end - time_pno_start << "\n";
+			if(madness_process.world->rank()==0) std::cout<< std::setw(25) << "time pno" << " = " << time_pno_end - time_pno_start << "\n";
 			for(const auto& pairs: all_pairs){
 				if(pairs.type == MP2_PAIRTYPE){
 					mp2_energy = pairs.energies.total_energy();
 				}
 				std::pair<size_t, size_t> ranks= pno.get_average_rank(pairs.pno_ij);
-				if(world->rank()==0){
+				if(madness_process.world->rank()==0){
 					std::string name;
 					std::stringstream ss;
 					ss << pairs.type;
@@ -308,7 +308,7 @@ class PNOInterface: public MadnessProcess{
 					std::cout<< std::setw(25) << "max pno rank " + name << " = " << ranks.second << "\n";
 				}
 			}
-			if(world->rank()==0 and mp2_energy != 0.0){
+			if(madness_process.world->rank()==0 and mp2_energy != 0.0){
 				std::cout << "--------------------------------------------------\n";
 				std::cout<< std::setw(25) << "energy(total)" << " = " << scf_energy + mp2_energy << "\n";
 				std::cout << "--------------------------------------------------\n";
@@ -321,7 +321,7 @@ class PNOInterface: public MadnessProcess{
 			std::cout << std::showpos;
 	
 			const std::string orthogonalization = paramsint.orthogonalization();
-			if (world->rank()==0) std::cout << "Orthonormalization technique used: " << orthogonalization << std::endl;
+			if (madness_process.world->rank()==0) std::cout << "Orthonormalization technique used: " << orthogonalization << std::endl;
 			const bool orthogonalize = orthogonalization != "none";
 			const double h_thresh = 1.e-7; // neglect integrals
 			double thresh = parameters.thresh();
@@ -330,7 +330,7 @@ class PNOInterface: public MadnessProcess{
 			bool cabs_switch = false;
 			if (cabs_option=="pno" || cabs_option=="gbs" || cabs_option=="mixed")
 				cabs_switch = true;
-			if (world->rank()==0) {
+			if (madness_process.world->rank()==0) {
 				if (cabs_switch) std::cout << "CABS option " << cabs_option << std::endl;
 				else if (!cabs_switch) std::cout << "No CABS used." << std::endl;
 			}
@@ -339,7 +339,7 @@ class PNOInterface: public MadnessProcess{
 			int pno_cabs_size = paramsint.pno_cabs_size();
 	
 			thresh = std::min(thresh, 1.e-4);
-			if(world->rank()==0) std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
+			if(madness_process.world->rank()==0) std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
 			FunctionDefaults<3>::set_thresh(thresh);
 	
 			vecfuncT reference = nemo.get_calc()->amo;
@@ -357,7 +357,7 @@ class PNOInterface: public MadnessProcess{
 							std::vector<bool> ignore_pair(pairs.npairs, false);
 							for(auto x : paramsint.ignore_pair()){
 								ignore_pair[x] = true;
-								if(world->rank()==0) std::cout << "will ignore pair " << x << "\n";
+								if(madness_process.world->rank()==0) std::cout << "will ignore pair " << x << "\n";
 							} 
 	
 				const auto& pno_ij = pairs.pno_ij;
@@ -376,13 +376,13 @@ class PNOInterface: public MadnessProcess{
 				// collect PNOs from all pairs and sort by occupation number, keeping pair information via name
 				for(ElectronPairIterator it=pno.pit();it;++it){
 					if (only_diag and not it.diagonal()){
-						if(world->rank()==0) std::cout << "skipping pair (not diagonal) " << it.name() << "\n";
+						if(madness_process.world->rank()==0) std::cout << "skipping pair (not diagonal) " << it.name() << "\n";
 						continue;
 									}else if(ignore_pair[it.ij()]){
-						if(world->rank()==0) std::cout << "skipping pair (demanded by input) " << it.name() << "\n";
+						if(madness_process.world->rank()==0) std::cout << "skipping pair (demanded by input) " << it.name() << "\n";
 						continue;
 					}else{
-						if(world->rank()==0) std::cout << "adding " << it.name() << "\n";
+						if(madness_process.world->rank()==0) std::cout << "adding " << it.name() << "\n";
 						const auto& pair = pno_ij[it.ij()];
 						all_current_pnos.insert(all_current_pnos.end(), pair.begin(), pair.end());
 						for (auto ii=0; ii<rdm_evals[it.ij()].size();++ii){
@@ -433,26 +433,26 @@ class PNOInterface: public MadnessProcess{
 	
 			// reference projector (not automatically fullfilled for CIS)
 			// projection is to keep the reference and CIS orbitals untouched in the orthogonalization
-			madness::QProjector<double, 3> Q(*world, reference);
+			madness::QProjector<double, 3> Q(*(madness_process.world), reference);
 			obs_pnos = Q(obs_pnos);
 	
 			basis = obs_pnos;
 	
 			// compute overlap of all PNOs before orthogonalization
 			if (paramsint.print_pno_overlap()) {
-				const auto S = madness::matrix_inner(*world, obs_pnos, obs_pnos, true);
-				if(world->rank()==0) std::cout << "Overlap Matrix of all PNOs:\n";
+				const auto S = madness::matrix_inner(*(madness_process.world), obs_pnos, obs_pnos, true);
+				if(madness_process.world->rank()==0) std::cout << "Overlap Matrix of all PNOs:\n";
 				for (int i=0;i<obs_pnos.size();++i){
 					for (int j=0;j<obs_pnos.size();++j){
-						if(world->rank()==0) std::cout << S(i,j) << " ";
+						if(madness_process.world->rank()==0) std::cout << S(i,j) << " ";
 					}
-					if(world->rank()==0) std::cout << "\n";
+					if(madness_process.world->rank()==0) std::cout << "\n";
 				}
 			}
 	
-			if(world->rank()==0){
+			if(madness_process.world->rank()==0){
 				std::cout << "Before cherry pick" << std::endl;
-				std::cout << "rank is " << world->rank() << "\n";
+				std::cout << "rank is " << madness_process.world->rank() << "\n";
 				std::cout << "all used occupation numbers:\n" << occ << std::endl;
 				std::cout << "corresponding to active pairs:\n" << pno_ids << std::endl;
 				if (cabs_option=="pno" || cabs_option=="mixed") {
@@ -467,7 +467,7 @@ class PNOInterface: public MadnessProcess{
 				vecfuncT cp;
 				std::vector<double> cp_occ;
 				std::vector<std::pair<size_t,size_t> > cp_pno_ids;
-				if(world->rank()==0){
+				if(madness_process.world->rank()==0){
 					std::cout << "Cherry picking orbitals: " << cherry_pick << " from pno basis." << std::endl;
 				}
 				for(auto i: cherry_pick){ // TODO: whatever does not get cherry-picked, add to CABS, if CABS!
@@ -479,7 +479,7 @@ class PNOInterface: public MadnessProcess{
 				occ = cp_occ;
 				pno_ids = cp_pno_ids;
 			}
-			if(world->rank()==0){
+			if(madness_process.world->rank()==0){
 				std::cout << "After cherry pick" << std::endl;
 				std::cout << "all used occupation numbers:\n" << occ << std::endl;
 				std::cout << "corresponding to active pairs:\n" << pno_ids << std::endl;
@@ -491,11 +491,11 @@ class PNOInterface: public MadnessProcess{
 	
 			// orthogonalize orbital basis
 			if (orthogonalize){
-				basis = orthonormalize_basis(basis, orthogonalization, thresh, *world, paramsint.print_pno_overlap());
+				basis = orthonormalize_basis(basis, orthogonalization, thresh, *(madness_process.world), paramsint.print_pno_overlap());
 			}
 	
 			// will include CIS orbitals for excited states
-			if(world->rank()==0) std::cout << "Adding " << reference.size() << " HF orbitals\n";
+			if(madness_process.world->rank()==0) std::cout << "Adding " << reference.size() << " HF orbitals\n";
 			basis.insert(basis.begin(), reference.begin(), reference.end());
 	
 	
@@ -548,7 +548,7 @@ class PNOInterface: public MadnessProcess{
 	
 			// if desired, build a CABS using either a Gaussian basis set or the remaining PNOs
 			if (cabs_switch) {
-				if(world->rank()==0) std::cout << "Trying to use external CABS basis..." << std::endl;
+				if(madness_process.world->rank()==0) std::cout << "Trying to use external CABS basis..." << std::endl;
 				std::vector<real_function_3d> cabs;
 				// Get CABS from rest-pnos or external basis
 				if (cabs_option == "gbs" || cabs_option == "mixed") {
@@ -559,44 +559,44 @@ class PNOInterface: public MadnessProcess{
 				}
 				// set up CABS
 				if (!cabs.empty()) {
-					if(world->rank()==0) std::cout << "Found CABS..." << std::endl;
-					MyTimer time2 = MyTimer(*world).start();
+					if(madness_process.world->rank()==0) std::cout << "Found CABS..." << std::endl;
+					MyTimer time2 = MyTimer(*(madness_process.world)).start();
 					// Project out reference
 					//cabs = Q(cabs);
 					// Project out {pno} + ref
 					auto pno_plus_ref = basis;
-					if(world->rank()==0) std::cout << "\tProject out PNO + ref" << std::endl;
-					madness::QProjector<double, 3> Qpno(*world, pno_plus_ref);
+					if(madness_process.world->rank()==0) std::cout << "\tProject out PNO + ref" << std::endl;
+					madness::QProjector<double, 3> Qpno(*(madness_process.world), pno_plus_ref);
 					cabs = Qpno(cabs);
 					// Orthonormalize {cabs}
-					if(world->rank()==0) std::cout << "\tOrthonormalize CABS" << std::endl;
+					if(madness_process.world->rank()==0) std::cout << "\tOrthonormalize CABS" << std::endl;
 					cabs = orthonormalize_basis(cabs, paramsint.cabs_orthogonalization(), paramsint.cabs_thresh(),
-							*world, paramsint.print_pno_overlap());
+							*(madness_process.world), paramsint.print_pno_overlap());
 					time2.stop().print("Made pair specific ABS from PNOS and " + std::to_string(cabs.size()) + " functions");
 	
 					// Truncate cabs
-					madness::truncate(*world, cabs, thresh);
+					madness::truncate(*(madness_process.world), cabs, thresh);
 	
 					// Merge {cabs} + {pno}
-					if(world->rank()==0) std::cout << "Adding {cabs} to {pno+ref}.\n";
+					if(madness_process.world->rank()==0) std::cout << "Adding {cabs} to {pno+ref}.\n";
 	
 					basis.clear();
 					basis = cabs;
 					basis.insert(basis.begin(), pno_plus_ref.begin(), pno_plus_ref.end());
 				}
 				else if (cabs.empty()) {
-					if(world->rank()==0) std::cout << "CABS basis set not found..." << std::endl; 
+					if(madness_process.world->rank()==0) std::cout << "CABS basis set not found..." << std::endl;
 				}
 			}
 	
 			auto size_full = basis.size();
-			if(world->rank()==0) std::cout << "Size before adding CABS: " << size_obs << ".\n";
-			if(world->rank()==0) std::cout << "Size after adding CABS: " << size_full << ".\n";
+			if(madness_process.world->rank()==0) std::cout << "Size before adding CABS: " << size_obs << ".\n";
+			if(madness_process.world->rank()==0) std::cout << "Size after adding CABS: " << size_full << ".\n";
 	
 			// Build tensors
 			// define Coulomb and F12-operator (as SlaterOperator exp[-mu*r] )
-			auto gop = std::shared_ptr < real_convolution_3d > (madness::CoulombOperatorPtr(*world, 1.e-6, parameters.op_thresh()));
-			auto fop = SlaterOperator(*world, paramsint.gamma(), 1.e-6, parameters.op_thresh());
+			auto gop = std::shared_ptr < real_convolution_3d > (madness::CoulombOperatorPtr(*(madness_process.world), 1.e-6, parameters.op_thresh()));
+			auto fop = SlaterOperator(*(madness_process.world), paramsint.gamma(), 1.e-6, parameters.op_thresh());
 	
 			g = madness::Tensor<double>(size_full, size_obs, size_full, size_obs); // using mulliken notation since thats more efficient to compute here: Tensor is (pq|g|rs) = <pr|g|qs>
 			f = madness::Tensor<double>(size_full, size_obs, size_full, size_obs);
@@ -608,21 +608,21 @@ class PNOInterface: public MadnessProcess{
 			std::vector<vecfuncT> GPQ;
 			std::vector<vecfuncT> FPQ;
 			for (const auto& x : basis){
-				GPQ.push_back(madness::truncate(madness::apply(*world, *gop, madness::truncate(x*basis,thresh)), thresh));
+				GPQ.push_back(madness::truncate(madness::apply(*(madness_process.world), *gop, madness::truncate(x*basis,thresh)), thresh));
 				if (cabs_switch){
-					FPQ.push_back(madness::truncate(madness::apply(*world,  fop, madness::truncate(x*basis,thresh)), thresh));
+					FPQ.push_back(madness::truncate(madness::apply(*(madness_process.world),  fop, madness::truncate(x*basis,thresh)), thresh));
 				}
 			}
 	
-			auto J = madness::Coulomb<double, 3>(*world, &nemo);
-			auto K = madness::Exchange<double, 3>(*world, &nemo, 0);
+			auto J = madness::Coulomb<double, 3>(*(madness_process.world), &nemo);
+			auto K = madness::Exchange<double, 3>(*(madness_process.world), &nemo, 0);
 			auto Jmat = J(basis, basis);
 			auto Kmat = K(basis, basis);
 	
 			// Build tensors using symmetries (both Coulomb  and SlaterOperator are symmetric)  TODO maybe in separate function...
 			// pqrs = qprs = pqsr = qpsr && pqrs = rspq for full-size tensors
 			int non_zero=0, non_zero_f=0; // TODO check counting! probably far from correct as of now
-			if(world->rank() ==0 ) std::cout << "Compute G and F Tensor:\n";
+			if(madness_process.world->rank() ==0 ) std::cout << "Compute G and F Tensor:\n";
 			for (int p=0; p<size_full; p++){
 				for (int q=0; q<size_obs; q++){
 					if (PQ[p][q].norm2() < h_thresh) continue;
@@ -648,7 +648,7 @@ class PNOInterface: public MadnessProcess{
 											// symm
 											g(r,s,p,q) = g(p,q,r,s);
 											if(std::fabs(g(p,q,r,s)) > h_thresh ){
-												if(world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
+												if(madness_process.world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
 												non_zero += (p!=r && q!=s)? 2 : 1;
 											}
 										}
@@ -672,7 +672,7 @@ class PNOInterface: public MadnessProcess{
 								if (GPQ[r][s].norm2() >= h_thresh)  {
 									g(p,q,r,s) = PQ[p][q].inner(GPQ[r][s]);
 									if(std::fabs(g(p,q,r,s)) > h_thresh ){
-										if(world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
+										if(madness_process.world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
 										++non_zero;
 									}
 								}
@@ -697,7 +697,7 @@ class PNOInterface: public MadnessProcess{
 										g(p,q,r,s) = PQ[p][q].inner(GPQ[r][s]);
 										g(r,s,p,q) = g(p,q,r,s);
 										if(std::fabs(g(p,q,r,s)) > h_thresh ){
-											if(world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
+											if(madness_process.world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
 											++non_zero;
 										}
 									}
@@ -719,7 +719,7 @@ class PNOInterface: public MadnessProcess{
 								if (GPQ[r][s].norm2() >= h_thresh)  {
 									g(p,q,r,s) = PQ[p][q].inner(GPQ[r][s]);
 									if(std::fabs(g(p,q,r,s)) > h_thresh ){
-										if(world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
+										if(madness_process.world->rank()==0 and basis.size() < 3) std::cout << " g " << p  << " "<<  q  << " "<<  r  << " "<<  s << " = " << g(p,q,r,s) << "\n";
 										++non_zero;
 									}
 								}
@@ -736,7 +736,7 @@ class PNOInterface: public MadnessProcess{
 				}
 			}
 			// Assemble full g,f from symmetries (misses pqrs->qpsr)
-			if (world->rank()==0) std::cout << "Assemble g,f using symmetries..." << std::endl;
+			if (madness_process.world->rank()==0) std::cout << "Assemble g,f using symmetries..." << std::endl;
 			for (int p=0; p<size_obs; p++) {
 				for (int q=0; q<=p; q++) {
 					if (PQ[p][q].norm2() < h_thresh) continue; for (int r=0; r<size_obs; r++){
@@ -770,21 +770,21 @@ class PNOInterface: public MadnessProcess{
 	
 			// build h tensor
 			{
-				auto T = madness::Kinetic<double, 3>(*world);
-				auto V = madness::Nuclear<double, 3>(*world, nemo.ncf);
+				auto T = madness::Kinetic<double, 3>(*(madness_process.world));
+				auto V = madness::Nuclear<double, 3>(*(madness_process.world), nemo.ncf);
 				h = T(basis,basis) + V(basis,basis);
 			}
 			for (int i=0;i<basis.size();++i){
 				for (int j=0;j<basis.size();++j){
 					if(std::fabs(h(i,j)) > h_thresh){
-						if(world->rank()==0 and basis.size() < 3) std::cout << " h " << i << " "<< j << " "<< h(i,j) << "\n";
+						if(madness_process.world->rank()==0 and basis.size() < 3) std::cout << " h " << i << " "<< j << " "<< h(i,j) << "\n";
 						++non_zero_h;
 					}
 				}
 			}
 	
 			// print out number of non-zero elements
-			if(world->rank()==0){
+			if(madness_process.world->rank()==0){
 				std::cout << "non zero elements:\n g : " << non_zero << "\n h : " << non_zero_h;
 				if (cabs_switch) std::cout << "non zero elements:\n f : " << non_zero_f;
 				std::cout << std::endl;
@@ -833,6 +833,8 @@ class PNOInterface: public MadnessProcess{
 		}
 
 	private:
+	    MadnessProcess& madness_process;
+
 		commandlineparser parser;
 		vecfuncT basis;
 		madness::Tensor<double> g;

@@ -4,7 +4,7 @@ using namespace madness;
 
 
 
-Optimization::Optimization(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
+Optimization::Optimization(MadnessProcess& mp): madness_process(mp) {std::cout.precision(6);}
 
 Optimization::~Optimization()
 {
@@ -22,13 +22,13 @@ void Optimization::CreateNuclearPotentialAndRepulsion(std::string GeometryFile)
 {
     auto molecule = madness::Molecule();
     molecule.read_file(GeometryFile); //TODO: read_file is deprecated, use commandlineparser to set up molecule otherwise trouble awaits...
-    Vnuc = new Nuclear<double,3>(*world, molecule);
+    Vnuc = new Nuclear<double,3>(*(madness_process.world), molecule);
     nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
 }
 
 void Optimization::GiveCustomPotential(SavedFct custom_pot)
 {   
-    custom_potential = new real_function_3d(loadfct(custom_pot));
+    custom_potential = new real_function_3d(madness_process.loadfct(custom_pot));
     use_custom_potential = true;
 }
 
@@ -42,21 +42,21 @@ void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_
 
     for(int i = 0; i < frozen_occ_orbs_files.size(); i++)
     {
-        real_function_3d orb = real_factory_3d(*world);
+        real_function_3d orb = real_factory_3d(*(madness_process.world));
         load(orb, frozen_occ_orbs_files[i]);
         frozen_occ_orbs.push_back(orb);
     }
 
     for(int i = 0; i < active_orbs_files.size(); i++)
     {
-        real_function_3d orb = real_factory_3d(*world);
+        real_function_3d orb = real_factory_3d(*(madness_process.world));
         load(orb, active_orbs_files[i]);
         active_orbs.push_back(orb);
     }
 
     for(int i = 0; i < frozen_virt_orb_files.size(); i++)
     {
-        real_function_3d orb = real_factory_3d(*world);
+        real_function_3d orb = real_factory_3d(*(madness_process.world));
         load(orb, frozen_virt_orb_files[i]);
         frozen_virt_orb.push_back(orb);
     }
@@ -76,11 +76,11 @@ void Optimization::GiveInitialOrbitals(std::vector<SavedFct> all_orbs)
 
     for(SavedFct orb : all_orbs) {
         if (orb.type == "frozen_occ") {
-            frozen_occ_orbs.push_back(loadfct(orb));
+            frozen_occ_orbs.push_back(madness_process.loadfct(orb));
         } else if (orb.type == "active") {
-            active_orbs.push_back(loadfct(orb));
+            active_orbs.push_back(madness_process.loadfct(orb));
         } else if (orb.type == "frozen_virt") {
-            frozen_virt_orb.push_back(loadfct(orb));
+            frozen_virt_orb.push_back(madness_process.loadfct(orb));
         } else {
             std::cerr << "Unknown orbital type: " << orb.type << ". Recognized types are frozen_occ, active and frozen_virt." << std::endl;
         }
@@ -149,7 +149,7 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
                 T(i,j) = ActiveSpaceRotationMatrix(i,j);
             }
         }
-        active_orbs = transform(*world, active_orbs, T);
+        active_orbs = transform(*(madness_process.world), active_orbs, T);
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -209,7 +209,7 @@ void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_element
                 T(i,j) = ActiveSpaceRotationMatrix(i,j);
             }
         }
-        active_orbs = transform(*world, active_orbs, T);
+        active_orbs = transform(*(madness_process.world), active_orbs, T);
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -292,8 +292,8 @@ void Optimization::CalculateAllIntegrals()
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Initializing the Coulomb operator
-    real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
-    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, coulomb_lo, coulomb_eps));
+    real_convolution_3d coul_op = CoulombOperator(*(madness_process.world), coulomb_lo, coulomb_eps);
+    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*(madness_process.world), coulomb_lo, coulomb_eps));
 
     // Multiplication of AS orbital pairs and their Coulomb element (are needed more often and are therefore stored)
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -304,7 +304,7 @@ void Optimization::CalculateAllIntegrals()
         orbs_kl.insert(std::end(orbs_kl), std::begin(kl), std::end(kl));
     }
     orbs_kl = truncate(orbs_kl, truncation_tol);
-    coul_orbs_mn = apply(*world, *coul_op_parallel, orbs_kl);
+    coul_orbs_mn = apply(*(madness_process.world), *coul_op_parallel, orbs_kl);
     coul_orbs_mn = truncate(coul_orbs_mn, truncation_tol);
     auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -316,7 +316,7 @@ void Optimization::CalculateAllIntegrals()
         {
             //Kinetic
             for (int axis=0; axis<3; axis++) {
-                real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
+                real_derivative_3d D = free_space_derivative<double,3>(*(madness_process.world), axis);
                 real_function_3d d_orb_k = D(active_orbs[k]);
                 real_function_3d d_orb_l = D(active_orbs[l]);
                 as_integrals_one_body(k, l) += 0.5 * inner(d_orb_k,d_orb_l);
@@ -335,7 +335,7 @@ void Optimization::CalculateAllIntegrals()
 
     // AS two electron integrals
     as_integrals_two_body = Eigen::Tensor<double, 4>(as_dim, as_dim, as_dim, as_dim);
-    madness::Tensor<double> Inner_prods = matrix_inner(*world, orbs_kl, coul_orbs_mn, false);
+    madness::Tensor<double> Inner_prods = matrix_inner(*(madness_process.world), orbs_kl, coul_orbs_mn, false);
     for(int k = 0; k < as_dim; k++)
     {
         for(int l = 0; l < as_dim; l++)
@@ -359,7 +359,7 @@ void Optimization::CalculateAllIntegrals()
         {
             //Kinetic
             for (int axis=0; axis<3; axis++) {
-                real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
+                real_derivative_3d D = free_space_derivative<double,3>(*(madness_process.world), axis);
                 real_function_3d d_orb_a = D(frozen_occ_orbs[a]);
                 real_function_3d d_orb_k = D(active_orbs[k]);
                 core_as_integrals_one_body_ak(a, k) += 0.5 * inner(d_orb_a, d_orb_k);
@@ -386,7 +386,7 @@ void Optimization::CalculateAllIntegrals()
             orbs_aa.push_back(frozen_occ_orbs[a] * frozen_occ_orbs[a]);
         }
         orbs_aa = truncate(orbs_aa, truncation_tol);
-        madness::Tensor<double> Inner_prods_akal = matrix_inner(*world, orbs_aa, coul_orbs_mn, false);
+        madness::Tensor<double> Inner_prods_akal = matrix_inner(*(madness_process.world), orbs_aa, coul_orbs_mn, false);
         for (int a = 0; a < core_dim; a++)
         {
             for(int k = 0; k < as_dim; k++)
@@ -410,14 +410,14 @@ void Optimization::CalculateAllIntegrals()
         {
             std::vector<real_function_3d> orbs_ak = frozen_occ_orbs[a] * active_orbs;
             orbs_ak = truncate(orbs_ak, truncation_tol);
-            std::vector<real_function_3d> coul_orbs_ak = apply(*world, *coul_op_parallel, orbs_ak);
+            std::vector<real_function_3d> coul_orbs_ak = apply(*(madness_process.world), *coul_op_parallel, orbs_ak);
             coul_orbs_ak = truncate(coul_orbs_ak, truncation_tol);
 
             std::vector<real_function_3d> orbs_ka = active_orbs * frozen_occ_orbs[a];
             orbs_ka = truncate(orbs_ka, truncation_tol);
             
             // <ak|la> = <ka|al>
-            madness::Tensor<double> Inner_prods_akla = matrix_inner(*world, orbs_ka, coul_orbs_ak, false);
+            madness::Tensor<double> Inner_prods_akla = matrix_inner(*(madness_process.world), orbs_ka, coul_orbs_ak, false);
             for(int k = 0; k < as_dim; k++)
             {
                 for(int l = 0; l < as_dim; l++)
@@ -427,7 +427,7 @@ void Optimization::CalculateAllIntegrals()
             }
 
             // <ak|ln>
-            madness::Tensor<double> Inner_prods_akln = matrix_inner(*world, orbs_ak, coul_orbs_mn, false);
+            madness::Tensor<double> Inner_prods_akln = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_mn, false);
             for(int k = 0; k < as_dim; k++)
             {
                 for(int l = 0; l < as_dim; l++)
@@ -442,7 +442,7 @@ void Optimization::CalculateAllIntegrals()
             // <ab|ak>
             for (int b = 0; b < core_dim; b++)
             {
-                madness::Tensor<double> Inner_prods_abak = matrix_inner(*world, std::vector<real_function_3d>{ frozen_occ_orbs[b] * frozen_occ_orbs[b] }, coul_orbs_ak, false); //Change of indicies
+                madness::Tensor<double> Inner_prods_abak = matrix_inner(*(madness_process.world), std::vector<real_function_3d>{ frozen_occ_orbs[b] * frozen_occ_orbs[b] }, coul_orbs_ak, false); //Change of indicies
                 for(int k = 0; k < as_dim; k++)
                 {
                     core_as_integrals_two_body_abak(b,a,k) = Inner_prods_abak(0, k);
@@ -452,7 +452,7 @@ void Optimization::CalculateAllIntegrals()
             // <ba|ak>
             for (int b = 0; b < core_dim; b++)
             {
-                madness::Tensor<double> Inner_prods_baak = matrix_inner(*world, std::vector<real_function_3d>{ frozen_occ_orbs[b] * frozen_occ_orbs[a] }, coul_orbs_ak, false);
+                madness::Tensor<double> Inner_prods_baak = matrix_inner(*(madness_process.world), std::vector<real_function_3d>{ frozen_occ_orbs[b] * frozen_occ_orbs[a] }, coul_orbs_ak, false);
                 for(int k = 0; k < as_dim; k++)
                 {
                     core_as_integrals_two_body_baak(a,b,k) = Inner_prods_baak(0, k);
@@ -489,7 +489,7 @@ void Optimization::CalculateCoreEnergy()
         {
             //Kinetic
             for (int axis=0; axis<3; axis++) {
-                real_derivative_3d D = free_space_derivative<double,3>(*world, axis);
+                real_derivative_3d D = free_space_derivative<double,3>(*(madness_process.world), axis);
                 real_function_3d d_orb = D(frozen_occ_orbs[i]);
                 core_kinetic_energy += 0.5 * inner(d_orb, d_orb);
             }
@@ -507,8 +507,8 @@ void Optimization::CalculateCoreEnergy()
 
         //2e Part
 
-        real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
-        auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, coulomb_lo, coulomb_eps));
+        real_convolution_3d coul_op = CoulombOperator(*(madness_process.world), coulomb_lo, coulomb_eps);
+        auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*(madness_process.world), coulomb_lo, coulomb_eps));
 
         // <ab|ab>
         {
@@ -518,11 +518,11 @@ void Optimization::CalculateCoreEnergy()
                 orbs_aa.push_back(frozen_occ_orbs[a] * frozen_occ_orbs[a]);
             }
             orbs_aa = truncate(orbs_aa, truncation_tol);
-            std::vector<real_function_3d> coul_orbs_aa = apply(*world, *coul_op_parallel, orbs_aa);
+            std::vector<real_function_3d> coul_orbs_aa = apply(*(madness_process.world), *coul_op_parallel, orbs_aa);
             coul_orbs_aa = truncate(coul_orbs_aa, truncation_tol);
             for (int a = 0; a < core_dim; a++)
             {
-                madness::Tensor<double> Inner_prods_abab = matrix_inner(*world, std::vector<real_function_3d>{ orbs_aa[a] }, coul_orbs_aa, false);
+                madness::Tensor<double> Inner_prods_abab = matrix_inner(*(madness_process.world), std::vector<real_function_3d>{ orbs_aa[a] }, coul_orbs_aa, false);
                 for (int b = 0; b < core_dim; b++)
                 {
                     core_two_electron_energy += 2 * Inner_prods_abab(0, b);
@@ -534,7 +534,7 @@ void Optimization::CalculateCoreEnergy()
         {
             std::vector<real_function_3d> orbs_ab = frozen_occ_orbs[a] * frozen_occ_orbs;
             orbs_ab = truncate(orbs_ab, truncation_tol);
-            std::vector<real_function_3d> coul_orbs_ab = apply(*world, *coul_op_parallel, orbs_ab);
+            std::vector<real_function_3d> coul_orbs_ab = apply(*(madness_process.world), *coul_op_parallel, orbs_ab);
             coul_orbs_ab = truncate(coul_orbs_ab, truncation_tol);
             for (int b = 0; b < core_dim; b++)
             {
@@ -789,7 +789,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
     {
         int i = orbital_indicies_for_update[idx];
 
-        real_convolution_3d coul_op = CoulombOperator(*world, coulomb_lo, coulomb_eps);
+        real_convolution_3d coul_op = CoulombOperator(*(madness_process.world), coulomb_lo, coulomb_eps);
         real_function_3d rhs;
         if (use_custom_potential){
             rhs = (*custom_potential)*active_orbs[i];
@@ -820,7 +820,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
         for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
         {
             int i = orbital_indicies_for_update[idx];
-            std::vector<real_function_3d> lnk_copy = copy(*world, lnk, false);
+            std::vector<real_function_3d> lnk_copy = copy(*(madness_process.world), lnk, false);
             for(int l = 0; l < as_dim; l++)
             {
                 for(int n = 0; n < as_dim; n++)
@@ -828,13 +828,13 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
                     lnk_copy[l*as_dim + n] *= as_two_rdm(k, l, i, n) * rdm_ii_inv[idx];
                 }
             }
-            AllOrbitalUpdates[idx] += sum(*world, lnk_copy);
+            AllOrbitalUpdates[idx] += sum(*(madness_process.world), lnk_copy);
         }
     }
     auto t4 = std::chrono::high_resolution_clock::now();
 
     // Core - AS interaction
-    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*world, 0.001, 1e-6));
+    auto coul_op_parallel = std::shared_ptr<real_convolution_3d>(CoulombOperatorPtr(*(madness_process.world), 0.001, 1e-6));
 
     if(core_dim > 0)
     {
@@ -845,7 +845,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
             orbs_aa.push_back(frozen_occ_orbs[a] * frozen_occ_orbs[a]);
         }
         orbs_aa = truncate(orbs_aa, truncation_tol);
-        std::vector<real_function_3d> coul_orbs_aa = apply(*world, *coul_op_parallel, orbs_aa);
+        std::vector<real_function_3d> coul_orbs_aa = apply(*(madness_process.world), *coul_op_parallel, orbs_aa);
         coul_orbs_aa = truncate(coul_orbs_aa, truncation_tol);
 
         for(int k = 0; k < as_dim; k++)
@@ -855,13 +855,13 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
             for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
             {
                 int i = orbital_indicies_for_update[idx];
-                std::vector<real_function_3d> aak_copy = copy(*world, aak, false);
+                std::vector<real_function_3d> aak_copy = copy(*(madness_process.world), aak, false);
                 for(int a = 0; a < core_dim; a++)
                 {
                     aak_copy[a] *= 0.5 * nocc * 2 * as_one_rdm(k, i) * rdm_ii_inv[idx];
                     //AllOrbitalUpdates[idx] += 0.5 * 2 * rdm_ii_inv[idx] * as_one_rdm(k, i) * 2 * coul_orbs_aa[a] * active_orbs[k];
                 }
-                AllOrbitalUpdates[idx] += sum(*world, aak_copy);
+                AllOrbitalUpdates[idx] += sum(*(madness_process.world), aak_copy);
             }
         }
     }
@@ -874,7 +874,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
         {
             std::vector<real_function_3d> orbs_ak = frozen_occ_orbs[a] * active_orbs;
             orbs_ak = truncate(orbs_ak, truncation_tol);
-            std::vector<real_function_3d> coul_orbs_ak = apply(*world, *coul_op_parallel, orbs_ak);
+            std::vector<real_function_3d> coul_orbs_ak = apply(*(madness_process.world), *coul_op_parallel, orbs_ak);
             coul_orbs_ak = truncate(coul_orbs_ak, truncation_tol);
 
             std::vector<real_function_3d> aka = coul_orbs_ak * frozen_occ_orbs[a];
@@ -883,13 +883,13 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
             for(int idx = 0; idx < orbital_indicies_for_update.size(); idx++)
             {
                 int i = orbital_indicies_for_update[idx];
-                std::vector<real_function_3d> aka_copy = copy(*world, aka, false);
+                std::vector<real_function_3d> aka_copy = copy(*(madness_process.world), aka, false);
                 for(int k = 0; k < as_dim; k++)
                 {
                     aka_copy[k] *= -0.5 * nocc * as_one_rdm(k, i) * rdm_ii_inv[idx];
                     //AllOrbitalUpdates[idx] -= 0.5 * rdm_ii_inv[idx] * as_one_rdm(k, i) * 2 * coul_orbs_ak[k] * frozen_occ_orbs[a];
                 }
-                AllOrbitalUpdates[idx] += sum(*world, aka_copy);
+                AllOrbitalUpdates[idx] += sum(*(madness_process.world), aka_copy);
             }
         }
     }
@@ -900,7 +900,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
     {
         int i = orbital_indicies_for_update[idx];
         double en = LagrangeMultiplier_AS_AS(i, i) * rdm_ii_inv[idx];
-        SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*world, sqrt(-2*en), BSH_lo, BSH_eps);
+        SeparatedConvolution<double,3> bsh_op = BSHOperator<3>(*(madness_process.world), sqrt(-2*en), BSH_lo, BSH_eps);
         real_function_3d r = active_orbs[i] + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
         double err = r.norm2();
         std::cout << "Error of active space orbital " << i << ": " << err << std::endl; 
@@ -938,7 +938,7 @@ void Optimization::RotateOrbitalsBackAndUpdateIntegrals()
             T(i,j) = RotationMatrixBack(i,j);
         }
     }
-    active_orbs = transform(*world, active_orbs, T);
+    active_orbs = transform(*(madness_process.world), active_orbs, T);
     CalculateAllIntegrals();
 }
 

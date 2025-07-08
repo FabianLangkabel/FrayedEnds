@@ -17,20 +17,23 @@
 using namespace madness;
 namespace nb = nanobind;
 
-class Integrals: public MadnessProcess{
-public:
-    Integrals(double L, long k, double thresh);
-    ~Integrals(){};
+class Integrals {
+    public:
+        Integrals(MadnessProcess& mp);
+        ~Integrals(){};
 
-    madness::Tensor<double> potential_integrals;
-    madness::Tensor<double> overlap_integrals;
-    madness::Tensor<double> kinetic_integrals;
-    madness::Tensor<double> two_body_integrals;
+        madness::Tensor<double> potential_integrals;
+        madness::Tensor<double> overlap_integrals;
+        madness::Tensor<double> kinetic_integrals;
+        madness::Tensor<double> two_body_integrals;
 
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_overlap_integrals(std::vector<SavedFct> all_orbs);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_potential_integrals(std::vector<SavedFct> all_orbs, SavedFct potential);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_kinetic_integrals(std::vector<SavedFct> all_orbs);
-    nb::ndarray<nb::numpy, double, nb::ndim<4> > compute_two_body_integrals(std::vector<SavedFct> all_orbs);
+        nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_overlap_integrals(std::vector<SavedFct> all_orbs);
+        nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_potential_integrals(std::vector<SavedFct> all_orbs, SavedFct potential);
+        nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_kinetic_integrals(std::vector<SavedFct> all_orbs);
+        nb::ndarray<nb::numpy, double, nb::ndim<4> > compute_two_body_integrals(std::vector<SavedFct> all_orbs);
 
-    void hello(){std::cout << "hello from the integrals class\n";}
+        void hello(){std::cout << "hello from the integrals class\n";}
+
+    private:
+        MadnessProcess& madness_process;
 };
