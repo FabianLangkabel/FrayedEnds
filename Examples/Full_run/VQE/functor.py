@@ -1,14 +1,6 @@
-import tequila as tq
 import numpy as np
-import os
-import shutil
-from pathlib import Path
-import logging
-import subprocess as sp
-import pyscf
-from pyscf import fci
-import time
 import madpy as mad
+
 
 class Coulomb_with_param:
     epsilon = 0.0,
@@ -25,9 +17,13 @@ mraf=factory.GetMRAFunction()
 del factory
 print("MRA function created successfully.")
 
+mad_process = mad.MadnessProcess(50,7,0.0001)
+
 liste=["yz","xy","xz"]
-opti=mad.Optimization(50,7,0.0001)
+opti=mad.Optimization(mad_process)
 for i in range(3):
-    opti.plot("custom_func"+str(i)+".dat",mraf,axis=i)
-opti.plane_plot(".dat",mraf,plane="xy",zoom=5.0,datapoints=81,origin=[0.0,0.0,0.0])
+    mad_process.plot("custom_func"+str(i)+".dat",mraf,axis=i)
+mad_process.plane_plot(".dat",mraf,plane="xy",zoom=5.0,datapoints=81,origin=[0.0,0.0,0.0])
 del opti
+
+del mad_process

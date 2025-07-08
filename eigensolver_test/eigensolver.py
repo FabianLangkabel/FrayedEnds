@@ -17,17 +17,23 @@ geometry_bohr = '''
 H 0.0 0.0 ''' + distance.__str__() + '''
 H 0.0 0.0 ''' + (-distance).__str__()
 
+
 peak_loc=[[0.0,0.0,-distance],[0.0,0.0,distance]] #locations of the peaks
 sharpness_list=[100.0,100.0] #sharpness of the peaks
 Q=2
-PotMaker = mad.CoulombPotentialFromChargeDensity(box_size, wavelet_order, madness_thresh,sharpness_list,Q,peak_loc)
+
+mad_process = mad.MadnessProcess(box_size, wavelet_order, madness_thresh) # Initialize the Madness process
+
+PotMaker = mad.CoulombPotentialFromChargeDensity(mad_process,sharpness_list,Q,peak_loc)
 custom_pot=PotMaker.CreatePotential()
-PotMaker.plot("custom_potential.dat", custom_pot) #Plot the custom potential
+mad_process.plot("custom_potential.dat", custom_pot) #Plot the custom potential
 del PotMaker
 
-eigensolver = mad.Eigensolver(box_size, wavelet_order, madness_thresh)
+eigensolver = mad.Eigensolver(mad_process)
 eigensolver.solve(custom_pot, 4, 100)
 orbs=eigensolver.GetOrbitals(0,2,0)
 del eigensolver
 print(type(orbs))
 print(type(orbs[0]))
+
+del mad_process
