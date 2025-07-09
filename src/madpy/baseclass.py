@@ -12,3 +12,13 @@ class MadPyBase:
                     keyvals[k] = v
             parameters = MadnessParameters(**keyvals)
         self.madness_parameters=parameters
+
+def analyze(orbitals):
+    data = []
+    for x in orbitals:
+        info = {}
+        for kv in x.info.lstrip().rstrip().split(" "):
+            kv = kv.split("=")
+            info[kv[0]]=kv[1]
+        data.append({"type": x.type, **info})
+    return data

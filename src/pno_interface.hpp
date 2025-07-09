@@ -44,40 +44,7 @@ std::ostream& operator << (std::ostream& os, const std::vector<T>& v){
     return os;
 }
 
-// Function for orthogonalization of a basis
-std::vector<real_function_3d> orthonormalize_basis(const std::vector<real_function_3d> &basis, const std::string orthogonalization,
-		const double thresh, World& world, const bool print_out) {
 
-	// compute overlap, to be passed in orthonormalization routines and potentially printed
-	auto S = madness::matrix_inner(world, basis, basis, true);
-
-	auto out_basis = basis;
-	if (orthogonalization == "cholesky"){
-		out_basis = madness::orthonormalize_cd(basis, S);
-	}else if(orthogonalization == "symmetric"){
-		out_basis = madness::orthonormalize_symmetric(basis, S);
-	}else if(orthogonalization == "canonical") {
-		out_basis = madness::orthonormalize_canonical(basis, S, thresh);
-	}else if(orthogonalization == "rr_cholesky") {
-		if(world.rank()==0) std::cout << std::endl <<  "Be cautious:" << std::endl;
-		if(world.rank()==0) std::cout << "Rank reduced cholesky changes ordering in basis via pivoting. Make sure, that this does not interfere with your application (e.g. active-space)." << std::endl;
-		out_basis = madness::orthonormalize_rrcd(basis, S, thresh);
-	}else{
-		MADNESS_EXCEPTION("unknown orthonormalization method", 1);
-	}
-
-	if (print_out) {
-		const auto new_S = madness::matrix_inner(world, out_basis, out_basis);
-		if(world.rank()==0) {
-			std::cout << "Overlap Matrix before " << orthogonalization << "\n";
-			std::cout << S;
-			std::cout << "Overlap Matrix after " << orthogonalization << "\n";
-			std::cout << new_S;
-		}
-	}
-
-	return out_basis;
-}
 //PNOIntegrals class
 class PNOIntParameters: public PNOParameters {
 	/*
@@ -447,7 +414,8 @@ class PNOInterface: public MadnessProcess{
 			tmpx.insert(tmpx.end(), occ.begin(), occ.end());
 			occ = tmpx;
 
-			std::vector<std::pair<size_t,size_t>> tmpy(reference.size(), std::make_pair(9999,9999));
+			std::vector<std::pair<size_t,size_t>> tmpy;
+			for (size_t k=0; k<reference.size(); k++) tmpy.push_back(std::make_pair(k,k));
 			tmpy.insert(tmpy.end(), pno_ids.begin(), pno_ids.end());
 			pno_ids = tmpy;
 
@@ -470,16 +438,18 @@ class PNOInterface: public MadnessProcess{
 				if (i<core_dim){
 					pnorb.type="frozen_occ";
 					pnorb.info="occ="+std::to_string(occ[i])+" ";
+					pnorb.info+="pair1="+std::to_string(ids[i].first)+" ";
+					pnorb.info+="pair2="+std::to_string(ids[i].second)+" ";
 				}else if (i<core_dim+as_dim){
 					pnorb.type="active";
 					pnorb.info="occ="+std::to_string(occ[i])+" ";
-					pnorb.info+="idx="+std::to_string(ids[i].first)+" ";
-					pnorb.info+="idy="+std::to_string(ids[i].second)+" ";
+					pnorb.info+="pair1="+std::to_string(ids[i].first)+" ";
+					pnorb.info+="pair2="+std::to_string(ids[i].second)+" ";
 				}else if (i<core_dim+as_dim+froz_virt_dim){
 					pnorb.type="frozen_virt";
 					pnorb.info="occ="+std::to_string(occ[i])+" ";
-					pnorb.info+="idx="+std::to_string(ids[i].first)+" ";
-					pnorb.info+="idy="+std::to_string(ids[i].second)+" ";
+					pnorb.info+="pair1="+std::to_string(ids[i].first)+" ";
+					pnorb.info+="pair2="+std::to_string(ids[i].second)+" ";
 				}
 				pnos.push_back(pnorb);
 			}

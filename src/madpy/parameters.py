@@ -26,35 +26,3 @@ class MadnessParameters:
     truncate_mode: int=1
     refine: bool=True
     n_threads: int=-1 # use all available threads by default
-
-@dataclass
-class MRAFunction:
-    info: str = None # a string or datastructure with more information
-    data: bin = None
-    more: dict = None # a dictionary like structure that can carry more customized information
-
-@dataclass
-class Orbital:
-    """
-    Dataclass that holds binaries to MRA an MRA orbital and additional information
-    """
-    idx: int = None # an index associated to the orbital (most methods have one)
-    occ: float = None # an occupation number associated to the orbital
-    name: str = None # allows orbital to be named (e.g. "HF")
-    info: str = None # a string or datastructure with more information
-    more: dict = None # a dictionary like structure that can carry more customized information
-
-    data: bin = None # the actual data
-
-def unpack_madness_data(data, *args, **kwargs):
-    """
-    Takes an orbital, a list of orbitals or raw madness data
-    :return: raw madness data or a list of raw madness data
-    """
-
-    if hasattr(data, "__len__"):
-        return [unpack_madness_data(x) for x in data]
-    elif hasattr(data, "data"):
-        return data.data
-    else:
-        return data

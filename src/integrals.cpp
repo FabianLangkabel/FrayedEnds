@@ -100,4 +100,31 @@ nb::ndarray<nb::numpy, double, nb::ndim<4> > Integrals::compute_two_body_integra
     return numpy_array;
 }
 
+std::vector<SavedFct> Integrals::orthonormalize(std::vector<SavedFct> all_orbs, const std::string method, double rr_thresh){
+    std::vector<real_function_3d> basis;
+    for(SavedFct orb : all_orbs) basis.push_back(loadfct(orb));
+	// compute overlap, to be passed in orthonormalization routines and potentially printed
+	auto S = madness::matrix_inner(*world, basis, basis, true);
+
+	auto out_basis = basis;
+	if (method == "cholesky"){
+		out_basis = madness::orthonormalize_cd(basis, S);
+	}else if(method == "symmetric"){
+		out_basis = madness::orthonormalize_symmetric(basis, S);
+	}else if(method == "canonical") {
+		out_basis = madness::orthonormalize_canonical(basis, S, rr_thresh);
+	}else if(method == "rr_cholesky") {
+		out_basis = madness::orthonormalize_rrcd(basis, S, rr_thresh);
+	}else{
+		MADNESS_EXCEPTION("unknown orthonormalization method", 1);
+	}
+
+    std::vector<SavedFct> result;
+    for(auto x : out_basis) result.push_back(SavedFct(x));
+    for(size_t k=0; k<result.size(); k++) result[k].info = all_orbs[k].info;
+    for(size_t k=0; k<result.size(); k++) result[k].type = all_orbs[k].type;
+
+	return result;
+}
+
 

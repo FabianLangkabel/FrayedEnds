@@ -32,5 +32,7 @@ public:
     nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_kinetic_integrals(std::vector<SavedFct> all_orbs);
     nb::ndarray<nb::numpy, double, nb::ndim<4> > compute_two_body_integrals(std::vector<SavedFct> all_orbs);
 
+    std::vector<SavedFct> orthonormalize(std::vector<SavedFct> all_orbs, const std::string method, const double rr_thresh);
+
     void hello(){std::cout << "hello from the integrals class\n";}
 };

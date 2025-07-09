@@ -1,5 +1,5 @@
 from ._madpy_impl import PNOInterface
-from .parameters import redirect_output, Orbital
+from .parameters import redirect_output
 from .baseclass import MadPyBase
 import glob
 import os
@@ -8,7 +8,7 @@ import os
 #TODO separate the PNO calculation into pno, transformator, integrals,...
 class MadPNO(MadPyBase):
 
-    _orbitals: Orbital = None
+    _orbitals = None
     _h = None # one-body tensor
     _g = None # two-body tensor
     _c = 0.0 # constant term
@@ -37,7 +37,7 @@ class MadPNO(MadPyBase):
         if self._orbitals is not None:
             return self._orbitals
         else:
-            return self.compute_pnos(*args, **kwargs)
+            return self.compute_orbitals(*args, **kwargs)
 
     def get_integrals(self, *args, **kwargs):
         if self._h is not None and self._g is not None:
@@ -53,21 +53,18 @@ class MadPNO(MadPyBase):
         return self.impl.GetNuclearRepulsion()
 
     @redirect_output("madpno.log")
-    def compute_pnos(self, frozen_occ_dim, active_dim, frozen_virt_dim, *args, **kwargs):
+    def compute_orbitals(self, frozen_occ_dim, active_dim, frozen_virt_dim, *args, **kwargs):
         self.impl.DeterminePNOsAndIntegrals()
 
         # package the orbitals
-        orbitals = []
-        pnos = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)  # input: dimensions of (frozen_occ, active, forzen_virt) space
-        for k,pno in enumerate(pnos):
-            orbitals.append(Orbital(idx=k, data=pno))
+        orbitals = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)  # input: dimensions of (frozen_occ, active, forzen_virt) space
         self.cleanup(*args, **kwargs)
         self._orbitals = orbitals
         return orbitals
 
     def compute_integrals(self, *args, **kwargs):
         if self._orbitals is None:
-            self.compute_pnos()
+            self.compute_orbitals(*args, **kwargs)
         self._h = self.impl.GetHTensor()
         self._g = self.impl.GetGTensor()
         self._c = self.impl.GetNuclearRepulsion()
