@@ -8,7 +8,7 @@ true_start=time()
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25" # geometry in Angstrom
 madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno":1})
 orbitals = madpno.get_orbitals(0,2,0)
-print(madpy.analyze(orbitals))
+print(madpy.get_function_info(orbitals))
 
 param = madpno.madness_parameters
 nuc_repulsion= madpno.get_nuclear_repulsion()
