@@ -7,8 +7,7 @@ true_start = time()
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
 madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno": 1})
 orbitals = madpno.get_orbitals(0, 2, 0)
-print(madpy.analyze(orbitals))
-edges = madpno.get_pno_groupings(diagonal=True)
+edges = madpno.get_spa_edges()
 print(edges)
 
 param = madpno.madness_parameters
@@ -36,7 +35,7 @@ for iteration in range(6):
     del integrals
 
     mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
-    U = mol.make_ansatz(name="SPA")
+    U = mol.make_ansatz(name="SPA", edges=edges)
     H = mol.make_hamiltonian()
     E = tq.ExpectationValue(H=H, U=U)
     result = tq.minimize(E, silent=True)
