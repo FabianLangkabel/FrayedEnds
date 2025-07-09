@@ -1,6 +1,6 @@
 from ._madpy_impl import PNOInterface
 from .parameters import redirect_output
-from .baseclass import MadPyBase
+from .baseclass import MadPyBase, analyze
 import glob
 import os
 
@@ -32,6 +32,23 @@ class MadPNO(MadPyBase):
         pno_input_string = self.parameter_string(molecule_file=geometry, *args, **kwargs)
         print(pno_input_string)
         self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
+
+    def get_pno_groupings(self, diagonal=True, *args, **kwargs):
+        # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
+        orbitals = self.get_orbitals(*args, **kwargs)
+        info = analyze(orbitals)
+        tmp = len([x for x in info if x["occ"]==2.0])
+        diagonal = {k:[] for k in range(len(tmp))}
+        off_diagonal = {(k,l):[] for l in range(k,len(tmp)) for k in range(len(tmp))}
+        for k in range(len(orbitals)):
+            x = info[k]["pair1"]
+            y = info[k]["pair2"]
+            if x == y: diagonal[x].append(k)
+            else: off_diagonal[(x,y)].append(k)
+
+        if diagonal:
+            return diagonal
+        return {**diagonal, **off_diagonal}
 
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is not None:
