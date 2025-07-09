@@ -73,10 +73,6 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<const std::string &, const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
         .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
         .def("DeterminePNOsAndIntegrals", &PNOInterface::DeterminePNOsAndIntegrals)
-        .def("GetPNOs", &PNOInterface::GetPNOs)
-        .def("GetHTensor", &PNOInterface::GetHTensor)
-        .def("GetGTensor", &PNOInterface::GetGTensor)
-        .def("GetF12Tensor", &PNOInterface::GetF12Tensor)
         .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
