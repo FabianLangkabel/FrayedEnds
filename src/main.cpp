@@ -33,7 +33,8 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_overlap_integrals", &Integrals::compute_overlap_integrals, nb::arg("all_orbs"))
         .def("compute_potential_integrals", &Integrals::compute_potential_integrals, nb::arg("all_orbs"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals::compute_kinetic_integrals, nb::arg("all_orbs"))
-        .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"));
+        .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"))
+        .def("orthonormalize", &Integrals::orthonormalize, nb::arg("all_orbs"), nb::arg("method")="symmetric", nb::arg("rr_thresh")=0.0);
 
     nb::class_<Optimization>(m, "Optimization")
         .def(nb::init<const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())

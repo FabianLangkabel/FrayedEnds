@@ -1,6 +1,4 @@
-import numpy as np
 import madpy
-from madpy.parameters import unpack_madness_data
 import tequila as tq
 from time import time
 
@@ -10,11 +8,7 @@ true_start=time()
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25" # geometry in Angstrom
 madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno":1})
 orbitals = madpno.get_orbitals(0,2,0)
-for i in range(len(orbitals)):
-    print(i)
-    print(orbitals[i].data)
-    print("info=",orbitals[i].data.info)
-    print("type=",orbitals[i].data.type)
+print(madpy.analyze(orbitals))
 
 param = madpno.madness_parameters
 nuc_repulsion= madpno.get_nuclear_repulsion()
@@ -26,6 +20,9 @@ for i in range(len(orbitals)):
     plt.line_plot(f"pnoorb{i}.dat",orbitals[i])
 del plt
 
+integrals = madpy.Integrals(param)
+orbitals = integrals.orthonormalize(orbitals=orbitals)
+del integrals
 c=nuc_repulsion
 for iteration in range(6):
 
@@ -48,7 +45,7 @@ for iteration in range(6):
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
     
     opti = madpy.Optimization(Vnuc, nuc_repulsion, parameters=param)
-    orbitals = opti.get_orbitals(orbitals=unpack_madness_data(orbitals), rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+    orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
     c = opti.get_c() #if there are no frozen core electrons, this should always be equal to the nuclear repulsion
     print(orbitals)
     del opti

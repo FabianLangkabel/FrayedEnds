@@ -47,7 +47,7 @@ class SavedFct {
         std::string info="";
         std::string type="";
 
-        SavedFct(Function<double,3> f) {
+        SavedFct(Function<double,3> f){
             std::string filename = "saved_fct0504030201"; //TO DO: use the cloud for this
             save(f,filename);
             saved_str = read_binary_file(filename+".00000");

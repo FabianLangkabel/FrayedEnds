@@ -1,6 +1,6 @@
 from ._madpy_impl import Optimization as OptInterface
 from .baseclass import MadPyBase
-from .parameters import redirect_output, unpack_madness_data
+from .parameters import redirect_output
 
 class Optimization(MadPyBase):
 
@@ -23,7 +23,6 @@ class Optimization(MadPyBase):
 
     @redirect_output("madopt.log")
     def optimize_orbs(self, orbitals, rdm1, rdm2, opt_thresh=1.e-4, occ_thresh=1.e-5, *args, **kwargs):
-        orbitals = unpack_madness_data(orbitals)
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
         self.impl.GivePotentialAndRepulsion(self._Vnuc, self._nuclear_repulsion)
