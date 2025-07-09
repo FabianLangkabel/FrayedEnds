@@ -70,7 +70,7 @@ class GuessGenerator{
                     }
 
                     // get the next orders
-                    std::cout << "Get the other orders: " << std::endl;
+                    // std::cout << "Get the other orders: " << std::endl;
 
                     int first_nonzero = 0; // index of the first non-zero in the array
 
@@ -90,6 +90,10 @@ class GuessGenerator{
                     // if all orders are zero, break (it's the first guess if the order is 0)
                     if (all_zero) {
                         std::cout << "All zero" << std::endl;
+                        for (int j = 0; j < orders.size(); j++) {
+                            std::cout << orders[j] << " ";
+                        }
+                        std::cout << std::endl;
                         break;
                     }
 
