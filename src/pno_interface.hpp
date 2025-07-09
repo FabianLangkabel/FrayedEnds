@@ -249,7 +249,7 @@ class PNOInterface: public MadnessProcess{
 				std::cout << std::setfill(' ');
 				std::cout << "\n\n\n";
 				std::cout << "--------------------------------------------------\n";
-				std::cout << "MRA-PNO-MP2-F12 ended \n";
+				std::cout << "MRA-PNO-MP2 ended \n";
 				std::cout << "--------------------------------------------------\n";
 				std::cout << std::setw(25) << "time scf" << " = " << time_scf_end - time_scf_start << "\n";
 				std::cout << std::setw(25) << "energy scf" << " = " << scf_energy << "\n";
