@@ -455,21 +455,6 @@ class PNOInterface: public MadnessProcess{
 			}
 			return pnos;
 		}
-		nb::ndarray<nb::numpy, double, nb::ndim<2> > GetHTensor()
-		{
-			nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(h.ptr(), {basis.size(), basis.size()});
-			return numpy_array;
-		}
-		nb::ndarray<nb::numpy, double, nb::ndim<4> > GetGTensor()
-		{
-			nb::ndarray<nb::numpy, double, nb::ndim<4> > numpy_array(g.ptr(), {basis.size(), basis.size(), basis.size(), basis.size()});
-			return numpy_array;
-		}
-		nb::ndarray<nb::numpy, double, nb::ndim<4> > GetF12Tensor() //what is the f tensor?
-		{
-			nb::ndarray<nb::numpy, double, nb::ndim<4> > numpy_array(f.ptr(), {basis.size(), basis.size(), basis.size(), basis.size()});
-			return numpy_array;
-		}
 		double GetNuclearRepulsion() const
 		{
 			return nuclear_repulsion;
@@ -480,9 +465,6 @@ class PNOInterface: public MadnessProcess{
 		vecfuncT basis;
 		std::vector<double> occ;
 		std::vector<std::pair<size_t,size_t>> ids;
-		madness::Tensor<double> g;
-		madness::Tensor<double> f;
-		madness::Tensor<double> h;
 		double nuclear_repulsion;
 		real_function_3d Vnuc;
 };
