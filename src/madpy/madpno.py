@@ -1,5 +1,4 @@
 import numpy
-
 from ._madpy_impl import PNOInterface
 from .parameters import redirect_output
 from .baseclass import MadPyBase, get_function_info
@@ -7,7 +6,6 @@ import glob
 import os
 
 
-#TODO separate the PNO calculation into pno, transformator, integrals,...
 class MadPNO(MadPyBase):
 
     _orbitals = None
@@ -45,6 +43,7 @@ class MadPNO(MadPyBase):
 
             except Exception:
                 maxrank = n_orbitals
+
         pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
         print(pno_input_string)
         self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)

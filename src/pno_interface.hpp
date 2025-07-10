@@ -153,6 +153,7 @@ class PNOInterface: public MadnessProcess{
 			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
 			F12Parameters paramf12(*world, parser, parameters, TAG_F12);
 			PNO pno(*world, nemo, parameters, paramf12);
+			aobas = nemo.get_calc()->ao;
 			pno.solve();
 			const double time_pno_end = wall_time();
 	
@@ -346,6 +347,7 @@ class PNOInterface: public MadnessProcess{
 		commandlineparser parser;
 		vecfuncT basis;
 		real_function_3d Vnuc;
+		vecfuncT aobas;
 	protected:
 		size_t nfreeze;
 		double nuclear_repulsion;
