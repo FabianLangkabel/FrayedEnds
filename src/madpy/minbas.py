@@ -28,6 +28,11 @@ class AtomicBasisProjector(MadPyBase):
         orbitals = self.impl.get_atomic_basis()
         self.orbitals = orbitals
 
+    def get_nuclear_repulsion(self):
+        return self.impl.get_nuclear_repulsion()
+    def get_nuclear_potential(self):
+        return self.impl.get_nuclear_potential()
+
     def parameter_string(self, molecule_file, aobasis="sto-3g", **kwargs) -> str:
             data = {}
 

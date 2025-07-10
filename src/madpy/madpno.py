@@ -106,7 +106,10 @@ class MadPNO(MadPyBase):
         return self.impl.get_nuclear_potential()
 
     def get_nuclear_repulsion(self, *args, **kwargs):
-        return self.impl.GetNuclearRepulsion()
+        return self.impl.get_nuclear_repulsion()
+
+    def get_sto3g(self, *args, **kwargs):
+        return self.impl.get_sto3g()
 
     @redirect_output("madpno.log")
     def compute_orbitals(self, n_orbitals, frozen_virt_dim=0, *args, **kwargs):

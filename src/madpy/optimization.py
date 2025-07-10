@@ -2,6 +2,55 @@ from ._madpy_impl import Optimization as OptInterface
 from .baseclass import MadPyBase
 from .parameters import redirect_output
 
+import numpy as np
+
+
+def transform_rdms(TransformationMatrix, rdm1, rdm2):
+    new_rdm1 = np.dot(np.dot(TransformationMatrix.transpose(), rdm1), TransformationMatrix)
+    n = rdm2.shape[0]
+
+    temp1 = np.zeros(shape=(n, n, n, n))
+    for i in range(n):
+        for j in range(n):
+            for k2 in range(n):
+                for l in range(n):
+                    k_value = 0
+                    for k in range(n):
+                        k_value += TransformationMatrix[k][k2] * rdm2[i][j][k][l]
+                    temp1[i][j][k2][l] = k_value
+
+    temp2 = np.zeros(shape=(n, n, n, n))
+    for i2 in range(n):
+        for j in range(n):
+            for k2 in range(n):
+                for l in range(n):
+                    i_value = 0
+                    for i in range(n):
+                        i_value += TransformationMatrix[i][i2] * temp1[i][j][k2][l]
+                    temp2[i2][j][k2][l] = i_value
+
+    temp3 = np.zeros(shape=(n, n, n, n))
+    for i2 in range(n):
+        for j in range(n):
+            for k2 in range(n):
+                for l2 in range(n):
+                    l_value = 0
+                    for l in range(n):
+                        l_value += TransformationMatrix[l][l2] * temp2[i2][j][k2][l]
+                    temp3[i2][j][k2][l2] = l_value
+
+    new_rdm2 = np.zeros(shape=(n, n, n, n))
+    for i2 in range(n):
+        for j2 in range(n):
+            for k2 in range(n):
+                for l2 in range(n):
+                    j_value = 0
+                    for j in range(n):
+                        j_value += TransformationMatrix[j][j2] * temp3[i2][j][k2][l2]
+                    new_rdm2[i2][j2][k2][l2] = j_value
+
+    return new_rdm1, new_rdm2
+
 class Optimization(MadPyBase):
 
     _orbitals = None
