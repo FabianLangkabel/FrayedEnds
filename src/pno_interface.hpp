@@ -23,10 +23,7 @@ namespace nb = nanobind;
 
 // DEFINE PARAMETER TAGS FOR THE INPUT FILE
 const std::string TAG_PNO = "pno";
-const std::string TAG_F12 = "f12";
-const std::string TAG_PNOInt = "pnoint";
 const std::string TAG_CP = "computeprotocol";
-
 
 template<typename T1, typename T2>
 std::ostream& operator << (std::ostream& os, const std::pair<T1,T2>& v){
@@ -43,90 +40,6 @@ std::ostream& operator << (std::ostream& os, const std::vector<T>& v){
     os << "]";
     return os;
 }
-
-
-//PNOIntegrals class
-class PNOIntParameters: public PNOParameters {
-	/*
-	 * parameters we need:
-	 * == orthogonalization method
-	 * == cabs-file (don't pick the one from F12 I guess)
-	 * == cherry-pick orbs
-	 * == size of desired PNO-basis aka size-OBS
-	 * == size of PNO-CABS
-	 * == maybe some kind of thresh for cabs? aka cabs_thresh, that is unused anyhow
-	 *
-	 *
-	 *
-	 */
-	public:
-		PNOIntParameters(const PNOParameters& param) : PNOParameters(param){
-			initialize_pnoint_parameters();
-			set_derived_values(param);
-		}
-	
-		PNOIntParameters(World& world, const commandlineparser& parser, const PNOParameters& param, const std::string& TAG="pnoint") : PNOParameters(param){
-			initialize_pnoint_parameters();
-			QCCalculationParametersBase::read_input_and_commandline_options(world,parser,TAG);
-			set_derived_values(param);
-		}
-	
-	
-		void initialize_pnoint_parameters() {
-			initialize<std::string>("orthog", "cholesky", "orthogonalization method for PNO basis, also current default for a potential CABS. options: symmetric, canonical, cholesky, rr_cholesky,  ");
-			initialize<std::string>("orthog_cabs", "default", "orthogonalization method for CABS basis. options: symmetric, canonical, cholesky, rr_cholesky, uses same as orbitals basis if default.");
-			initialize<int>("n_pno", 10, "desired size of PNO-basis (orbital space)");
-			initialize<std::string>("cabs_option", "none", "type of complementary auxiliary basis to be used. can be none ~ no CABS, gbs ~ Gaussian basis set as CABS, requires input via auxbas_file, pno ~ use superfluous PNOs as CABS, mixed ~ gbs&pno-option");
-			initialize<int>("pno_cabs_size", -1, "size of a potential pno-cabs. defaults to -1 ~ all remaining PNOs, if pno-cabs or mixed-cabs");
-			initialize<bool>("only_diag", false, "use only diagonal elements PNOs");
-			initialize<std::vector<int> >("cherry_pick", std::vector<int>(), "cherry pick option to choose particular set of PNOs, not just blindly by occupation number. can be useful, if only a restricted number of PNOs can be used, to avoid separating degenerate pairs. can be envoked by passing a vector via [ elem1, elem2, ... ]");
-			initialize<std::vector<int> >("ignore_pair", std::vector<int>(), "ignore certain pairs in the selection of pnos numbering is 00-0, 01-1, 02-2 ... ");
-			initialize<double>("gamma",1.4, "The f12 length scale, here to be used to compute f12-integrals");
-			initialize<double>("cabs_thresh",1.e-4, " thresh for cabs part ");
-			initialize<std::string>("auxbas", "none", "atom centered partial wave guess of format like 'h-2s1p-o-3s2p1d' ");
-			initialize<std::string>("auxbas_file", "none", "Use external comp. aux. basis in addition to the pnos as auxbasis. Give the filename as parameter. Give the auxbas in turbomole format. Don't use contractions. If a file is specified the auxbas parameter has no effect");
-			initialize<bool>("print_pno_overlap", true, "Print overlap matrix at certain steps in computation, for debugging purposes.");
-			initialize<bool>("hardcore_boson", false, "compute only integrals for hardcore boson hamiltonian (restricted to double occupations)");
-		}
-	
-		std::string orthogonalization()const { return get<std::string>("orthog");}
-		std::string cabs_orthogonalization()const { 
-			if (get<std::string>("orthog_cabs") == "default")
-				return orthogonalization();
-			else
-				return get<std::string>("orthog_cabs");
-		}
-	
-		bool hardcore_boson()const{return get<bool>("hardcore_boson");}
-		std::string cabs_option()const { return get<std::string>("cabs_option");}
-		int n_pno()const { return get<int >("n_pno");}
-		int pno_cabs_size()const { return get<int >("pno_cabs_size");}
-		bool only_diag()const { return get<bool>("only_diag"); }
-		std::vector<int> cherry_pick()const { 
-			return get<std::vector<int> >("cherry_pick");
-		}
-		std::vector<int> ignore_pair()const { 
-			return get<std::vector<int> >("ignore_pair");
-		}
-		double cabs_thresh()const { return get<double >("cabs_thresh");}
-		std::string auxbas_file()const {
-			return get<std::string >("auxbas_file");
-		}
-		double gamma()const { return get<double >("gamma");}
-	
-		// TODO guess we don't need that here...
-		std::map<std::string,std::vector<int> > auxbas()const {
-			return partial_wave("auxbas");
-		}
-		bool print_pno_overlap()const { return get<bool>("print_pno_overlap"); }
-	
-		void set_derived_values(const PNOParameters& param) {
-			set_derived_value("cabs_thresh", thresh());
-			set_derived_value("n_pno", std::min(10, param.maxrank()));
-					set_derived_value("only_diag", diagonal());
-		}
-	
-};
 	
 inline std::pair<size_t, char**> stringToCharPointerArray(const std::string& input) {
     std::vector<std::string> tokens;
@@ -237,9 +150,6 @@ class PNOInterface: public MadnessProcess{
 			// Compute MRA-PNO-MP2-F12
 			const double time_pno_start = wall_time();
 			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
-			F12Parameters paramf12(*world, parser, parameters, TAG_F12);
-			PNOIntParameters paramsint(*world, parser, parameters, TAG_PNOInt); //should be removed eventually
-			paramsint.print("PNO Integrals evaluated as:\npnoint","end"); //ditto
 			PNO pno(*world, nemo, parameters, paramf12);
 			pno.solve();
 			const double time_pno_end = wall_time();
@@ -294,24 +204,9 @@ class PNOInterface: public MadnessProcess{
 			std::cout << std::setprecision(8);
 			std::cout << std::fixed;
 			std::cout << std::showpos;
-	
-			const std::string orthogonalization = paramsint.orthogonalization(); // need to get ortho method elsewhere
-			if (world->rank()==0) std::cout << "Orthonormalization technique used: " << orthogonalization << std::endl;
-			const bool orthogonalize = orthogonalization != "none";
+
 			const double h_thresh = 1.e-7; // neglect integrals
 			double thresh = parameters.thresh();
-	
-			const std::string cabs_option = paramsint.cabs_option();
-			bool cabs_switch = false;
-			if (cabs_option=="pno" || cabs_option=="gbs" || cabs_option=="mixed")
-				cabs_switch = true;
-			if (world->rank()==0) {
-				if (cabs_switch) std::cout << "CABS option " << cabs_option << std::endl;
-				else if (!cabs_switch) std::cout << "No CABS used." << std::endl;
-			}
-			const bool only_diag = paramsint.only_diag();
-			const int basis_size = paramsint.n_pno();
-			int pno_cabs_size = paramsint.pno_cabs_size();
 	
 			thresh = std::min(thresh, 1.e-4);
 			if(world->rank()==0) std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
@@ -324,45 +219,25 @@ class PNOInterface: public MadnessProcess{
 			std::vector<double> rest_occ;
 			std::vector<std::pair<size_t,size_t>> pno_ids;
 			std::vector<std::pair<size_t,size_t>> rest_ids;
-			std::string name;
 
 			for(auto& pairs: all_pairs){
-							// list of pairs to ignore:
-							std::vector<bool> ignore_pair(pairs.npairs, false);
-							for(auto x : paramsint.ignore_pair()){
-								ignore_pair[x] = true;
-								if(world->rank()==0) std::cout << "will ignore pair " << x << "\n";
-							} 
-	
 				const auto& pno_ij = pairs.pno_ij;
 				const auto& rdm_evals = pairs.rdm_evals_ij;
-				const bool is_gs = pairs.type == MP2_PAIRTYPE;
-	
-				if (not is_gs){
-					const auto& x = pairs.cis.x;
-					reference.insert(reference.end(), x.begin(), x.end());
-					name = "molecule_ex_" + std::to_string(pairs.cis.number);
-				}else{
-					name = "molecule";
-				}
-	
+
+	            const bool only_diag=true;
 				std::vector<real_function_3d> all_current_pnos;
 				// collect PNOs from all pairs and sort by occupation number, keeping pair information via name
 				for(ElectronPairIterator it=pno.pit();it;++it){
 					if (only_diag and not it.diagonal()){
 						if(world->rank()==0) std::cout << "skipping pair (not diagonal) " << it.name() << "\n";
 						continue;
-									}else if(ignore_pair[it.ij()]){
-						if(world->rank()==0) std::cout << "skipping pair (demanded by input) " << it.name() << "\n";
-						continue;
-					}else{
-						if(world->rank()==0) std::cout << "adding " << it.name() << "\n";
-						const auto& pair = pno_ij[it.ij()];
-						all_current_pnos.insert(all_current_pnos.end(), pair.begin(), pair.end());
-						for (auto ii=0; ii<rdm_evals[it.ij()].size();++ii){
-							occ.push_back(rdm_evals[it.ij()][ii]);
-							pno_ids.push_back(std::make_pair(it.i(),it.j()));  // for each eigenvalue ~ PNO, store pair affiliation
-						}
+					}
+					if(world->rank()==0) std::cout << "adding " << it.name() << "\n";
+					const auto& pair = pno_ij[it.ij()];
+					all_current_pnos.insert(all_current_pnos.end(), pair.begin(), pair.end());
+					for (auto ii=0; ii<rdm_evals[it.ij()].size();++ii){
+						occ.push_back(rdm_evals[it.ij()][ii]);
+						pno_ids.push_back(std::make_pair(it.i(),it.j()));  // for each eigenvalue ~ PNO, store pair affiliation
 					}
 				}
 	            if(world->rank()==0) std::cout << "done " << "\n";
@@ -394,8 +269,6 @@ class PNOInterface: public MadnessProcess{
 	        if(world->rank()==0) std::cout << "collected " << obs_pnos.size() << " pnos" << "\n";
             if(world->rank()==0) std::cout << "and " << reference.size() << " reference orbitals" << "\n";
 
-			// reference projector (not automatically fullfilled for CIS)
-			// projection is to keep the reference and CIS orbitals untouched in the orthogonalization
 			madness::QProjector<double, 3> Q(*world, reference);
 			obs_pnos = Q(obs_pnos);
 			vecfuncT xbasis = reference;
@@ -426,6 +299,7 @@ class PNOInterface: public MadnessProcess{
 			this->occ = occ;
 			this->ids = pno_ids;
 		}
+
 
 		std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const
 		{	
