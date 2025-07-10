@@ -127,4 +127,32 @@ std::vector<SavedFct> Integrals::orthonormalize(std::vector<SavedFct> all_orbs, 
 	return result;
 }
 
+std::vector<SavedFct> Integrals::project_out(std::vector<SavedFct> kernel, std::vector<SavedFct> target){
+    std::vector<real_function_3d> x;
+    for(SavedFct orb : kernel) x.push_back(loadfct(orb));
+    std::vector<real_function_3d> y;
+    for(SavedFct orb : target) y.push_back(loadfct(orb));
+
+    auto Q = madness::QProjector<double,3>(x);
+    auto z = Q(y);
+    madness::normalize(*world, z);
+    std::vector<SavedFct> result;
+    for(size_t k=0; k<target.size(); k++) result.push_back(SavedFct(z[k], target[k].type, target[k].info));
+    return result;
+}
+
+std::vector<SavedFct> Integrals::project_on(std::vector<SavedFct> kernel, std::vector<SavedFct> target){
+    std::vector<real_function_3d> x;
+    for(SavedFct orb : kernel) x.push_back(loadfct(orb));
+    std::vector<real_function_3d> y;
+    for(SavedFct orb : target) y.push_back(loadfct(orb));
+
+    auto P = madness::Projector<double,3>(x);
+    auto z = P(y);
+    madness::normalize(*world, z);
+    std::vector<SavedFct> result;
+    for(size_t k=0; k<target.size(); k++) result.push_back(SavedFct(z[k], target[k].type, target[k].info));
+    return result;
+}
+
 

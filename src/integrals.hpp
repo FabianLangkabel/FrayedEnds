@@ -34,5 +34,10 @@ public:
 
     std::vector<SavedFct> orthonormalize(std::vector<SavedFct> all_orbs, const std::string method, const double rr_thresh);
 
+    std::vector<SavedFct> project_out(std::vector<SavedFct> kernel, std::vector<SavedFct> target);
+    std::vector<SavedFct> project_on(std::vector<SavedFct> kernel, std::vector<SavedFct> target);
+
+
+
     void hello(){std::cout << "hello from the integrals class\n";}
 };

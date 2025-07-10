@@ -153,7 +153,6 @@ class PNOInterface: public MadnessProcess{
 			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
 			F12Parameters paramf12(*world, parser, parameters, TAG_F12);
 			PNO pno(*world, nemo, parameters, paramf12);
-			aobas = nemo.get_calc()->ao;
 			pno.solve();
 			const double time_pno_end = wall_time();
 	
@@ -304,6 +303,8 @@ class PNOInterface: public MadnessProcess{
 			this->ids = pno_ids;
 
 			nfreeze = pno.param.freeze();
+			nemo.get_calc()->reset_aobasis("sto-3g");
+            sto3g = nemo.get_calc()->project_ao_basis(*world, nemo.get_calc()->aobasis);
 		}
 
 
@@ -338,16 +339,22 @@ class PNOInterface: public MadnessProcess{
 			}
 			return pnos;
 		}
-		double GetNuclearRepulsion() const
+		double get_nuclear_repulsion() const
 		{
 			return nuclear_repulsion;
+		}
+
+		std::vector<SavedFct> get_sto3g()const{
+		    std::vector<SavedFct> result;
+		    for(auto x: sto3g) result.push_back(SavedFct(x, "atomic"));
+		    return result;
 		}
 
 	private:
 		commandlineparser parser;
 		vecfuncT basis;
 		real_function_3d Vnuc;
-		vecfuncT aobas;
+		vecfuncT sto3g;
 	protected:
 		size_t nfreeze;
 		double nuclear_repulsion;

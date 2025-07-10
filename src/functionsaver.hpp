@@ -47,12 +47,26 @@ class SavedFct {
         std::string info="";
         std::string type="";
 
-        SavedFct(Function<double,3> f){
-            std::string filename = "saved_fct0504030201"; //TO DO: use the cloud for this
-            save(f,filename);
-            saved_str = read_binary_file(filename+".00000");
-            delete_file(filename+".00000");
+        SavedFct(Function<double,3> f): type("unknown"), info("None") {
+            saved_str = get_data_string(f);
         }
+
+        SavedFct(Function<double,3> f, const std::string type): type(type){
+            saved_str = get_data_string(f);
+        }
+
+        SavedFct(Function<double,3> f, const std::string type, const std::string info): type(type), info(info){
+            saved_str = get_data_string(f);
+        }
+
+        std::string get_data_string(Function<double,3> f)const {
+            std::string filename = "saved_fct0504030201"; //TODO: use the cloud for this
+            save(f,filename);
+            std::string data_string = read_binary_file(filename+".00000");
+            delete_file(filename+".00000");
+            return data_string;
+        }
+
 };
 
 

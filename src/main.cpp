@@ -43,6 +43,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_potential_integrals", &Integrals::compute_potential_integrals, nb::arg("all_orbs"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals::compute_kinetic_integrals, nb::arg("all_orbs"))
         .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"))
+        .def("project_out", &Integrals::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("orthonormalize", &Integrals::orthonormalize, nb::arg("all_orbs"), nb::arg("method")="symmetric", nb::arg("rr_thresh")=0.0);
 
     nb::class_<Optimization>(m, "Optimization")
@@ -80,15 +81,18 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<const std::string &, const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
         .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
         .def("run", &PNOInterface::run)
+        .def("get_sto3g", &PNOInterface::get_sto3g)
         .def("GetPNOs", &PNOInterface::GetPNOs)
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
-        .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
+        .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion);
 
     nb::class_<MinBasProjector>(m, "MinBasProjector")
         .def(nb::init<const std::string &, const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
         .def("run", &MinBasProjector::run)
+        .def("get_nuclear_potential", &MinBasProjector::get_nuclear_potential)
         .def("get_basis_name", &MinBasProjector::get_basis_name)
-        .def("get_atomic_basis", &MinBasProjector::get_atomic_basis);
+        .def("get_atomic_basis", &MinBasProjector::get_atomic_basis)
+        .def("get_nuclear_repulsion", &MinBasProjector::get_nuclear_repulsion);
 
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")

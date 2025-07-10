@@ -28,5 +28,8 @@ class Integrals(MadPyBase):
     def orthonormalize(self, orbitals, method="symmetric", *args, **kwargs):
         return self.impl.orthonormalize(orbitals, method, *args, **kwargs)
 
+    def project_out(self, kernel, target, *args, **kwargs):
+        return self.impl.project_out(kernel, target)
+
     def hello(self):
         self.impl.hello()

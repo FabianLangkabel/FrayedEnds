@@ -40,6 +40,9 @@ class MinBasProjector: public MadnessProcess{
             calc.reset_aobasis("sto-3g");
             atomicbasis = calc.project_ao_basis(*world, calc.aobasis);
             basisname = "sto-3g";
+            nuclear_repulsion = calc.molecule.nuclear_repulsion_energy();
+            calc.make_nuclear_potential(*world);
+            Vnuc = calc.potentialmanager -> vnuclear();
 		}
 
 		std::vector<SavedFct> get_atomic_basis()const{
@@ -55,9 +58,21 @@ class MinBasProjector: public MadnessProcess{
 		    return basisname;
 		}
 
+		SavedFct get_nuclear_potential(){
+			return SavedFct(Vnuc);
+		}
+
+		double get_nuclear_repulsion() const
+		{
+			return nuclear_repulsion;
+		}
+
 		private:
         commandlineparser parser;
 	    std::vector<madness::Function<double,3>> atomicbasis;
 	    std::string basisname;
+	    double nuclear_repulsion;
+	    madness::Function<double,3> Vnuc;
+
 
 };
