@@ -5,9 +5,8 @@ from time import time
 true_start = time()
 # initialize the PNO interface
 geom = "Li 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
-madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno": 1})
-# todo change
-orbitals = madpno.get_orbitals(1, 2, 0)
+madpno = madpy.MadPNO(geom, n_orbitals=3)
+orbitals = madpno.get_orbitals()
 edges = madpno.get_spa_edges()
 
 param = madpno.madness_parameters

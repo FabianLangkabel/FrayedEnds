@@ -23,6 +23,7 @@ namespace nb = nanobind;
 
 // DEFINE PARAMETER TAGS FOR THE INPUT FILE
 const std::string TAG_PNO = "pno";
+const std::string TAG_F12 = "f12";
 const std::string TAG_CP = "computeprotocol";
 
 template<typename T1, typename T2>
@@ -150,7 +151,7 @@ class PNOInterface: public MadnessProcess{
 			// Compute MRA-PNO-MP2-F12
 			const double time_pno_start = wall_time();
 			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
-			PNOParametersF12 paramf12(*world, parser);
+			F12Parameters paramf12(*world, parser, parameters, TAG_F12);
 			PNO pno(*world, nemo, parameters, paramf12);
 			pno.solve();
 			const double time_pno_end = wall_time();
@@ -214,6 +215,7 @@ class PNOInterface: public MadnessProcess{
 			FunctionDefaults<3>::set_thresh(thresh);
 	
 			vecfuncT reference = nemo.get_calc()->amo;
+			const size_t npno = basis_size - reference.size();
 			vecfuncT obs_pnos;
 			std::vector<real_function_3d> rest_pnos;
 			std::vector<double> occ;
@@ -253,7 +255,7 @@ class PNOInterface: public MadnessProcess{
 				std::vector<double> unzipped_first;
 				std::vector<real_function_3d> unzipped_second;
 				std::vector<std::pair<size_t,size_t> > unzipped_third;
-				for (auto i=0; i<basis_size;++i){
+				for (auto i=0; i<npno;++i){
 					unzipped_first.push_back(std::get<0>(zipped[i]));
 					unzipped_second.push_back(std::get<1>(zipped[i]));
 					unzipped_third.push_back(std::get<2>(zipped[i]));
@@ -299,6 +301,8 @@ class PNOInterface: public MadnessProcess{
 
 			this->occ = occ;
 			this->ids = pno_ids;
+
+			nfreeze = pno.param.freeze();
 		}
 
 
@@ -341,10 +345,14 @@ class PNOInterface: public MadnessProcess{
 	private:
 		commandlineparser parser;
 		vecfuncT basis;
+		real_function_3d Vnuc;
+	protected:
+		size_t nfreeze;
+		double nuclear_repulsion;
 		std::vector<double> occ;
 		std::vector<std::pair<size_t,size_t>> ids;
-		double nuclear_repulsion;
-		real_function_3d Vnuc;
+	public:
+	    std::size_t get_frozen_core_dim()const{return this->nfreeze;}
 };
 
 

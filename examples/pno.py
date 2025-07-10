@@ -6,23 +6,24 @@ from time import time
 true_start=time()
 # initialize the PNO interface
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25" # geometry in Angstrom
-madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno":1})
-orbitals = madpno.get_orbitals(0,2,0)
+madpno = madpy.MadPNO(geom, n_orbitals=2)
+orbitals = madpno.get_orbitals()
 print(madpy.get_function_info(orbitals))
 
 param = madpno.madness_parameters
 nuc_repulsion= madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 del madpno
+integrals = madpy.Integrals(param)
+orbitals = integrals.orthonormalize(orbitals=orbitals)
+del integrals
 
 plt=madpy.Plotter()
 for i in range(len(orbitals)):
     plt.line_plot(f"pnoorb{i}.dat",orbitals[i])
 del plt
 
-integrals = madpy.Integrals(param)
-orbitals = integrals.orthonormalize(orbitals=orbitals)
-del integrals
+
 c=nuc_repulsion
 for iteration in range(6):
 
