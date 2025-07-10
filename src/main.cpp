@@ -10,6 +10,7 @@
 #include "nwchem_converter.hpp"
 #include "molecule.hpp"
 #include "plot.hpp"
+#include "minbas.hpp"
 
 namespace nb = nanobind;
 
@@ -82,6 +83,13 @@ NB_MODULE(_madpy_impl, m) {
         .def("GetPNOs", &PNOInterface::GetPNOs)
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
         .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
+
+    nb::class_<MinBasProjector>(m, "MinBasProjector")
+        .def(nb::init<const std::string &, const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
+        .def("run", &MinBasProjector::run)
+        .def("get_basis_name", &MinBasProjector::get_basis_name)
+        .def("get_atomic_basis", &MinBasProjector::get_atomic_basis);
+
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<const std::vector<double> &, const double &, const std::vector<std::vector<double> > &, const double &, const long &, const double &, const int &, const int &, const bool &, const int &>())
