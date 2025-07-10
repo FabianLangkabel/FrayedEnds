@@ -2,7 +2,6 @@ import madpy
 import tequila as tq
 from time import time
 
-
 true_start=time()
 # initialize the PNO interface
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25" # geometry in Angstrom
