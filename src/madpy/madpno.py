@@ -22,7 +22,7 @@ class MadPNO(MadPyBase):
         """
         return self.get_orbitals(*args, **kwargs)
 
-    def __init__(self, geometry, *args, **kwargs):
+    def __init__(self, geometry, no_compute=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # check if geometry is given as a file
@@ -34,6 +34,9 @@ class MadPNO(MadPyBase):
         pno_input_string = self.parameter_string(molecule_file=geometry, *args, **kwargs)
         print(pno_input_string)
         self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
+
+        if not no_compute:
+            self._orbitals = self.compute_orbitals(*args, **kwargs)
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
@@ -77,7 +80,7 @@ class MadPNO(MadPyBase):
         if self._orbitals is not None:
             return self._orbitals
         else:
-            return self.compute_orbitals(*args, **kwargs)
+            raise Exception("orbitals not yet computed")
 
     def get_integrals(self, *args, **kwargs):
         if self._h is not None and self._g is not None:
@@ -93,7 +96,7 @@ class MadPNO(MadPyBase):
         return self.impl.GetNuclearRepulsion()
 
     @redirect_output("madpno.log")
-    def compute_orbitals(self, frozen_occ_dim, active_dim, frozen_virt_dim, *args, **kwargs):
+    def compute_orbitals(self, frozen_occ_dim=None, active_dim=None, frozen_virt_dim=0, *args, **kwargs):
         self.impl.DeterminePNOsAndIntegrals()
 
         # package the orbitals
