@@ -17,7 +17,7 @@ def get_function_info(orbitals):
     result = []
     for x in orbitals:
         info = {}
-        for kv in x.info.lstrip().rstrip().split(" "):
+        for kv in x.info.strip().split(" "):
             kv = kv.split("=")
             info[kv[0]]=eval(kv[1])
         result.append({"type": x.type, **info})
