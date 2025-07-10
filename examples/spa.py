@@ -4,11 +4,11 @@ from time import time
 
 true_start = time()
 # initialize the PNO interface
-geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
+geom = "Li 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
 madpno = madpy.MadPNO(geom, maxrank=1, pnoint={"n_pno": 1})
-orbitals = madpno.get_orbitals(0, 2, 0)
+# todo change
+orbitals = madpno.get_orbitals(1, 2, 0)
 edges = madpno.get_spa_edges()
-print(edges)
 
 param = madpno.madness_parameters
 nuc_repulsion = madpno.get_nuclear_repulsion()
@@ -31,7 +31,6 @@ for iteration in range(6):
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
-    print(S)
     del integrals
 
     mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)

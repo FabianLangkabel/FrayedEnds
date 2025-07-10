@@ -58,7 +58,18 @@ class MadPNO(MadPyBase):
         if frozen_core:
             orbitals = self.get_orbitals()
             info = get_function_info(orbitals)
-            nof = len([x for x in info if numpy.isclose(float(x["occ"]), 2.0 and "frozen" in x["type"])])
+            # indices of hf orbitals that are frozen and
+            occf = [k for k,x in enumerate(info) if numpy.isclose(float(x["occ"]), 2.0) and "frozen" in x["type"]]
+            # compute offset
+            nof = len(occf)
+            if nof==0: return edges
+
+            if not all([k == i for i,k in enumerate(occf)]):
+                raise Exception("get_spa_edges with frozen_core=True only works for occupied frozen orbitals consecutively numbered starting with 0, here we have: {}".format(str(occf)))
+
+            # remove frozen orbitals
+            edges = [edge for edge in edges if len(edge)!=0 and edge[0] not in occf]
+            # correct edges with offset
             edges = [tuple([y-nof for y in x]) for x in edges]
         return edges
 
