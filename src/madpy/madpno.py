@@ -22,7 +22,9 @@ class MadPNO(MadPyBase):
         """
         return self.get_orbitals(*args, **kwargs)
 
-    def __init__(self, geometry, no_compute=False, *args, **kwargs):
+    def __init__(self, geometry, n_orbitals=None, no_compute=False, maxrank=None, diagonal=True, frozen_core=True, *args, **kwargs):
+        if not no_compute and n_orbitals is None:
+            raise Exception("madpno: n_orbitals needs to be set")
         super().__init__(*args, **kwargs)
 
         # check if geometry is given as a file
@@ -31,12 +33,24 @@ class MadPNO(MadPyBase):
             self.create_molecule_file(geometry_angstrom=geometry)
             geometry="molecule"
 
-        pno_input_string = self.parameter_string(molecule_file=geometry, *args, **kwargs)
+        if maxrank is None:
+            # safe option, with this we always compute enough pnos
+            maxrank = n_orbitals
+            # more effective
+            try:
+                from tequila.quantumchemistry import ParametersQC
+                ne=ParametersQC(geometry=geometry).n_electrons
+                np = ne//2
+                maxrank = int(numpy.ceil(n_orbitals/np))
+
+            except Exception:
+                maxrank = n_orbitals
+        pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
         print(pno_input_string)
         self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
 
         if not no_compute:
-            self._orbitals = self.compute_orbitals(*args, **kwargs)
+            self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
@@ -96,11 +110,12 @@ class MadPNO(MadPyBase):
         return self.impl.GetNuclearRepulsion()
 
     @redirect_output("madpno.log")
-    def compute_orbitals(self, frozen_occ_dim=None, active_dim=None, frozen_virt_dim=0, *args, **kwargs):
-        self.impl.DeterminePNOsAndIntegrals()
-
+    def compute_orbitals(self, n_orbitals, frozen_virt_dim=0, *args, **kwargs):
+        self.impl.run(n_orbitals)
+        frozen_occ_dim = self.impl.get_frozen_core_dim()
+        active_dim = n_orbitals - frozen_occ_dim - frozen_virt_dim
         # package the orbitals
-        orbitals = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)  # input: dimensions of (frozen_occ, active, forzen_virt) space
+        orbitals = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)
         self.cleanup(*args, **kwargs)
         self._orbitals = orbitals
         return orbitals
