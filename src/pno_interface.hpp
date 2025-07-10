@@ -113,7 +113,7 @@ class PNOInterface: public MadnessProcess{
 			return SavedFct(Vnuc);
 		}
 
-		void DeterminePNOsAndIntegrals() 
+		void run(const size_t basis_size)
 		{	
 			std::cout.precision(6);
 			if(world->rank()==0){
@@ -150,6 +150,7 @@ class PNOInterface: public MadnessProcess{
 			// Compute MRA-PNO-MP2-F12
 			const double time_pno_start = wall_time();
 			PNOParameters parameters(*world,parser,nemo.get_calc()->molecule,TAG_PNO);
+			PNOParametersF12 paramf12(*world, parser);
 			PNO pno(*world, nemo, parameters, paramf12);
 			pno.solve();
 			const double time_pno_end = wall_time();
