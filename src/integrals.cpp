@@ -18,11 +18,13 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_potential_integr
     return numpy_array;
 }
 
-nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_overlap_integrals(std::vector<SavedFct> all_orbs){
-    std::vector<real_function_3d> orbitals;
-    for(SavedFct orb : all_orbs) orbitals.push_back(loadfct(orb));
-    overlap_integrals= madness::matrix_inner(*world, orbitals, orbitals);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(overlap_integrals.ptr(), {orbitals.size(), orbitals.size()});
+nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_overlap_integrals(std::vector<SavedFct> all_orbs, std::vector<SavedFct> other){
+    std::vector<real_function_3d> orbitals1;
+    for(SavedFct orb : all_orbs) orbitals1.push_back(loadfct(orb));
+    std::vector<real_function_3d> orbitals2;
+    for(SavedFct orb : other) orbitals2.push_back(loadfct(orb));
+    overlap_integrals= madness::matrix_inner(*world, orbitals1, orbitals2);
+    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(overlap_integrals.ptr(), {orbitals1.size(), orbitals2.size()});
     return numpy_array;
 }
 nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integrals(std::vector<SavedFct> all_orbs){
