@@ -24,7 +24,7 @@ class Integrals(MadPyBase):
 
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
         if other is None:
-            return self.impl.compute_overlap_integrals(orbitals,orbitals)
+            other = orbitals
         return self.impl.compute_overlap_integrals(orbitals,other)
 
     def orthonormalize(self, orbitals, method="symmetric", *args, **kwargs):
@@ -32,6 +32,9 @@ class Integrals(MadPyBase):
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
+
+    def transform(self, orbitals, matrix, *args, **kwargs):
+        return self.impl.transform(orbitals, matrix)
 
     def hello(self):
         self.impl.hello()
