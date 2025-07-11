@@ -1,6 +1,16 @@
 from ._madpy_impl import MadnessProcess
 from .baseclass import MadPyBase
 
+def plot_lines(functions, name=None):
+    plt = Plotter()
+    for i in range(len(functions)):
+        if name is None:
+            x = "function_"+functions[i].type + " " + functions[i].info
+            plt.line_plot(f"{x}{i}.dat", functions[i])
+        else:
+            plt.line_plot(f"{name}{i}.dat", functions[i])
+    del plt
+
 class Plotter(MadPyBase):
 
     def __init__(self, *args, **kwargs):

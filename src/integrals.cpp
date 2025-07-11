@@ -3,10 +3,7 @@
 using namespace madness;
 
 
-Integrals::Integrals(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads)
-{
-    std::cout << "starting\n";
-}
+Integrals::Integrals(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads) {}
 
 nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_potential_integrals(std::vector<SavedFct> all_orbs, SavedFct potential){
     std::vector<real_function_3d> orbitals;

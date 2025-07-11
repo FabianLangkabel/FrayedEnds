@@ -43,6 +43,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_potential_integrals", &Integrals::compute_potential_integrals, nb::arg("all_orbs"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals::compute_kinetic_integrals, nb::arg("all_orbs"))
         .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"))
+        .def("transform", &Integrals::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("orthonormalize", &Integrals::orthonormalize, nb::arg("all_orbs"), nb::arg("method")="symmetric", nb::arg("rr_thresh")=0.0);
 
