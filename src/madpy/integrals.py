@@ -22,8 +22,10 @@ class Integrals(MadPyBase):
     def compute_potential_integrals(self, orbitals, Vnuc, *args, **kwargs):
         return self.impl.compute_potential_integrals(orbitals, Vnuc)
 
-    def compute_overlap_integrals(self, orbitals, *args, **kwargs):
-        return self.impl.compute_overlap_integrals(orbitals)
+    def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
+        if other is None:
+            return self.impl.compute_overlap_integrals(orbitals,orbitals)
+        return self.impl.compute_overlap_integrals(orbitals,other)
 
     def orthonormalize(self, orbitals, method="symmetric", *args, **kwargs):
         return self.impl.orthonormalize(orbitals, method, *args, **kwargs)

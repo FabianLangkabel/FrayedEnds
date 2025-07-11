@@ -39,7 +39,7 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<Integrals>(m, "Integrals")
         .def(nb::init<const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
         .def("hello", &Integrals::hello)
-        .def("compute_overlap_integrals", &Integrals::compute_overlap_integrals, nb::arg("all_orbs"))
+        .def("compute_overlap_integrals", &Integrals::compute_overlap_integrals, nb::arg("all_orbs"), nb::arg("other"))
         .def("compute_potential_integrals", &Integrals::compute_potential_integrals, nb::arg("all_orbs"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals::compute_kinetic_integrals, nb::arg("all_orbs"))
         .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"))
