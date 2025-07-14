@@ -371,7 +371,7 @@ void SpinorbOpt::TransformToNObasis()
     std::cout << "Beta rdm matrix before " << std::endl;
     std::cout << Beta_Rdm_Matrix << std::endl;*/
     
-     int num_active_orbs = active_alpha_beta_orbs.size();
+    int num_active_orbs = active_alpha_beta_orbs.size();
     //int dim_alpha = active_alpha_orbital_indicies.size();
     //int dim_beta = active_beta_orbital_indicies.size();
 
@@ -381,8 +381,8 @@ void SpinorbOpt::TransformToNObasis()
     es_alpha.compute(Alpha_Rdm_Matrix);
     es_beta.compute(Beta_Rdm_Matrix);
 
-    Eigen::MatrixXd Alpha_Rotation_Matrix = es_alpha.eigenvectors().rowwise().reverse();
-    Eigen::MatrixXd Beta_Rotation_Matrix = es_beta.eigenvectors().rowwise().reverse();
+    Alpha_Rotation_Matrix = es_alpha.eigenvectors().rowwise().reverse();
+    Beta_Rotation_Matrix = es_beta.eigenvectors().rowwise().reverse();
 
     //Eigen::MatrixXd Alpha_Rotation_Matrix = Eigen::MatrixXd::Identity(num_active_alpha, num_active_alpha);
     //Eigen::MatrixXd Beta_Rotation_Matrix = Eigen::MatrixXd::Identity(num_active_beta, num_active_beta);
@@ -471,7 +471,8 @@ void SpinorbOpt::TransformToNObasis()
 
     for (int i = 0; i < num_active_orbs; i++)
     {
-        active_alpha_beta_orbs[i] = orbitals_rotate[i];
+        
+        
         //orbitals_rotate.push_back(all_beta_orbitals[actIdxA].function);
     }
     
@@ -892,9 +893,6 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
 
         //Calculate new energy
         std::vector<double> energies = CalculateEnergy();
-        
-        std::cout << "Calculate Spin Squared" << std::endl;
-        double spin_squared = CalculateTotalSpin();
 
         json energy_iter;
 
@@ -904,12 +902,9 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
         energy_iter["Two-electron energy"] = energies[2];
         energy_iter["Nuclear repulsion energy"] = energies[3];
         energy_iter["Total energy"] = energies[4];
-        energy_iter["Spin squared"] = spin_squared;
         energies_array.push_back(energy_iter);
 
-        
-
-
+    
         //Check convergence
         std::cout << "Highest error: " << highest_error << std::endl;
         if(highest_error < optimization_thresh){
@@ -918,12 +913,23 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
         }
     }
 
+    std::cout << "Calculate Spin Squared" << std::endl;
+    double spin_squared = CalculateTotalSpin();
+
     SpinorbOpt_data["SpinorbOpt output"] = energies_array;
+    SpinorbOpt_data["Spin squared of refined orbitals"] = spin_squared;
 
     std::cout << "Save energies to a json file" << std::endl;
-    std::ofstream file(OutputPath + "/SpinorbOpt_energies_orthosym.json");
+    std::ofstream file(OutputPath + "/SpinorbOpt_energies_test.json");
     file << SpinorbOpt_data.dump(4);
     file.close();
+
+    std::cout << "Transform Integrals and Orbitals Back" << std::endl;
+    TransformIntegralsAndOrbitalsBack();
+   
+    //Calculate new energy
+    std::cout << "Calculate energy of integrals transformed back" << std::endl;
+    std::vector<double> energies = CalculateEnergy();
 
 }
 
@@ -990,6 +996,7 @@ double SpinorbOpt::CalculateTotalSpin()
     }
 
     std::cout << "S squared: " << spin_squared << std::endl;
+    return spin_squared;
     
 }
 
@@ -1064,6 +1071,69 @@ std::vector<real_function_3d> SpinorbOpt::GetAllActiveSpinorbitalUpdates(std::ve
     return AllSpinorbitalUpdates;
 }
 
+void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
+{
+    int num_active_orbs = active_alpha_beta_orbs.size();
+    
+    //Create Alpha, Beta and Full rotation matrices
+    Eigen::MatrixXd RotationMatrixAlphaBack = Alpha_Rotation_Matrix.transpose();
+    Eigen::MatrixXd RotationMatrixBetaBack = Beta_Rotation_Matrix.transpose();
+
+    /*std::cout << "Alpha Back rotation matri:" << std::endl;
+    std::cout << RotationMatrixAlphaBack << std::endl;
+
+    std::cout << "Beta Back rotation matri:" << std::endl;
+    std::cout << RotationMatrixBetaBack << std::endl;*/
+
+
+    Eigen::MatrixXd Alpha_Beta_RotationMatrixBack = Eigen::MatrixXd::Zero(num_active_orbs, num_active_orbs);
+    for(int i = 0; i < num_active_alpha; i++)
+    {
+        for(int j = 0; j < num_active_alpha; j++)
+        {
+            Alpha_Beta_RotationMatrixBack(active_spin_orb_indices[2*i], active_spin_orb_indices[2*j]) = RotationMatrixAlphaBack(i,j);
+        }
+    }
+    for(int i = 0; i < num_active_beta; i++)
+    {
+        for(int j = 0; j < num_active_beta; j++)
+        {
+            Alpha_Beta_RotationMatrixBack(active_spin_orb_indices[2*i+1], active_spin_orb_indices[2*j+1]) = RotationMatrixBetaBack(i,j);
+        }
+    }
+
+    TransformMatrix(&Alpha_Rdm_Matrix, RotationMatrixAlphaBack);
+    TransformMatrix(&Beta_Rdm_Matrix, RotationMatrixBetaBack);
+    TransformTensor(&Alpha_Beta_Rdm_Tensor, Alpha_Beta_RotationMatrixBack);
+    
+    //Transform the orbitals
+    madness::Tensor<double> T(num_active_orbs, num_active_orbs);
+    for (int i = 0; i < num_active_orbs; i++) {
+        for (int j = 0; j < num_active_orbs; j++) {
+            T(i,j) = Alpha_Beta_RotationMatrixBack(i,j);
+        }
+    }
+
+    std::vector<real_function_3d> orbitals_rotate;
+    for (int i = 0; i < num_active_orbs; i++)
+        {
+            orbitals_rotate.push_back(active_alpha_beta_orbs[i]);
+        }
+    orbitals_rotate = transform(*world, orbitals_rotate, T);
+    
+    for(int i = 0; i < num_active_orbs; i++)
+    {
+        active_alpha_beta_orbs[i] = orbitals_rotate[i];
+    }
+
+    //Transform Integrals
+    TransformMatrix(&integrals_kinetic[0], Alpha_Beta_RotationMatrixBack);
+    TransformMatrix(&integrals_kinetic[1], Alpha_Beta_RotationMatrixBack);
+    TransformMatrix(&integrals_kinetic[2], Alpha_Beta_RotationMatrixBack);
+    TransformMatrix(&integrals_potential, Alpha_Beta_RotationMatrixBack);
+    TransformTensor(&integrals_two_body, Alpha_Beta_RotationMatrixBack);
+
+}
 
  /*void SpinorbOpt::SaveNOs(std::string OutputPath)
 {
@@ -1079,9 +1149,9 @@ std::vector<real_function_3d> SpinorbOpt::GetAllActiveSpinorbitalUpdates(std::ve
         }
         
     }
-}
+}*/
 
-void SpinorbOpt::SaveSpinorbitals(std::string OutputPath)
+/*void SpinorbOpt::SaveSpinorbitals(std::string OutputPath)
 {
     for(int i = 0; i < all_alpha_orbitals.size(); i++)
     {

@@ -38,6 +38,7 @@ public:
     double CalculateLagrangeMultiplierElement(int dim, int a, int i);
     //std::vector<real_function_3d> ProjectSpinorbitals(std::vector<real_function_3d> orbs);
     double CalculateTotalSpin();
+    void TransformIntegralsAndOrbitalsBack();
     //void SaveNOs(std::string OutputPath);
     //void SaveSpinorbitals(std::string OutputPath); 
     //void SaveIntegralsToNumpy(std::string OutputPath);
@@ -62,6 +63,8 @@ private:
     Eigen::MatrixXd Alpha_Beta_Rdm_Matrix;
     Eigen::Tensor<double, 4> Alpha_Beta_Rdm_Tensor;
     
+    Eigen::MatrixXd Alpha_Rotation_Matrix;
+    Eigen::MatrixXd Beta_Rotation_Matrix;
     Eigen::MatrixXd ActiveSpaceRotationMatrix;
 
     std::vector<Eigen::MatrixXd> integrals_kinetic;
