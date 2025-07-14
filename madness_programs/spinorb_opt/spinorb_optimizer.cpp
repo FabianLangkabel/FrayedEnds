@@ -483,8 +483,6 @@ void SpinorbOpt::TransformToNObasis()
         std::cout << "Occupation of Orbital " << i << " is " << occ << std::endl; //wenn occ fast eins, ist orbital besetzt -> kriterium fur n_alpha und n_beta
     }*/
 
-    //CalculateTotalSpin(); 
-    
 }
 
 void SpinorbOpt::CalculateAllIntegrals()
@@ -670,7 +668,7 @@ std::vector<double> SpinorbOpt::CalculateEnergy()
     std::vector<double> energies;
 
     int dim_ab = Alpha_Beta_Rdm_Matrix.rows();
-    //std::cout << "dim ab calc en" << dim_ab << std::endl;
+
     double kinetic_energy = 0.0;
     double nuclear_attraction_energy = 0.0;
 
@@ -780,7 +778,9 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
     int iterstep = 0;
     std::cout << "Calculate initial energies: " << std::endl;
     std::vector<double> initial_energies = CalculateEnergy();
-    
+    std::cout << "Calculate initial total spin: " << std::endl;
+    double initial_spin_squared = CalculateTotalSpin();
+
     //Save the energetic values in a json file
     json energies_array = json::array();
     json initial_energies_forjson;
@@ -791,6 +791,7 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
     initial_energies_forjson["Two-electron energy"] = initial_energies[2];
     initial_energies_forjson["Nuclear repulsion energy"] = initial_energies[3];
     initial_energies_forjson["Total energy"] = initial_energies[4];
+    initial_energies_forjson["Spin_squared"] = initial_spin_squared;
     energies_array.push_back(initial_energies_forjson);
     
     while(!converged)
@@ -862,25 +863,25 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
             }
         }
 
-        std::vector<real_function_3d> alpha_orbs_project = ProjectSpinorbitals(alpha_orbs);
-        std::vector<real_function_3d> beta_orbs_project = ProjectSpinorbitals(beta_orbs);
+        //std::vector<real_function_3d> alpha_orbs_project = ProjectSpinorbitals(alpha_orbs);
+        //std::vector<real_function_3d> beta_orbs_project = ProjectSpinorbitals(beta_orbs);
         
-        alpha_orbs_project = orthonormalize_symmetric(alpha_orbs_project);
-        beta_orbs_project = orthonormalize_symmetric(beta_orbs_project);
+        //alpha_orbs_project = orthonormalize_symmetric(alpha_orbs_project);
+        //beta_orbs_project = orthonormalize_symmetric(beta_orbs_project);
 
-        //alpha_orbs = orthonormalize_symmetric(alpha_orbs);
-        //beta_orbs = orthonormalize_symmetric(beta_orbs);
+        alpha_orbs = orthonormalize_symmetric(alpha_orbs);
+        beta_orbs = orthonormalize_symmetric(beta_orbs);
 
         //Update all_orbitals
         int x = 0;
         int y = 0;
         for (int i = 0; i < num_active_orbs; i++){
             if (i % 2 == 0){
-                active_alpha_beta_orbs[i] = alpha_orbs_project[x].truncate(1e-5);
+                active_alpha_beta_orbs[i] = alpha_orbs[x].truncate(1e-5);
                 x++;
             }   
             if (i % 2 == 1) {
-                active_alpha_beta_orbs[i] = beta_orbs_project[y].truncate(1e-5);
+                active_alpha_beta_orbs[i] = beta_orbs[y].truncate(1e-5);
                 y++;
             }
         }
@@ -891,6 +892,10 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
 
         //Calculate new energy
         std::vector<double> energies = CalculateEnergy();
+        
+        std::cout << "Calculate Spin Squared" << std::endl;
+        double spin_squared = CalculateTotalSpin();
+
         json energy_iter;
 
         energy_iter["Iteration"] = iterstep;
@@ -899,7 +904,10 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
         energy_iter["Two-electron energy"] = energies[2];
         energy_iter["Nuclear repulsion energy"] = energies[3];
         energy_iter["Total energy"] = energies[4];
+        energy_iter["Spin squared"] = spin_squared;
         energies_array.push_back(energy_iter);
+
+        
 
 
         //Check convergence
@@ -913,14 +921,14 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
     SpinorbOpt_data["SpinorbOpt output"] = energies_array;
 
     std::cout << "Save energies to a json file" << std::endl;
-    std::ofstream file(OutputPath + "/SpinorbOpt_energies.json");
+    std::ofstream file(OutputPath + "/SpinorbOpt_energies_orthosym.json");
     file << SpinorbOpt_data.dump(4);
     file.close();
 
 }
 
 
-std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
+/*std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
 {
     int dim_orbs = orbs.size();
     
@@ -936,61 +944,54 @@ std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_f
     }
   
     return orbs;
-}
-
-
-/*void SpinorbOpt::CalculateTotalSpin()
-{
-    int n_alpha = 0;
-    int n_beta = 0;
-
-    std::vector<real_function_3d> alpha_orbs;
-    std::vector<real_function_3d> beta_orbs;
-    
-    for(int a = 0; a < active_alpha_beta_orbs.size(); a++) {
-        double occ = abs(Alpha_Beta_Rdm_Matrix(a, a));
-        if (a % 2 == 0){
-            alpha_orbs.push_back(active_alpha_beta_orbs[a]);
-            if (occ > 0.5) {
-                n_alpha += 1;
-            }
-        }
-        if (a % 2 == 1) {
-            beta_orbs.push_back(active_alpha_beta_orbs[a]);
-            if (occ > 0.5) {
-                n_beta += 1;
-            }
-        }
-    }    
-    
-    std::cout << "N_alpha: " << n_alpha << std::endl;
-    std::cout << "N_beta: " << n_beta << std::endl;
-    std::cout << "Alpha orbs size " << alpha_orbs.size() << std::endl;
-    std::cout << "Beta orbs size " << beta_orbs.size() << std::endl;
-
-    double S2_exact = ((n_alpha - n_beta) * 0.5) * (((n_alpha - n_beta) * 0.5) + 1);
-
-    std::cout << "S2_exakt: " << S2_exact << std::endl;
-
-    Eigen::MatrixXd S_abij = Eigen::MatrixXd::Zero(num_active_alpha, num_active_beta);
-    Eigen::MatrixXd S_ji = Eigen::MatrixXd::Zero(num_active_beta, num_active_alpha);
-
-    for (int i = 0; i < alpha_orbs.size(); i++) {
-        for (int j = 0; j < beta_orbs.size(); j++) {
-            double element_ij = inner(alpha_orbs[i], beta_orbs[j]);
-            S_abij(i,j) = element_ij * element_ij;
-        }
-    }
-    for (int i = 0; i < beta_orbs.size(); i++) {
-        for (int j = 0; j < alpha_orbs.size(); j++) {
-            double element_ji = inner(alpha_orbs[j], beta_orbs[i]);
-            S_ji(j,i) = element_ji * element_ji;
-        }
-    }
-
-    std::cout << "S^ab_ij: " << S_abij << std::endl;
-    std::cout << "S_ji: " << S_ji << std::endl;
 }*/
+
+
+double SpinorbOpt::CalculateTotalSpin()
+{
+    double diag_alpha = 0;
+    double diag_beta = 0;
+
+    for (int i = 0; i < num_active_alpha; i++) {
+        diag_alpha += Alpha_Rdm_Matrix(i,i);
+    }
+
+    //std::cout << "trace of Alpha rdm: " << diag_alpha << std::endl;
+
+    for (int j = 0; j < num_active_beta; j++) {
+        diag_beta += Beta_Rdm_Matrix(j,j);
+    }
+
+    //std::cout << "trace of Beta rdm: " << diag_beta << std::endl;
+    
+    double spin_squared = 0.25 * (diag_alpha - diag_beta) * (diag_alpha - diag_beta);
+    spin_squared += 0.5 * (diag_alpha + diag_beta);
+
+    //std::cout << "Sz part: " << spin_squared << std::endl;
+
+    Eigen::MatrixXd overlap_matrix_ab = Eigen::MatrixXd::Zero(num_active_alpha, num_active_beta);
+    for (int i = 0; i < num_active_alpha; i++) {
+        for(int j = 0; j < num_active_beta; j++) {
+            overlap_matrix_ab(i, j) = inner(active_alpha_beta_orbs[2*i], active_alpha_beta_orbs[2*j + 1]);
+        }
+    }
+
+    for (int i = 0; i < num_active_beta; i++) {
+        for (int j = 0; j < num_active_alpha; j++) {
+            for (int k = 0; k < num_active_alpha; k++) {
+                for (int l = 0; l < num_active_beta; l++) {
+                    double S_ik = overlap_matrix_ab(k, i);
+                    double S_jl = overlap_matrix_ab(j, l);
+                    double element = S_ik * S_jl * Alpha_Beta_Rdm_Tensor(2*i+1, 2*j, 2*l+1, 2*k);
+                    spin_squared -= element;
+                }
+            }
+        }
+    }
+
+    std::cout << "S squared: " << spin_squared << std::endl;
+    
+}
 
 
 std::vector<real_function_3d> SpinorbOpt::GetAllActiveSpinorbitalUpdates(std::vector<int> spin_orbs_indices_for_update)

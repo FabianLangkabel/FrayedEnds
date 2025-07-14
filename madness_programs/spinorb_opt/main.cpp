@@ -206,12 +206,10 @@ int main(int argc, char** argv)
     opti->ReadRDMFiles(one_body_rdm_files, two_body_rdm_files);
     opti->TransformToNObasis();
     opti->CalculateAllIntegrals();
-    //opti->CalculateEnergy();
-    
     
     std::cout << "---------------------------------------------------" << std::endl;
     std::cout << "Start spin orbital optimization" << std::endl;
-    opti->OptimizeSpinorbitals(optimization_thresh, NO_occupation_thresh);
+    opti->OptimizeSpinorbitals(optimization_thresh, NO_occupation_thresh, output_folder);
     
 
     //----------------------- Write Output -----------------------
