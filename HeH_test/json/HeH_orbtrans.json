@@ -7,5 +7,5 @@
     "molecule_file": "/workspaces/MRA-OrbitalOptimization/HeH_test/geometry/HeH.mol",
     "calpha_coeff_file": "/workspaces/MRA-OrbitalOptimization/HeH_test/coeffs_631g/22676711863_alpha_coeffs.npy",
     "cbeta_coeff_file": "/workspaces/MRA-OrbitalOptimization/HeH_test/coeffs_631g/22676711863_beta_coeffs.npy",
-    "output_folder": "/workspaces/MRA-OrbitalOptimization/HeH_test/multiwavelets_631g"
+    "output_folder": "/workspaces/MRA-OrbitalOptimization/HeH_test/multiwavelets_test"
 }
