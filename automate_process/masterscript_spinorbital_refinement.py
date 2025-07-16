@@ -285,7 +285,7 @@ for i in np.arange(1.2, 7.1, 0.1):
     except subprocess.CalledProcessError as e:
         print("Error occurred:")
         print(e.stderr)
-    spinorbopt_file = make_spinorbopt_json(outputfolder, atom_pos_str, 3) #make spinorbopt json file
+    spinorbopt_file = make_spinorbopt_json(outputfolder, atom_pos_str, 4) #make spinorbopt json file
     SpinorbOpt_cmd = ["/workspaces/MRA-OrbitalOptimization/build/madness_programs/spinorb_opt/SpinorbOpt", spinorbopt_file]
     print("Run Spin orbital refinement at bondlength ", i)
     try: 
