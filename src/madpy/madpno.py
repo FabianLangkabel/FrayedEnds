@@ -21,6 +21,7 @@ class MadPNO(MadPyBase):
         return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, geometry, n_orbitals=None, no_compute=False, maxrank=None, diagonal=True, frozen_core=True, *args, **kwargs):
+        # todo: replace geometry with instalce of molecule class (expose to python)
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")
         super().__init__(*args, **kwargs)
@@ -94,13 +95,6 @@ class MadPNO(MadPyBase):
             return self._orbitals
         else:
             raise Exception("orbitals not yet computed")
-
-    def get_integrals(self, *args, **kwargs):
-        if self._h is not None and self._g is not None:
-            return self._c, self._h, self._g
-        else:
-            self.compute_integrals(*args, **kwargs)
-            return self.get_integrals(*args, **kwargs)
 
     def get_nuclear_potential(self, *args, **kwargs):
         return self.impl.get_nuclear_potential()
