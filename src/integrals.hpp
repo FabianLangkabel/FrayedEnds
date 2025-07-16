@@ -52,7 +52,7 @@ public:
             auto y = madness::transform(*world, x, U);
 
             std::vector<SavedFct> result;
-            for(size_t k=0; k<orbitals.size(); k++) result.push_back(SavedFct(y[k], orbitals[k].type, orbitals[k].info + " transformed"));
+            for(size_t k=0; k<orbitals.size(); k++) result.push_back(SavedFct(y[k], orbitals[k].type, orbitals[k].info + " transformed "));
             return result;
     }
 
