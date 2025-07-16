@@ -14,11 +14,11 @@ namespace nb = nanobind;
 
 NB_MODULE(_madpy_impl, m) {
     nb::class_<MadnessProcess>(m, "MadnessProcess")
-        .def(nb::init<const double &, const int &, const double &>())
+        .def(nb::init<const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
         .def("loadfct", &MadnessProcess::loadfct)
         .def("loadfct_from_file", &MadnessProcess::loadfct_from_file)
-        .def("plot", &MadnessProcess::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
-        .def("plane_plot", &MadnessProcess::plane_plot, nb::arg("filename"), nb::arg("f"), nb::arg("plane") = "yz", nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}));
+        .def("plot", &MadnessProcess::plot)
+        .def("plane_plot", &MadnessProcess::plane_plot);
 
     nb::class_<real_function_3d>(m,"real_function_3d")
         .def(nb::init<>());
@@ -86,7 +86,7 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<const std::string &>());
     
     nb::class_<PyFuncFactory>(m, "PyFuncFactory")
-        .def(nb::init<const double &, const long &, const double &, std::function<double(double, double, double)> &>())
+        .def(nb::init<std::function<double(double, double, double)> &, const double &, const long &, const double &, const int &, const int &, const bool &>())
         .def("GetMRAFunction", &PyFuncFactory::GetMRAFunction);
 
     nb::class_<Eigensolver3D>(m, "Eigensolver")

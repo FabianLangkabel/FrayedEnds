@@ -1,19 +1,21 @@
 from ._madpy_impl import Optimization as OptInterface
-from .baseclass import MadPyBase
-from .parameters import redirect_output
+from .madworld import redirect_output
 
-class Optimization(MadPyBase):
+class Optimization:
 
     _orbitals = None
     _h = None # one-body tensor
     _g = None # two-body tensor
     _c = 0.0 # constant term
     _Vnuc = None  # nuclear potential
-    _nuclear_repulsion = None 
+    _nuclear_repulsion = None
+    _world = None
+    impl = None
 
-    def __init__(self, Vnuc, nuc_repulsion, *args, **kwargs):
+    def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.impl = OptInterface(self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
+        self._world = madworld
+        self.impl = OptInterface(self._world._impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
