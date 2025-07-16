@@ -44,7 +44,7 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integral
             }
         }
     }
-    
+
     nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(kinetic_integrals.ptr(), {orbitals.size(), orbitals.size()});
     return numpy_array;
 }
