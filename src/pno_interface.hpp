@@ -220,15 +220,19 @@ class PNOInterface {
 		{
 			
 			auto [argc, charArray] = stringToCharPointerArray(argv);
-			
 			parser = commandlineparser(argc,charArray);
 			freeCharPointerArray(charArray,argc);
 		}
 		~PNOInterface()
 		{	
 			basis.clear();
+			Vnuc.clear();
 		}
-		
+
+		SavedFct get_nuclear_potential(){
+			return SavedFct(Vnuc);
+		}
+
 		void DeterminePNOsAndIntegrals() 
 		{	
 			std::cout.precision(6);
@@ -258,12 +262,16 @@ class PNOInterface {
 			if(nemo.ncf->type() != madness::NuclearCorrelationFactor::None){
 				MADNESS_EXCEPTION("Nuclear Correlation Factors not yet supported in MRA-PNOs. Add ncf (none,1.0) to your dft input",1);
 			}
+			{
+			Vnuc = nemo.ncf -> U2();
+			nuclear_repulsion = nemo.get_calc()->molecule.nuclear_repulsion_energy();
+			}
 	
 			// Compute MRA-PNO-MP2-F12
 			const double time_pno_start = wall_time();
 			PNOParameters parameters(*(madness_process.world),parser,nemo.get_calc()->molecule,TAG_PNO);
 			F12Parameters paramf12(*(madness_process.world), parser, parameters, TAG_F12);
-			PNOIntParameters paramsint(*(madness_process.world), parser, parameters, TAG_PNOInt);
+			PNOIntParameters paramsint(*(madness_process.world), parser, parameters, TAG_PNOInt); 
 			paramsint.print("PNO Integrals evaluated as:\npnoint","end");
 			PNO pno(*(madness_process.world), nemo, parameters, paramf12);
 			pno.solve();
@@ -320,7 +328,7 @@ class PNOInterface {
 			std::cout << std::fixed;
 			std::cout << std::showpos;
 	
-			const std::string orthogonalization = paramsint.orthogonalization();
+			const std::string orthogonalization = paramsint.orthogonalization(); 
 			if (madness_process.world->rank()==0) std::cout << "Orthonormalization technique used: " << orthogonalization << std::endl;
 			const bool orthogonalize = orthogonalization != "none";
 			const double h_thresh = 1.e-7; // neglect integrals
@@ -438,6 +446,9 @@ class PNOInterface {
 	
 			basis = obs_pnos;
 	
+
+			// ungefaehr alles ab hier sollte separat sein und nicht mehr teil des PNO codes, (ab orthonormalizierung)
+
 			// compute overlap of all PNOs before orthogonalization
 			if (paramsint.print_pno_overlap()) {
 				const auto S = madness::matrix_inner(*(madness_process.world), obs_pnos, obs_pnos, true);
@@ -789,14 +800,12 @@ class PNOInterface {
 				if (cabs_switch) std::cout << "non zero elements:\n f : " << non_zero_f;
 				std::cout << std::endl;
 			}
-			std::cout << FunctionDefaults<3>::get_cell_width()[0] << std::endl;
-			std::cout << FunctionDefaults<3>::get_cell_width()[1] << std::endl;
-			std::cout << FunctionDefaults<3>::get_cell_width()[2] << std::endl;
 		}
+
 		std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const
 		{	
 			if (core_dim+as_dim+froz_virt_dim != basis.size()){
-				std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << std::endl;
+				std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << core_dim << " "<< as_dim << " " << froz_virt_dim << " " << basis.size() << std::endl;
 			}
 			std::vector<SavedFct> pnos;
 			for (auto i=0; i<basis.size(); ++i){
@@ -841,6 +850,7 @@ class PNOInterface {
 		madness::Tensor<double> f;
 		madness::Tensor<double> h;
 		double nuclear_repulsion;
+		real_function_3d Vnuc;
 };
 
 
