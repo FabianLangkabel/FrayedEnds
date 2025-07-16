@@ -1,30 +1,31 @@
 from ._madpy_impl import PNOInterface
-from .parameters import redirect_output
-from .baseclass import MadPyBase
+from .madworld import redirect_output
 import glob
 import os
 
 
 #TODO separate the PNO calculation into pno, transformator, integrals,...
-class MadPNO(MadPyBase):
+class MadPNO:
 
     _orbitals = None
     _h = None # one-body tensor
     _g = None # two-body tensor
     _c = 0.0 # constant term
+    impl = None
+    _world = None
 
-    def __init__(self, geometry, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+    def __init__(self, madworld, geometry, *args, **kwargs):
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
             self.create_molecule_file(geometry_angstrom=geometry)
             geometry="molecule"
 
+        self._world = madworld
         pno_input_string = self.parameter_string(molecule_file=geometry, *args, **kwargs)
         print(pno_input_string)
-        self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
+
+        self.impl = PNOInterface(self._world._impl, pno_input_string)
 
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is not None:
@@ -72,7 +73,7 @@ class MadPNO(MadPyBase):
 
         data = {}
 
-        data["dft"] = {"xc": "hf", "L":self.madness_parameters.L,  "k": self.madness_parameters.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )"}
+        data["dft"] = {"xc": "hf", "L":self._world.madness_parameters["L"],  "k": self._world.madness_parameters["k"], "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )"}
         data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": diagonal}
         # this should be gone soon
         data["pnoint"] = {"n_pno": 10, "orthog": "symmetric"}
