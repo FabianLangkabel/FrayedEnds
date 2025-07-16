@@ -1,8 +1,6 @@
-import numpy as np
 import madpy
 import tequila as tq
 from time import time
-
 
 true_start=time()
 # initialize the PNO interface
@@ -10,11 +8,15 @@ geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25" # geometry in Angstrom
 
 world = madpy.MadWorld()
 
-madpno = madpy.MadPNO(world, geom, maxrank=1, pnoint={"n_pno":1})
-orbitals = madpno.get_orbitals(0,2,0)
+madpno = madpy.MadPNO(world, geom, n_orbitals=2)
+orbitals = madpno.get_orbitals()
+print(madpy.get_function_info(orbitals))
 
 nuc_repulsion= madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
+
+integrals = madpy.Integrals(world)
+orbitals = integrals.orthonormalize(orbitals=orbitals)
 
 
 for i in range(len(orbitals)):
@@ -36,7 +38,6 @@ for iteration in range(6):
     E = tq.ExpectationValue(H=H, U=U)
     result = tq.minimize(E, silent=True)
     rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
-    
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
     

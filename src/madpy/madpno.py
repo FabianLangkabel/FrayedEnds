@@ -1,10 +1,11 @@
+import numpy
 from ._madpy_impl import PNOInterface
+from .baseclass import MadPyBase, get_function_info
 from .madworld import redirect_output
 import glob
 import os
 
 
-#TODO separate the PNO calculation into pno, transformator, integrals,...
 class MadPNO:
 
     _orbitals = None
@@ -14,48 +15,113 @@ class MadPNO:
     impl = None
     _world = None
 
-    def __init__(self, madworld, geometry, *args, **kwargs):
+    @property
+    def orbitals(self, *args, **kwargs):
+        """
+        Convenience
+        """
+        return self.get_orbitals(*args, **kwargs)
+
+    def __init__(self, madworld, geometry, n_orbitals=None, no_compute=False, maxrank=None, diagonal=True, frozen_core=True, *args, **kwargs):
+        # todo: replace geometry with instalce of molecule class (expose to python)
+        if not no_compute and n_orbitals is None:
+            raise Exception("madpno: n_orbitals needs to be set")
+
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
             self.create_molecule_file(geometry_angstrom=geometry)
             geometry="molecule"
 
+        if maxrank is None:
+            # safe option, with this we always compute enough pnos
+            maxrank = n_orbitals
+            # more effective
+            try:
+                from tequila.quantumchemistry import ParametersQC
+                ne=ParametersQC(geometry=geometry).n_electrons
+                np = ne//2
+                maxrank = int(numpy.ceil(n_orbitals/np))
+
+            except Exception:
+                maxrank = n_orbitals
+
         self._world = madworld
-        pno_input_string = self.parameter_string(molecule_file=geometry, *args, **kwargs)
+        pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
         print(pno_input_string)
 
         self.impl = PNOInterface(self._world._impl, pno_input_string)
+
+        if not no_compute:
+            self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
+
+    def get_pno_groupings(self, diagonal=True, *args, **kwargs):
+        # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
+        orbitals = self.get_orbitals(*args, **kwargs)
+        info = get_function_info(orbitals)
+        nhf = len([x for x in info if numpy.isclose(float(x["occ"]),2.0)])
+        diagonal = {k:[] for k in range(nhf)}
+        off_diagonal = {(k,l):[] for k in range(nhf) for l in range(k,nhf)}
+        for k in range(len(orbitals)):
+            x = info[k]["pair1"]
+            y = info[k]["pair2"]
+            if x == y: diagonal[x].append(k)
+            else: off_diagonal[(x,y)].append(k)
+
+        if diagonal:
+            return diagonal
+        return {**diagonal, **off_diagonal}
+
+    def get_spa_edges(self, frozen_core=True):
+        pno_groupings = self.get_pno_groupings(diagonal=True)
+        edges = [tuple(sorted(x)) for x in pno_groupings.values()]
+        if frozen_core:
+            orbitals = self.get_orbitals()
+            info = get_function_info(orbitals)
+            # indices of hf orbitals that are frozen and
+            occf = [k for k,x in enumerate(info) if numpy.isclose(float(x["occ"]), 2.0) and "frozen" in x["type"]]
+            # compute offset
+            nof = len(occf)
+            if nof==0: return edges
+
+            if not all([k == i for i,k in enumerate(occf)]):
+                raise Exception("get_spa_edges with frozen_core=True only works for occupied frozen orbitals consecutively numbered starting with 0, here we have: {}".format(str(occf)))
+
+            # remove frozen orbitals
+            edges = [edge for edge in edges if len(edge)!=0 and edge[0] not in occf]
+            # correct edges with offset
+            edges = [tuple([y-nof for y in x]) for x in edges]
+        return edges
 
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is not None:
             return self._orbitals
         else:
-            return self.compute_pnos(*args, **kwargs)
-
-    def get_integrals(self, *args, **kwargs):
-        if self._h is not None and self._g is not None:
-            return self._c, self._h, self._g
-        else:
-            self.compute_integrals(*args, **kwargs)
-            return self.get_integrals(*args, **kwargs)
+            raise Exception("orbitals not yet computed")
 
     def get_nuclear_potential(self, *args, **kwargs):
         return self.impl.get_nuclear_potential()
 
     def get_nuclear_repulsion(self, *args, **kwargs):
-        return self.impl.GetNuclearRepulsion()
+        return self.impl.get_nuclear_repulsion()
+
+    def get_sto3g(self, *args, **kwargs):
+        return self.impl.get_sto3g()
 
     @redirect_output("madpno.log")
-    def compute_pnos(self, frozen_occ_dim, active_dim, frozen_virt_dim, *args, **kwargs):
-        self.impl.DeterminePNOsAndIntegrals()
-        self._orbitals = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)  # input: dimensions of (frozen_occ, active, forzen_virt) space
+    def compute_orbitals(self, n_orbitals, frozen_virt_dim=0, *args, **kwargs):
+        self.impl.run(n_orbitals)
+        frozen_occ_dim = self.impl.get_frozen_core_dim()
+        active_dim = n_orbitals - frozen_occ_dim - frozen_virt_dim
+        # package the orbitals
+        orbitals = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)
         self.cleanup(*args, **kwargs)
-        return self._orbitals
+        self._orbitals = orbitals
+        return orbitals
 
     def compute_integrals(self, *args, **kwargs):
         if self._orbitals is None:
-            self.compute_pnos()
+            self.compute_orbitals(*args, **kwargs)
         self._h = self.impl.GetHTensor()
         self._g = self.impl.GetGTensor()
         self._c = self.impl.GetNuclearRepulsion()
