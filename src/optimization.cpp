@@ -196,7 +196,7 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
     std::cout << evals << std::endl;
     TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
     TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
-    active_orbs = transform(*world, active_orbs, ActiveSpaceRotationMatrix);
+    active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
 
 
 
