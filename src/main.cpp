@@ -7,6 +7,10 @@
 #include "PyFuncFactory.hpp"
 #include "integrals.hpp"
 #include "eigensolver.hpp"
+#include "nwchem_converter.hpp"
+#include "molecule.hpp"
+#include "plot.hpp"
+#include "minbas.hpp"
 #include "MadnessProcess.hpp"
 
 namespace nb = nanobind;
@@ -23,6 +27,11 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<real_function_3d>(m,"real_function_3d")
         .def(nb::init<>());
 
+    nb::class_<molecule>(m,"molecule")
+        .def(nb::init<>())
+        .def("add_atom", &molecule::add_atom)
+        .def("to_json", &molecule::to_json);
+
     nb::class_<SavedFct>(m, "SavedFct")
         .def(nb::init<const Function<double,3> &>())
         .def_rw("info", &SavedFct::info)
@@ -31,10 +40,13 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<Integrals>(m, "Integrals")
         .def(nb::init<MadnessProcess &>())
         .def("hello", &Integrals::hello)
-        .def("compute_overlap_integrals", &Integrals::compute_overlap_integrals, nb::arg("all_orbs"))
+        .def("compute_overlap_integrals", &Integrals::compute_overlap_integrals, nb::arg("all_orbs"), nb::arg("other"))
         .def("compute_potential_integrals", &Integrals::compute_potential_integrals, nb::arg("all_orbs"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals::compute_kinetic_integrals, nb::arg("all_orbs"))
-        .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"));
+        .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"))
+        .def("transform", &Integrals::transform, nb::arg("orbitals"), nb::arg("matrix"))
+        .def("project_out", &Integrals::project_out, nb::arg("kernel"), nb::arg("target"))
+        .def("orthonormalize", &Integrals::orthonormalize, nb::arg("all_orbs"), nb::arg("method")="symmetric", nb::arg("rr_thresh")=0.0);
 
     nb::class_<Optimization>(m, "Optimization")
         .def(nb::init<MadnessProcess &>())
@@ -43,8 +55,6 @@ NB_MODULE(_madpy_impl, m) {
         .def("GivePotentialAndRepulsion", &Optimization::GivePotentialAndRepulsion)
         .def("ReadInitialOrbitals", &Optimization::ReadInitialOrbitals)
         .def("ReadRDMFilesAndRotateOrbitals", &Optimization::ReadRDMFilesAndRotateOrbitals)
-        .def("TransformMatrix", &Optimization::TransformMatrix)
-        .def("TransformTensor", &Optimization::TransformTensor)
         .def("CalculateAllIntegrals", &Optimization::CalculateAllIntegrals)
         .def("CalculateCoreEnergy", &Optimization::CalculateCoreEnergy)
         .def("CalculateEnergies", &Optimization::CalculateEnergies)
@@ -70,12 +80,20 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<MadnessProcess &, const std::string &>())
         .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
-        .def("DeterminePNOsAndIntegrals", &PNOInterface::DeterminePNOsAndIntegrals)
+        .def("run", &PNOInterface::run)
+        .def("get_sto3g", &PNOInterface::get_sto3g)
         .def("GetPNOs", &PNOInterface::GetPNOs)
-        .def("GetHTensor", &PNOInterface::GetHTensor)
-        .def("GetGTensor", &PNOInterface::GetGTensor)
-        .def("GetF12Tensor", &PNOInterface::GetF12Tensor)
-        .def("GetNuclearRepulsion", &PNOInterface::GetNuclearRepulsion);
+        .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
+        .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion);
+
+    nb::class_<MinBasProjector>(m, "MinBasProjector")
+        .def(nb::init<const std::string &, const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
+        .def("run", &MinBasProjector::run)
+        .def("get_nuclear_potential", &MinBasProjector::get_nuclear_potential)
+        .def("get_basis_name", &MinBasProjector::get_basis_name)
+        .def("get_atomic_basis", &MinBasProjector::get_atomic_basis)
+        .def("get_nuclear_repulsion", &MinBasProjector::get_nuclear_repulsion);
+
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<MadnessProcess &, const std::vector<double> &, const double &, const std::vector<std::vector<double> > &>())
@@ -94,4 +112,17 @@ NB_MODULE(_madpy_impl, m) {
         .def("solve", &Eigensolver3D::solve, nb::arg("input_V"), nb::arg("num_levels"), nb::arg("max_iter"))
         .def("solve_with_guesses", &Eigensolver3D::solve_with_input_guesses, nb::arg("input_V"), nb::arg("input_guesses"), nb::arg("num_levels"), nb::arg("max_iter"))
         .def("GetOrbitals", &Eigensolver3D::GetOrbitals);
+
+    nb::class_<NWChem_Converter>(m, "NWChem_Converter")
+        .def(nb::init<const double &, const int &, const double &>())
+        .def("Read_NWChem_File", &NWChem_Converter::read_nwchem_file)
+        .def("GetNormalizedAOs", &NWChem_Converter::GetNormalizedAOs)
+        .def("GetMOs", &NWChem_Converter::GetMOs);
+
+    nb::class_<Plot>(m, "Plot")
+        .def(nb::init<const double &, const int &, const double &>())
+        .def("plot", &Plot::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
+        .def("plane_plot", &Plot::plane_plot, nb::arg("filename"), nb::arg("f"), nb::arg("plane") = "yz", nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}))
+        .def("cube_plot", &Plot::cube_plot, nb::arg("filename"), nb::arg("f"), nb::arg("molecule"), nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}));
+
 }

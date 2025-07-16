@@ -2,6 +2,16 @@
 requires = ["scikit-build-core >=0.4.3", "nanobind >=1.3.2", "madness"]
 build-backend = "scikit_build_core.build"
 
+[tool.scikit-build.cmake]
+args =[ 
+  "-DCMAKE_CXX_FLAGS=-O3 -DNDEBUG -fcolor-diagnostics",
+  "-DCMAKE_COLOR_MAKEFILE=ON",
+  "-DCMAKE_CXX_FLAGS=-w",  # or use -Wno-everything if using Clang
+  "-DCMAKE_C_FLAGS=-w"     # optional for pure C files
+]
+#generator = "Ninja"
+
+
 [project]
 name = "madpy"
 version = "0.0.1"

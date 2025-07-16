@@ -3,10 +3,7 @@
 using namespace madness;
 
 
-Integrals::Integrals(MadnessProcess& mp): madness_process(mp)
-{
-    std::cout << "starting\n";
-}
+Integrals::Integrals(MadnessProcess& mp): madness_process(mp) {}
 
 nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_potential_integrals(std::vector<SavedFct> all_orbs, SavedFct potential){
     std::vector<real_function_3d> orbitals;
@@ -18,11 +15,13 @@ nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_potential_integr
     return numpy_array;
 }
 
-nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_overlap_integrals(std::vector<SavedFct> all_orbs){
-    std::vector<real_function_3d> orbitals;
-    for(SavedFct orb : all_orbs) orbitals.push_back(madness_process.loadfct(orb));
-    overlap_integrals= madness::matrix_inner(*(madness_process.world), orbitals, orbitals);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(overlap_integrals.ptr(), {orbitals.size(), orbitals.size()});
+nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_overlap_integrals(std::vector<SavedFct> all_orbs, std::vector<SavedFct> other){
+    std::vector<real_function_3d> orbitals1;
+    for(SavedFct orb : all_orbs) orbitals1.push_back(madness_process.loadfct(orb));
+    std::vector<real_function_3d> orbitals2;
+    for(SavedFct orb : other) orbitals2.push_back(madness_process.loadfct(orb));
+    overlap_integrals= madness::matrix_inner(*(madness_process.world), orbitals1, orbitals2);
+    nb::ndarray<nb::numpy, double, nb::ndim<2> > numpy_array(overlap_integrals.ptr(), {orbitals1.size(), orbitals2.size()});
     return numpy_array;
 }
 nb::ndarray<nb::numpy, double, nb::ndim<2> > Integrals::compute_kinetic_integrals(std::vector<SavedFct> all_orbs){
@@ -98,6 +97,61 @@ nb::ndarray<nb::numpy, double, nb::ndim<4> > Integrals::compute_two_body_integra
 
     nb::ndarray<nb::numpy, double, nb::ndim<4> > numpy_array(two_body_integrals.ptr(), {orbitals.size(), orbitals.size(), orbitals.size(), orbitals.size()});
     return numpy_array;
+}
+
+std::vector<SavedFct> Integrals::orthonormalize(std::vector<SavedFct> all_orbs, const std::string method, double rr_thresh){
+    std::vector<real_function_3d> basis;
+    for(SavedFct orb : all_orbs) basis.push_back(madness_process.loadfct(orb));
+	// compute overlap, to be passed in orthonormalization routines and potentially printed
+	auto S = madness::matrix_inner(*(madness_process.world), basis, basis, true);
+
+	auto out_basis = basis;
+	if (method == "cholesky"){
+		out_basis = madness::orthonormalize_cd(basis, S);
+	}else if(method == "symmetric"){
+		out_basis = madness::orthonormalize_symmetric(basis, S);
+	}else if(method == "canonical") {
+		out_basis = madness::orthonormalize_canonical(basis, S, rr_thresh);
+	}else if(method == "rr_cholesky") {
+		out_basis = madness::orthonormalize_rrcd(basis, S, rr_thresh);
+	}else{
+		MADNESS_EXCEPTION("unknown orthonormalization method", 1);
+	}
+
+    std::vector<SavedFct> result;
+    for(auto x : out_basis) result.push_back(SavedFct(x));
+    for(size_t k=0; k<result.size(); k++) result[k].info = all_orbs[k].info;
+    for(size_t k=0; k<result.size(); k++) result[k].type = all_orbs[k].type;
+
+	return result;
+}
+
+std::vector<SavedFct> Integrals::project_out(std::vector<SavedFct> kernel, std::vector<SavedFct> target){
+    std::vector<real_function_3d> x;
+    for(SavedFct orb : kernel) x.push_back(madness_process.loadfct(orb));
+    std::vector<real_function_3d> y;
+    for(SavedFct orb : target) y.push_back(madness_process.loadfct(orb));
+
+    auto Q = madness::QProjector<double,3>(x);
+    auto z = Q(y);
+    madness::normalize(*(madness_process.world), z);
+    std::vector<SavedFct> result;
+    for(size_t k=0; k<target.size(); k++) result.push_back(SavedFct(z[k], target[k].type, target[k].info));
+    return result;
+}
+
+std::vector<SavedFct> Integrals::project_on(std::vector<SavedFct> kernel, std::vector<SavedFct> target){
+    std::vector<real_function_3d> x;
+    for(SavedFct orb : kernel) x.push_back(madness_process.loadfct(orb));
+    std::vector<real_function_3d> y;
+    for(SavedFct orb : target) y.push_back(madness_process.loadfct(orb));
+
+    auto P = madness::Projector<double,3>(x);
+    auto z = P(y);
+    madness::normalize(*(madness_process.world), z);
+    std::vector<SavedFct> result;
+    for(size_t k=0; k<target.size(); k++) result.push_back(SavedFct(z[k], target[k].type, target[k].info));
+    return result;
 }
 
 
