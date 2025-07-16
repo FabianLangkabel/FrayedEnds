@@ -366,10 +366,10 @@ void SpinorbOpt::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::
 
 void SpinorbOpt::TransformToNObasis()
 {
-    /*std::cout << "Alpha rdm matrix before " << std::endl;
+    std::cout << "Alpha rdm matrix before " << std::endl;
     std::cout << Alpha_Rdm_Matrix << std::endl;
     std::cout << "Beta rdm matrix before " << std::endl;
-    std::cout << Beta_Rdm_Matrix << std::endl;*/
+    std::cout << Beta_Rdm_Matrix << std::endl;
     
     int num_active_orbs = active_alpha_beta_orbs.size();
     //int dim_alpha = active_alpha_orbital_indicies.size();
@@ -431,7 +431,7 @@ void SpinorbOpt::TransformToNObasis()
         }
     }
 
-    std::cout << "Alpha Beta rdms " << std::endl;
+    std::cout << "Alpha Beta rdms in NO basis " << std::endl;
     std::cout << Alpha_Beta_Rdm_Matrix << std::endl;
     //std::cout << "Active space rotation matrix " << std::endl;
     //std::cout << ActiveSpaceRotationMatrix << std::endl;
@@ -471,8 +471,7 @@ void SpinorbOpt::TransformToNObasis()
 
     for (int i = 0; i < num_active_orbs; i++)
     {
-        
-        
+        active_alpha_beta_orbs[i] = orbitals_rotate[i];
         //orbitals_rotate.push_back(all_beta_orbitals[actIdxA].function);
     }
     
@@ -756,7 +755,7 @@ double SpinorbOpt::CalculateLagrangeMultiplierElement(int dim, int a, int i)
 }
 
 
-void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh, std::string OutputPath)
+void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occupation_thresh, std::string OutputPath, std::string rdm_iteration)
 {
     
     
@@ -920,13 +919,13 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
     SpinorbOpt_data["Spin squared of refined orbitals"] = spin_squared;
 
     std::cout << "Save energies to a json file" << std::endl;
-    std::ofstream file(OutputPath + "/SpinorbOpt_energies_test.json");
+    std::ofstream file(OutputPath + "/SpinorbOpt_energies_test_" + rdm_iteration + ".json");
     file << SpinorbOpt_data.dump(4);
     file.close();
 
-    std::cout << "Transform Integrals and Orbitals Back" << std::endl;
+    std::cout << "Transform Rdms, Integrals and Orbitals Back" << std::endl;
     TransformIntegralsAndOrbitalsBack();
-   
+
     //Calculate new energy
     std::cout << "Calculate energy of integrals transformed back" << std::endl;
     std::vector<double> energies = CalculateEnergy();
@@ -1102,9 +1101,13 @@ void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
         }
     }
 
-    TransformMatrix(&Alpha_Rdm_Matrix, RotationMatrixAlphaBack);
-    TransformMatrix(&Beta_Rdm_Matrix, RotationMatrixBetaBack);
+    //TransformMatrix(&Alpha_Rdm_Matrix, RotationMatrixAlphaBack);
+    //TransformMatrix(&Beta_Rdm_Matrix, RotationMatrixBetaBack);
+    TransformMatrix(&Alpha_Beta_Rdm_Matrix, Alpha_Beta_RotationMatrixBack);
     TransformTensor(&Alpha_Beta_Rdm_Tensor, Alpha_Beta_RotationMatrixBack);
+
+    std::cout << "Alpha Beta rdms transformed back " << std::endl;
+    std::cout << Alpha_Beta_Rdm_Matrix << std::endl;
     
     //Transform the orbitals
     madness::Tensor<double> T(num_active_orbs, num_active_orbs);
@@ -1131,6 +1134,7 @@ void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
     TransformMatrix(&integrals_kinetic[1], Alpha_Beta_RotationMatrixBack);
     TransformMatrix(&integrals_kinetic[2], Alpha_Beta_RotationMatrixBack);
     TransformMatrix(&integrals_potential, Alpha_Beta_RotationMatrixBack);
+    TransformMatrix(&integrals_one_body, Alpha_Beta_RotationMatrixBack);
     TransformTensor(&integrals_two_body, Alpha_Beta_RotationMatrixBack);
 
 }
@@ -1151,24 +1155,24 @@ void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
     }
 }*/
 
-/*void SpinorbOpt::SaveSpinorbitals(std::string OutputPath)
+void SpinorbOpt::SaveSpinorbitals(std::string OutputPath)
 {
-    for(int i = 0; i < all_alpha_orbitals.size(); i++)
+    for(int i = 0; i < num_active_alpha; i++)
     {
-        std::string base_filename = all_alpha_orbitals[i].orbital_file_name.substr(all_alpha_orbitals[i].orbital_file_name.find_last_of("/\\") + 1);
-        save(all_alpha_orbitals[i].function, OutputPath + "/alpha_" + base_filename); // ohne das .00000 im filename
-    }
-    
-    for(int i = 0; i < all_beta_orbitals.size(); i++)
-    {
-        std::string base_filename = all_beta_orbitals[i].orbital_file_name.substr(all_beta_orbitals[i].orbital_file_name.find_last_of("/\\") + 1);
-        save(all_beta_orbitals[i].function, OutputPath + "/beta_" + base_filename); // ohne das .00000 im filename
-    }
-}*/
+        std::string filename_alpha = "alpha_orbital_" + std::to_string(i);
+        save(active_alpha_beta_orbs[2*i], OutputPath + "/" + filename_alpha);
 
-/*void SpinorbOpt::SaveIntegralsToNumpy(std::string OutputPath)
+    }
+    for(int j = 0; j < num_active_beta; j++)
+    {
+        std::string filename_beta = "beta_orbital_" + std::to_string(j);
+        save(active_alpha_beta_orbs[2*j+1], OutputPath + "/" + filename_beta); 
+    }
+}
+
+void SpinorbOpt::SaveIntegralsToNumpy(std::string OutputPath)
 {
-    std::cout << "Save Integrals in npy files" << std::endl;
+    std::cout << "Save Integrals to npy files" << std::endl;
     
     int dim_ab = active_alpha_beta_orbs.size();
 
@@ -1239,11 +1243,11 @@ void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
 
     std::vector<unsigned long> one_alpha_e_ints_shape{(unsigned long)dim_alpha, (unsigned long)dim_alpha};
     const npy::npy_data<double> one_alpha_e_data{one_alpha_e_int_elements, one_alpha_e_ints_shape, false};
-    npy::write_npy(OutputPath + "/alpha_htensor.npy", one_alpha_e_data);
+    npy::write_npy(OutputPath + "/alpha_hmatrix.npy", one_alpha_e_data);
 
     std::vector<unsigned long> one_beta_e_ints_shape{(unsigned long)dim_beta, (unsigned long)dim_beta};
     const npy::npy_data<double> one_beta_e_data{one_beta_e_int_elements, one_beta_e_ints_shape, false};
-    npy::write_npy(OutputPath + "/beta_htensor.npy", one_beta_e_data);
+    npy::write_npy(OutputPath + "/beta_hmatrix.npy", one_beta_e_data);
 
     std::vector<unsigned long> two_e_integrals_aa_elements_shape{(unsigned long)dim_alpha, (unsigned long)dim_alpha, (unsigned long)dim_alpha, (unsigned long)dim_alpha};
     const npy::npy_data<double> two_alpha_alpha_e_data{two_e_integrals_aa_elements, two_e_integrals_aa_elements_shape, false};
@@ -1257,4 +1261,4 @@ void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
     const npy::npy_data<double> two_alpha_beta_e_data{two_e_integrals_ab_elements, two_e_integrals_ab_elements_shape, false};
     npy::write_npy(OutputPath + "/alpha_beta_gtensor.npy", two_alpha_beta_e_data);
 
-}*/
+}

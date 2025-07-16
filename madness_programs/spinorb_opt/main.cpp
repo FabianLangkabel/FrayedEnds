@@ -13,6 +13,7 @@ int main(int argc, char** argv)
     double madness_thresh;
     double optimization_thresh;
     double NO_occupation_thresh;
+    std::string rdm_iteration;
     std::string molecule_file;
     std::string output_folder;
     bool print_final_integrals;
@@ -68,6 +69,15 @@ int main(int argc, char** argv)
     else
     {
         NO_occupation_thresh = input["NO_occupation_thresh"];
+    }
+    if(!input.contains("Iteration"))
+    {
+        std::cout << "Iteration parameter could not be read from input file" << std::endl;
+        return 0;
+    }
+    else
+    {
+        rdm_iteration = input["Iteration"];
     }
 
     if(!input.contains("molecule_file"))
@@ -209,13 +219,15 @@ int main(int argc, char** argv)
     
     std::cout << "---------------------------------------------------" << std::endl;
     std::cout << "Start spin orbital optimization" << std::endl;
-    opti->OptimizeSpinorbitals(optimization_thresh, NO_occupation_thresh, output_folder);
+    opti->OptimizeSpinorbitals(optimization_thresh, NO_occupation_thresh, output_folder, rdm_iteration);
     
 
     //----------------------- Write Output -----------------------
     //opti->RotateOrbitalsAndIntegralsBack();
     //if(print_final_integrals){opti->SaveIntegralsToNumpy(output_folder);}
-    //opti->SaveIntegralsToNumpy(output_folder);
+    std::cout << "Save intregrals and orbitals" << std::endl;
+    opti->SaveSpinorbitals(output_folder);
+    opti->SaveIntegralsToNumpy(output_folder);
 
     return 0;
 }
