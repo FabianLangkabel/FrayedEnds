@@ -1,4 +1,5 @@
-from .parameters import MadnessParameters
+from .mrafunctionfactory import MadnessParameters
+
 class MadPyBase:
     madness_parameters: MadnessParameters = None
     # the nanobind interface (madness runtime starts when initialized)
