@@ -272,7 +272,7 @@ class PNOInterface {
 	        if(madness_process.world->rank()==0) std::cout << "collected " << obs_pnos.size() << " pnos" << "\n";
             if(madness_process.world->rank()==0) std::cout << "and " << reference.size() << " reference orbitals" << "\n";
 
-			madness::QProjector<double, 3> Q(*world, reference);
+			madness::QProjector<double, 3> Q(*(madness_process.world), reference);
 			obs_pnos = Q(obs_pnos);
 			vecfuncT xbasis = reference;
 			if(madness_process.world->rank()==0) std::cout << "Forming basis with " << xbasis.size() << " orbitals" << "\n";
