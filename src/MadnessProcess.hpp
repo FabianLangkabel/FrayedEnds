@@ -32,11 +32,16 @@ class RedirectOutput{
 class MadnessProcess {
     public:
         World* world;
-        MadnessProcess(double L, long k, double thresh, int initial_level=5, int truncate_mode=1, bool refine=true){
+        MadnessProcess(double L, long k, double thresh, int initial_level=3, int truncate_mode=1, bool refine=true, int n_threads=-1){
             int arg = 0;
             char **a = new char*[0]();
 
-            world = &initialize(arg, a);
+            if (n_threads == -1) { // default value is -1
+                world = &initialize(arg, a);
+            } else {
+                world = &initialize(arg, a, n_threads);
+            }
+            
             startup(*world,arg,a);
             delete[] a;
             
@@ -55,7 +60,7 @@ class MadnessProcess {
         }
         //load a function from a SavedFct object
         Function<double,3> loadfct(const SavedFct& Sf){
-            std::string filename = "saved_fct2"; //TODO: check if filename is unique
+            std::string filename = "saved_fct01020304"; //TODO: use the cloud for this
             write_binary_file(Sf,filename);
             Function<double,3> f1 = real_factory_3d(*world);
             load(f1,filename);
@@ -69,10 +74,19 @@ class MadnessProcess {
             return f1;
         }
 
-        void plot(std::string filename, SavedFct f, int axis=2, int datapoints=2001){
+        void plot(std::string filename, SavedFct f, std::string axis="z", int datapoints=2001){
             Vector<double,3> lo(0.0), hi(0.0);
             double L = FunctionDefaults<3>::get_cell_width()[0]/2;
-            lo[axis] = -L; hi[axis] = L;
+            if (axis=="x"){
+                lo[0] = -L; hi[0] = L;
+            } else if (axis=="y"){
+                lo[1] = -L; hi[1] = L;
+            } else if (axis=="z"){
+                lo[2] = -L; hi[2] = L;
+            } else {
+                std::cout << "Axis to plot not recognized." << std::endl;
+                return;
+            }
             plot_line(filename.c_str(),datapoints,lo,hi,loadfct(f));
         }
 
