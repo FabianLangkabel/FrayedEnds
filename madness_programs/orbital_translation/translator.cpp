@@ -27,12 +27,12 @@ Translator::~Translator()
 
 }
 
-void Translator::create_aos(std::string GeometryFile)
+void Translator::create_aos(std::string GeometryFile, std::string basis_set)
 {
     //Define AO BasisSet
     AtomicBasisSet aobasis;
     aobasis = AtomicBasisSet();
-    aobasis.read_file("sto-3g");
+    aobasis.read_file(basis_set);
 
     //Define Molecule
     molecule = madness::Molecule();

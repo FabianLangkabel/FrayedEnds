@@ -361,16 +361,8 @@ void SpinorbOpt::TransformTensor(Eigen::Tensor<double, 4>* ObjectTensor, Eigen::
     *ObjectTensor = temp4;
 }
 
-//void SpinorbOpt::CreateActiveSpaceRotationMatrix();
-//idea to make this a seperate function perhaps?!
-
 void SpinorbOpt::TransformToNObasis()
 {
-    std::cout << "Alpha rdm matrix before " << std::endl;
-    std::cout << Alpha_Rdm_Matrix << std::endl;
-    std::cout << "Beta rdm matrix before " << std::endl;
-    std::cout << Beta_Rdm_Matrix << std::endl;
-    
     int num_active_orbs = active_alpha_beta_orbs.size();
     //int dim_alpha = active_alpha_orbital_indicies.size();
     //int dim_beta = active_beta_orbital_indicies.size();
@@ -431,8 +423,8 @@ void SpinorbOpt::TransformToNObasis()
         }
     }
 
-    std::cout << "Alpha Beta rdms in NO basis " << std::endl;
-    std::cout << Alpha_Beta_Rdm_Matrix << std::endl;
+    //std::cout << "Alpha Beta rdms in NO basis " << std::endl;
+    //std::cout << Alpha_Beta_Rdm_Matrix << std::endl;
     //std::cout << "Active space rotation matrix " << std::endl;
     //std::cout << ActiveSpaceRotationMatrix << std::endl;
 
@@ -475,8 +467,8 @@ void SpinorbOpt::TransformToNObasis()
         //orbitals_rotate.push_back(all_beta_orbitals[actIdxA].function);
     }
     
-    std::cout << "orbitals_rotate " << orbitals_rotate.size() << std::endl;
-    std::cout << "alpha beta orbs " << active_alpha_beta_orbs.size() << std::endl;
+    //std::cout << "orbitals_rotate " << orbitals_rotate.size() << std::endl;
+    //std::cout << "alpha beta orbs " << active_alpha_beta_orbs.size() << std::endl;
 
     /*for (int i = 0; i < num_active_orbs; i++ ) {
         double occ = abs(Alpha_Beta_Rdm_Matrix(i, i));
@@ -863,12 +855,6 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
             }
         }
 
-        //std::vector<real_function_3d> alpha_orbs_project = ProjectSpinorbitals(alpha_orbs);
-        //std::vector<real_function_3d> beta_orbs_project = ProjectSpinorbitals(beta_orbs);
-        
-        //alpha_orbs_project = orthonormalize_symmetric(alpha_orbs_project);
-        //beta_orbs_project = orthonormalize_symmetric(beta_orbs_project);
-
         alpha_orbs = orthonormalize_symmetric(alpha_orbs);
         beta_orbs = orthonormalize_symmetric(beta_orbs);
 
@@ -931,26 +917,6 @@ void SpinorbOpt::OptimizeSpinorbitals(double optimization_thresh, double NO_occu
     std::vector<double> energies = CalculateEnergy();
 
 }
-
-
-/*std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
-{
-    int dim_orbs = orbs.size();
-    
-    for (int i = 0; i < dim_orbs-1; i++) {
-        std::vector<real_function_3d>  orb_for_projection;
-        orb_for_projection.push_back(orbs[i]);
-        auto Q_project = QProjector(*world, orb_for_projection);
-        
-        for (int q = i+1; q < dim_orbs; q++) {
-            orbs[q] = Q_project(orbs[q]);
-        }
-        orb_for_projection.clear();
-    }
-  
-    return orbs;
-}*/
-
 
 double SpinorbOpt::CalculateTotalSpin()
 {
@@ -1106,8 +1072,8 @@ void SpinorbOpt::TransformIntegralsAndOrbitalsBack()
     TransformMatrix(&Alpha_Beta_Rdm_Matrix, Alpha_Beta_RotationMatrixBack);
     TransformTensor(&Alpha_Beta_Rdm_Tensor, Alpha_Beta_RotationMatrixBack);
 
-    std::cout << "Alpha Beta rdms transformed back " << std::endl;
-    std::cout << Alpha_Beta_Rdm_Matrix << std::endl;
+    //std::cout << "Alpha Beta rdms transformed back " << std::endl;
+    //std::cout << Alpha_Beta_Rdm_Matrix << std::endl;
     
     //Transform the orbitals
     madness::Tensor<double> T(num_active_orbs, num_active_orbs);

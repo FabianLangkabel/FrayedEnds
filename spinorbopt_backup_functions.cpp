@@ -473,3 +473,22 @@ void SpinorbOpt::OptimizeSpinorbitals_Simulataneous_Test(double NO_occupation_th
     CalculateEnergy();
 
 }
+
+//Projects Spinorbitals out  one by one
+std::vector<real_function_3d> SpinorbOpt::ProjectSpinorbitals(std::vector<real_function_3d> orbs) //projects SO one by one out
+{
+    int dim_orbs = orbs.size();
+    
+    for (int i = 0; i < dim_orbs-1; i++) {
+        std::vector<real_function_3d>  orb_for_projection;
+        orb_for_projection.push_back(orbs[i]);
+        auto Q_project = QProjector(*world, orb_for_projection);
+        
+        for (int q = i+1; q < dim_orbs; q++) {
+            orbs[q] = Q_project(orbs[q]);
+        }
+        orb_for_projection.clear();
+    }
+  
+    return orbs;
+}

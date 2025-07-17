@@ -12,6 +12,7 @@ int main(int argc, char** argv)
     long wavelet_order;
     double madness_thresh;
     std::string molecule_file;
+    std::string basis_set;
     std::string calpha_coeff_file; //Input C_alpha
     std::string cbeta_coeff_file; //Input C_beta
     std::string output_folder = "";
@@ -23,6 +24,7 @@ int main(int argc, char** argv)
     if(input.contains("wavelet_order")) wavelet_order = input["wavelet_order"];
     if(input.contains("madness_thresh")) madness_thresh = input["madness_thresh"];
     if(input.contains("molecule_file")) molecule_file = input["molecule_file"];
+    if(input.contains("basis_set")) basis_set = input["basis_set"];
     if(input.contains("calpha_coeff_file")) calpha_coeff_file = input["calpha_coeff_file"];
     if(input.contains("cbeta_coeff_file")) cbeta_coeff_file = input["cbeta_coeff_file"];
     if(input.contains("output_folder")) output_folder = input["output_folder"];
@@ -40,7 +42,7 @@ int main(int argc, char** argv)
     //----------------------- Execute -----------------------
     Translator* trans = new Translator(argc, argv, box_size, wavelet_order, madness_thresh);
     trans->read_mo_coeffs(calpha_coeff_file, cbeta_coeff_file); // Hier werden C_alpha und C_beta eingelesen
-    trans->create_aos(molecule_file); //Hier werden AOs erstellt
+    trans->create_aos(molecule_file, basis_set); //Hier werden AOs erstellt
     trans->create_mo_orbitals();
     trans->print_mo_orbitals(output_folder); //Hier werden die MOs auf Platte geschrieben
 

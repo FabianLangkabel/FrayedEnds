@@ -24,7 +24,7 @@ public:
     Translator(int argc, char** argv, double L, long k, double thresh);
     ~Translator();
 
-    void create_aos(std::string GeometryFile);
+    void create_aos(std::string GeometryFile, std::string basis_set);
     void read_mo_coeffs(std::string calpha_coeff_file, std::string cbeta_coeff_file);
     void create_mo_orbitals();
     void print_mo_orbitals(std::string output_folder);
