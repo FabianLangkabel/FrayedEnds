@@ -46,7 +46,6 @@ class MadPNO(MadPyBase):
                 maxrank = n_orbitals
 
         pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
-        print(pno_input_string)
         self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
 
         if not no_compute:
@@ -136,10 +135,9 @@ class MadPNO(MadPyBase):
 
         data = {}
 
-        data["dft"] = {"xc": "hf", "L":self.madness_parameters.L,  "k": self.madness_parameters.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )"}
+        data["dft"] = {"xc": "hf", "L":self.madness_parameters.L,  "k": self.madness_parameters.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys"}
+        data["nemo"] = {"ncf": "( none , 1.0)"}
         data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": diagonal}
-        # this should be gone soon
-        data["pnoint"] = {"n_pno": 10, "orthog": "symmetric"}
 
         if not frozen_core:
             data["pno"]["freeze"] = 0
@@ -157,8 +155,8 @@ class MadPNO(MadPyBase):
         for k, v in data["pno"].items():
             input_str += "{}={}; ".format(k, v)
         input_str = input_str[:-2] + "\""
-        input_str += " --pnoint=\""
-        for k, v in data["pnoint"].items():
+        input_str += " --nemo=\""
+        for k, v in data["nemo"].items():
             input_str += "{}={}; ".format(k, v)
         input_str = input_str[:-2] + "\""
         if data["plot"] != {}:
