@@ -38,12 +38,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && \
-    bash miniconda.sh -b -p /opt/conda && \
-    rm miniconda.sh && \
+RUN wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O miniforge.sh && \
+    bash miniforge.sh -b -p /opt/conda && \
+    rm miniforge.sh && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> /etc/bash.bashrc && \
+    echo "conda activate base" >> /etc/bash.bashrc
+
+RUN conda config --add channels conda-forge && \
+    conda config --set channel_priority strict
 
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | tee /usr/share/keyrings/oneapi.gpg > /dev/null && \
     echo "deb [signed-by=/usr/share/keyrings/oneapi.gpg] https://apt.repos.intel.com/oneapi all main" > /etc/apt/sources.list.d/oneapi.list && \
@@ -61,18 +64,11 @@ RUN cd /opt && \
         -DLAPACK_LIBRARIES=/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_rt.so \
         -DLAPACK_INCLUDE_DIRS=/opt/intel/oneapi/mkl/latest/include/ \
         -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" .. && \
-    cmake --build . --target install -j2
+    cmake --build . --target install -j4
 
-RUN conda install -y python=3.11 && \
-    pip install pyscf && \
-    pip install tequila-basic && \
-    pip install qulacs && \
-    pip install block2 && \
-    python -m pip install nanobind
 
-RUN conda install -c conda-forge nwchem && \
-    conda install -c conda-forge openmpi && \
-    conda install ipykernel --update-deps --force-reinstall
+RUN conda install -y python=3.11 nwchem openmpi ipykernel && \
+    pip install pyscf tequila-basic qulacs block2 nanobind
 
 ENV MADNESS_DIR=/usr/local/madness
 COPY . /workspaces/MRA-OrbitalOptimization
@@ -85,7 +81,7 @@ RUN groupadd --gid 900 conda && \
     usermod -aG sudo ${USERNAME} && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-ENV LD_LIBRARY_PATH="/opt/intel/oneapi/mkl/2025.1/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/intel/oneapi/mkl/latest/lib:$LD_LIBRARY_PATH"
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
