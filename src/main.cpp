@@ -26,14 +26,17 @@ NB_MODULE(_madpy_impl, m) {
 
     nb::class_<SavedFct>(m, "SavedFct")
         .def(nb::init<const Function<double,3> &>())
+        .def(nb::init<const std::string &>())
         .def_rw("info", &SavedFct::info)
-        .def_rw("type", &SavedFct::type);
+        .def_rw("type", &SavedFct::type)
+        .def("save_to_file", &SavedFct::save_to_file, nb::arg("filepath"));
 
     nb::class_<MadnessProcess>(m, "MadnessProcess")
         .def(nb::init<const double &, const long &, const double &, const int &, const int &, const bool &, const int &>())
         .def("loadfct", &MadnessProcess::loadfct)
         .def("plot", &MadnessProcess::plot)
-        .def("plane_plot", &MadnessProcess::plane_plot);
+        .def("plane_plot", &MadnessProcess::plane_plot)
+        .def("cube_plot", &MadnessProcess::cube_plot);
 
 
     nb::class_<Integrals>(m, "Integrals")

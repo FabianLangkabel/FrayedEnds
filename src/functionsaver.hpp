@@ -67,6 +67,54 @@ class SavedFct {
             return data_string;
         }
 
+        SavedFct(const std::string& filepath) {
+            load_from_file(filepath);
+        }
+
+        void save_to_file(const std::string& filepath) const {
+            std::ofstream out(filepath, std::ios::binary);
+            if (!out) throw std::runtime_error("Cannot open file for writing");
+
+            size_t len;
+
+            len = saved_str.size();
+            out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+            out.write(saved_str.data(), len);
+
+            len = info.size();
+            out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+            out.write(info.data(), len);
+
+            len = type.size();
+            out.write(reinterpret_cast<const char*>(&len), sizeof(len));
+            out.write(type.data(), len);
+        }
+
+        void load_from_file(const std::string& filepath) {
+            std::ifstream in(filepath, std::ios::binary);
+            if (!in) throw std::runtime_error("Cannot open file for reading");
+
+            size_t len;
+            char* buffer;
+
+            in.read(reinterpret_cast<char*>(&len), sizeof(len));
+            buffer = new char[len];
+            in.read(buffer, len);
+            saved_str.assign(buffer, len);
+            delete[] buffer;
+
+            in.read(reinterpret_cast<char*>(&len), sizeof(len));
+            buffer = new char[len];
+            in.read(buffer, len);
+            info.assign(buffer, len);
+            delete[] buffer;
+
+            in.read(reinterpret_cast<char*>(&len), sizeof(len));
+            buffer = new char[len];
+            in.read(buffer, len);
+            type.assign(buffer, len);
+            delete[] buffer;
+        }
 };
 
 
