@@ -1,0 +1,1180 @@
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/GS-mps_info.bin
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.1.fpc
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.0.fpc
+converged SCF energy = -1.54583859536891  <S^2> = 0.79571275  2S+1 = 2.0452019
+Orbital Translator output:
+MADNESS runtime initialized with 3 threads in the pool and affinity OFF
+Alpha matrix: 
+ 4.010269e-01  5.734976e-16  1.332728e+00
+ 4.496477e-01 -7.620699e-01 -8.050369e-01
+ 4.496477e-01  7.620699e-01 -8.050369e-01
+Beta matrix: 
+ 6.766981e-01 -3.569772e-16  1.216168e+00
+ 2.671289e-01  7.620699e-01 -8.825586e-01
+ 2.671289e-01 -7.620699e-01 -8.825586e-01
+
+DMRG energy:  -1.5709210877323776
+Save SpinorbOpt Json file
+Run Spin orbital refinement:
+MADNESS runtime initialized with 3 threads in the pool and affinity OFF
+Read orbitals and calculate the integrals
+constructed nuclear correlation factor of the form
+    R   =  1.000000e+00
+with eprec  1.000000e-04
+which means it's (nearly) a conventional calculation
+
+Enuc: 
+1.388889e+00
+Frozen occupied spin orbitals: 
+Active space spin orbitals indicies: 0 1 2 3 4 5 
+ReadOrbitals took 0 seconds
+ReadRDMFiles took 0 seconds
+Alpha rdm matrix before 
+ 9.924416e-01  9.313934e-17  3.272719e-02
+ 9.313934e-17  9.819512e-01 -1.692799e-16
+ 3.272719e-02 -1.692799e-16  2.560723e-02
+Beta rdm matrix before 
+ 9.744406e-01  2.056361e-15 -3.201360e-02
+ 2.056361e-15  1.804878e-02 -1.060464e-16
+-3.201360e-02 -1.060464e-16  7.510669e-03
+Alpha Beta rdms in NO basis 
+ 9.935481e-01  0.000000e+00 -4.858908e-18  0.000000e+00 -4.163336e-17  0.000000e+00
+ 0.000000e+00  9.754993e-01  0.000000e+00  1.966071e-18  0.000000e+00  0.000000e+00
+-4.858908e-18  0.000000e+00  9.819512e-01  0.000000e+00  1.107093e-16  0.000000e+00
+ 0.000000e+00  1.966071e-18  0.000000e+00  1.804878e-02  0.000000e+00  1.670233e-18
+-4.119968e-17  0.000000e+00  1.107093e-16  0.000000e+00  2.450069e-02  0.000000e+00
+ 0.000000e+00  2.005774e-18  0.000000e+00  1.670233e-18  0.000000e+00  6.451906e-03
+orbitals_rotate 6
+alpha beta orbs 6
+One body integrals: -1.553885e+00  0.000000e+00 -1.455823e-14  0.000000e+00 -1.863543e-01  0.000000e+00
+ 0.000000e+00 -1.590782e+00  0.000000e+00  2.492256e-14  0.000000e+00 -6.009255e-02
+-1.449231e-14  0.000000e+00 -1.174821e+00  0.000000e+00 -4.795817e-14  0.000000e+00
+ 0.000000e+00  2.530983e-14  0.000000e+00 -1.174821e+00  0.000000e+00  4.444882e-14
+-1.863543e-01  0.000000e+00 -4.830338e-14  0.000000e+00 -7.474295e-01  0.000000e+00
+ 0.000000e+00 -6.009255e-02  0.000000e+00  4.378789e-14  0.000000e+00 -7.105329e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -4.633446e-15  5.140404e-11
+-4.633446e-15  1.000000e+00 -1.424555e-14
+ 5.140404e-11 -1.424555e-14  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00  6.146125e-15 -5.725185e-11
+ 6.146125e-15  1.000000e+00  1.305206e-14
+-5.725185e-11  1.305206e-14  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 38 seconds
+---------------------------------------------------
+Start spin orbital optimization
+Calculate initial energies: 
+            Kinetic energy  1.984919e+00
+ Nuclear attraction energy  -6.278303e+00
+       Two-electron energy  1.333601e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.570894e+00
+CalculateEnergies took 0 seconds
+Calculate initial total spin: 
+S squared: 7.500000e-01
+---------------------------------------------------
+Start iteration step: 1
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.665046e-01  0.000000e+00 -1.769298e-14  0.000000e+00  1.059499e-02  0.000000e+00
+ 0.000000e+00 -5.443540e-01  0.000000e+00  9.007499e-16  0.000000e+00 -6.701683e-03
+-1.772907e-14  0.000000e+00 -3.659791e-01  0.000000e+00 -1.845976e-15  0.000000e+00
+ 0.000000e+00  2.959093e-14  0.000000e+00 -2.005411e-02  0.000000e+00  3.896999e-16
+ 1.059434e-02  0.000000e+00 -5.480500e-14  0.000000e+00 -2.008054e-02  0.000000e+00
+ 0.000000e+00 -6.699453e-03  0.000000e+00  1.047720e-15  0.000000e+00 -9.208846e-03
+Error of Orbital 0: 2.288121e-02
+Error of Orbital 1: 5.715641e-02
+Error of Orbital 2: 1.707573e-01
+Error of Orbital 3: 4.462328e-02
+Error of Orbital 4: 1.338499e-01
+Error of Orbital 5: 1.561829e-01
+GetAllActiveSpinorbitalUpdates took 41 seconds
+UpdateOrbitals took 41 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.550734e+00  0.000000e+00  3.184952e-15  0.000000e+00 -1.883491e-01  0.000000e+00
+ 0.000000e+00 -1.589500e+00  0.000000e+00  2.787701e-15  0.000000e+00 -6.470536e-02
+ 3.179748e-15  0.000000e+00 -1.182078e+00  0.000000e+00  4.093947e-15  0.000000e+00
+ 0.000000e+00  2.664969e-15  0.000000e+00 -1.185768e+00  0.000000e+00 -5.353357e-15
+-1.883491e-01  0.000000e+00  4.184153e-15  0.000000e+00 -7.932077e-01  0.000000e+00
+ 0.000000e+00 -6.470536e-02  0.000000e+00 -4.940492e-15  0.000000e+00 -7.429793e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -4.163336e-17  1.480074e-11
+-4.163336e-17  1.000000e+00 -1.804112e-16
+ 1.480073e-11 -1.665335e-16  1.000000e+00
+Beta Overlap matrix: 
+1.000000e+00 2.567391e-16 4.597017e-16
+2.532696e-16 1.000000e+00 2.775558e-16
+4.597017e-16 2.914335e-16 1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 49 seconds
+            Kinetic energy  1.736714e+00
+ Nuclear attraction energy  -6.034371e+00
+       Two-electron energy  1.286768e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.622000e+00
+CalculateEnergies took 0 seconds
+Highest error: 1.707573e-01
+---------------------------------------------------
+Start iteration step: 2
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.859624e-01  0.000000e+00  1.462896e-15  0.000000e+00  8.487159e-03  0.000000e+00
+ 0.000000e+00 -5.784079e-01  0.000000e+00 -4.094463e-16  0.000000e+00 -6.097213e-03
+ 1.547605e-15  0.000000e+00 -4.135180e-01  0.000000e+00 -1.119839e-16  0.000000e+00
+ 0.000000e+00 -2.628833e-16  0.000000e+00 -1.818583e-02  0.000000e+00 -4.550514e-17
+-1.040191e-02  0.000000e+00  7.017724e-15  0.000000e+00 -1.910555e-02  0.000000e+00
+ 0.000000e+00  1.354569e-02  0.000000e+00 -7.691863e-17  0.000000e+00 -8.940685e-03
+Error of Orbital 0: 1.184046e-02
+Error of Orbital 1: 1.422392e-02
+Error of Orbital 2: 3.600207e-02
+Error of Orbital 3: 2.539097e-02
+Error of Orbital 4: 5.813068e-02
+Error of Orbital 5: 3.617111e-02
+GetAllActiveSpinorbitalUpdates took 42 seconds
+UpdateOrbitals took 43 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.550442e+00  0.000000e+00  3.410466e-15  0.000000e+00 -1.868195e-01  0.000000e+00
+ 0.000000e+00 -1.590933e+00  0.000000e+00  2.201364e-15  0.000000e+00 -6.692045e-02
+ 3.472049e-15  0.000000e+00 -1.177495e+00  0.000000e+00  2.491063e-15  0.000000e+00
+ 0.000000e+00  2.285498e-15  0.000000e+00 -1.191047e+00  0.000000e+00 -1.353084e-15
+-1.868195e-01  0.000000e+00  2.609024e-15  0.000000e+00 -8.122279e-01  0.000000e+00
+ 0.000000e+00 -6.692045e-02  0.000000e+00 -1.505740e-15  0.000000e+00 -7.488782e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  1.457168e-16  8.082458e-12
+ 1.387779e-16  1.000000e+00 -2.081668e-16
+ 8.082458e-12 -2.081668e-16  1.000000e+00
+Beta Overlap matrix: 
+1.000000e+00 4.371503e-16 1.147953e-15
+4.406198e-16 1.000000e+00 5.551115e-17
+1.147953e-15 5.551115e-17 1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 47 seconds
+            Kinetic energy  1.688096e+00
+ Nuclear attraction energy  -5.982961e+00
+       Two-electron energy  1.281125e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.624851e+00
+CalculateEnergies took 0 seconds
+Highest error: 5.813068e-02
+---------------------------------------------------
+Start iteration step: 3
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.876371e-01  0.000000e+00  9.619648e-16  0.000000e+00  8.051549e-03  0.000000e+00
+ 0.000000e+00 -5.836312e-01  0.000000e+00 -2.092503e-16  0.000000e+00 -6.399616e-03
+ 1.154128e-15  0.000000e+00 -4.153095e-01  0.000000e+00 -3.070959e-16  0.000000e+00
+ 0.000000e+00  2.255206e-15  0.000000e+00 -1.789165e-02  0.000000e+00 -1.701247e-17
+-6.086574e-03  0.000000e+00  3.648700e-15  0.000000e+00 -1.925786e-02  0.000000e+00
+ 0.000000e+00  1.503582e-02  0.000000e+00  1.368203e-16  0.000000e+00 -8.886576e-03
+Error of Orbital 0: 3.997881e-03
+Error of Orbital 1: 5.519791e-03
+Error of Orbital 2: 1.777106e-02
+Error of Orbital 3: 1.084959e-02
+Error of Orbital 4: 2.451532e-02
+Error of Orbital 5: 1.942269e-02
+GetAllActiveSpinorbitalUpdates took 43 seconds
+UpdateOrbitals took 44 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.550782e+00  0.000000e+00  2.560452e-15  0.000000e+00 -1.861920e-01  0.000000e+00
+ 0.000000e+00 -1.592012e+00  0.000000e+00  2.459838e-15  0.000000e+00 -6.792741e-02
+ 2.857090e-15  0.000000e+00 -1.174274e+00  0.000000e+00  2.307182e-15  0.000000e+00
+ 0.000000e+00  2.672775e-15  0.000000e+00 -1.192481e+00  0.000000e+00 -1.561251e-15
+-1.861920e-01  0.000000e+00  2.343611e-15  0.000000e+00 -8.186902e-01  0.000000e+00
+ 0.000000e+00 -6.792741e-02  0.000000e+00 -2.043504e-15  0.000000e+00 -7.506241e-01
+Alpha Overlap matrix: 
+1.000000e+00 3.191891e-16 1.951437e-11
+3.295975e-16 1.000000e+00 1.110223e-16
+1.951436e-11 1.110223e-16 1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -1.387779e-16  9.506285e-16
+-1.370432e-16  1.000000e+00  8.326673e-17
+ 9.506285e-16  8.326673e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.667709e+00
+ Nuclear attraction energy  -5.960996e+00
+       Two-electron energy  1.279029e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625369e+00
+CalculateEnergies took 0 seconds
+Highest error: 2.451532e-02
+---------------------------------------------------
+Start iteration step: 4
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.880977e-01  0.000000e+00  3.770053e-16  0.000000e+00  7.785044e-03  0.000000e+00
+ 0.000000e+00 -5.860206e-01  0.000000e+00 -1.597926e-16  0.000000e+00 -6.582005e-03
+ 7.948176e-16  0.000000e+00 -4.151471e-01  0.000000e+00 -3.071651e-16  0.000000e+00
+ 0.000000e+00  2.346059e-15  0.000000e+00 -1.775738e-02  0.000000e+00 -2.160819e-17
+-3.602473e-03  0.000000e+00  2.763450e-15  0.000000e+00 -1.931532e-02  0.000000e+00
+ 0.000000e+00  1.632740e-02  0.000000e+00  1.519012e-16  0.000000e+00 -8.889980e-03
+Error of Orbital 0: 1.648643e-03
+Error of Orbital 1: 2.780412e-03
+Error of Orbital 2: 9.542229e-03
+Error of Orbital 3: 5.054425e-03
+Error of Orbital 4: 1.406046e-02
+Error of Orbital 5: 1.081414e-02
+GetAllActiveSpinorbitalUpdates took 44 seconds
+UpdateOrbitals took 44 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.551230e+00  0.000000e+00  2.628106e-15  0.000000e+00 -1.858192e-01  0.000000e+00
+ 0.000000e+00 -1.592791e+00  0.000000e+00  2.223915e-15  0.000000e+00 -6.834650e-02
+ 2.707470e-15  0.000000e+00 -1.172262e+00  0.000000e+00  2.244732e-15  0.000000e+00
+ 0.000000e+00  2.329734e-15  0.000000e+00 -1.192957e+00  0.000000e+00 -1.672273e-15
+-1.858192e-01  0.000000e+00  2.400857e-15  0.000000e+00 -8.217537e-01  0.000000e+00
+ 0.000000e+00 -6.834650e-02  0.000000e+00 -2.151057e-15  0.000000e+00 -7.506884e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  2.498002e-16  3.728406e-12
+ 2.567391e-16  1.000000e+00 -1.387779e-17
+ 3.728406e-12 -2.775558e-17  1.000000e+00
+Beta Overlap matrix: 
+1.000000e+00 1.040834e-16 2.619432e-16
+1.006140e-16 1.000000e+00 1.249001e-16
+2.619432e-16 1.249001e-16 1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.658200e+00
+ Nuclear attraction energy  -5.950801e+00
+       Two-electron energy  1.278228e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625484e+00
+CalculateEnergies took 0 seconds
+Highest error: 1.406046e-02
+---------------------------------------------------
+Start iteration step: 5
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.882287e-01  0.000000e+00  1.907528e-16  0.000000e+00  7.626695e-03  0.000000e+00
+ 0.000000e+00 -5.872410e-01  0.000000e+00 -1.420405e-16  0.000000e+00 -6.700053e-03
+ 4.605274e-16  0.000000e+00 -4.147158e-01  0.000000e+00 -3.232762e-16  0.000000e+00
+ 0.000000e+00  2.326128e-15  0.000000e+00 -1.769362e-02  0.000000e+00 -2.604655e-17
+-1.910418e-03  0.000000e+00  2.563824e-15  0.000000e+00 -1.936354e-02  0.000000e+00
+ 0.000000e+00  1.725990e-02  0.000000e+00  1.588190e-16  0.000000e+00 -8.902170e-03
+Error of Orbital 0: 7.824097e-04
+Error of Orbital 1: 1.647248e-03
+Error of Orbital 2: 5.357504e-03
+Error of Orbital 3: 2.497557e-03
+Error of Orbital 4: 8.659724e-03
+Error of Orbital 5: 6.515774e-03
+GetAllActiveSpinorbitalUpdates took 43 seconds
+UpdateOrbitals took 43 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.551603e+00  0.000000e+00  3.032297e-15  0.000000e+00 -1.855874e-01  0.000000e+00
+ 0.000000e+00 -1.593321e+00  0.000000e+00  3.521489e-15  0.000000e+00 -6.852646e-02
+ 2.481522e-15  0.000000e+00 -1.171035e+00  0.000000e+00  2.413000e-15  0.000000e+00
+ 0.000000e+00  3.370568e-15  0.000000e+00 -1.193123e+00  0.000000e+00 -2.097281e-15
+-1.855874e-01  0.000000e+00  2.354020e-15  0.000000e+00 -8.233627e-01  0.000000e+00
+ 0.000000e+00 -6.852646e-02  0.000000e+00 -1.974115e-15  0.000000e+00 -7.503272e-01
+Alpha Overlap matrix: 
+1.000000e+00 3.538836e-16 8.819903e-12
+3.538836e-16 1.000000e+00 1.526557e-16
+8.819889e-12 1.595946e-16 1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -5.759282e-16  8.890458e-16
+-5.741935e-16  1.000000e+00 -1.665335e-16
+ 8.890458e-16 -1.526557e-16  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 47 seconds
+            Kinetic energy  1.653512e+00
+ Nuclear attraction energy  -5.945835e+00
+       Two-electron energy  1.277930e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625505e+00
+CalculateEnergies took 0 seconds
+Highest error: 8.659724e-03
+---------------------------------------------------
+Start iteration step: 6
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.882499e-01  0.000000e+00  8.018506e-16  0.000000e+00  7.530408e-03  0.000000e+00
+ 0.000000e+00 -5.878958e-01  0.000000e+00 -1.135886e-16  0.000000e+00 -6.775683e-03
+ 3.799367e-16  0.000000e+00 -4.143445e-01  0.000000e+00 -2.828602e-16  0.000000e+00
+ 0.000000e+00  2.857269e-15  0.000000e+00 -1.766097e-02  0.000000e+00 -2.679847e-17
+-7.889285e-04  0.000000e+00  2.447536e-15  0.000000e+00 -1.939886e-02  0.000000e+00
+ 0.000000e+00  1.790153e-02  0.000000e+00  1.537510e-16  0.000000e+00 -8.913154e-03
+Error of Orbital 0: 4.215740e-04
+Error of Orbital 1: 1.027541e-03
+Error of Orbital 2: 3.085273e-03
+Error of Orbital 3: 1.301320e-03
+Error of Orbital 4: 5.409604e-03
+Error of Orbital 5: 4.068067e-03
+GetAllActiveSpinorbitalUpdates took 44 seconds
+UpdateOrbitals took 44 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.551873e+00  0.000000e+00  3.302913e-15  0.000000e+00 -1.854433e-01  0.000000e+00
+ 0.000000e+00 -1.593667e+00  0.000000e+00  2.564789e-15  0.000000e+00 -6.860684e-02
+ 3.490264e-15  0.000000e+00 -1.170292e+00  0.000000e+00  2.619432e-15  0.000000e+00
+ 0.000000e+00  2.856222e-15  0.000000e+00 -1.193182e+00  0.000000e+00 -2.192690e-15
+-1.854433e-01  0.000000e+00  2.178813e-15  0.000000e+00 -8.242515e-01  0.000000e+00
+ 0.000000e+00 -6.860684e-02  0.000000e+00 -2.230854e-15  0.000000e+00 -7.499356e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -4.093947e-16  1.783074e-12
+-4.059253e-16  1.000000e+00 -8.326673e-17
+ 1.783074e-12 -8.326673e-17  1.000000e+00
+Beta Overlap matrix: 
+1.000000e+00 1.734723e-17 7.155734e-16
+2.255141e-17 1.000000e+00 2.775558e-17
+7.155734e-16 4.163336e-17 1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.651102e+00
+ Nuclear attraction energy  -5.943322e+00
+       Two-electron energy  1.277830e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625502e+00
+CalculateEnergies took 0 seconds
+Highest error: 5.409604e-03
+---------------------------------------------------
+Start iteration step: 7
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.882378e-01  0.000000e+00  7.372067e-16  0.000000e+00  7.471295e-03  0.000000e+00
+ 0.000000e+00 -5.882577e-01  0.000000e+00 -9.465037e-17  0.000000e+00 -6.823570e-03
+ 1.079742e-15  0.000000e+00 -4.140787e-01  0.000000e+00 -3.128743e-16  0.000000e+00
+ 0.000000e+00  3.062282e-15  0.000000e+00 -1.764323e-02  0.000000e+00 -2.395858e-17
+-6.397367e-05  0.000000e+00  2.029823e-15  0.000000e+00 -1.942259e-02  0.000000e+00
+ 0.000000e+00  1.832820e-02  0.000000e+00  1.523063e-16  0.000000e+00 -8.921114e-03
+Error of Orbital 0: 2.471130e-04
+Error of Orbital 1: 6.450019e-04
+Error of Orbital 2: 1.804436e-03
+Error of Orbital 3: 7.072387e-04
+Error of Orbital 4: 3.376161e-03
+Error of Orbital 5: 2.565730e-03
+GetAllActiveSpinorbitalUpdates took 43 seconds
+UpdateOrbitals took 43 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.552056e+00  0.000000e+00  2.470246e-15  0.000000e+00 -1.853537e-01  0.000000e+00
+ 0.000000e+00 -1.593888e+00  0.000000e+00  3.406130e-15  0.000000e+00 -6.864450e-02
+ 2.360959e-15  0.000000e+00 -1.169843e+00  0.000000e+00  2.348816e-15  0.000000e+00
+ 0.000000e+00  3.431717e-15  0.000000e+00 -1.193203e+00  0.000000e+00 -1.942890e-15
+-1.853537e-01  0.000000e+00  2.437286e-15  0.000000e+00 -8.247575e-01  0.000000e+00
+ 0.000000e+00 -6.864450e-02  0.000000e+00 -2.099015e-15  0.000000e+00 -7.496199e-01
+Alpha Overlap matrix: 
+1.000000e+00 3.538836e-16 4.598044e-12
+3.469447e-16 1.000000e+00 6.938894e-17
+4.598058e-12 5.551115e-17 1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -5.724587e-16  3.521489e-16
+-5.707240e-16  1.000000e+00 -1.110223e-16
+ 3.521489e-16 -1.110223e-16  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.649820e+00
+ Nuclear attraction energy  -5.942007e+00
+       Two-electron energy  1.277804e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625495e+00
+CalculateEnergies took 0 seconds
+Highest error: 3.376161e-03
+---------------------------------------------------
+Start iteration step: 8
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.882194e-01  0.000000e+00  4.287679e-16  0.000000e+00  7.434947e-03  0.000000e+00
+ 0.000000e+00 -5.884618e-01  0.000000e+00 -9.480572e-17  0.000000e+00 -6.853598e-03
+ 3.970990e-16  0.000000e+00 -4.139013e-01  0.000000e+00 -2.812106e-16  0.000000e+00
+ 0.000000e+00  2.782681e-15  0.000000e+00 -1.763316e-02  0.000000e+00 -2.110028e-17
+ 3.971135e-04  0.000000e+00  2.218670e-15  0.000000e+00 -1.943781e-02  0.000000e+00
+ 0.000000e+00  1.860488e-02  0.000000e+00  1.493682e-16  0.000000e+00 -8.926403e-03
+Error of Orbital 0: 1.508306e-04
+Error of Orbital 1: 4.029506e-04
+Error of Orbital 2: 1.065785e-03
+Error of Orbital 3: 3.966501e-04
+Error of Orbital 4: 2.097493e-03
+Error of Orbital 5: 1.617314e-03
+GetAllActiveSpinorbitalUpdates took 43 seconds
+UpdateOrbitals took 44 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.552176e+00  0.000000e+00  3.353220e-15  0.000000e+00 -1.852986e-01  0.000000e+00
+ 0.000000e+00 -1.594027e+00  0.000000e+00  3.052246e-15  0.000000e+00 -6.866313e-02
+ 3.701466e-15  0.000000e+00 -1.169572e+00  0.000000e+00  2.704434e-15  0.000000e+00
+ 0.000000e+00  2.977653e-15  0.000000e+00 -1.193211e+00  0.000000e+00 -2.079933e-15
+-1.852986e-01  0.000000e+00  2.442491e-15  0.000000e+00 -8.250511e-01  0.000000e+00
+ 0.000000e+00 -6.866313e-02  0.000000e+00 -1.994932e-15  0.000000e+00 -7.493919e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -2.706169e-16  1.046233e-12
+-2.706169e-16  1.000000e+00  5.551115e-17
+ 1.046233e-12  5.551115e-17  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -7.979728e-17 -6.418477e-17
+-7.806256e-17  1.000000e+00 -9.714451e-17
+-6.418477e-17 -8.326673e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.649118e+00
+ Nuclear attraction energy  -5.941300e+00
+       Two-electron energy  1.277804e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625489e+00
+CalculateEnergies took 0 seconds
+Highest error: 2.097493e-03
+---------------------------------------------------
+Start iteration step: 9
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.882033e-01  0.000000e+00  8.422803e-16  0.000000e+00  7.412617e-03  0.000000e+00
+ 0.000000e+00 -5.885787e-01  0.000000e+00 -1.044169e-16  0.000000e+00 -6.872283e-03
+ 1.222657e-15  0.000000e+00 -4.137870e-01  0.000000e+00 -2.949314e-16  0.000000e+00
+ 0.000000e+00  2.817856e-15  0.000000e+00 -1.762729e-02  0.000000e+00 -1.913705e-17
+ 6.864814e-04  0.000000e+00  2.435169e-15  0.000000e+00 -1.944734e-02  0.000000e+00
+ 0.000000e+00  1.878105e-02  0.000000e+00  1.537161e-16  0.000000e+00 -8.929770e-03
+Error of Orbital 0: 9.353296e-05
+Error of Orbital 1: 2.503200e-04
+Error of Orbital 2: 6.335667e-04
+Error of Orbital 3: 2.279839e-04
+Error of Orbital 4: 1.297061e-03
+Error of Orbital 5: 1.015193e-03
+GetAllActiveSpinorbitalUpdates took 43 seconds
+UpdateOrbitals took 43 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.552252e+00  0.000000e+00  2.652392e-15  0.000000e+00 -1.852646e-01  0.000000e+00
+ 0.000000e+00 -1.594113e+00  0.000000e+00  2.869233e-15  0.000000e+00 -6.867286e-02
+ 2.775991e-15  0.000000e+00 -1.169408e+00  0.000000e+00  2.631576e-15  0.000000e+00
+ 0.000000e+00  2.553947e-15  0.000000e+00 -1.193215e+00  0.000000e+00 -2.411266e-15
+-1.852646e-01  0.000000e+00  2.709638e-15  0.000000e+00 -8.252238e-01  0.000000e+00
+ 0.000000e+00 -6.867286e-02  0.000000e+00 -2.383510e-15  0.000000e+00 -7.492366e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  3.261280e-16  3.025059e-12
+ 3.157197e-16  1.000000e+00 -2.775558e-16
+ 3.025052e-12 -2.775558e-16  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00  3.087808e-16  1.726050e-16
+ 3.105155e-16  1.000000e+00 -5.551115e-17
+ 1.726050e-16 -5.551115e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.648725e+00
+ Nuclear attraction energy  -5.940909e+00
+       Two-electron energy  1.277811e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625484e+00
+CalculateEnergies took 0 seconds
+Highest error: 1.297061e-03
+---------------------------------------------------
+Start iteration step: 10
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.881914e-01  0.000000e+00  1.994754e-16  0.000000e+00  7.398935e-03  0.000000e+00
+ 0.000000e+00 -5.886466e-01  0.000000e+00 -8.557860e-17  0.000000e+00 -6.883841e-03
+ 4.416057e-16  0.000000e+00 -4.137148e-01  0.000000e+00 -3.124964e-16  0.000000e+00
+ 0.000000e+00  2.722083e-15  0.000000e+00 -1.762381e-02  0.000000e+00 -2.514072e-17
+ 8.668931e-04  0.000000e+00  2.480407e-15  0.000000e+00 -1.945322e-02  0.000000e+00
+ 0.000000e+00  1.889178e-02  0.000000e+00  1.547993e-16  0.000000e+00 -8.931866e-03
+Error of Orbital 0: 5.878779e-05
+Error of Orbital 1: 1.549372e-04
+Error of Orbital 2: 3.782879e-04
+Error of Orbital 3: 1.341666e-04
+Error of Orbital 4: 7.987961e-04
+Error of Orbital 5: 6.343242e-04
+GetAllActiveSpinorbitalUpdates took 43 seconds
+UpdateOrbitals took 43 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.552300e+00  0.000000e+00  2.572595e-15  0.000000e+00 -1.852440e-01  0.000000e+00
+ 0.000000e+00 -1.594167e+00  0.000000e+00  3.086940e-15  0.000000e+00 -6.867821e-02
+ 2.769486e-15  0.000000e+00 -1.169309e+00  0.000000e+00  2.400857e-15  0.000000e+00
+ 0.000000e+00  3.412201e-15  0.000000e+00 -1.193217e+00  0.000000e+00 -2.192690e-15
+-1.852440e-01  0.000000e+00  2.005340e-15  0.000000e+00 -8.253263e-01  0.000000e+00
+ 0.000000e+00 -6.867821e-02  0.000000e+00 -2.289835e-15  0.000000e+00 -7.491343e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  9.714451e-17  7.709805e-13
+ 1.006140e-16  1.000000e+00  2.775558e-17
+ 7.709805e-13 -1.387779e-17  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -3.608225e-16  6.366435e-16
+-3.608225e-16  1.000000e+00 -1.249001e-16
+ 6.366435e-16 -1.110223e-16  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.648501e+00
+ Nuclear attraction energy  -5.940690e+00
+       Two-electron energy  1.277819e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625481e+00
+CalculateEnergies took 0 seconds
+Highest error: 7.987961e-04
+Convergence has been reached :-)
+Calculate Spin Squared
+S squared: 7.536277e-01
+Save energies to a json file
+Transform Rdms, Integrals and Orbitals Back
+Alpha Beta rdms transformed back 
+ 9.924416e-01  0.000000e+00  8.587244e-17  0.000000e+00  3.272719e-02  0.000000e+00
+ 0.000000e+00  9.744406e-01  0.000000e+00  2.056361e-15  0.000000e+00 -3.201360e-02
+ 8.587244e-17  0.000000e+00  9.819512e-01  0.000000e+00 -3.930028e-16  0.000000e+00
+ 0.000000e+00  2.056361e-15  0.000000e+00  1.804878e-02  0.000000e+00 -1.060464e-16
+ 3.272719e-02  0.000000e+00 -3.930028e-16  0.000000e+00  2.560723e-02  0.000000e+00
+ 0.000000e+00 -3.201360e-02  0.000000e+00 -1.060464e-16  0.000000e+00  7.510669e-03
+Calculate energy of integrals transformed back
+            Kinetic energy  1.648501e+00
+ Nuclear attraction energy  -5.940690e+00
+       Two-electron energy  1.277819e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.625481e+00
+CalculateEnergies took 0 seconds
+Save intregrals and orbitals
+Save Integrals to npy files
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/GS-mps_info.bin
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.1.fpc
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.0.fpc
+converged SCF energy = -1.54583859536891  <S^2> = 0.79571275  2S+1 = 2.0452019
+DMRG energy:  -1.626545276347211
+Save SpinorbOpt Json file
+Run Spin orbital refinement:
+MADNESS runtime initialized with 3 threads in the pool and affinity OFF
+Read orbitals and calculate the integrals
+constructed nuclear correlation factor of the form
+    R   =  1.000000e+00
+with eprec  1.000000e-04
+which means it's (nearly) a conventional calculation
+
+Enuc: 
+1.388889e+00
+Frozen occupied spin orbitals: 
+Active space spin orbitals indicies: 0 1 2 3 4 5 
+ReadOrbitals took 0 seconds
+ReadRDMFiles took 0 seconds
+Alpha rdm matrix before 
+ 9.910732e-01  1.264189e-15  4.928986e-02
+ 1.264189e-15  9.838495e-01 -1.822920e-14
+ 4.928986e-02 -1.822920e-14  2.507734e-02
+Beta rdm matrix before 
+ 9.731343e-01  1.197433e-14 -6.445034e-02
+ 1.197433e-14  1.615052e-02 -8.094197e-16
+-6.445034e-02 -8.094197e-16  1.071518e-02
+Alpha Beta rdms in NO basis 
+ 9.935817e-01  0.000000e+00  2.688746e-18  0.000000e+00  2.081668e-17  0.000000e+00
+ 0.000000e+00  9.774312e-01  0.000000e+00 -3.826958e-18  0.000000e+00 -2.775558e-17
+ 2.688746e-18  0.000000e+00  9.838495e-01  0.000000e+00  5.097978e-17  0.000000e+00
+ 0.000000e+00 -3.826958e-18  0.000000e+00  1.615052e-02  0.000000e+00 -5.029188e-19
+ 2.168404e-17  0.000000e+00  5.097978e-17  0.000000e+00  2.256884e-02  0.000000e+00
+ 0.000000e+00 -2.455718e-17  0.000000e+00 -5.029188e-19  0.000000e+00  6.418320e-03
+orbitals_rotate 6
+alpha beta orbs 6
+One body integrals: -1.558405e+00  0.000000e+00  1.723014e-14  0.000000e+00 -1.727433e-01  0.000000e+00
+ 0.000000e+00 -1.588619e+00  0.000000e+00  7.241603e-15  0.000000e+00 -9.682038e-02
+ 1.734550e-14  0.000000e+00 -1.169309e+00  0.000000e+00  7.077672e-16  0.000000e+00
+ 0.000000e+00  7.517424e-15  0.000000e+00 -1.193217e+00  0.000000e+00 -3.122502e-17
+-1.727433e-01  0.000000e+00  4.822531e-16  0.000000e+00 -8.192218e-01  0.000000e+00
+ 0.000000e+00 -9.682038e-02  0.000000e+00 -3.469447e-18  0.000000e+00 -7.546823e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -5.551115e-17 -1.153407e-11
+-5.551115e-17  1.000000e+00 -1.249001e-16
+-1.153407e-11 -1.249001e-16  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -6.904199e-16  5.661704e-16
+-6.904199e-16  1.000000e+00  0.000000e+00
+ 5.661704e-16  0.000000e+00  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 44 seconds
+---------------------------------------------------
+Start spin orbital optimization
+Calculate initial energies: 
+            Kinetic energy  1.629322e+00
+ Nuclear attraction energy  -5.923518e+00
+       Two-electron energy  1.278761e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626545e+00
+CalculateEnergies took 0 seconds
+Calculate initial total spin: 
+S squared: 7.518832e-01
+---------------------------------------------------
+Start iteration step: 1
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.935018e-01  0.000000e+00  7.077103e-15  0.000000e+00  7.200451e-03  0.000000e+00
+ 0.000000e+00 -5.863606e-01  0.000000e+00  2.446636e-16  0.000000e+00 -6.523657e-03
+ 8.130439e-15  0.000000e+00 -4.110366e-01  0.000000e+00 -7.658358e-16  0.000000e+00
+ 0.000000e+00  3.506500e-15  0.000000e+00 -1.722239e-02  0.000000e+00 -3.252168e-17
+ 7.200451e-03  0.000000e+00 -7.389574e-15  0.000000e+00 -1.968213e-02  0.000000e+00
+ 0.000000e+00 -6.523666e-03  0.000000e+00  1.093314e-15  0.000000e+00 -8.869482e-03
+Error of Orbital 0: 3.079054e-03
+Error of Orbital 1: 9.407464e-03
+Error of Orbital 2: 2.213852e-03
+Error of Orbital 3: 1.191519e-02
+Error of Orbital 4: 1.120854e-02
+Error of Orbital 5: 8.766207e-03
+GetAllActiveSpinorbitalUpdates took 40 seconds
+UpdateOrbitals took 40 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.559024e+00  0.000000e+00  1.762132e-14  0.000000e+00 -1.729807e-01  0.000000e+00
+ 0.000000e+00 -1.586989e+00  0.000000e+00  6.011684e-15  0.000000e+00 -9.684883e-02
+ 1.773017e-14  0.000000e+00 -1.169285e+00  0.000000e+00 -1.318390e-16  0.000000e+00
+ 0.000000e+00  5.838646e-15  0.000000e+00 -1.191403e+00  0.000000e+00  3.816392e-17
+-1.729807e-01  0.000000e+00 -6.834810e-16  0.000000e+00 -8.168722e-01  0.000000e+00
+ 0.000000e+00 -9.684883e-02  0.000000e+00 -4.371503e-16  0.000000e+00 -7.587216e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -2.775558e-16 -3.400058e-16
+-2.810252e-16  1.000000e+00  1.387779e-16
+-3.400058e-16  1.387779e-16  1.000000e+00
+Beta Overlap matrix: 
+1.000000e+00 2.636780e-16 3.599551e-16
+2.636780e-16 1.000000e+00 5.551115e-17
+3.599551e-16 5.551115e-17 1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 45 seconds
+            Kinetic energy  1.628442e+00
+ Nuclear attraction energy  -5.921580e+00
+       Two-electron energy  1.277538e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626710e+00
+CalculateEnergies took 0 seconds
+Highest error: 1.191519e-02
+---------------------------------------------------
+Start iteration step: 2
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.945246e-01  0.000000e+00  7.324436e-15  0.000000e+00  7.133810e-03  0.000000e+00
+ 0.000000e+00 -5.861249e-01  0.000000e+00 -4.702893e-18  0.000000e+00 -6.472540e-03
+ 8.221945e-15  0.000000e+00 -4.117086e-01  0.000000e+00 -8.908320e-16  0.000000e+00
+ 0.000000e+00  3.488341e-15  0.000000e+00 -1.715971e-02  0.000000e+00  1.179072e-17
+ 6.150746e-03  0.000000e+00 -5.559098e-15  0.000000e+00 -1.961017e-02  0.000000e+00
+ 0.000000e+00 -5.115145e-03  0.000000e+00  1.005853e-15  0.000000e+00 -8.932732e-03
+Error of Orbital 0: 1.199216e-03
+Error of Orbital 1: 2.544788e-03
+Error of Orbital 2: 8.918467e-04
+Error of Orbital 3: 3.094303e-03
+Error of Orbital 4: 1.661825e-03
+Error of Orbital 5: 4.441448e-03
+GetAllActiveSpinorbitalUpdates took 41 seconds
+UpdateOrbitals took 41 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.559404e+00  0.000000e+00  1.686585e-14  0.000000e+00 -1.731109e-01  0.000000e+00
+ 0.000000e+00 -1.586474e+00  0.000000e+00  5.321264e-15  0.000000e+00 -9.694375e-02
+ 1.693914e-14  0.000000e+00 -1.169542e+00  0.000000e+00 -1.094611e-15  0.000000e+00
+ 0.000000e+00  5.339045e-15  0.000000e+00 -1.190650e+00  0.000000e+00 -5.030698e-16
+-1.731109e-01  0.000000e+00 -1.051242e-15  0.000000e+00 -8.167958e-01  0.000000e+00
+ 0.000000e+00 -9.694375e-02  0.000000e+00 -4.128642e-16  0.000000e+00 -7.601231e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  1.734723e-16 -3.608225e-16
+ 1.700029e-16  1.000000e+00 -2.775558e-17
+-3.608225e-16 -1.387779e-17  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00  5.551115e-16 -4.948299e-16
+ 5.516421e-16  1.000000e+00 -2.775558e-17
+-4.948299e-16 -5.551115e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 47 seconds
+            Kinetic energy  1.628952e+00
+ Nuclear attraction energy  -5.922212e+00
+       Two-electron energy  1.277644e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626728e+00
+CalculateEnergies took 0 seconds
+Highest error: 4.441448e-03
+---------------------------------------------------
+Start iteration step: 3
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.947517e-01  0.000000e+00  6.424960e-15  0.000000e+00  7.089477e-03  0.000000e+00
+ 0.000000e+00 -5.856984e-01  0.000000e+00 -1.368543e-16  0.000000e+00 -6.476080e-03
+ 7.212656e-15  0.000000e+00 -4.118161e-01  0.000000e+00 -9.704351e-16  0.000000e+00
+ 0.000000e+00  3.451819e-15  0.000000e+00 -1.714552e-02  0.000000e+00  3.555319e-17
+ 6.136485e-03  0.000000e+00 -4.616883e-15  0.000000e+00 -1.960683e-02  0.000000e+00
+ 0.000000e+00 -4.617394e-03  0.000000e+00  9.632905e-16  0.000000e+00 -8.954183e-03
+Error of Orbital 0: 5.617319e-04
+Error of Orbital 1: 8.592785e-04
+Error of Orbital 2: 5.186091e-04
+Error of Orbital 3: 1.775494e-03
+Error of Orbital 4: 1.230267e-03
+Error of Orbital 5: 1.903963e-03
+GetAllActiveSpinorbitalUpdates took 42 seconds
+UpdateOrbitals took 42 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.559623e+00  0.000000e+00  1.712692e-14  0.000000e+00 -1.731629e-01  0.000000e+00
+ 0.000000e+00 -1.586283e+00  0.000000e+00  5.970918e-15  0.000000e+00 -9.702321e-02
+ 1.707705e-14  0.000000e+00 -1.169713e+00  0.000000e+00 -1.434616e-15  0.000000e+00
+ 0.000000e+00  5.869003e-15  0.000000e+00 -1.190329e+00  0.000000e+00  2.619432e-16
+-1.731629e-01  0.000000e+00 -1.557782e-15  0.000000e+00 -8.169298e-01  0.000000e+00
+ 0.000000e+00 -9.702321e-02  0.000000e+00  6.938894e-18  0.000000e+00 -7.606513e-01
+Alpha Overlap matrix: 
+1.000000e+00 1.873501e-16 9.714451e-17
+1.804112e-16 1.000000e+00 9.714451e-17
+9.714451e-17 9.714451e-17 1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -2.463307e-16  1.721713e-16
+-2.428613e-16  1.000000e+00 -1.387779e-17
+ 1.721713e-16 -1.387779e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.629365e+00
+ Nuclear attraction energy  -5.922826e+00
+       Two-electron energy  1.277841e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626731e+00
+CalculateEnergies took 0 seconds
+Highest error: 1.903963e-03
+---------------------------------------------------
+Start iteration step: 4
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.948058e-01  0.000000e+00  7.032770e-15  0.000000e+00  7.061287e-03  0.000000e+00
+ 0.000000e+00 -5.854378e-01  0.000000e+00 -1.886647e-16  0.000000e+00 -6.484600e-03
+ 7.611808e-15  0.000000e+00 -4.118251e-01  0.000000e+00 -9.722534e-16  0.000000e+00
+ 0.000000e+00  3.844578e-15  0.000000e+00 -1.713918e-02  0.000000e+00  5.826287e-17
+ 6.257070e-03  0.000000e+00 -4.455635e-15  0.000000e+00 -1.960855e-02  0.000000e+00
+ 0.000000e+00 -4.343857e-03  0.000000e+00  9.446865e-16  0.000000e+00 -8.962771e-03
+Error of Orbital 0: 2.847058e-04
+Error of Orbital 1: 3.326171e-04
+Error of Orbital 2: 2.770825e-04
+Error of Orbital 3: 8.748324e-04
+Error of Orbital 4: 8.485390e-04
+Error of Orbital 5: 9.425630e-04
+GetAllActiveSpinorbitalUpdates took 42 seconds
+UpdateOrbitals took 42 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.559748e+00  0.000000e+00  1.648681e-14  0.000000e+00 -1.731813e-01  0.000000e+00
+ 0.000000e+00 -1.586208e+00  0.000000e+00  5.396725e-15  0.000000e+00 -9.707487e-02
+ 1.683029e-14  0.000000e+00 -1.169805e+00  0.000000e+00 -1.873501e-15  0.000000e+00
+ 0.000000e+00  5.728057e-15  0.000000e+00 -1.190196e+00  0.000000e+00  4.406198e-16
+-1.731813e-01  0.000000e+00 -1.713907e-15  0.000000e+00 -8.170346e-01  0.000000e+00
+ 0.000000e+00 -9.707487e-02  0.000000e+00  3.226586e-16  0.000000e+00 -7.608441e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  2.012279e-16 -3.122502e-16
+ 2.012279e-16  1.000000e+00  5.551115e-17
+-3.122502e-16  4.163336e-17  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00  8.326673e-17  7.480995e-18
+ 8.326673e-17  1.000000e+00 -8.326673e-17
+ 7.480995e-18 -9.714451e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 45 seconds
+            Kinetic energy  1.629609e+00
+ Nuclear attraction energy  -5.923212e+00
+       Two-electron energy  1.277983e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626732e+00
+CalculateEnergies took 0 seconds
+Highest error: 9.425630e-04
+Convergence has been reached :-)
+Calculate Spin Squared
+S squared: 7.518877e-01
+Save energies to a json file
+Transform Rdms, Integrals and Orbitals Back
+Alpha Beta rdms transformed back 
+ 9.910732e-01  0.000000e+00  1.269662e-15  0.000000e+00  4.928986e-02  0.000000e+00
+ 0.000000e+00  9.731343e-01  0.000000e+00  1.197433e-14  0.000000e+00 -6.445034e-02
+ 1.269662e-15  0.000000e+00  9.838495e-01  0.000000e+00 -1.811718e-14  0.000000e+00
+ 0.000000e+00  1.197433e-14  0.000000e+00  1.615052e-02  0.000000e+00 -8.094197e-16
+ 4.928986e-02  0.000000e+00 -1.811718e-14  0.000000e+00  2.507734e-02  0.000000e+00
+ 0.000000e+00 -6.445034e-02  0.000000e+00 -8.094197e-16  0.000000e+00  1.071518e-02
+Calculate energy of integrals transformed back
+            Kinetic energy  1.629609e+00
+ Nuclear attraction energy  -5.923212e+00
+       Two-electron energy  1.277983e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626732e+00
+CalculateEnergies took 0 seconds
+Save intregrals and orbitals
+Save Integrals to npy files
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/GS-mps_info.bin
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.1.fpc
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.0.fpc
+converged SCF energy = -1.54583859536891  <S^2> = 0.79571275  2S+1 = 2.0452019
+DMRG energy:  -1.6267411058600225
+Save SpinorbOpt Json file
+Run Spin orbital refinement:
+MADNESS runtime initialized with 3 threads in the pool and affinity OFF
+Read orbitals and calculate the integrals
+constructed nuclear correlation factor of the form
+    R   =  1.000000e+00
+with eprec  1.000000e-04
+which means it's (nearly) a conventional calculation
+
+Enuc: 
+1.388889e+00
+Frozen occupied spin orbitals: 
+Active space spin orbitals indicies: 0 1 2 3 4 5 
+ReadOrbitals took 0 seconds
+ReadRDMFiles took 0 seconds
+Alpha rdm matrix before 
+9.908243e-01 5.398138e-16 5.091705e-02
+5.398138e-16 9.839931e-01 5.019448e-15
+5.091705e-02 5.019448e-15 2.518252e-02
+Beta rdm matrix before 
+ 9.727920e-01 -1.672025e-14 -6.741199e-02
+-1.672025e-14  1.600685e-02  1.658073e-16
+-6.741199e-02  1.658073e-16  1.120119e-02
+Alpha Beta rdms in NO basis 
+ 9.935017e-01  0.000000e+00 -6.339310e-18  0.000000e+00  0.000000e+00  0.000000e+00
+ 0.000000e+00  9.774949e-01  0.000000e+00  1.451347e-17  0.000000e+00  0.000000e+00
+-6.339310e-18  0.000000e+00  9.839931e-01  0.000000e+00 -6.595565e-17  0.000000e+00
+ 0.000000e+00  1.451347e-17  0.000000e+00  1.600685e-02  0.000000e+00  3.137895e-19
+-2.168404e-19  0.000000e+00 -6.595565e-17  0.000000e+00  2.250515e-02  0.000000e+00
+ 0.000000e+00  1.691355e-17  0.000000e+00  3.137895e-19  0.000000e+00  6.498300e-03
+orbitals_rotate 6
+alpha beta orbs 6
+One body integrals: -1.560330e+00  0.000000e+00  3.230489e-14  0.000000e+00 -1.719284e-01  0.000000e+00
+ 0.000000e+00 -1.585602e+00  0.000000e+00  3.873638e-15  0.000000e+00 -9.961494e-02
+ 3.214790e-14  0.000000e+00 -1.169805e+00  0.000000e+00  1.435657e-14  0.000000e+00
+ 0.000000e+00  3.714910e-15  0.000000e+00 -1.190196e+00  0.000000e+00 -4.789572e-14
+-1.719284e-01  0.000000e+00  1.501230e-14  0.000000e+00 -8.164528e-01  0.000000e+00
+ 0.000000e+00 -9.961494e-02  0.000000e+00 -4.713591e-14  0.000000e+00 -7.614499e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -2.012279e-16 -9.367507e-16
+-2.012279e-16  1.000000e+00  2.636780e-16
+-9.367507e-16  2.636780e-16  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00  6.591949e-16  1.031076e-15
+ 6.591949e-16  1.000000e+00 -5.551115e-16
+ 1.031076e-15 -5.551115e-16  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 45 seconds
+---------------------------------------------------
+Start spin orbital optimization
+Calculate initial energies: 
+            Kinetic energy  1.628159e+00
+ Nuclear attraction energy  -5.921721e+00
+       Two-electron energy  1.277932e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626741e+00
+CalculateEnergies took 0 seconds
+Calculate initial total spin: 
+S squared: 7.519005e-01
+---------------------------------------------------
+Start iteration step: 1
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.953252e-01  0.000000e+00  2.687999e-14  0.000000e+00  6.982166e-03  0.000000e+00
+ 0.000000e+00 -5.850054e-01  0.000000e+00  4.628814e-16  0.000000e+00 -6.497270e-03
+ 2.618683e-14  0.000000e+00 -4.115554e-01  0.000000e+00 -1.124318e-15  0.000000e+00
+ 0.000000e+00 -3.025176e-15  0.000000e+00 -1.712264e-02  0.000000e+00  3.103875e-17
+ 6.982168e-03  0.000000e+00  4.374617e-15  0.000000e+00 -1.968415e-02  0.000000e+00
+ 0.000000e+00 -6.497279e-03  0.000000e+00 -1.269040e-15  0.000000e+00 -9.005182e-03
+Error of Orbital 0: 4.679514e-04
+Error of Orbital 1: 9.643324e-04
+Error of Orbital 2: 2.276009e-04
+Error of Orbital 3: 9.683944e-04
+Error of Orbital 4: 1.238152e-03
+Error of Orbital 5: 1.970693e-03
+GetAllActiveSpinorbitalUpdates took 41 seconds
+UpdateOrbitals took 41 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.560504e+00  0.000000e+00  3.280969e-14  0.000000e+00 -1.719644e-01  0.000000e+00
+ 0.000000e+00 -1.585416e+00  0.000000e+00  5.828671e-15  0.000000e+00 -9.969547e-02
+ 3.267005e-14  0.000000e+00 -1.169852e+00  0.000000e+00  1.759877e-14  0.000000e+00
+ 0.000000e+00  6.439727e-15  0.000000e+00 -1.189924e+00  0.000000e+00 -4.548098e-14
+-1.719644e-01  0.000000e+00  1.713560e-14  0.000000e+00 -8.164248e-01  0.000000e+00
+ 0.000000e+00 -9.969547e-02  0.000000e+00 -4.515138e-14  0.000000e+00 -7.623129e-01
+Alpha Overlap matrix: 
+ 1.000000e+00  3.538836e-16 -4.787837e-16
+ 3.573530e-16  1.000000e+00 -1.942890e-16
+-4.787837e-16 -1.942890e-16  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -5.898060e-17  9.280771e-17
+-5.898060e-17  1.000000e+00  3.191891e-16
+ 9.280771e-17  3.191891e-16  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 46 seconds
+            Kinetic energy  1.628271e+00
+ Nuclear attraction energy  -5.921871e+00
+       Two-electron energy  1.277968e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626743e+00
+CalculateEnergies took 0 seconds
+Highest error: 1.970693e-03
+---------------------------------------------------
+Start iteration step: 2
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.954078e-01  0.000000e+00  2.797355e-14  0.000000e+00  6.960666e-03  0.000000e+00
+ 0.000000e+00 -5.848644e-01  0.000000e+00  7.695774e-16  0.000000e+00 -6.502907e-03
+ 2.732951e-14  0.000000e+00 -4.115807e-01  0.000000e+00 -8.823322e-16  0.000000e+00
+ 0.000000e+00 -2.411497e-15  0.000000e+00 -1.711245e-02  0.000000e+00 -2.899768e-18
+ 7.048934e-03  0.000000e+00  3.240711e-15  0.000000e+00 -1.968159e-02  0.000000e+00
+ 0.000000e+00 -6.236336e-03  0.000000e+00 -1.139088e-15  0.000000e+00 -9.016982e-03
+Error of Orbital 0: 2.199423e-04
+Error of Orbital 1: 2.837951e-04
+Error of Orbital 2: 1.350224e-04
+Error of Orbital 3: 5.284479e-04
+Error of Orbital 4: 7.031407e-04
+Error of Orbital 5: 7.748965e-04
+GetAllActiveSpinorbitalUpdates took 41 seconds
+UpdateOrbitals took 41 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.560602e+00  0.000000e+00  3.285219e-14  0.000000e+00 -1.719773e-01  0.000000e+00
+ 0.000000e+00 -1.585358e+00  0.000000e+00  5.327336e-15  0.000000e+00 -9.973857e-02
+ 3.334139e-14  0.000000e+00 -1.169895e+00  0.000000e+00  1.811572e-14  0.000000e+00
+ 0.000000e+00  5.521625e-15  0.000000e+00 -1.189815e+00  0.000000e+00 -4.495189e-14
+-1.719773e-01  0.000000e+00  1.760744e-14  0.000000e+00 -8.164984e-01  0.000000e+00
+ 0.000000e+00 -9.973857e-02  0.000000e+00 -4.495709e-14  0.000000e+00 -7.625263e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -2.428613e-16  2.636780e-16
+-2.463307e-16  1.000000e+00  2.775558e-17
+ 2.636780e-16  1.387779e-17  1.000000e+00
+Beta Overlap matrix: 
+1.000000e+00 7.285839e-16 8.250779e-16
+7.285839e-16 1.000000e+00 1.804112e-16
+8.250779e-16 1.942890e-16 1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 45 seconds
+            Kinetic energy  1.628400e+00
+ Nuclear attraction energy  -5.922084e+00
+       Two-electron energy  1.278052e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626743e+00
+CalculateEnergies took 0 seconds
+Highest error: 7.748965e-04
+Convergence has been reached :-)
+Calculate Spin Squared
+S squared: 7.519384e-01
+Save energies to a json file
+Transform Rdms, Integrals and Orbitals Back
+Alpha Beta rdms transformed back 
+ 9.908243e-01  0.000000e+00  5.398138e-16  0.000000e+00  5.091705e-02  0.000000e+00
+ 0.000000e+00  9.727920e-01  0.000000e+00 -1.670528e-14  0.000000e+00 -6.741199e-02
+ 5.398138e-16  0.000000e+00  9.839931e-01  0.000000e+00  5.019448e-15  0.000000e+00
+ 0.000000e+00 -1.670528e-14  0.000000e+00  1.600685e-02  0.000000e+00  1.597659e-16
+ 5.091705e-02  0.000000e+00  5.019448e-15  0.000000e+00  2.518252e-02  0.000000e+00
+ 0.000000e+00 -6.741199e-02  0.000000e+00  1.597659e-16  0.000000e+00  1.120119e-02
+Calculate energy of integrals transformed back
+            Kinetic energy  1.628400e+00
+ Nuclear attraction energy  -5.922084e+00
+       Two-electron energy  1.278052e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626743e+00
+CalculateEnergies took 0 seconds
+Save intregrals and orbitals
+Save Integrals to npy files
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.GS.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.GS.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/GS-mps_info.bin
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.LEFT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.INFO.PDM-KET@TMP.RIGHT.3
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.0
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.2
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F.MPS.PDM-KET@TMP.-1
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.1.fpc
+Deleted: /workspaces/MRA-OrbitalOptimization/automate_process/tmp4/F0.PART.NPDM.NPDM.FRAG.0.fpc
+converged SCF energy = -1.54583859536891  <S^2> = 0.79571275  2S+1 = 2.0452019
+DMRG energy:  -1.6267436239778021
+Save SpinorbOpt Json file
+Run Spin orbital refinement:
+MADNESS runtime initialized with 3 threads in the pool and affinity OFF
+Read orbitals and calculate the integrals
+constructed nuclear correlation factor of the form
+    R   =  1.000000e+00
+with eprec  1.000000e-04
+which means it's (nearly) a conventional calculation
+
+Enuc: 
+1.388889e+00
+Frozen occupied spin orbitals: 
+Active space spin orbitals indicies: 0 1 2 3 4 5 
+ReadOrbitals took 0 seconds
+ReadRDMFiles took 0 seconds
+Alpha rdm matrix before 
+ 9.908167e-01  6.069668e-16  5.081991e-02
+ 6.069668e-16  9.840057e-01 -6.152353e-15
+ 5.081991e-02 -6.152353e-15  2.517757e-02
+Beta rdm matrix before 
+ 9.727286e-01 -2.239671e-15 -6.782436e-02
+-2.239671e-15  1.599431e-02 -1.524015e-16
+-6.782436e-02 -1.524015e-16  1.127707e-02
+Alpha Beta rdms in NO basis 
+ 9.934839e-01  0.000000e+00  3.475630e-18  0.000000e+00 -3.469447e-17  0.000000e+00
+ 0.000000e+00  9.774896e-01  0.000000e+00 -4.006424e-18  0.000000e+00  0.000000e+00
+ 3.475630e-18  0.000000e+00  9.840057e-01  0.000000e+00  4.071683e-18  0.000000e+00
+ 0.000000e+00 -4.006424e-18  0.000000e+00  1.599431e-02  0.000000e+00  3.957082e-18
+-2.905662e-17  0.000000e+00  4.071683e-18  0.000000e+00  2.251037e-02  0.000000e+00
+ 0.000000e+00  4.824700e-18  0.000000e+00  3.957082e-18  0.000000e+00  6.516061e-03
+orbitals_rotate 6
+alpha beta orbs 6
+One body integrals: -1.560568e+00  0.000000e+00  1.401136e-14  0.000000e+00 -1.720512e-01  0.000000e+00
+ 0.000000e+00 -1.585272e+00  0.000000e+00 -4.301247e-15  0.000000e+00  1.000928e-01
+ 1.360544e-14  0.000000e+00 -1.169895e+00  0.000000e+00  4.100886e-15  0.000000e+00
+ 0.000000e+00 -4.285634e-15  0.000000e+00 -1.189815e+00  0.000000e+00 -1.258368e-14
+-1.720512e-01  0.000000e+00  3.955170e-15  0.000000e+00 -8.165325e-01  0.000000e+00
+ 0.000000e+00  1.000928e-01  0.000000e+00 -1.233388e-14  0.000000e+00 -7.626123e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -8.326673e-17  1.040834e-16
+-8.326673e-17  1.000000e+00  2.775558e-16
+ 1.040834e-16  2.775558e-16  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -5.620504e-16 -9.213550e-16
+-5.620504e-16  1.000000e+00  4.163336e-17
+-9.213550e-16  4.163336e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 45 seconds
+---------------------------------------------------
+Start spin orbital optimization
+Calculate initial energies: 
+            Kinetic energy  1.628228e+00
+ Nuclear attraction energy  -5.921777e+00
+       Two-electron energy  1.277917e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626744e+00
+CalculateEnergies took 0 seconds
+Calculate initial total spin: 
+S squared: 7.519447e-01
+---------------------------------------------------
+Start iteration step: 1
+Spin orbital indices list for update : 0 1 2 3 4 5 
+CalculateLagrangeMultiplier took 0 seconds
+Lagrange Multiplier: -6.955041e-01  0.000000e+00  9.436243e-15  0.000000e+00  6.942260e-03  0.000000e+00
+ 0.000000e+00 -5.847911e-01  0.000000e+00 -3.005797e-16  0.000000e+00  6.511036e-03
+ 9.008219e-15  0.000000e+00 -4.115893e-01  0.000000e+00 -3.750232e-16  0.000000e+00
+ 0.000000e+00 -4.775436e-16  0.000000e+00 -1.710700e-02  0.000000e+00  9.515183e-17
+ 6.942261e-03  0.000000e+00 -1.872421e-15  0.000000e+00 -1.969485e-02  0.000000e+00
+ 0.000000e+00  6.511044e-03  0.000000e+00 -5.540775e-17  0.000000e+00 -9.029659e-03
+Error of Orbital 0: 1.189301e-04
+Error of Orbital 1: 2.210970e-04
+Error of Orbital 2: 9.577062e-05
+Error of Orbital 3: 3.434143e-04
+Error of Orbital 4: 5.147489e-04
+Error of Orbital 5: 6.378964e-04
+GetAllActiveSpinorbitalUpdates took 40 seconds
+UpdateOrbitals took 40 seconds
+Orthonormalize orbitals
+Update Integrals
+One body integrals: -1.560629e+00  0.000000e+00  1.388473e-14  0.000000e+00 -1.720617e-01  0.000000e+00
+ 0.000000e+00 -1.585229e+00  0.000000e+00 -4.321196e-15  0.000000e+00  1.001274e-01
+ 1.382141e-14  0.000000e+00 -1.169925e+00  0.000000e+00  3.870168e-15  0.000000e+00
+ 0.000000e+00 -3.809019e-15  0.000000e+00 -1.189728e+00  0.000000e+00 -1.455433e-14
+-1.720617e-01  0.000000e+00  4.565792e-15  0.000000e+00 -8.165943e-01  0.000000e+00
+ 0.000000e+00  1.001274e-01  0.000000e+00 -1.416228e-14  0.000000e+00 -7.628379e-01
+Alpha Overlap matrix: 
+ 1.000000e+00 -3.469447e-17 -6.383782e-16
+-4.163336e-17  1.000000e+00 -8.326673e-17
+-6.383782e-16 -1.110223e-16  1.000000e+00
+Beta Overlap matrix: 
+ 1.000000e+00 -3.504141e-16 -4.505944e-16
+-3.538836e-16  1.000000e+00 -1.387779e-17
+-4.505944e-16 -2.775558e-17  1.000000e+00
+mn size: 36
+CalculateAllIntegrals took 44 seconds
+            Kinetic energy  1.628303e+00
+ Nuclear attraction energy  -5.921901e+00
+       Two-electron energy  1.277966e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626744e+00
+CalculateEnergies took 0 seconds
+Highest error: 6.378964e-04
+Convergence has been reached :-)
+Calculate Spin Squared
+S squared: 7.519538e-01
+Save energies to a json file
+Transform Rdms, Integrals and Orbitals Back
+Alpha Beta rdms transformed back 
+ 9.908167e-01  0.000000e+00  6.126089e-16  0.000000e+00  5.081991e-02  0.000000e+00
+ 0.000000e+00  9.727286e-01  0.000000e+00 -2.239671e-15  0.000000e+00 -6.782436e-02
+ 6.126089e-16  0.000000e+00  9.840057e-01  0.000000e+00 -6.040311e-15  0.000000e+00
+ 0.000000e+00 -2.239671e-15  0.000000e+00  1.599431e-02  0.000000e+00 -1.524015e-16
+ 5.081991e-02  0.000000e+00 -6.040311e-15  0.000000e+00  2.517757e-02  0.000000e+00
+ 0.000000e+00 -6.782436e-02  0.000000e+00 -1.524015e-16  0.000000e+00  1.127707e-02
+Calculate energy of integrals transformed back
+            Kinetic energy  1.628303e+00
+ Nuclear attraction energy  -5.921901e+00
+       Two-electron energy  1.277966e+00
+ Nuclear  repulsion energy  1.388889e+00
+              Total energy  -1.626744e+00
+CalculateEnergies took 0 seconds
+Save intregrals and orbitals
+Save Integrals to npy files
+[0, 'S squared: 7.500000e-01', 'S squared: 7.536277e-01', 1, 'S squared: 7.518832e-01', 'S squared: 7.518877e-01', 2, 'S squared: 7.519005e-01', 'S squared: 7.519384e-01', 3, 'S squared: 7.519447e-01', 'S squared: 7.519538e-01']
+[0, 'Total energy  -1.625481e+00', 1, 'Total energy  -1.626732e+00', 2, 'Total energy  -1.626743e+00', 3, 'Total energy  -1.626744e+00']
