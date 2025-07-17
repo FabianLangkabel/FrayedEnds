@@ -23,7 +23,7 @@ using namespace madness;
 
 class Eigensolver3D: public MadnessProcess {
     public:     
-        Eigensolver3D(double L, long k, double thresh);
+        Eigensolver3D(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
 
         ~Eigensolver3D();
 

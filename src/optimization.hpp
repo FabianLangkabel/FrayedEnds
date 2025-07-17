@@ -19,7 +19,7 @@ using namespace madness;
 
 class Optimization: public MadnessProcess{
 public:
-    Optimization(double L, long k, double thresh);
+    Optimization(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
     ~Optimization();
 
     //input
@@ -32,8 +32,7 @@ public:
     std::vector<double> GetGTensor();
     std::vector<SavedFct> GetOrbitals();
 
-    void CreateNuclearPotentialAndRepulsion(std::string GeometryFile);
-    void GiveCustomPotential(SavedFct custom_pot);
+    void GivePotentialAndRepulsion(SavedFct potential, double nuclear_repulsion);
     void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files);
     void ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file);
     void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
@@ -46,7 +45,7 @@ public:
     double CalculateLagrangeMultiplierElement_AS_Core(int z, int i);
     void OptimizeOrbitals(double optimization_thresh, double NO_occupation_thresh);
     std::vector<real_function_3d> GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update);
-    void RotateOrbitalsBackAndUpdateIntegrals();
+    void RotateOrbitalsBack();
     void SaveOrbitals(std::string OutputPath);
     void SaveEffectiveHamiltonian(std::string OutputPath);
 
@@ -66,9 +65,7 @@ private:
     //Madness + Molecule
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy=0.0;
-    Nuclear<double,3>* Vnuc=nullptr;
-    bool use_custom_potential=false;
-    real_function_3d* custom_potential=nullptr;
+    real_function_3d Vnuc;
 
 
     //Orbitals

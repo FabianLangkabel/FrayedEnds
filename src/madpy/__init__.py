@@ -1,10 +1,14 @@
-from ._madpy_impl import RedirectOutput
-from ._madpy_impl import PNOInterface
-from ._madpy_impl import Optimization
-from ._madpy_impl import PyFuncFactory
-from ._madpy_impl import CoulombPotentialFromChargeDensity
-from ._madpy_impl import Integrals
-from ._madpy_impl import Eigensolver
+from .madpno import MadPNO
+from .integrals import Integrals
+from .optimization import Optimization, transform_rdms
+from .plotting import Plotter, plot_lines
+from .eigensolver import Eigensolver
+from .mrafunctionfactory import MRAFunctionFactory
+from .baseclass import get_function_info
+from .minbas import AtomicBasisProjector
+
+# todo: better integration
 from ._madpy_impl import NWChem_Converter
+from ._madpy_impl import CoulombPotentialFromChargeDensity
 from ._madpy_impl import molecule
-from ._madpy_impl import Plot
+

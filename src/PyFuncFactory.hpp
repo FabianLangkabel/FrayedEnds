@@ -19,38 +19,21 @@ class PyFunctor: public FunctionFunctorInterface<double, 3> {
         }
 };
 
-class PyFuncFactory{
+class PyFuncFactory: public MadnessProcess {
     public:
-        World* world;
         Function<double,3> MRA_func;
 
-        PyFuncFactory(double L, long k, double thresh, std::function<double(double, double, double)> pyfunc) {
-            int arg = 0;
-            char **a = new char*[0]();
-
-            world = &initialize(arg, a, 0);
-            startup(*world,arg,a);
-            delete[] a;
-            
-            FunctionDefaults<3>::set_k(k);
-            FunctionDefaults<3>::set_thresh(thresh);
-            FunctionDefaults<3>::set_refine(true);
-            FunctionDefaults<3>::set_initial_level(5);
-            FunctionDefaults<3>::set_truncate_mode(1);
-            FunctionDefaults<3>::set_cubic_cell(-L, L);
-
+        PyFuncFactory(std::function<double(double, double, double)> pyfunc, double L, long k, double thresh, int initial_level, int truncate_mode, bool refine): MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, 0) {
+            //for this process n_threads always has to be 0, otherwise the python function can not be converted to a MRA function
             std::cout.precision(6);
-            std::cout << "Creating function with functor" << std::endl;
+            //std::cout << "Creating function with functor" << std::endl;
             PyFunctor functor(pyfunc);
-            std::cout << "Functor created" << std::endl;
+            //std::cout << "Functor created" << std::endl;
             MRA_func = FunctionFactory<double,3>(*world).functor(functor);
-            std::cout << "Function created" << std::endl;
+            //std::cout << "Function created" << std::endl;
         }
         ~PyFuncFactory(){
             MRA_func.clear();
-            std::cout << "Finalize madness env" << std::endl;
-            world->gop.fence();
-            finalize();
         }
         SavedFct GetMRAFunction() {
             return SavedFct(MRA_func);
