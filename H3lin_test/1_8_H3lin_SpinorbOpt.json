@@ -1,0 +1,49 @@
+{
+  "box_size": 50.0,
+  "wavelet_order": 8,
+  "madness_thresh": 1e-05,
+  "optimization_thresh": 0.001,
+  "NO_occupation_thresh": 0.001,
+  "Iteration": "3",
+  "molecule_file": "/workspaces/MRA-OrbitalOptimization/H3lin_test/1_8_geometry_H3lin.mol",
+  "output_folder": "/workspaces/MRA-OrbitalOptimization/H3lin_test",
+  "alpha_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/H3lin_test/1_8_alpha_1rdm.npy",
+  "beta_one_rdm_file": "/workspaces/MRA-OrbitalOptimization/H3lin_test/1_8_beta_1rdm.npy",
+  "alpha_alpha_rdm_file": "/workspaces/MRA-OrbitalOptimization/H3lin_test/1_8_alpha_alpha_2rdm.npy",
+  "alpha_beta_rdm_file": "/workspaces/MRA-OrbitalOptimization/H3lin_test/1_8_alpha_beta_2rdm.npy",
+  "beta_beta_rdm_file": "/workspaces/MRA-OrbitalOptimization/H3lin_test/1_8_beta_beta_2rdm.npy",
+  "alpha_orbitals": [
+    {
+      "alpha_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/H3lin_test/alpha_orbital_0",
+      "alpha_orbital_type": "active",
+      "alpha_active_space_index": 0
+    },
+    {
+      "alpha_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/H3lin_test/alpha_orbital_1",
+      "alpha_orbital_type": "active",
+      "alpha_active_space_index": 2
+    },
+    {
+      "alpha_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/H3lin_test/alpha_orbital_2",
+      "alpha_orbital_type": "active",
+      "alpha_active_space_index": 4
+    }
+  ],
+  "beta_orbitals": [
+    {
+      "beta_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/H3lin_test/beta_orbital_0",
+      "beta_orbital_type": "active",
+      "beta_active_space_index": 1
+    },
+    {
+      "beta_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/H3lin_test/beta_orbital_1",
+      "beta_orbital_type": "active",
+      "beta_active_space_index": 3
+    },
+    {
+      "beta_orbital_file_name": "/workspaces/MRA-OrbitalOptimization/H3lin_test/beta_orbital_2",
+      "beta_orbital_type": "active",
+      "beta_active_space_index": 5
+    }
+  ]
+}

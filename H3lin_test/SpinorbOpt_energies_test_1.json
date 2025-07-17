@@ -1,0 +1,46 @@
+{
+    "Spin squared of refined orbitals": 0.7518876950059731,
+    "SpinorbOpt output": [
+        {
+            "Iteration": 0,
+            "Kinetic energy": 1.6293224216908466,
+            "Nuclear attraction energy": -5.9235177820321425,
+            "Nuclear repulsion energy": 1.3888888888888888,
+            "Spin_squared": 0.751883230476069,
+            "Total energy": -1.6265452680437362,
+            "Two-electron energy": 1.2787612034086706
+        },
+        {
+            "Iteration": 1,
+            "Kinetic energy": 1.6284424694812893,
+            "Nuclear attraction energy": -5.921579540857941,
+            "Nuclear repulsion energy": 1.3888888888888888,
+            "Total energy": -1.626709988050664,
+            "Two-electron energy": 1.2775381944370992
+        },
+        {
+            "Iteration": 2,
+            "Kinetic energy": 1.6289518442025546,
+            "Nuclear attraction energy": -5.922212293496509,
+            "Nuclear repulsion energy": 1.3888888888888888,
+            "Total energy": -1.6267277067364554,
+            "Two-electron energy": 1.2776438536686099
+        },
+        {
+            "Iteration": 3,
+            "Kinetic energy": 1.6293650554542003,
+            "Nuclear attraction energy": -5.92282579019929,
+            "Nuclear repulsion energy": 1.3888888888888888,
+            "Total energy": -1.6267310741371799,
+            "Two-electron energy": 1.2778407717190206
+        },
+        {
+            "Iteration": 4,
+            "Kinetic energy": 1.6296090391652112,
+            "Nuclear attraction energy": -5.923212266053047,
+            "Nuclear repulsion energy": 1.3888888888888888,
+            "Total energy": -1.6267317488876656,
+            "Two-electron energy": 1.2779825891112808
+        }
+    ]
+}
