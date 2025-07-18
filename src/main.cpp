@@ -9,7 +9,6 @@
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
 #include "molecule.hpp"
-#include "plot.hpp"
 #include "minbas.hpp"
 #include "MadnessProcess.hpp"
 
@@ -22,7 +21,8 @@ NB_MODULE(_madpy_impl, m) {
         .def("loadfct", &MadnessProcess::loadfct)
         .def("loadfct_from_file", &MadnessProcess::loadfct_from_file)
         .def("plot", &MadnessProcess::plot)
-        .def("plane_plot", &MadnessProcess::plane_plot);
+        .def("plane_plot", &MadnessProcess::plane_plot)
+        .def("cube_plot", &MadnessProcess::cube_plot);
 
     nb::class_<real_function_3d>(m,"real_function_3d")
         .def(nb::init<>());
@@ -87,13 +87,12 @@ NB_MODULE(_madpy_impl, m) {
         .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion);
 
     nb::class_<MinBasProjector>(m, "MinBasProjector")
-        .def(nb::init<const std::string &, const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
+        .def(nb::init<MadnessProcess &, const std::string &>())
         .def("run", &MinBasProjector::run)
         .def("get_nuclear_potential", &MinBasProjector::get_nuclear_potential)
         .def("get_basis_name", &MinBasProjector::get_basis_name)
         .def("get_atomic_basis", &MinBasProjector::get_atomic_basis)
         .def("get_nuclear_repulsion", &MinBasProjector::get_nuclear_repulsion);
-
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<MadnessProcess &, const std::vector<double> &, const double &, const std::vector<std::vector<double> > &>())
@@ -114,15 +113,8 @@ NB_MODULE(_madpy_impl, m) {
         .def("GetOrbitals", &Eigensolver3D::GetOrbitals);
 
     nb::class_<NWChem_Converter>(m, "NWChem_Converter")
-        .def(nb::init<const double &, const int &, const double &>())
+        .def(nb::init<MadnessProcess &>())
         .def("Read_NWChem_File", &NWChem_Converter::read_nwchem_file)
         .def("GetNormalizedAOs", &NWChem_Converter::GetNormalizedAOs)
         .def("GetMOs", &NWChem_Converter::GetMOs);
-
-    nb::class_<Plot>(m, "Plot")
-        .def(nb::init<const double &, const int &, const double &>())
-        .def("plot", &Plot::plot, nb::arg("filename"), nb::arg("f"), nb::arg("axis") = 2, nb::arg("datapoints") = 2001)
-        .def("plane_plot", &Plot::plane_plot, nb::arg("filename"), nb::arg("f"), nb::arg("plane") = "yz", nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}))
-        .def("cube_plot", &Plot::cube_plot, nb::arg("filename"), nb::arg("f"), nb::arg("molecule"), nb::arg("zoom") = 1.0, nb::arg("datapoints") = 151, nb::arg("origin") = std::vector<double>({0.0, 0.0, 0.0}));
-
 }
