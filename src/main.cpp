@@ -17,12 +17,26 @@ namespace nb = nanobind;
 
 NB_MODULE(_madpy_impl, m) {
     nb::class_<MadnessProcess>(m, "MadnessProcess")
-        .def(nb::init<const double &, const int &, const double &, const int &, const int &, const bool &, const int &>())
+        .def(nb::init<const double &, const int &, const double &, const int &, const int &, const bool &, const int &>(),
+            nb::arg("L"),
+            nb::arg("k"),
+            nb::arg("thresh"),
+            nb::arg("initial_level"),
+            nb::arg("truncate_mode"),
+            nb::arg("refine"),
+            nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess::loadfct)
         .def("loadfct_from_file", &MadnessProcess::loadfct_from_file)
         .def("plot", &MadnessProcess::plot)
         .def("plane_plot", &MadnessProcess::plane_plot)
-        .def("cube_plot", &MadnessProcess::cube_plot);
+        .def("cube_plot", &MadnessProcess::cube_plot)
+        .def_ro("L", &MadnessProcess::L)
+        .def_ro("k", &MadnessProcess::k)
+        .def_ro("thresh", &MadnessProcess::thresh)
+        .def_ro("initial_level", &MadnessProcess::initial_level)
+        .def_ro("truncate_mode", &MadnessProcess::truncate_mode)
+        .def_ro("refine", &MadnessProcess::refine)
+        .def_ro("n_threads", &MadnessProcess::n_threads);
 
     nb::class_<real_function_3d>(m,"real_function_3d")
         .def(nb::init<>());
