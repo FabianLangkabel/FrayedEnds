@@ -1,7 +1,6 @@
 import numpy
 from ._madpy_impl import PNOInterface
-from .baseclass import MadPyBase, get_function_info
-from .madworld import redirect_output
+from .madworld import redirect_output, get_function_info
 import glob
 import os
 
@@ -139,7 +138,7 @@ class MadPNO:
 
         data = {}
 
-        data["dft"] = {"xc": "hf", "L":self._world.madness_parameters["L"],  "k": self._world.madness_parameters["k"], "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )"}
+        data["dft"] = {"xc": "hf", "L":self._world.L,  "k": self._world.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )"}
         data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": diagonal}
         # this should be gone soon
         data["pnoint"] = {"n_pno": 10, "orthog": "symmetric"}
