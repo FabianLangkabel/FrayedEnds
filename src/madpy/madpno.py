@@ -46,6 +46,7 @@ class MadPNO:
                 maxrank = n_orbitals
 
         self._world = madworld
+        self._world.add_instance(self)
         pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
         print(pno_input_string)
 

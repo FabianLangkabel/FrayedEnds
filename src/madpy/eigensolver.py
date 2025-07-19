@@ -10,6 +10,7 @@ class Eigensolver:
     def __init__(self, madworld, potential, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._world = madworld
+        self._world.add_instance(self)
         self.impl = EigenInterface(self._world._impl)
         self._potential=potential
     

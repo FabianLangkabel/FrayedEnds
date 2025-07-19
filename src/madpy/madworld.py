@@ -24,6 +24,14 @@ def get_function_info(orbitals):
         result.append({"type": x.type, **info})
     return result
 
+def plot_lines(madworld, functions, name=None):
+    for i in range(len(functions)):
+        if name is None:
+            x = "function_"+functions[i].type + " " + functions[i].info
+            madworld.line_plot(f"{x}{i}.dat", functions[i])
+        else:
+            madworld.line_plot(f"{name}{i}.dat", functions[i])
+
 
 class MadWorld:
     _impl = None
@@ -39,6 +47,7 @@ class MadWorld:
     }
 
     def __init__(self, **kwargs):
+        self._instances = []
 
         self.madness_parameters = dict(self.madness_parameters)
 
@@ -66,12 +75,31 @@ class MadWorld:
             raise AttributeError(f"Cannot modify read-only attribute '{name}'")
         super().__setattr__(name, value)
 
+    def __del__(self):
+        self.shutdown()
+
+    def add_instance(self, instance):
+        self._instances.append(instance)
+        return instance
+
     def get_params(self):
         return dict(self.madness_parameters)
 
+    def shutdown(self):
+        print("Shutting down MadWorld and cleaning up instances...")
+        self._instances.clear()
+
+    def change_nthreads(self, nthreads):
+        self._impl.change_nthreads(nthreads)
+
     def line_plot(self, filename, mra_function, axis="z", datapoints=2001):
-        self._impl.plot(filename, mra_function, axis, datapoints)
+        if hasattr(mra_function, "data"):
+            self._impl.plot(filename, mra_function.data, axis, datapoints)
+        else:
+            self._impl.plot(filename, mra_function, axis, datapoints)
 
     def plane_plot(self, filename, mra_function, plane="yz", zoom=1.0, datapoints=81, origin=[0.0, 0.0, 0.0]):
-        self._impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
-
+        if hasattr(mra_function, "data"):
+            self._impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
+        else:
+            self._impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)

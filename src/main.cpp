@@ -25,6 +25,7 @@ NB_MODULE(_madpy_impl, m) {
             nb::arg("truncate_mode"),
             nb::arg("refine"),
             nb::arg("n_threads"))
+        .def("change_nthreads", &MadnessProcess::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess::loadfct)
         .def("loadfct_from_file", &MadnessProcess::loadfct_from_file)
         .def("plot", &MadnessProcess::plot)
@@ -117,7 +118,7 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<const std::string &>());
     
     nb::class_<PyFuncFactory>(m, "PyFuncFactory")
-        .def(nb::init<std::function<double(double, double, double)> &, const double &, const long &, const double &, const int &, const int &, const bool &>())
+        .def(nb::init<MadnessProcess &, std::function<double(double, double, double)> &>())
         .def("GetMRAFunction", &PyFuncFactory::GetMRAFunction);
 
     nb::class_<Eigensolver3D>(m, "Eigensolver")

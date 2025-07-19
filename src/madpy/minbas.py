@@ -1,14 +1,12 @@
-import numpy
 from ._madpy_impl import MinBasProjector
-from  .madpno import MadPNO
-from .parameters import redirect_output
-from .baseclass import MadPyBase, get_function_info
-import glob
 import os
 
-class AtomicBasisProjector(MadPyBase):
+class AtomicBasisProjector:
 
-    def __init__(self, geometry, aobasis="sto-3g",  *args, **kwargs):
+    _world = None
+    impl = None
+
+    def __init__(self, madworld, geometry, aobasis="sto-3g",  *args, **kwargs):
         super().__init__(*args, **kwargs)
         # check if geometry is given as a file
         # if not write the file
@@ -16,12 +14,13 @@ class AtomicBasisProjector(MadPyBase):
             self.create_molecule_file(geometry_angstrom=geometry)
             geometry="molecule"
 
+        self._world = madworld
+        self._world.add_instance(self)
         input_string = self.parameter_string(molecule_file=geometry, aobasis=aobasis, *args, **kwargs)
         print(input_string)
-        self.impl = MinBasProjector(input_string, self.madness_parameters.L, self.madness_parameters.k,
-                                 self.madness_parameters.thresh, self.madness_parameters.initial_level,
-                                 self.madness_parameters.truncate_mode, self.madness_parameters.refine,
-                                 self.madness_parameters.n_threads)
+
+        self.impl = MinBasProjector(self._world._impl, input_string)
+
         print("calling run")
         self.impl.run()
         print("done")
@@ -36,7 +35,7 @@ class AtomicBasisProjector(MadPyBase):
     def parameter_string(self, molecule_file, aobasis="sto-3g", **kwargs) -> str:
             data = {}
 
-            data["dft"] = {"xc": "hf", "L": self.madness_parameters.L, "k": self.madness_parameters.k, "econv": 1.e-4,
+            data["dft"] = {"xc": "hf", "L": self._world.L, "k": self._world.k, "econv": 1.e-4,
                            "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )", "aobasis": "sto-3g"}
 
             input_str = "dft --geometry=\"source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name=" + molecule_file + "\""

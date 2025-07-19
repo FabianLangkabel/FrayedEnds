@@ -9,6 +9,7 @@ class Integrals:
     def __init__(self, madworld, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._world = madworld
+        self._world.add_instance(self)
         self.impl = IntegralsInterface(self._world._impl)
 
     def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
