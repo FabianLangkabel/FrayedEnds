@@ -67,6 +67,13 @@ class MadnessProcess {
             world->gop.fence();
             finalize();
         }
+
+        void change_nthreads(int n_threads) {
+            ThreadPool::end();
+            ThreadPool::begin(n_threads);
+            std::cout << "Changed number of threads to " << ThreadPool::size() << std::endl;
+        }
+
         //load a function from a SavedFct object
         Function<double,3> loadfct(const SavedFct& Sf){
             std::string filename = "saved_fct01020304"; //TODO: use the cloud for this
