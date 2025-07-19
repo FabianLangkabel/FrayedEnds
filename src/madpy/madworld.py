@@ -103,3 +103,9 @@ class MadWorld:
             self._impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
         else:
             self._impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
+
+    def cube_plot(self, filename, mra_function, molecule, zoom=1.0, datapoints=81, origin=[0.0, 0.0, 0.0]):
+        if hasattr(mra_function, "data"):
+            self.impl.cube_plot(filename, mra_function.data, molecule, zoom, datapoints, origin)
+        else:
+            self.impl.cube_plot(filename, mra_function, molecule, zoom, datapoints, origin)
