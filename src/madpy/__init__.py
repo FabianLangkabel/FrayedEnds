@@ -10,4 +10,4 @@ from .minbas import AtomicBasisProjector
 from ._madpy_impl import NWChem_Converter
 from ._madpy_impl import CoulombPotentialFromChargeDensity
 from ._madpy_impl import molecule
-
+from ._madpy_impl import SavedFct

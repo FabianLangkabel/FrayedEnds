@@ -48,8 +48,6 @@ class MadPNO:
         self._world = madworld
         self._world.add_instance(self)
         pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
-        print(pno_input_string)
-
         self.impl = PNOInterface(self._world._impl, pno_input_string)
 
         if not no_compute:
@@ -139,10 +137,9 @@ class MadPNO:
 
         data = {}
 
-        data["dft"] = {"xc": "hf", "L":self._world.L,  "k": self._world.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys", "ncf": "( none , 1.0 )"}
+        data["dft"] = {"xc": "hf", "L":self._world.L,  "k": self._world.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys"}
+        data["nemo"] = {"ncf": "( none , 1.0)"}
         data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": diagonal}
-        # this should be gone soon
-        data["pnoint"] = {"n_pno": 10, "orthog": "symmetric"}
 
         if not frozen_core:
             data["pno"]["freeze"] = 0
@@ -160,8 +157,8 @@ class MadPNO:
         for k, v in data["pno"].items():
             input_str += "{}={}; ".format(k, v)
         input_str = input_str[:-2] + "\""
-        input_str += " --pnoint=\""
-        for k, v in data["pnoint"].items():
+        input_str += " --nemo=\""
+        for k, v in data["nemo"].items():
             input_str += "{}={}; ".format(k, v)
         input_str = input_str[:-2] + "\""
         if data["plot"] != {}:
@@ -173,7 +170,7 @@ class MadPNO:
         return input_str
 
     def create_molecule_file(self, geometry_angstrom, filename="molecule"):
-        molecule_file_str = "geometry\n"
+        molecule_file_str = "molecule\n"
         molecule_file_str += geometry_angstrom
         molecule_file_str += "\nend"
         molecule_file_str = os.linesep.join([s for s in molecule_file_str.splitlines() if s])
