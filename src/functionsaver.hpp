@@ -69,8 +69,6 @@ class SavedFct {
 
 };
 
-
-
 //Helper function to convert a string into a binary .00000 file
 inline void write_binary_file(const SavedFct& Sf, const std::string& filename) { //TODO: make sure the filename is unique
     std::string filename2 = filename + ".00000";

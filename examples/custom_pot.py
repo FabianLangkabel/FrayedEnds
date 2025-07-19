@@ -1,4 +1,5 @@
 import numpy as np
+
 import madpy as mad
 import tequila as tq
 from time import time
@@ -13,11 +14,14 @@ def potential(x,y,z):
     r = np.array([x,y,z])
     return a * np.exp(- 0.5 * np.linalg.norm(r)**2)
 
-factory = mad.MRAFunctionFactory(potential)
-mra_pot = factory.GetFunction()
-del factory
 
-world = mad.MadWorld()
+world = mad.MadWorld(n_threads=0)
+
+factory = mad.MRAFunctionFactory(world, potential)
+mra_pot = factory.GetFunction()
+
+world.change_nthreads(-1)
+
 eigen = mad.Eigensolver(world, mra_pot)
 orbitals = eigen.get_orbitals(0,2,0,n_states=5) # frozen occupied, active, frozen virtual dimensions
 
@@ -43,7 +47,7 @@ for iteration in range(6):
     rdm2_list = rdm2.reshape(-1).tolist()
 
     print("iteration {} FCI energy {:+2.8f}".format(iteration, e))
-    
+
     opti = mad.Optimization(world, mra_pot, nuc_repulsion=0.0)
     orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
     c,h_el,g_el = opti.get_integrals()
@@ -56,4 +60,4 @@ print("Total time: ", true_end-true_start)
 
 
 
-
+del world

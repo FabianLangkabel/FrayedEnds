@@ -18,7 +18,6 @@ Vnuc = madpno.get_nuclear_potential()
 integrals = madpy.Integrals(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
-
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat",orbitals[i])
 
@@ -51,6 +50,6 @@ for iteration in range(6):
 true_end=time()
 print("Total time: ", true_end-true_start)
 
-
+del world
 
 
