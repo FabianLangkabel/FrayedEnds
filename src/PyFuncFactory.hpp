@@ -19,17 +19,17 @@ class PyFunctor: public FunctionFunctorInterface<double, 3> {
         }
 };
 
-class PyFuncFactory: public MadnessProcess {
+class PyFuncFactory {
     public:
         Function<double,3> MRA_func;
 
-        PyFuncFactory(std::function<double(double, double, double)> pyfunc, double L, long k, double thresh, int initial_level, int truncate_mode, bool refine): MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, 0) {
+        PyFuncFactory(MadnessProcess& mp, std::function<double(double, double, double)> pyfunc): madness_process(mp) {
             //for this process n_threads always has to be 0, otherwise the python function can not be converted to a MRA function
             std::cout.precision(6);
             //std::cout << "Creating function with functor" << std::endl;
             PyFunctor functor(pyfunc);
             //std::cout << "Functor created" << std::endl;
-            MRA_func = FunctionFactory<double,3>(*world).functor(functor);
+            MRA_func = FunctionFactory<double,3>(*(madness_process.world)).functor(functor);
             //std::cout << "Function created" << std::endl;
         }
         ~PyFuncFactory(){
@@ -38,6 +38,8 @@ class PyFuncFactory: public MadnessProcess {
         SavedFct GetMRAFunction() {
             return SavedFct(MRA_func);
         }
+    private:
+        MadnessProcess& madness_process;
 };
 
 
