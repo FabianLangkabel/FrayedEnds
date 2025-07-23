@@ -14,7 +14,6 @@ def potential(x,y,z):
     r = np.array([x,y,z])
     return a * np.exp(- 0.5 * np.linalg.norm(r)**2)
 
-
 world = mad.MadWorld(n_threads=0)
 
 factory = mad.MRAFunctionFactory(world, potential)
@@ -57,7 +56,5 @@ for iteration in range(6):
 
 true_end=time()
 print("Total time: ", true_end-true_start)
-
-
 
 del world
