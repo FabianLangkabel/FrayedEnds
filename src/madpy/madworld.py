@@ -47,7 +47,6 @@ class MadWorld:
     }
 
     def __init__(self, **kwargs):
-        self._instances = []
 
         self.madness_parameters = dict(self.madness_parameters)
 
@@ -75,19 +74,8 @@ class MadWorld:
             raise AttributeError(f"Cannot modify read-only attribute '{name}'")
         super().__setattr__(name, value)
 
-    def __del__(self):
-        self.shutdown()
-
-    def add_instance(self, instance):
-        self._instances.append(instance)
-        return instance
-
     def get_params(self):
         return dict(self.madness_parameters)
-
-    def shutdown(self):
-        print("Shutting down MadWorld and cleaning up instances...")
-        self._instances.clear()
 
     def change_nthreads(self, nthreads):
         self._impl.change_nthreads(nthreads)
