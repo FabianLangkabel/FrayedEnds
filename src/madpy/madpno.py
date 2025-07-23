@@ -12,7 +12,6 @@ class MadPNO:
     _g = None # two-body tensor
     _c = 0.0 # constant term
     impl = None
-    _world = None
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -45,10 +44,8 @@ class MadPNO:
             except Exception:
                 maxrank = n_orbitals
 
-        self._world = madworld
-        self._world.add_instance(self)
-        pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
-        self.impl = PNOInterface(self._world._impl, pno_input_string)
+        pno_input_string = self.parameter_string(madworld, molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
+        self.impl = PNOInterface(madworld._impl, pno_input_string)
 
         if not no_compute:
             self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
@@ -125,7 +122,7 @@ class MadPNO:
         self._c = self.impl.GetNuclearRepulsion()
         return self._c,self._h,self._g
 
-    def parameter_string(self, molecule_file, maxrank=10, diagonal=True, frozen_core=True, **kwargs) -> str:
+    def parameter_string(self, madworld, molecule_file, maxrank=10, diagonal=True, frozen_core=True, **kwargs) -> str:
         """
         :param molecule_file: file containing the molecular coordinates
         :param maxrank: maxrank for each set of PNOs
@@ -137,7 +134,7 @@ class MadPNO:
 
         data = {}
 
-        data["dft"] = {"xc": "hf", "L":self._world.L,  "k": self._world.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys"}
+        data["dft"] = {"xc": "hf", "L":madworld.L,  "k": madworld.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys"}
         data["nemo"] = {"ncf": "( none , 1.0)"}
         data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": diagonal}
 

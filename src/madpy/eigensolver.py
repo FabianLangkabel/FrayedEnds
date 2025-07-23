@@ -4,14 +4,10 @@ from .madworld import redirect_output
 class Eigensolver:
     _orbitals = None  # Placeholder for orbitals
     _potential = None
-    _world = None
     impl = None
 
     def __init__(self, madworld, potential, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._world = madworld
-        self._world.add_instance(self)
-        self.impl = EigenInterface(self._world._impl)
+        self.impl = EigenInterface(madworld._impl)
         self._potential=potential
     
     @redirect_output("mad_eigensolver.log")

@@ -58,7 +58,6 @@ class Optimization:
     _c = 0.0 # constant term
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
-    _world = None
     impl = None
 
     @property
@@ -67,9 +66,7 @@ class Optimization:
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._world = madworld
-        self._world.add_instance(self)
-        self.impl = OptInterface(self._world._impl)
+        self.impl = OptInterface(madworld._impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 

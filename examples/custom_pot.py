@@ -57,4 +57,8 @@ for iteration in range(6):
 true_end=time()
 print("Total time: ", true_end-true_start)
 
+del factory
+del integrals
+del opti
+del eigen
 del world

@@ -3,14 +3,10 @@ from tequila.quantumchemistry import NBodyTensor
 
 class Integrals:
 
-    _world = None
     impl = None
 
     def __init__(self, madworld, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._world = madworld
-        self._world.add_instance(self)
-        self.impl = IntegralsInterface(self._world._impl)
+        self.impl = IntegralsInterface(madworld._impl)
 
     def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
         g_elems = self.impl.compute_two_body_integrals(orbitals)
