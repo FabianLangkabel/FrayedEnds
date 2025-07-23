@@ -8,25 +8,28 @@ def run(R):
     # initialize the PNO interface
     geom = "H 0.0 0.0 0.0\nH 0.0 0.0 {}\nH 0.0 0.0 {}\nH 0.0 0.0 {}".format(R,2*R,3*R)  # geometry in Angstrom
     print(geom)
-    madpno = madpy.MadPNO(geom, n_orbitals=4, maxrank=1)
+
+    world = madpy.MadWorld()
+
+    madpno = madpy.MadPNO(world, geom, n_orbitals=4, maxrank=1)
     orbitals = madpno.get_orbitals()
     atomics = madpno.get_sto3g()
-    param = madpno.madness_parameters
+
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
-    del madpno
+    # del madpno
 
-    madpy.plot_lines(atomics, "atomics")
+    madpy.plot_lines(world, atomics, "atomics")
 
-    integrals = madpy.Integrals(param)
+    integrals = madpy.Integrals(world)
     orbitals = integrals.orthonormalize(orbitals=atomics)
     G = integrals.compute_two_body_integrals(orbitals).elems
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
-    del integrals
+    # del integrals
 
-    madpy.plot_lines(orbitals, "o-atomics")
+    madpy.plot_lines(world, orbitals, "o-atomics")
 
     mol1 = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=nuc_repulsion)
     mol2 = tq.Molecule(geom, basis_set="sto-3g").use_native_orbitals()
@@ -50,23 +53,23 @@ def run(R):
         energies["SPA/sto-3g"] = result.energy
 
 
-    integrals = madpy.Integrals(param)
+    integrals = madpy.Integrals(world)
     orbitals = integrals.transform(orbitals, u)
-    del integrals
+    # del integrals
 
     c = nuc_repulsion
     for x in orbitals: x.type="active"
 
     current = result.energy
     for iteration in range(3):
-        madpy.plot_lines(orbitals, f"orbitals-iteration-{iteration}")
+        madpy.plot_lines(world, orbitals, f"orbitals-iteration-{iteration}")
 
-        integrals = madpy.Integrals(param)
+        integrals = madpy.Integrals(world)
         G = integrals.compute_two_body_integrals(orbitals).elems
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
         S = integrals.compute_overlap_integrals(orbitals)
-        del integrals
+        # del integrals
 
         mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
         fci = mol.compute_energy("fci")
@@ -80,11 +83,11 @@ def run(R):
         energies["SPA/MRA-NO[it={}]".format(iteration)] = result.energy
         energies["FCI/MRA-NO[it={},wfn=spa]".format(iteration)] = fci
 
-        opti = madpy.Optimization(Vnuc, nuc_repulsion, parameters=param)
+        opti = madpy.Optimization(world, Vnuc, nuc_repulsion, parameters=param)
         new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.01, occ_thresh=0.001)
-        del opti
+        # del opti
 
-        integrals = madpy.Integrals(param)
+        integrals = madpy.Integrals(world)
         S = integrals.compute_overlap_integrals(orbitals, new_orbitals)
         print("overlap new and old")
         print(S)
@@ -101,7 +104,7 @@ def run(R):
 
         S = integrals.compute_overlap_integrals(xorbitals, orbitals)
         print(S)
-        del integrals
+        # del integrals
 
         if iteration>0 and numpy.isclose(current, result.energy, atol=1.e-3):
             print("converged")
