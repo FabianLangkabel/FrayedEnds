@@ -20,7 +20,7 @@ using namespace madness;
 using namespace madchem;
 
 class NWChem_Converter {
-public:
+  public:
     NWChem_Converter(MadnessProcess& mp);
     ~NWChem_Converter();
 
@@ -29,7 +29,7 @@ public:
     std::vector<SavedFct> GetNormalizedAOs();
     std::vector<SavedFct> GetMOs();
 
-private:
+  private:
     MadnessProcess& madness_process;
     std::vector<std::vector<double>> atoms;
     std::vector<real_function_3d> aos;

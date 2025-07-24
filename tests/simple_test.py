@@ -1,5 +1,7 @@
 import pytest
+
 import madpy
+
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
 def test_pno_execution(geom):
