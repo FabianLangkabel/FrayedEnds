@@ -24,15 +24,6 @@ def get_function_info(orbitals):
         result.append({"type": x.type, **info})
     return result
 
-def plot_lines(madworld, functions, name=None):
-    for i in range(len(functions)):
-        if name is None:
-            x = "function_"+functions[i].type + " " + functions[i].info
-            madworld.line_plot(f"{x}{i}.dat", functions[i])
-        else:
-            madworld.line_plot(f"{name}{i}.dat", functions[i])
-
-
 class MadWorld:
     _impl = None
 
@@ -85,6 +76,14 @@ class MadWorld:
             self._impl.plot(filename, mra_function.data, axis, datapoints)
         else:
             self._impl.plot(filename, mra_function, axis, datapoints)
+
+    def plot_lines(self, functions, name=None):
+        for i in range(len(functions)):
+            if name is None:
+                x = "function_" + functions[i].type + " " + functions[i].info
+                self.line_plot(f"{x}{i}.dat", functions[i])
+            else:
+                self.line_plot(f"{name}{i}.dat", functions[i])
 
     def plane_plot(self, filename, mra_function, plane="yz", zoom=1.0, datapoints=81, origin=[0.0, 0.0, 0.0]):
         if hasattr(mra_function, "data"):
