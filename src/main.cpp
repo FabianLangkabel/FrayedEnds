@@ -133,5 +133,7 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<MadnessProcess &>())
         .def("Read_NWChem_File", &NWChem_Converter::read_nwchem_file)
         .def("GetNormalizedAOs", &NWChem_Converter::GetNormalizedAOs)
-        .def("GetMOs", &NWChem_Converter::GetMOs);
+        .def("GetMOs", &NWChem_Converter::GetMOs)
+        .def("GetVNuc", &NWChem_Converter::GetVNuc)
+        .def("GetNuclearRepulsionEnergy", &NWChem_Converter::GetNuclearRepulsionEnergy);
 }
