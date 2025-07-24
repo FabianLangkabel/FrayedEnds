@@ -22,7 +22,7 @@ using namespace madness;
 using namespace madchem;
 
 class NWChem_Converter {
-public:
+  public:
     NWChem_Converter(MadnessProcess& mp);
     ~NWChem_Converter();
 
@@ -33,7 +33,7 @@ public:
     SavedFct GetVNuc() {return SavedFct(Vnuc);}
     double GetNuclearRepulsionEnergy() {return nuclear_repulsion_energy;}
 
-private:
+  private:
     MadnessProcess& madness_process;
     std::vector<std::vector<double>> atoms;
     std::vector<real_function_3d> aos;
