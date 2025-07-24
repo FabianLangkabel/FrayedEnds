@@ -8,3 +8,4 @@ from .madworld import MadWorld, get_function_info
 from .minbas import AtomicBasisProjector
 from .mrafunctionfactory import MRAFunctionFactory
 from .optimization import Optimization, transform_rdms
+from .pyscf_interface import PySCFInterface
