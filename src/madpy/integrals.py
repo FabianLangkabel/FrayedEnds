@@ -1,5 +1,7 @@
-from ._madpy_impl import Integrals as IntegralsInterface
 from tequila.quantumchemistry import NBodyTensor
+
+from ._madpy_impl import Integrals as IntegralsInterface
+
 
 class Integrals:
 
@@ -25,7 +27,7 @@ class Integrals:
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
         if other is None:
             other = orbitals
-        return self.impl.compute_overlap_integrals(orbitals,other)
+        return self.impl.compute_overlap_integrals(orbitals, other)
 
     def orthonormalize(self, orbitals, method="symmetric", *args, **kwargs):
         return self.impl.orthonormalize(orbitals, method, *args, **kwargs)

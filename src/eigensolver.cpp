@@ -4,10 +4,11 @@
 
 using namespace madness;
 
-Eigensolver3D::Eigensolver3D(MadnessProcess& mp): madness_process(mp) {std::cout.precision(6);}
+Eigensolver3D::Eigensolver3D(MadnessProcess& mp) : madness_process(mp) {
+    std::cout.precision(6);
+}
 
-Eigensolver3D::~Eigensolver3D()
-{
+Eigensolver3D::~Eigensolver3D() {
     V.clear();
     orbitals.clear();
 }
@@ -17,12 +18,12 @@ void Eigensolver3D::solve(SavedFct input_V, int num_levels, int max_iter) {
     Function<double, 3> V = madness_process.loadfct(input_V);
     std::cout << "Potential loaded" << std::endl;
     // Create the guess generator
-    GuessGenerator<double, 3> guess_generator(*(madness_process.world));              // Guess generator for all potentials
+    GuessGenerator<double, 3> guess_generator(*(madness_process.world)); // Guess generator for all potentials
     // Create the guess functions
-    std::vector<Function<double,3>> guesses = guess_generator.create_guesses(num_levels, V);
+    std::vector<Function<double, 3>> guesses = guess_generator.create_guesses(num_levels, V);
 
     // plot guess functions
-    //for (int i = 0; i < guesses.size(); i++) {
+    // for (int i = 0; i < guesses.size(); i++) {
     //    madness_process.plot("g-" + std::to_string(i) + ".dat", SavedFct(guesses[i]));
     //}
 
@@ -46,7 +47,9 @@ void Eigensolver3D::solve(SavedFct input_V, int num_levels, int max_iter) {
 }
 
 // Function to solve the eigenvalue problem for the given potential with given guesses
-std::vector<Function<double, 3>> Eigensolver3D::solve_with_input_guesses(SavedFct input_V, const std::vector<SavedFct>& input_guesses, int num_levels, int max_iter) {
+std::vector<Function<double, 3>> Eigensolver3D::solve_with_input_guesses(SavedFct input_V,
+                                                                         const std::vector<SavedFct>& input_guesses,
+                                                                         int num_levels, int max_iter) {
     Function<double, 3> V = madness_process.loadfct(input_V);
     std::vector<Function<double, 3>> guesses;
 
@@ -81,10 +84,11 @@ double Eigensolver3D::energy(const Function<double, 3>& phi, const Function<doub
     double kinetic_energy = 0.0;
 
     for (int axis = 0; axis < 3; axis++) {
-        Derivative<double, 3> D = free_space_derivative<double, 3>(*(madness_process.world), axis); // Derivative operator
+        Derivative<double, 3> D =
+            free_space_derivative<double, 3>(*(madness_process.world), axis); // Derivative operator
 
         Function<double, 3> dphi = D(phi);
-        kinetic_energy += 0.5 * inner(dphi, dphi);  // (1/2) <dphi/dx | dphi/dx>
+        kinetic_energy += 0.5 * inner(dphi, dphi); // (1/2) <dphi/dx | dphi/dx>
     }
 
     double energy = kinetic_energy + potential_energy;
@@ -92,27 +96,29 @@ double Eigensolver3D::energy(const Function<double, 3>& phi, const Function<doub
 }
 
 // Function to calculate the Hamiltonian matrix, Overlap matrix and Diagonal matrix
-std::pair<Tensor<double>, std::vector<Function<double, 3>>> Eigensolver3D::diagonalize(const std::vector<Function<double, 3>>& functions, const Function<double, 3>& V){
+std::pair<Tensor<double>, std::vector<Function<double, 3>>>
+Eigensolver3D::diagonalize(const std::vector<Function<double, 3>>& functions, const Function<double, 3>& V) {
     const int num = functions.size();
 
-    auto H = Tensor<double>(num, num); // Hamiltonian matrix
-    auto overlap = Tensor<double>(num, num); // Overlap matrix
+    auto H = Tensor<double>(num, num);           // Hamiltonian matrix
+    auto overlap = Tensor<double>(num, num);     // Overlap matrix
     auto diag_matrix = Tensor<double>(num, num); // Diagonal matrix
 
     // Calculate the Hamiltonian matrix
 
-    for(int i = 0; i < num; i++) {
+    for (int i = 0; i < num; i++) {
         auto energy1 = energy(functions[i], V);
         std::cout << energy1 << std::endl;
-        for(int j = 0; j < num; j++) {
+        for (int j = 0; j < num; j++) {
             double kin_energy = 0.0;
             for (int axis = 0; axis < 3; axis++) {
-                Derivative<double, 3> D = free_space_derivative<double,3>(*(madness_process.world), axis); // Derivative operator
+                Derivative<double, 3> D =
+                    free_space_derivative<double, 3>(*(madness_process.world), axis); // Derivative operator
 
                 Function<double, 3> dx_i = D(functions[i]);
                 Function<double, 3> dx_j = D(functions[j]);
 
-                kin_energy += 0.5 * inner(dx_i, dx_j);  // (1/2) <dphi/dx | dphi/dx>
+                kin_energy += 0.5 * inner(dx_i, dx_j); // (1/2) <dphi/dx | dphi/dx>
             }
 
             double pot_energy = inner(functions[i], V * functions[j]); // <phi|V|phi>
@@ -128,12 +134,12 @@ std::pair<Tensor<double>, std::vector<Function<double, 3>>> Eigensolver3D::diago
     // Calculate the Diagonal matrix
     Tensor<double> U;
     Tensor<double> evals;
-    // sygvp is a function to solve the generalized eigenvalue problem HU = SUW where S is the overlap matrix and W is the diagonal matrix of eigenvalues of H
-    // The eigenvalues are stored in evals and the eigenvectors are stored in U
+    // sygvp is a function to solve the generalized eigenvalue problem HU = SUW where S is the overlap matrix and W is
+    // the diagonal matrix of eigenvalues of H The eigenvalues are stored in evals and the eigenvectors are stored in U
     sygvp(*(madness_process.world), H, overlap, 1, U, evals);
 
     diag_matrix.fill(0.0);
-    for(int i = 0; i < num; i++) {
+    for (int i = 0; i < num; i++) {
         diag_matrix(i, i) = evals(i); // Set the diagonal elements
     }
 
@@ -150,19 +156,20 @@ std::pair<Tensor<double>, std::vector<Function<double, 3>>> Eigensolver3D::diago
 }
 
 // Function to optimize the eigenfunction for each energy level
-Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Function<double, 3> guess_function, int N, const std::vector<Function<double, 3>>& prev_phi, int max_iter) {
+Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Function<double, 3> guess_function, int N,
+                                            const std::vector<Function<double, 3>>& prev_phi, int max_iter) {
 
     // Create the initial guess wave function
     Function<double, 3> phi = guess_function;
 
-    phi.scale(1.0/phi.norm2()); // phi *= 1.0/norm
+    phi.scale(1.0 / phi.norm2()); // phi *= 1.0/norm
     double E = energy(phi, V);
 
     NonlinearSolverND<3> solver;
     int count_shift = 0; // counter how often the potential was shifted
 
-    for(int iter = 0; iter <= max_iter; iter++) {
-        
+    for (int iter = 0; iter <= max_iter; iter++) {
+
         // plot("phi-" + std::to_string(N) + "-" + std::to_string(iter) + ".dat", phi);
 
         // Energy cant be positiv
@@ -172,15 +179,15 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
 
         if (E > 0) {
             shift = -20;
-            //shift = - 1.2 * E;
+            // shift = - 1.2 * E;
             E = energy(phi, V + shift);
             count_shift++;
         }
 
         Function<double, 3> Vphi = (V + shift) * phi;
         Vphi.truncate();
-        
-        SeparatedConvolution<double,3> op = BSHOperator<3>(*(madness_process.world), sqrt(-2*E), 0.001, 1e-7);
+
+        SeparatedConvolution<double, 3> op = BSHOperator<3>(*(madness_process.world), sqrt(-2 * E), 0.001, 1e-7);
 
         Function<double, 3> r = phi + 2.0 * op(Vphi); // the residual
         double err = r.norm2();
@@ -189,23 +196,24 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
         // Q*|Phi> = |Phi> - |phi_0><phi_0|Phi> - |phi_1><phi_1|Phi> - ...
 
         for (const auto& prev_phi : prev_phi) {
-            phi -= inner(prev_phi, phi)*prev_phi; 
+            phi -= inner(prev_phi, phi) * prev_phi;
         }
-        phi.scale(1.0/phi.norm2());
+        phi.scale(1.0 / phi.norm2());
 
         phi = solver.update(phi, r);
 
         double norm = phi.norm2();
-        phi.scale(1.0/norm);  // phi *= 1.0/norm
-        E = energy(phi,V);
+        phi.scale(1.0 / norm); // phi *= 1.0/norm
+        E = energy(phi, V);
 
         if (madness_process.world->rank() == 0)
-            print("iteration", iter, "energy", E, "norm", norm, "error",err);
+            print("iteration", iter, "energy", E, "norm", norm, "error", err);
 
-        if (err < 5e-4) break;
+        if (err < 5e-4)
+            break;
     }
 
-    //madness_process.plot("phi-" + std::to_string(N)+ ".dat", phi);
+    // madness_process.plot("phi-" + std::to_string(N)+ ".dat", phi);
 
     if (count_shift != 0) {
         std::cout << "Potential was shifted " << count_shift << " times" << std::endl;
@@ -217,14 +225,14 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
 
 std::vector<SavedFct> Eigensolver3D::GetOrbitals(int core_dim, int as_dim, int froz_virt_dim) const {
     std::vector<SavedFct> sav_orbs;
-    for (auto i=0; i<(core_dim+as_dim+froz_virt_dim); ++i){
+    for (auto i = 0; i < (core_dim + as_dim + froz_virt_dim); ++i) {
         SavedFct sav_orb(orbitals[i]);
-        if (i<core_dim){
-            sav_orb.type="frozen_occ";
-        }else if (i<core_dim+as_dim){
-            sav_orb.type="active";
-        }else if (i<core_dim+as_dim+froz_virt_dim){
-            sav_orb.type="frozen_virt";
+        if (i < core_dim) {
+            sav_orb.type = "frozen_occ";
+        } else if (i < core_dim + as_dim) {
+            sav_orb.type = "active";
+        } else if (i < core_dim + as_dim + froz_virt_dim) {
+            sav_orb.type = "frozen_virt";
         }
         sav_orbs.push_back(sav_orb);
     }
