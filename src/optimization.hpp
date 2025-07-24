@@ -17,9 +17,9 @@
 
 using namespace madness;
 
-class Optimization: public MadnessProcess{
+class Optimization {
 public:
-    Optimization(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
+    Optimization(MadnessProcess& mp);
     ~Optimization();
 
     //input
@@ -61,12 +61,12 @@ public:
     double BSH_eps = 1e-6;
     
 private:
+    MadnessProcess& madness_process;
 
     //Madness + Molecule
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy=0.0;
     real_function_3d Vnuc;
-
 
     //Orbitals
     std::vector<std::string> frozen_occ_orbs_files;

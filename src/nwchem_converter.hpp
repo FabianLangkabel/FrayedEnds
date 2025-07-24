@@ -19,9 +19,9 @@
 using namespace madness;
 using namespace madchem;
 
-class NWChem_Converter : public MadnessProcess{
+class NWChem_Converter {
 public:
-    NWChem_Converter(double L, long k, double thresh);
+    NWChem_Converter(MadnessProcess& mp);
     ~NWChem_Converter();
 
     void read_nwchem_file(std::string nwchem_file);
@@ -30,6 +30,7 @@ public:
     std::vector<SavedFct> GetMOs();
 
 private:
+    MadnessProcess& madness_process;
     std::vector<std::vector<double>> atoms;
     std::vector<real_function_3d> aos;
     std::vector<real_function_3d> mos;

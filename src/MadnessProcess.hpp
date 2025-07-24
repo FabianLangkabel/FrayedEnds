@@ -32,7 +32,16 @@ class RedirectOutput{
 class MadnessProcess {
     public:
         World* world;
-        MadnessProcess(double L, long k, double thresh, int initial_level=3, int truncate_mode=1, bool refine=true, int n_threads=-1){
+        double L;
+        long k;
+        double thresh;
+        int initial_level;
+        int truncate_mode;
+        bool refine;
+        int n_threads;
+
+        MadnessProcess(double L, long k, double thresh, int initial_level=3, int truncate_mode=1, bool refine=true, int n_threads=-1)
+        : L(L), k(k), thresh(thresh), initial_level(initial_level), truncate_mode(truncate_mode), refine(refine), n_threads(n_threads) {
             int arg = 0;
             char **a = new char*[0]();
 
@@ -58,6 +67,13 @@ class MadnessProcess {
             world->gop.fence();
             finalize();
         }
+
+        void change_nthreads(int n_threads) {
+            ThreadPool::end();
+            ThreadPool::begin(n_threads);
+            std::cout << "Changed number of threads to " << ThreadPool::size() << std::endl;
+        }
+
         //load a function from a SavedFct object
         Function<double,3> loadfct(const SavedFct& Sf){
             std::string filename = "saved_fct01020304"; //TODO: use the cloud for this

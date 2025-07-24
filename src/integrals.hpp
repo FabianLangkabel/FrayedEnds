@@ -17,10 +17,10 @@
 using namespace madness;
 namespace nb = nanobind;
 
-class Integrals: public MadnessProcess{
-public:
-    Integrals(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
-    ~Integrals(){};
+class Integrals {
+    public:
+        Integrals(MadnessProcess& mp);
+        ~Integrals(){};
 
     madness::Tensor<double> potential_integrals;
     madness::Tensor<double> overlap_integrals;
@@ -39,7 +39,7 @@ public:
 
     std::vector<SavedFct> transform(std::vector<SavedFct> orbitals, nb::ndarray<nb::numpy, double, nb::ndim<2> > matrix){
             std::vector<real_function_3d> x;
-            for(SavedFct orb : orbitals) x.push_back(loadfct(orb));
+            for(SavedFct orb : orbitals) x.push_back(madness_process.loadfct(orb));
 
             // @todo there are more efficient ways (flatten and rewire the pointer of the first entry)
             madness::Tensor<double> U(matrix.shape(0), matrix.shape(1));
@@ -49,14 +49,15 @@ public:
                 }
             }
 
-            auto y = madness::transform(*world, x, U);
+            auto y = madness::transform(*(madness_process.world), x, U);
 
             std::vector<SavedFct> result;
             for(size_t k=0; k<orbitals.size(); k++) result.push_back(SavedFct(y[k], orbitals[k].type, orbitals[k].info + " transformed "));
             return result;
     }
 
-
-
     void hello(){std::cout << "hello from the integrals class\n";}
+
+    private:
+        MadnessProcess& madness_process;
 };

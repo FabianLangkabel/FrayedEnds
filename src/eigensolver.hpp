@@ -21,9 +21,9 @@
 
 using namespace madness;
 
-class Eigensolver3D: public MadnessProcess {
+class Eigensolver3D {
     public:     
-        Eigensolver3D(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
+        Eigensolver3D(MadnessProcess& mp);
 
         ~Eigensolver3D();
 
@@ -38,12 +38,10 @@ class Eigensolver3D: public MadnessProcess {
         std::vector<SavedFct> GetOrbitals(int core_dim, int as_dim, int froz_virt_dim) const;
 
     private:
+        MadnessProcess& madness_process;
+
         Function<double, 3> V;
         std::vector<Function<double, 3>> orbitals;
-
-        double L;
-        long k;
-        double thresh;
 
         // Function to calculate the Hamiltonian matrix, Overlap matrix and Diagonal matrix
         std::pair<Tensor<double>, std::vector<Function<double, 3>>> diagonalize(const std::vector<Function<double, 3>>& functions, const Function<double, 3>& V);
