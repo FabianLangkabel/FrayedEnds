@@ -15,14 +15,13 @@ edges = madpno.get_spa_edges()
 
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
-# del madpno
 
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
 integrals = madpy.Integrals(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
-# del integrals
+
 c = nuc_repulsion
 for iteration in range(6):
 
@@ -34,7 +33,6 @@ for iteration in range(6):
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
-    # del integrals
 
     mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
     U = mol.make_ansatz(name="SPA", edges=edges)
@@ -46,9 +44,8 @@ for iteration in range(6):
     print(c)
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
-    opti = madpy.Optimization(world, Vnuc, nuc_repulsion, parameters=param)
+    opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
     new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
-    # del opti
 
 
     integrals = madpy.Integrals(world)
@@ -67,11 +64,13 @@ for iteration in range(6):
         orbitals[i] = new_orbitals[j]
     S = integrals.compute_overlap_integrals(xorbitals, orbitals)
     print(S)
-    # del integrals
 
 true_end = time()
 print("Total time: ", true_end - true_start)
 
+del madpno
+del integrals
+del opti
 del world
 
 
