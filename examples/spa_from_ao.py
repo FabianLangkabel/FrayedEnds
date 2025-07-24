@@ -15,7 +15,6 @@ atomics = madpno.get_sto3g()
 
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
-# del madpno
 
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
@@ -34,7 +33,6 @@ orbitals = [orbitals[0], active[4], active[5]]
 orbitals[0].type="frozen_occ"
 orbitals[1].type="active"
 orbitals[2].type="active"
-# del integrals
 
 c = nuc_repulsion
 
@@ -68,10 +66,9 @@ for iteration in range(6):
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
-    opti = madpy.Optimization(world, Vnuc, nuc_repulsion, parameters=param)
+    opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
     print(orbitals)
-    # del opti
 
     for i in range(len(orbitals)):
         world.line_plot(f"orb{i}.dat", orbitals[i])
@@ -79,6 +76,7 @@ for iteration in range(6):
 true_end = time()
 print("Total time: ", true_end - true_start)
 
-
-
-
+del madpno
+del integrals
+del opti
+del world

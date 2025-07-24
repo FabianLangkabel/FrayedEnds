@@ -17,9 +17,8 @@ def run(R):
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
-    # del madpno
 
-    madpy.plot_lines(world, atomics, "atomics")
+    world.plot_lines(atomics, "atomics")
 
     integrals = madpy.Integrals(world)
     orbitals = integrals.orthonormalize(orbitals=atomics)
@@ -29,7 +28,7 @@ def run(R):
     S = integrals.compute_overlap_integrals(orbitals)
     # del integrals
 
-    madpy.plot_lines(world, orbitals, "o-atomics")
+    world.plot_lines(orbitals, "o-atomics")
 
     mol1 = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=nuc_repulsion)
     mol2 = tq.Molecule(geom, basis_set="sto-3g").use_native_orbitals()
@@ -52,24 +51,21 @@ def run(R):
         print(u)
         energies["SPA/sto-3g"] = result.energy
 
-
     integrals = madpy.Integrals(world)
     orbitals = integrals.transform(orbitals, u)
-    # del integrals
 
     c = nuc_repulsion
     for x in orbitals: x.type="active"
 
     current = result.energy
     for iteration in range(3):
-        madpy.plot_lines(world, orbitals, f"orbitals-iteration-{iteration}")
+        world.plot_lines(orbitals, f"orbitals-iteration-{iteration}")
 
         integrals = madpy.Integrals(world)
         G = integrals.compute_two_body_integrals(orbitals).elems
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
         S = integrals.compute_overlap_integrals(orbitals)
-        # del integrals
 
         mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
         fci = mol.compute_energy("fci")
@@ -83,9 +79,8 @@ def run(R):
         energies["SPA/MRA-NO[it={}]".format(iteration)] = result.energy
         energies["FCI/MRA-NO[it={},wfn=spa]".format(iteration)] = fci
 
-        opti = madpy.Optimization(world, Vnuc, nuc_repulsion, parameters=param)
+        opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
         new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.01, occ_thresh=0.001)
-        # del opti
 
         integrals = madpy.Integrals(world)
         S = integrals.compute_overlap_integrals(orbitals, new_orbitals)
@@ -104,13 +99,19 @@ def run(R):
 
         S = integrals.compute_overlap_integrals(xorbitals, orbitals)
         print(S)
-        # del integrals
 
         if iteration>0 and numpy.isclose(current, result.energy, atol=1.e-3):
             print("converged")
             break
         current = result.energy
+
+    del madpno
+    del integrals
+    del opti
+    del world
+
     return energies
+
 
 results=[]
 x = list(numpy.linspace(start=0.65, stop=1.2, num=5, endpoint=False))
@@ -136,6 +137,3 @@ for m in methods:
     plt.plot(x,y, label=m, marker="x")
 plt.legend()
 plt.show()
-
-
-
