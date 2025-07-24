@@ -5,15 +5,15 @@ import tequila as tq
 
 import madpy
 
+method="cisd" #"fci"
+
 true_start = time()
 # initialize the PNO interface
 geom = "H 0.0 0.0 0.0\nH 0.0 0.0 3.5\nH 0.0 0.0 7.0\nH 0.0 0.0 10.5"  # geometry in Angstrom
 
 world = madpy.MadWorld()
-
 madpno = madpy.MadPNO(world, geom, n_orbitals=4)
 orbitals = madpno.get_orbitals()
-edges = madpno.get_spa_edges()
 
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
@@ -36,17 +36,9 @@ for iteration in range(6):
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
 
-    mol = tq.Molecule(
-        geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
-    )
-    U = mol.make_ansatz(name="SPA", edges=edges)
-    H = mol.make_hamiltonian()
-    E = tq.ExpectationValue(H=H, U=U)
-    result = tq.minimize(E, silent=True)
-    rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
-
-    print(c)
-    print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
+    mol = madpy.PySCFInterface(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, constant_term=c)
+    rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
+    print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
     opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
     new_orbitals = opti.get_orbitals(
