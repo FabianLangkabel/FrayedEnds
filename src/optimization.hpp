@@ -9,7 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <algorithm>
-#include <utility> 
+#include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
 #include "npy.hpp"
 #include "functionsaver.hpp"
@@ -18,22 +18,23 @@
 using namespace madness;
 
 class Optimization {
-public:
+  public:
     Optimization(MadnessProcess& mp);
     ~Optimization();
 
-    //input
+    // input
     void GiveInitialOrbitals(std::vector<SavedFct> all_orbs);
-    void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements); //TODO
+    void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements); // TODO
 
-    //output
+    // output
     double GetC();
     std::vector<double> GetHTensor();
     std::vector<double> GetGTensor();
     std::vector<SavedFct> GetOrbitals();
 
     void GivePotentialAndRepulsion(SavedFct potential, double nuclear_repulsion);
-    void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files, std::vector<std::string> frozen_virt_orb_files);
+    void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files,
+                             std::vector<std::string> frozen_virt_orb_files);
     void ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file);
     void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
     void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);
@@ -49,9 +50,10 @@ public:
     void SaveOrbitals(std::string OutputPath);
     void SaveEffectiveHamiltonian(std::string OutputPath);
 
-    //helper
+    // helper
     void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
-    madness::Tensor<double> matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B, std::size_t n);
+    madness::Tensor<double> matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B,
+                                       std::size_t n);
 
     int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
@@ -59,16 +61,16 @@ public:
     double coulomb_eps = 1e-6;
     double BSH_lo = 0.01;
     double BSH_eps = 1e-6;
-    
-private:
+
+  private:
     MadnessProcess& madness_process;
 
-    //Madness + Molecule
+    // Madness + Molecule
     std::vector<std::vector<double>> atoms;
-    double nuclear_repulsion_energy=0.0;
+    double nuclear_repulsion_energy = 0.0;
     real_function_3d Vnuc;
 
-    //Orbitals
+    // Orbitals
     std::vector<std::string> frozen_occ_orbs_files;
     std::vector<std::string> active_orbs_files;
     std::vector<std::string> frozen_virt_orb_files;
@@ -79,31 +81,31 @@ private:
     int as_dim;
     int froz_virt_dim;
 
-    //RDMs
+    // RDMs
     madness::Tensor<double> ActiveSpaceRotationMatrix;
     madness::Tensor<double> as_one_rdm;
     madness::Tensor<double> as_two_rdm;
 
-    //Integrals
+    // Integrals
     madness::Tensor<double> as_integrals_one_body; // (k,l)
     madness::Tensor<double> as_integrals_two_body; // (k,l,m,n)
 
-    madness::Tensor<double> core_as_integrals_one_body_ak; // (a,k)
+    madness::Tensor<double> core_as_integrals_one_body_ak;   // (a,k)
     madness::Tensor<double> core_as_integrals_two_body_akln; // (a,k,l,n)
     madness::Tensor<double> core_as_integrals_two_body_akal; // (a,k,l)
     madness::Tensor<double> core_as_integrals_two_body_akla; // (a,k,l)
     madness::Tensor<double> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
     madness::Tensor<double> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
 
-    //Energies
+    // Energies
     double core_total_energy;
 
-    //Refinement
+    // Refinement
     double highest_error;
-    madness::Tensor<double> LagrangeMultiplier_AS_AS;       
+    madness::Tensor<double> LagrangeMultiplier_AS_AS;
     madness::Tensor<double> LagrangeMultiplier_AS_Core;
 
-    //Stored AS orbital combinations
-    std::vector<real_function_3d> orbs_kl; // |kl>
+    // Stored AS orbital combinations
+    std::vector<real_function_3d> orbs_kl;      // |kl>
     std::vector<real_function_3d> coul_orbs_mn; // 1/r|mn>
 };
