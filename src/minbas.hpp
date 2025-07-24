@@ -21,9 +21,9 @@
 using namespace madness;
 namespace nb = nanobind;
 
-class MinBasProjector: public MadnessProcess{
+class MinBasProjector {
 	public:
-		MinBasProjector(std::string argv, double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads) : MadnessProcess(L, k, thresh, initial_level, truncate_mode, refine, n_threads)
+		MinBasProjector(MadnessProcess& mp, std::string argv) : madness_process(mp)
 		{
 			auto [argc, charArray] = stringToCharPointerArray(argv);
 			parser = commandlineparser(argc,charArray);
@@ -36,12 +36,12 @@ class MinBasProjector: public MadnessProcess{
 
         void run()
 		{
-			SCF calc(*world, parser);
+			SCF calc(*(madness_process.world), parser);
             calc.reset_aobasis("sto-3g");
-            atomicbasis = calc.project_ao_basis(*world, calc.aobasis);
+            atomicbasis = calc.project_ao_basis(*(madness_process.world), calc.aobasis);
             basisname = "sto-3g";
             nuclear_repulsion = calc.molecule.nuclear_repulsion_energy();
-            calc.make_nuclear_potential(*world);
+            calc.make_nuclear_potential(*(madness_process.world));
             Vnuc = calc.potentialmanager -> vnuclear();
 		}
 
@@ -67,7 +67,8 @@ class MinBasProjector: public MadnessProcess{
 			return nuclear_repulsion;
 		}
 
-		private:
+	private:
+		MadnessProcess& madness_process;
         commandlineparser parser;
 	    std::vector<madness::Function<double,3>> atomicbasis;
 	    std::string basisname;

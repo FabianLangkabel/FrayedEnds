@@ -5,28 +5,25 @@ from time import time
 true_start = time()
 # initialize the PNO interface
 geom = "Li 0.0 0.0 0.0\nH 0.0 0.0 3.0"  # geometry in Angstrom
-madpno = madpy.MadPNO(geom, n_orbitals=3)
+
+world = madpy.MadWorld()
+
+madpno = madpy.MadPNO(world, geom, n_orbitals=3)
 orbitals = madpno.get_orbitals()
 edges = madpno.get_spa_edges()
 atomics = madpno.get_sto3g()
-param = madpno.madness_parameters
+
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
-del madpno
 
-plt = madpy.Plotter()
 for i in range(len(orbitals)):
-    plt.line_plot(f"pnoorb{i}.dat", orbitals[i])
-del plt
+    world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
-integrals = madpy.Integrals(param)
+integrals = madpy.Integrals(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
-plt = madpy.Plotter()
 for i in range(len(atomics)):
-    plt.line_plot(f"atomics{i}.dat", atomics[i])
-del plt
-
+    world.line_plot(f"atomics{i}.dat", atomics[i])
 
 # project the first hf orbital out of the atomics
 active = integrals.project_out(kernel=[orbitals[0]], target=atomics)
@@ -36,23 +33,21 @@ orbitals = [orbitals[0], active[4], active[5]]
 orbitals[0].type="frozen_occ"
 orbitals[1].type="active"
 orbitals[2].type="active"
-del integrals
 
 c = nuc_repulsion
 
 u = None
 for iteration in range(6):
 
-    integrals = madpy.Integrals(param)
+    integrals = madpy.Integrals(world)
     G = integrals.compute_two_body_integrals(orbitals).elems
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
     print(S)
-    plt = madpy.Plotter()
+
     for i in range(len(orbitals)):
-        plt.line_plot(f"orb{i}.dat", orbitals[i])
-    del plt
+        world.line_plot(f"orb{i}.dat", orbitals[i])
 
     mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
     U = mol.make_ansatz(name="UpCCGSD")
@@ -71,19 +66,17 @@ for iteration in range(6):
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
-    opti = madpy.Optimization(Vnuc, nuc_repulsion, parameters=param)
+    opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
     print(orbitals)
-    del opti
 
-    plt = madpy.Plotter()
     for i in range(len(orbitals)):
-        plt.line_plot(f"orb{i}.dat", orbitals[i])
-    del plt
+        world.line_plot(f"orb{i}.dat", orbitals[i])
 
 true_end = time()
 print("Total time: ", true_end - true_start)
 
-
-
-
+del madpno
+del integrals
+del opti
+del world

@@ -1,17 +1,17 @@
 import numpy
 from ._madpy_impl import PNOInterface
-from .parameters import redirect_output
-from .baseclass import MadPyBase, get_function_info
+from .madworld import redirect_output, get_function_info
 import glob
 import os
 
 
-class MadPNO(MadPyBase):
+class MadPNO:
 
     _orbitals = None
     _h = None # one-body tensor
     _g = None # two-body tensor
     _c = 0.0 # constant term
+    impl = None
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -20,11 +20,10 @@ class MadPNO(MadPyBase):
         """
         return self.get_orbitals(*args, **kwargs)
 
-    def __init__(self, geometry, n_orbitals=None, no_compute=False, maxrank=None, diagonal=True, frozen_core=True, *args, **kwargs):
+    def __init__(self, madworld, geometry, n_orbitals=None, no_compute=False, maxrank=None, diagonal=True, frozen_core=True, *args, **kwargs):
         # todo: replace geometry with instalce of molecule class (expose to python)
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")
-        super().__init__(*args, **kwargs)
 
         # check if geometry is given as a file
         # if not write the file
@@ -45,8 +44,8 @@ class MadPNO(MadPyBase):
             except Exception:
                 maxrank = n_orbitals
 
-        pno_input_string = self.parameter_string(molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
-        self.impl = PNOInterface(pno_input_string, self.madness_parameters.L, self.madness_parameters.k, self.madness_parameters.thresh, self.madness_parameters.initial_level, self.madness_parameters.truncate_mode, self.madness_parameters.refine, self.madness_parameters.n_threads)
+        pno_input_string = self.parameter_string(madworld, molecule_file=geometry, maxrank=maxrank, diagonal=diagonal, frozen_core=frozen_core,  *args, **kwargs)
+        self.impl = PNOInterface(madworld._impl, pno_input_string)
 
         if not no_compute:
             self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
@@ -123,7 +122,7 @@ class MadPNO(MadPyBase):
         self._c = self.impl.GetNuclearRepulsion()
         return self._c,self._h,self._g
 
-    def parameter_string(self, molecule_file, maxrank=10, diagonal=True, frozen_core=True, **kwargs) -> str:
+    def parameter_string(self, madworld, molecule_file, maxrank=10, diagonal=True, frozen_core=True, **kwargs) -> str:
         """
         :param molecule_file: file containing the molecular coordinates
         :param maxrank: maxrank for each set of PNOs
@@ -135,7 +134,7 @@ class MadPNO(MadPyBase):
 
         data = {}
 
-        data["dft"] = {"xc": "hf", "L":self.madness_parameters.L,  "k": self.madness_parameters.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys"}
+        data["dft"] = {"xc": "hf", "L":madworld.L,  "k": madworld.k, "econv": 1.e-4, "dconv": 5.e-4, "localize": "boys"}
         data["nemo"] = {"ncf": "( none , 1.0)"}
         data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": diagonal}
 
