@@ -22,6 +22,8 @@ try:
 except ImportError:
     HAS_PYSCF = ImportError
 
+SUPPORTED_RDM_METHODS = ["fci", "cisd", "qcisd"]
+
 class PySCFInterface:
 
     def __init__(self, geometry, one_body_integrals, two_body_integrals, constant_term,  *args, **kwargs):
@@ -36,24 +38,29 @@ class PySCFInterface:
         mol = tq.Molecule(geometry=geometry, one_body_integrals=one_body_integrals, two_body_integrals=two_body_integrals, nuclear_repulsion=constant_term, *args, **kwargs)
         self.tqmol = tq.quantumchemistry.QuantumChemistryPySCF.from_tequila(molecule=mol)
     def compute_energy(self, method:str, *args, **kwargs):
+        if method in SUPPORTED_RDM_METHODS:
+            return self.compute_rdms(method=method, *args, **kwargs)[0]
         return self.tqmol.compute_energy(method=method, *args, **kwargs)
 
-    def compute_rdms(self, method="fci", *args, **kwargs):
+    def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
         if method in ["fci","FCI"]:
             c, h1, h2 = self.tqmol.get_integrals(ordering="chem")
-            e, fcivec = pyscf.fci.direct_spin0.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons)
+            energy, fcivec = pyscf.fci.direct_spin0.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons)
             rdm1, rdm2 = pyscf.fci.direct_spin0.make_rdm12(fcivec, self.tqmol.n_orbitals, self.tqmol.n_electrons)
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
-        elif hasattr(method, "lower") and "ci" in method.lower():
+        elif hasattr(method, "lower") and method.lower() == "cisd":
             from pyscf import ci
             hf = self.tqmol._get_hf(**kwargs)
             cisd = ci.CISD(hf)
-            cisd.kernel()
+            energy, civec = cisd.kernel()
             rdm1 = cisd.make_rdm1()
             rdm2 = cisd.make_rdm2()
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         else:
-            raise Exception(f"compute_rdms: method={method} not supported (yet)")
+            raise Exception(f"compute_rdms: method={method} not supported (yet)\nsupported are{SUPPORTED_RDM_METHODS}")
+
+        if return_energy:
+            return rdm1, rdm2, energy
         return rdm1, rdm2
 
 

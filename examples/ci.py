@@ -5,6 +5,8 @@ import tequila as tq
 
 import madpy
 
+method="cisd" #"fci"
+
 true_start = time()
 # initialize the PNO interface
 geom = "H 0.0 0.0 0.0\nH 0.0 0.0 3.5\nH 0.0 0.0 7.0\nH 0.0 0.0 10.5"  # geometry in Angstrom
@@ -35,9 +37,7 @@ for iteration in range(6):
     S = integrals.compute_overlap_integrals(orbitals)
 
     mol = madpy.PySCFInterface(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, constant_term=c)
-    energy = mol.compute_energy(method="cisd")
-    rdm1, rdm2 = mol.compute_rdms(method="cisd")
-
+    rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
     print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
     opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
