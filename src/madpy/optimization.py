@@ -1,11 +1,13 @@
+import numpy as np
+
 from ._madpy_impl import Optimization as OptInterface
 from .madworld import redirect_output
 
-import numpy as np
-
 
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
-    new_rdm1 = np.dot(np.dot(TransformationMatrix.transpose(), rdm1), TransformationMatrix)
+    new_rdm1 = np.dot(
+        np.dot(TransformationMatrix.transpose(), rdm1), TransformationMatrix
+    )
     n = rdm2.shape[0]
 
     temp1 = np.zeros(shape=(n, n, n, n))
@@ -50,12 +52,13 @@ def transform_rdms(TransformationMatrix, rdm1, rdm2):
 
     return new_rdm1, new_rdm2
 
+
 class Optimization:
 
     _orbitals = None
-    _h = None # one-body tensor
-    _g = None # two-body tensor
-    _c = 0.0 # constant term
+    _h = None  # one-body tensor
+    _g = None  # two-body tensor
+    _c = 0.0  # constant term
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
@@ -71,7 +74,16 @@ class Optimization:
         self._nuclear_repulsion = nuc_repulsion
 
     @redirect_output("madopt.log")
-    def optimize_orbs(self, orbitals, rdm1, rdm2, opt_thresh=1.e-4, occ_thresh=1.e-5, *args, **kwargs):
+    def optimize_orbs(
+        self,
+        orbitals,
+        rdm1,
+        rdm2,
+        opt_thresh=1.0e-4,
+        occ_thresh=1.0e-5,
+        *args,
+        **kwargs,
+    ):
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
         self.impl.GivePotentialAndRepulsion(self._Vnuc, self._nuclear_repulsion)
@@ -86,10 +98,10 @@ class Optimization:
 
         self._orbitals = self.impl.GetOrbitals()
         return self._orbitals
-    
+
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is None:
-            self._orbitals=self.optimize_orbs(*args, **kwargs)
+            self._orbitals = self.optimize_orbs(*args, **kwargs)
             assert self._orbitals is not None
         return self._orbitals
 
@@ -101,7 +113,9 @@ class Optimization:
         self._h = self.impl.GetHTensor()
         self._g = self.impl.GetGTensor()
         return self._c, self._h, self._g
-    
-    def get_c(self, *args, **kwargs): #this is the sum of the energy of the frozen core electrons and the nuclear repulsion
-        self._c=self.impl.GetC()
+
+    def get_c(
+        self, *args, **kwargs
+    ):  # this is the sum of the energy of the frozen core electrons and the nuclear repulsion
+        self._c = self.impl.GetC()
         return self._c

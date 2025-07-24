@@ -1,6 +1,8 @@
-import madpy
-import tequila as tq
 from time import time
+
+import tequila as tq
+
+import madpy
 
 true_start = time()
 # initialize the PNO interface
@@ -30,9 +32,9 @@ active = integrals.project_out(kernel=[orbitals[0]], target=atomics)
 active = integrals.orthonormalize(orbitals=active)
 # make an active space: hf, Li-s, H-1s
 orbitals = [orbitals[0], active[4], active[5]]
-orbitals[0].type="frozen_occ"
-orbitals[1].type="active"
-orbitals[2].type="active"
+orbitals[0].type = "frozen_occ"
+orbitals[1].type = "active"
+orbitals[2].type = "active"
 
 c = nuc_repulsion
 
@@ -49,12 +51,14 @@ for iteration in range(6):
     for i in range(len(orbitals)):
         world.line_plot(f"orb{i}.dat", orbitals[i])
 
-    mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
+    mol = tq.Molecule(
+        geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
+    )
     U = mol.make_ansatz(name="UpCCGSD")
 
-    #opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, initial_guess=u)
-    #u = opt.mo_coeff
-    #mol = opt.molecule
+    # opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, initial_guess=u)
+    # u = opt.mo_coeff
+    # mol = opt.molecule
 
     H = mol.make_hamiltonian()
     E = tq.ExpectationValue(H=H, U=U)
@@ -67,7 +71,9 @@ for iteration in range(6):
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
     opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
-    orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+    orbitals = opti.get_orbitals(
+        orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+    )
     print(orbitals)
 
     for i in range(len(orbitals)):
