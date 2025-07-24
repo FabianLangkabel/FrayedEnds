@@ -3,18 +3,16 @@ repos:
     rev: v5.10.0
     hooks:
       - id: isort
-        args: [--check-only]
 
   - repo: https://github.com/psf/black
     rev: 24.4.2
     hooks:
       - id: black
-        args: [--check]
         language_version: python3
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v18.1.4
     hooks:
       - id: clang-format
-        args: [--dry-run, --Werror, --style=file]
+        args: [--style=file]
         files: \.(cpp|hpp|c|h|cc|hh|cxx|hxx)$
