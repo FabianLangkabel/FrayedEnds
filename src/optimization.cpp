@@ -173,27 +173,10 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
     //****************************************
     // Rotate active Space Orbitals
     //****************************************
-    /*
-    {
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-        es.compute(as_one_rdm);
-        ActiveSpaceRotationMatrix = es.eigenvectors().rowwise().reverse();
-        TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
-        TransformTensor(&as_two_rdm, ActiveSpaceRotationMatrix);
-        madness::Tensor<double> T(as_dim, as_dim);
-        for (int i = 0; i < as_dim; i++) {
-            for (int j = 0; j < as_dim; j++) {
-                T(i,j) = ActiveSpaceRotationMatrix(i,j);
-            }
-        }
-        active_orbs = transform(*(madness_process.world), active_orbs, T);
-    }
-    */
     ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
     Tensor<double> evals(as_dim);
     syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
     sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
-    std::cout << evals << std::endl;
     TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
     TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
     active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
@@ -245,22 +228,6 @@ void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_element
     //****************************************
     // Rotate active Space Orbitals
     //****************************************
-    /*
-    {
-
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
-        es.compute(as_one_rdm);
-        ActiveSpaceRotationMatrix = es.eigenvectors().rowwise().reverse();
-        TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
-        TransformTensor(&as_two_rdm, ActiveSpaceRotationMatrix);
-        madness::Tensor<double> T(as_dim, as_dim);
-        for (int i = 0; i < as_dim; i++) {
-            for (int j = 0; j < as_dim; j++) {
-                T(i,j) = ActiveSpaceRotationMatrix(i,j);
-            }
-        }
-        active_orbs = transform(*(madness_process.world), active_orbs, T);
-    }*/
     ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
     Tensor<double> evals(as_dim);
     syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
@@ -971,24 +938,16 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
 
 void Optimization::RotateOrbitalsBack()
 {
-    /*
-    //Create Full RotationMatrix
-    Eigen::MatrixXd RotationMatrixBack = ActiveSpaceRotationMatrix.transpose();
-
-    //Transform RDMs
-    TransformMatrix(&as_one_rdm, RotationMatrixBack);
-    TransformTensor(&as_two_rdm, RotationMatrixBack);
-
-    //Transform active Orbitals
-    madness::Tensor<double> T(as_dim, as_dim);
+    madness::Tensor<double> RotationMatrixBack = madness::Tensor<double>(as_dim, as_dim);
     for (int i = 0; i < as_dim; i++) {
         for (int j = 0; j < as_dim; j++) {
-            T(i,j) = RotationMatrixBack(i,j);
+            RotationMatrixBack(i, j) = ActiveSpaceRotationMatrix(j, i);
         }
     }
-    active_orbs = transform(*(madness_process.world), active_orbs, T);
-    */
-    // todo ????? whats going on above?
+
+    TransformMatrix(&as_one_rdm, RotationMatrixBack);
+    TransformTensor(as_two_rdm, RotationMatrixBack);
+    active_orbs = transform(*(madness_process.world), active_orbs, RotationMatrixBack);
     CalculateAllIntegrals();
 }
 
