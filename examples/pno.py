@@ -45,12 +45,8 @@ for iteration in range(6):
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
     opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
-    orbitals = opti.get_orbitals(
-        orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
-    )
-    c = (
-        opti.get_c()
-    )  # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
+    orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+    c = opti.get_c() # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 
     for i in range(len(orbitals)):
         world.line_plot(f"orb{i}.dat", orbitals[i])
