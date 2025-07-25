@@ -38,5 +38,8 @@ class Integrals:
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
 
-    def hello(self):
-        self.impl.hello()
+    def compute_nuclear_derivative(
+        self,
+        molecule,
+    ):
+        pass
