@@ -32,5 +32,5 @@ class PyFuncFactory {
         // std::cout << "Function created" << std::endl;
     }
     ~PyFuncFactory() { MRA_func.clear(); }
-    SavedFct GetMRAFunction() { return SavedFct(MRA_func); }
+    SavedFct get_mra_function() { return SavedFct(MRA_func); }
 };
