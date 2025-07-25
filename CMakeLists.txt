@@ -61,6 +61,7 @@ nanobind_add_module(
   src/PyFuncFactory.hpp
   src/eigensolver.cpp
   src/nwchem_converter.cpp
+  src/madmolecule.cpp
 )
 
 # Install directive for scikit-build-core
