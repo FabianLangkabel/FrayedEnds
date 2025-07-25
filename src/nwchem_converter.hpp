@@ -30,8 +30,8 @@ class NWChem_Converter {
 
     std::vector<SavedFct> GetNormalizedAOs();
     std::vector<SavedFct> GetMOs();
-    SavedFct GetVNuc() {return SavedFct(Vnuc);}
-    double GetNuclearRepulsionEnergy() {return nuclear_repulsion_energy;}
+    SavedFct GetVNuc() { return SavedFct(Vnuc); }
+    double GetNuclearRepulsionEnergy() { return nuclear_repulsion_energy; }
 
   private:
     MadnessProcess& madness_process;
