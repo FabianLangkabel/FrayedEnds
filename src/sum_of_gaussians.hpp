@@ -55,7 +55,7 @@ class CoulombPotentialFromChargeDensity {
     }
 
     ~CoulombPotentialFromChargeDensity() {}
-    SavedFct CreateChargeDens() {
+    SavedFct create_charge_density() {
         SumOfGaussians Rho(sharpness_list, Q, charge_locations); // charge density
         Function<double, 3> f = FunctionFactory<double, 3>(*(madness_process.world))
                                     .special_level(10)
@@ -65,7 +65,7 @@ class CoulombPotentialFromChargeDensity {
         f = Rho.Q / norm * f; // renormalize such that Q=\int dV rho
         return SavedFct(f);
     }
-    SavedFct CreatePotential() {
+    SavedFct create_potential() {
         Function<double, 3> Vnuc = make_potential(*(madness_process.world), sharpness_list, Q, charge_locations);
         return SavedFct(Vnuc);
     }

@@ -111,8 +111,8 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<MadnessProcess&, const std::vector<double>&, const double&,
                       const std::vector<std::vector<double>>&>())
-        .def("CreatePotential", &CoulombPotentialFromChargeDensity::CreatePotential)
-        .def("CreateChargeDens", &CoulombPotentialFromChargeDensity::CreateChargeDens);
+        .def("create_potential", &CoulombPotentialFromChargeDensity::create_potential)
+        .def("create_charge_density", &CoulombPotentialFromChargeDensity::create_charge_density);
 
     nb::class_<RedirectOutput>(m, "RedirectOutput").def(nb::init<const std::string&>());
 
