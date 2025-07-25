@@ -96,7 +96,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
         .def("run", &PNOInterface::run)
         .def("get_sto3g", &PNOInterface::get_sto3g)
-        .def("GetPNOs", &PNOInterface::GetPNOs)
+        .def("get_pnos", &PNOInterface::get_pnos)
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
         .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion);
 

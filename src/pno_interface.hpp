@@ -316,7 +316,7 @@ class PNOInterface {
         sto3g = nemo.get_calc()->project_ao_basis(*(madness_process.world), nemo.get_calc()->aobasis);
     }
 
-    std::vector<SavedFct> GetPNOs(int core_dim, int as_dim, int froz_virt_dim) const {
+    std::vector<SavedFct> get_pnos(int core_dim, int as_dim, int froz_virt_dim) const {
         if (core_dim + as_dim + froz_virt_dim != basis.size()) {
             std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << core_dim << " "
                       << as_dim << " " << froz_virt_dim << " " << basis.size() << std::endl;
