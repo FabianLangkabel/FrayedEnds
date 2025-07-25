@@ -8,7 +8,6 @@
 #include "integrals.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
-#include "molecule.hpp"
 #include "minbas.hpp"
 #include "MadnessProcess.hpp"
 
@@ -33,12 +32,12 @@ NB_MODULE(_madpy_impl, m) {
         .def_ro("refine", &MadnessProcess::refine)
         .def_ro("n_threads", &MadnessProcess::n_threads);
 
-    nb::class_<real_function_3d>(m, "real_function_3d").def(nb::init<>());
+    nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
 
-    nb::class_<molecule>(m, "molecule")
+    nb::class_<MadMolecule>(m, "MadMolecule")
         .def(nb::init<>())
-        .def("add_atom", &molecule::add_atom)
-        .def("to_json", &molecule::to_json);
+        .def("add_atom", &MadMolecule::add_atom)
+        .def("to_json", &MadMolecule::to_json);
 
     nb::class_<SavedFct>(m, "SavedFct")
         .def(nb::init<const Function<double, 3>&>())
