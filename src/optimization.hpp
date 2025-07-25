@@ -23,32 +23,32 @@ class Optimization {
     ~Optimization();
 
     // input
-    void GiveInitialOrbitals(std::vector<SavedFct> all_orbs);
-    void GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements); // TODO
+    void give_initial_orbitals(std::vector<SavedFct> all_orbs);
+    void give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements);
 
     // output
-    double GetC();
-    std::vector<double> GetHTensor();
-    std::vector<double> GetGTensor();
-    std::vector<SavedFct> GetOrbitals();
+    double get_c();
+    std::vector<double> get_h_tensor();
+    std::vector<double> get_g_tensor();
+    std::vector<SavedFct> get_orbitals();
 
-    void GivePotentialAndRepulsion(SavedFct potential, double nuclear_repulsion);
-    void ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files,
+    void give_potential_and_repulsion(SavedFct potential, double nuclear_repulsion);
+    void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files,
                              std::vector<std::string> frozen_virt_orb_files);
-    void ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file);
+    void read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file);
     void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
     void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);
-    void CalculateAllIntegrals();
-    void CalculateCoreEnergy();
-    void CalculateEnergies();
-    void CalculateLagrangeMultiplier();
-    double CalculateLagrangeMultiplierElement_AS_AS(int z, int i);
-    double CalculateLagrangeMultiplierElement_AS_Core(int z, int i);
-    void OptimizeOrbitals(double optimization_thresh, double NO_occupation_thresh);
-    std::vector<real_function_3d> GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update);
-    void RotateOrbitalsBack();
-    void SaveOrbitals(std::string OutputPath);
-    void SaveEffectiveHamiltonian(std::string OutputPath);
+    void calculate_all_integrals();
+    void calculate_core_energy();
+    void calculate_energies();
+    void calculate_lagrange_multiplier();
+    double calculate_lagrange_multiplier_element_as_as(int z, int i);
+    double calculate_lagrange_multiplier_element_as_core(int z, int i);
+    void optimize_orbitals(double optimization_thresh, double NO_occupation_thresh);
+    std::vector<real_function_3d> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
+    void rotate_orbitals_back();
+    void save_orbitals(std::string OutputPath);
+    void save_effective_hamiltonian(std::string OutputPath);
 
     // helper
     void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);

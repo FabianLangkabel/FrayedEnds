@@ -15,12 +15,12 @@ Optimization::~Optimization() {
     coul_orbs_mn.clear();
 }
 
-void Optimization::GivePotentialAndRepulsion(SavedFct potential, double nuclear_repulsion) {
+void Optimization::give_potential_and_repulsion(SavedFct potential, double nuclear_repulsion) {
     Vnuc = madness_process.loadfct(potential);
     nuclear_repulsion_energy = nuclear_repulsion;
 }
 
-void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_files,
+void Optimization::read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files,
                                        std::vector<std::string> active_orbs_files,
                                        std::vector<std::string> frozen_virt_orb_files) {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -55,7 +55,7 @@ void Optimization::ReadInitialOrbitals(std::vector<std::string> frozen_occ_orbs_
     std::cout << "ReadOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
-void Optimization::GiveInitialOrbitals(std::vector<SavedFct> all_orbs) {
+void Optimization::give_initial_orbitals(std::vector<SavedFct> all_orbs) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (SavedFct orb : all_orbs) {
@@ -120,7 +120,7 @@ madness::Tensor<double> Optimization::matmul_mxm(const madness::Tensor<double>& 
     return C;
 }
 
-void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::string two_rdm_file) {
+void Optimization::read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     //****************************************
@@ -170,7 +170,7 @@ void Optimization::ReadRDMFilesAndRotateOrbitals(std::string one_rdm_file, std::
 
 // this function just takes two lists of doubles, without any information about the shape, might be better to change
 // that
-void Optimization::GiveRDMsAndRotateOrbitals(std::vector<double> one_rdm_elements,
+void Optimization::give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements,
                                              std::vector<double> two_rdm_elements) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -289,7 +289,7 @@ void Optimization::TransformTensor(madness::Tensor<double>& ObjectTensor,
     ObjectTensor = temp4;
 }
 
-void Optimization::CalculateAllIntegrals() {
+void Optimization::calculate_all_integrals() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Initializing the Coulomb operator
@@ -457,7 +457,7 @@ void Optimization::CalculateAllIntegrals() {
               << " seconds" << std::endl;
 }
 
-void Optimization::CalculateCoreEnergy() {
+void Optimization::calculate_core_energy() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     double nocc = 2; // Spatial orbitals = 2, Spin orbitals = 1
@@ -533,7 +533,7 @@ void Optimization::CalculateCoreEnergy() {
     std::cout << "CalculateCoreEnergy took " << duration.count() << " seconds" << std::endl;
 }
 
-void Optimization::CalculateEnergies() {
+void Optimization::calculate_energies() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Active Space Part
@@ -589,14 +589,14 @@ void Optimization::CalculateEnergies() {
     std::cout << "CalculateEnergies took " << duration.count() << " seconds" << std::endl;
 }
 
-void Optimization::CalculateLagrangeMultiplier() {
+void Optimization::calculate_lagrange_multiplier() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     LagrangeMultiplier_AS_AS = madness::Tensor<double>(as_dim, as_dim);
 
     for (int z = 0; z < as_dim; z++) {
         for (int i = 0; i < as_dim; i++) {
-            LagrangeMultiplier_AS_AS(z, i) = CalculateLagrangeMultiplierElement_AS_AS(z, i);
+            LagrangeMultiplier_AS_AS(z, i) = calculate_lagrange_multiplier_element_as_as(z, i);
         }
     }
 
@@ -604,7 +604,7 @@ void Optimization::CalculateLagrangeMultiplier() {
         LagrangeMultiplier_AS_Core = madness::Tensor<double>(core_dim, as_dim);
         for (int z = 0; z < core_dim; z++) {
             for (int i = 0; i < as_dim; i++) {
-                LagrangeMultiplier_AS_Core(z, i) = CalculateLagrangeMultiplierElement_AS_Core(z, i);
+                LagrangeMultiplier_AS_Core(z, i) = calculate_lagrange_multiplier_element_as_core(z, i);
             }
         }
     }
@@ -614,7 +614,7 @@ void Optimization::CalculateLagrangeMultiplier() {
     std::cout << "CalculateLagrangeMultiplier took " << duration.count() << " seconds" << std::endl;
 }
 
-double Optimization::CalculateLagrangeMultiplierElement_AS_AS(int z, int i) {
+double Optimization::calculate_lagrange_multiplier_element_as_as(int z, int i) {
     double element = as_one_rdm(i, i) * as_integrals_one_body(z, i);
     for (int l = 0; l < as_dim; l++) {
         for (int n = 0; n < as_dim; n++) {
@@ -633,7 +633,7 @@ double Optimization::CalculateLagrangeMultiplierElement_AS_AS(int z, int i) {
     return element;
 }
 
-double Optimization::CalculateLagrangeMultiplierElement_AS_Core(int z, int i) {
+double Optimization::calculate_lagrange_multiplier_element_as_core(int z, int i) {
     double element = as_one_rdm(i, i) * core_as_integrals_one_body_ak(z, i);
 
     for (int l = 0; l < as_dim; l++) {
@@ -653,7 +653,7 @@ double Optimization::CalculateLagrangeMultiplierElement_AS_Core(int z, int i) {
     return element;
 }
 
-void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupation_thresh) {
+void Optimization::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh) {
 
     bool converged = false;
     int iterstep = 0;
@@ -663,7 +663,7 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
         std::cout << "Start iteration step: " << iterstep << std::endl;
 
         // Update LagrangeMultiplier
-        CalculateLagrangeMultiplier();
+        calculate_lagrange_multiplier();
 
         // Update orbitals
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();
@@ -681,7 +681,7 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
         }
 
         std::vector<real_function_3d> AllActiveOrbitalUpdates =
-            GetAllActiveOrbitalUpdates(as_orbital_indicies_for_update);
+            get_all_active_orbital_updates(as_orbital_indicies_for_update);
 
         for (int idx = 0; idx < as_orbital_indicies_for_update.size(); idx++) {
             int actIdx = as_orbital_indicies_for_update[idx];
@@ -705,14 +705,14 @@ void Optimization::OptimizeOrbitals(double optimization_thresh, double NO_occupa
 
         std::cout << "Update Integrals" << std::endl;
         // Update integrals for new orbitals
-        CalculateAllIntegrals();
+        calculate_all_integrals();
 
         // Calculate new energy
-        CalculateEnergies();
+        calculate_energies();
     }
 }
 
-std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vector<int> orbital_indicies_for_update) {
+std::vector<real_function_3d> Optimization::get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update) {
     auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<real_function_3d> AllOrbitalUpdates;
@@ -855,7 +855,7 @@ std::vector<real_function_3d> Optimization::GetAllActiveOrbitalUpdates(std::vect
     return AllOrbitalUpdates;
 }
 
-void Optimization::RotateOrbitalsBack() {
+void Optimization::rotate_orbitals_back() {
     madness::Tensor<double> RotationMatrixBack = madness::Tensor<double>(as_dim, as_dim);
     for (int i = 0; i < as_dim; i++) {
         for (int j = 0; j < as_dim; j++) {
@@ -866,10 +866,10 @@ void Optimization::RotateOrbitalsBack() {
     TransformMatrix(&as_one_rdm, RotationMatrixBack);
     TransformTensor(as_two_rdm, RotationMatrixBack);
     active_orbs = transform(*(madness_process.world), active_orbs, RotationMatrixBack);
-    CalculateAllIntegrals();
+    calculate_all_integrals();
 }
 
-void Optimization::SaveOrbitals(std::string OutputPath) {
+void Optimization::save_orbitals(std::string OutputPath) {
     for (int i = 0; i < core_dim; i++) {
         std::string base_filename = frozen_occ_orbs_files[i].substr(frozen_occ_orbs_files[i].find_last_of("/\\") + 1);
         save(frozen_occ_orbs[i], OutputPath + "/" + base_filename);
@@ -884,7 +884,7 @@ void Optimization::SaveOrbitals(std::string OutputPath) {
     }
 }
 
-std::vector<SavedFct> Optimization::GetOrbitals() {
+std::vector<SavedFct> Optimization::get_orbitals() {
     std::vector<SavedFct> all_orbs;
     int j = 0;
     for (int i = 0; i < core_dim; i++) {
@@ -911,7 +911,7 @@ std::vector<SavedFct> Optimization::GetOrbitals() {
     return all_orbs;
 }
 
-void Optimization::SaveEffectiveHamiltonian(std::string OutputPath) {
+void Optimization::save_effective_hamiltonian(std::string OutputPath) {
     std::vector<double> effective_one_body_integrals_elements;
     std::vector<double> effective_two_body_integrals_elements;
 
@@ -954,14 +954,14 @@ void Optimization::SaveEffectiveHamiltonian(std::string OutputPath) {
 
 // the following three functions correspond to SaveEffectiveHamiltonian
 
-double Optimization::GetC() {
+double Optimization::get_c() {
     return core_total_energy + nuclear_repulsion_energy;
 }
 
 // information about the shape of the tensor is lost if we pass it to python like this. might be better to give a
 // tuple with the shape and the elements of the tensor, or write a class which has shape and a list of elements as
 // members
-std::vector<double> Optimization::GetHTensor() {
+std::vector<double> Optimization::get_h_tensor() {
     std::vector<double> effective_one_body_integrals_elements;
 
     madness::Tensor<double> effective_one_body_integrals = as_integrals_one_body;
@@ -979,7 +979,7 @@ std::vector<double> Optimization::GetHTensor() {
 }
 
 // same issue as in the htensor case
-std::vector<double> Optimization::GetGTensor() {
+std::vector<double> Optimization::get_g_tensor() {
     std::vector<double> effective_two_body_integrals_elements;
 
     for (int k = 0; k < as_dim; k++) {
