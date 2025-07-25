@@ -62,16 +62,3 @@ class MadnessProcess {
     void cube_plot(std::string filename, SavedFct f, MadMolecule molecule, double zoom = 1.0, int datapoints = 151,
                    std::vector<double> origin = {0.0, 0.0, 0.0});
 };
-
-class MadMolecule {
-  public:
-    MadMolecule();
-
-    void add_atom(float pos_x, float pos_y, float pos_z, std::string symbol);
-
-    std::string to_json();
-
-    SavedFct compute_nuclear_derivative(MadnessProcess& mp, const int atom, const int axis);
-
-    madness::Molecule mol;
-};

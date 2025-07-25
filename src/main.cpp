@@ -10,6 +10,7 @@
 #include "nwchem_converter.hpp"
 #include "minbas.hpp"
 #include "MadnessProcess.hpp"
+#include "madmolecule.hpp"
 
 namespace nb = nanobind;
 
@@ -37,7 +38,9 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<MadMolecule>(m, "MadMolecule")
         .def(nb::init<>())
         .def("add_atom", &MadMolecule::add_atom)
-        .def("to_json", &MadMolecule::to_json);
+        .def("to_json", &MadMolecule::to_json)
+        .def("compute_nuclear_derivative", &MadMolecule::compute_nuclear_derivative)
+        .def("get_vnuc", &MadMolecule::get_vnuc);
 
     nb::class_<SavedFct>(m, "SavedFct")
         .def(nb::init<const Function<double, 3>&>())
