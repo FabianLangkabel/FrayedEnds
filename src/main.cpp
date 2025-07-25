@@ -42,7 +42,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_nuclear_derivative", &MadMolecule::compute_nuclear_derivative)
         .def("compute_second_nuclear_derivative", &MadMolecule::compute_second_nuclear_derivative)
         .def("nuclear_repulsion_derivative", &MadMolecule::nuclear_repulsion_derivative)
-        .def("nuclear_repulsion_second_derivative", &MadMolecule::nuclear_repulsion_second_derivative);
+        .def("nuclear_repulsion_second_derivative", &MadMolecule::nuclear_repulsion_second_derivative)
         .def("get_vnuc", &MadMolecule::get_vnuc);
 
     nb::class_<SavedFct>(m, "SavedFct")
