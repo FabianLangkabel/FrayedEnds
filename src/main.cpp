@@ -129,9 +129,9 @@ NB_MODULE(_madpy_impl, m) {
 
     nb::class_<NWChem_Converter>(m, "NWChem_Converter")
         .def(nb::init<MadnessProcess&>())
-        .def("Read_NWChem_File", &NWChem_Converter::read_nwchem_file)
-        .def("GetNormalizedAOs", &NWChem_Converter::GetNormalizedAOs)
-        .def("GetMOs", &NWChem_Converter::GetMOs)
-        .def("GetVNuc", &NWChem_Converter::GetVNuc)
-        .def("GetNuclearRepulsionEnergy", &NWChem_Converter::GetNuclearRepulsionEnergy);
+        .def("read_nwchem_file", &NWChem_Converter::read_nwchem_file)
+        .def("get_normalized_aos", &NWChem_Converter::get_normalized_aos)
+        .def("get_mos", &NWChem_Converter::get_mos)
+        .def("get_vnuc", &NWChem_Converter::get_vnuc)
+        .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy);
 }
