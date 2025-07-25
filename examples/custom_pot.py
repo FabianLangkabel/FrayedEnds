@@ -20,7 +20,7 @@ def potential(x, y, z):
 world = mad.MadWorld(n_threads=0)
 
 factory = mad.MRAFunctionFactory(world, potential)
-mra_pot = factory.GetFunction()
+mra_pot = factory.get_function()
 
 world.change_nthreads(-1)
 

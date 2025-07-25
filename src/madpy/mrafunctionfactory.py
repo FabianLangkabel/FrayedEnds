@@ -8,5 +8,5 @@ class MRAFunctionFactory:
     def __init__(self, madworld, pyfunc, *args, **kwargs):
         self.impl = FuncFactory(madworld._impl, pyfunc)
 
-    def GetFunction(self):
-        return self.impl.GetMRAFunction()
+    def get_function(self):
+        return self.impl.get_mra_function()

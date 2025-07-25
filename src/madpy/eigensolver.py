@@ -21,7 +21,7 @@ class Eigensolver:
             )
 
         self.impl.solve(self._potential, n_states, max_iterations)
-        self._orbitals = self.impl.GetOrbitals(
+        self._orbitals = self.impl.get_orbitals(
             frozen_occ_dim, active_dim, frozen_virt_dim
         )
         return self._orbitals
