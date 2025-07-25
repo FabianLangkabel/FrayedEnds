@@ -42,8 +42,13 @@ void NWChem_Converter::read_nwchem_file(std::string nwchem_file) {
                           (double)symbol_to_atomic_number(atom.symbol), symbol_to_atomic_number(atom.symbol));
     }
 
+    // Vnuc = create_nuclear_correlation_factor(*(madness_process.world), molecule).U2();
     // Vnuc = new Nuclear<double,3>(*(madness_process.world), molecule);
-    // nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
+    PotentialManager pm = PotentialManager(molecule, "");
+    pm.make_nuclear_potential(*(madness_process.world));
+    Vnuc = pm.vnuclear();
+
+    nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
 
     // Transform ao's now
     normalize(*(madness_process.world), aos);
