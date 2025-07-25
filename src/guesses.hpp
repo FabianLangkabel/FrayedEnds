@@ -14,7 +14,7 @@
 #include <ostream>
 #include <vector>
 
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 using namespace madness;
 
