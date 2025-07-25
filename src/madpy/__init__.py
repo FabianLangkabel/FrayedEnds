@@ -1,6 +1,5 @@
 # todo: better integration
-from ._madpy_impl import (CoulombPotentialFromChargeDensity, NWChem_Converter,
-                          SavedFct, molecule)
+from ._madpy_impl import (CoulombPotentialFromChargeDensity, MadMolecule, SavedFct)
 from .eigensolver import Eigensolver
 from .integrals import Integrals
 from .madpno import MadPNO

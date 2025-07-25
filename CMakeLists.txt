@@ -57,7 +57,7 @@ nanobind_add_module(
   src/pno_interface.hpp
   src/sum_of_gaussians.hpp
   src/integrals.cpp
-  src/MadnessProcess.hpp
+  src/MadnessProcess.cpp
   src/PyFuncFactory.hpp
   src/eigensolver.cpp
   src/nwchem_converter.cpp
