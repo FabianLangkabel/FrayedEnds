@@ -56,7 +56,7 @@ void NWChem_Converter::read_nwchem_file(std::string nwchem_file) {
     truncate(*(madness_process.world), mos);
 }
 
-std::vector<SavedFct> NWChem_Converter::GetNormalizedAOs() {
+std::vector<SavedFct> NWChem_Converter::get_normalized_aos() {
     std::vector<SavedFct> all_orbs;
     for (int i = 0; i < aos.size(); i++) {
         SavedFct orb(aos[i]);
@@ -66,7 +66,7 @@ std::vector<SavedFct> NWChem_Converter::GetNormalizedAOs() {
     return all_orbs;
 }
 
-std::vector<SavedFct> NWChem_Converter::GetMOs() {
+std::vector<SavedFct> NWChem_Converter::get_mos() {
     std::vector<SavedFct> all_orbs;
     for (int i = 0; i < mos.size(); i++) {
         SavedFct orb(mos[i]);

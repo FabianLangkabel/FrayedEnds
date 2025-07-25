@@ -28,10 +28,10 @@ class NWChem_Converter {
 
     void read_nwchem_file(std::string nwchem_file);
 
-    std::vector<SavedFct> GetNormalizedAOs();
-    std::vector<SavedFct> GetMOs();
-    SavedFct GetVNuc() { return SavedFct(Vnuc); }
-    double GetNuclearRepulsionEnergy() { return nuclear_repulsion_energy; }
+    std::vector<SavedFct> get_normalized_aos();
+    std::vector<SavedFct> get_mos();
+    SavedFct get_vnuc() { return SavedFct(Vnuc); }
+    double get_nuclear_repulsion_energy() { return nuclear_repulsion_energy; }
 
   private:
     MadnessProcess& madness_process;
