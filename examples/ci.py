@@ -5,7 +5,7 @@ import tequila as tq
 
 import madpy
 
-method="cisd" #"fci"
+method = "cisd"  # "fci"
 
 true_start = time()
 # initialize the PNO interface
@@ -36,7 +36,9 @@ for iteration in range(6):
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
 
-    mol = madpy.PySCFInterface(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, constant_term=c)
+    mol = madpy.PySCFInterface(
+        geometry=geom, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
+    )
     rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
     print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
