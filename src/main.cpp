@@ -125,7 +125,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("solve", &Eigensolver3D::solve, nb::arg("input_V"), nb::arg("num_levels"), nb::arg("max_iter"))
         .def("solve_with_guesses", &Eigensolver3D::solve_with_input_guesses, nb::arg("input_V"),
              nb::arg("input_guesses"), nb::arg("num_levels"), nb::arg("max_iter"))
-        .def("GetOrbitals", &Eigensolver3D::GetOrbitals);
+        .def("get_orbitals", &Eigensolver3D::get_orbitals);
 
     nb::class_<NWChem_Converter>(m, "NWChem_Converter")
         .def(nb::init<MadnessProcess&>())

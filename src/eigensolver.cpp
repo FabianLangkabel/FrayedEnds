@@ -223,7 +223,7 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
     return phi;
 }
 
-std::vector<SavedFct> Eigensolver3D::GetOrbitals(int core_dim, int as_dim, int froz_virt_dim) const {
+std::vector<SavedFct> Eigensolver3D::get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const {
     std::vector<SavedFct> sav_orbs;
     for (auto i = 0; i < (core_dim + as_dim + froz_virt_dim); ++i) {
         SavedFct sav_orb(orbitals[i]);
