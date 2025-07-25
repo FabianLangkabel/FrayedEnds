@@ -51,7 +51,7 @@ for distance in distance_list:
         if iteration == 5:
             Energy_list.append(result.energy)
             #gradient calculation
-            part_deriv_V = molecule.compute_nuclear_derivative(world._impl, 1, 2)
+            part_deriv_V = molecule.compute_nuclear_derivative(world, 1, 2)
             Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
             part_deriv_c = molecule.nuclear_repulsion_derivative(1, 2)
 
