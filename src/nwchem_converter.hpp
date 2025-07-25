@@ -16,7 +16,7 @@
 #include <madness/chem/potentialmanager.h>
 #include "npy.hpp"
 #include "functionsaver.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 using namespace madness;
 using namespace madchem;

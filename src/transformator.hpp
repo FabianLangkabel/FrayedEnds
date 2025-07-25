@@ -6,7 +6,7 @@
 #include <vector>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 class Transformator {
   public:

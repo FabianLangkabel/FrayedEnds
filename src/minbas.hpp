@@ -16,7 +16,7 @@
 #include <tuple>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 using namespace madness;
 namespace nb = nanobind;

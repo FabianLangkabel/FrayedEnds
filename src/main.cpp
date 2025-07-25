@@ -4,12 +4,12 @@
 #include "optimization.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
-#include "PyFuncFactory.hpp"
+#include "pyfuncfactory.hpp"
 #include "integrals.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
 #include "minbas.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 #include "madmolecule.hpp"
 
 namespace nb = nanobind;

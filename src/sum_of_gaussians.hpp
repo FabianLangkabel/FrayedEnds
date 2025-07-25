@@ -1,7 +1,7 @@
 #include <madness/mra/mra.h>
 #include <madness/mra/operator.h>
 #include "functionsaver.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 using namespace madness;
 

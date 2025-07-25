@@ -1,7 +1,7 @@
 #pragma once
 
 #include "functionsaver.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 #include <madness/mra/mra.h>
 #include <madness/chem/molecule.h>
 #include <madness/chem/molecular_functors.h>
