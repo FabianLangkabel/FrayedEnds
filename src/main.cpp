@@ -118,7 +118,7 @@ NB_MODULE(_madpy_impl, m) {
 
     nb::class_<PyFuncFactory>(m, "PyFuncFactory")
         .def(nb::init<MadnessProcess&, std::function<double(double, double, double)>&>())
-        .def("GetMRAFunction", &PyFuncFactory::GetMRAFunction);
+        .def("get_mra_function", &PyFuncFactory::get_mra_function);
 
     nb::class_<Eigensolver3D>(m, "Eigensolver")
         .def(nb::init<MadnessProcess&>())
