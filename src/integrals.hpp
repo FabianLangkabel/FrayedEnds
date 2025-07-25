@@ -1,5 +1,5 @@
 #pragma once
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 #include "functionsaver.hpp"
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>

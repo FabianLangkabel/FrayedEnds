@@ -13,7 +13,7 @@
 #include <madness/external/nlohmann_json/json.hpp>
 #include "npy.hpp"
 #include "functionsaver.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 using namespace madness;
 

@@ -1,4 +1,4 @@
-#include "madMolecule.hpp"
+#include "madmolecule.hpp"
 
 using namespace madness;
 

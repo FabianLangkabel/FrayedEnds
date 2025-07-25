@@ -16,7 +16,7 @@
 #include <ostream>
 #include <vector>
 #include "guesses.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 #include "functionsaver.hpp"
 
 using namespace madness;
