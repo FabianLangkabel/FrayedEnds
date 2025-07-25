@@ -144,18 +144,10 @@ class MadPNO:
         frozen_occ_dim = self.impl.get_frozen_core_dim()
         active_dim = n_orbitals - frozen_occ_dim - frozen_virt_dim
         # package the orbitals
-        orbitals = self.impl.GetPNOs(frozen_occ_dim, active_dim, frozen_virt_dim)
+        orbitals = self.impl.get_pnos(frozen_occ_dim, active_dim, frozen_virt_dim)
         self.cleanup(*args, **kwargs)
         self._orbitals = orbitals
         return orbitals
-
-    def compute_integrals(self, *args, **kwargs):
-        if self._orbitals is None:
-            self.compute_orbitals(*args, **kwargs)
-        self._h = self.impl.GetHTensor()
-        self._g = self.impl.GetGTensor()
-        self._c = self.impl.GetNuclearRepulsion()
-        return self._c, self._h, self._g
 
     def parameter_string(
         self,

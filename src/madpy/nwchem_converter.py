@@ -21,22 +21,22 @@ class NWChem_Converter:
 
     @redirect_output("read_nwchem_file.log")
     def read_nwchem_file(self, file, *args, **kwargs):
-        self.impl.Read_NWChem_File(file)
+        self.impl.read_nwchem_file(file)
 
     def get_normalized_aos(self, *args, **kwargs):
         if self._normalized_aos is None:
-            self._normalized_aos = self.impl.GetNormalizedAOs(*args, **kwargs)
+            self._normalized_aos = self.impl.get_normalized_aos(*args, **kwargs)
             assert self._normalized_aos is not None
         return self._normalized_aos
 
     def get_mos(self, *args, **kwargs):
         if self._mos is None:
-            self._mos = self.impl.GetMOs(*args, **kwargs)
+            self._mos = self.impl.get_mos(*args, **kwargs)
             assert self._mos is not None
         return self._mos
 
     def get_Vnuc(self):
-        return self.impl.GetVNuc()
+        return self.impl.get_vnuc()
 
     def get_nuclear_repulsion_energy(self):
-        return self.impl.GetNuclearRepulsionEnergy()
+        return self.impl.get_nuclear_repulsion_energy()

@@ -86,17 +86,17 @@ class Optimization:
     ):
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
-        self.impl.GivePotentialAndRepulsion(self._Vnuc, self._nuclear_repulsion)
-        self.impl.GiveInitialOrbitals(orbitals)
-        self.impl.GiveRDMsAndRotateOrbitals(rdm1_list, rdm2_list)
-        self.impl.CalculateAllIntegrals()
-        self.impl.CalculateCoreEnergy()
-        self.impl.CalculateEnergies()
+        self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
+        self.impl.give_initial_orbitals(orbitals)
+        self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
+        self.impl.calculate_all_integrals()
+        self.impl.calculate_core_energy()
+        self.impl.calculate_energies()
 
-        self.impl.OptimizeOrbitals(opt_thresh, occ_thresh)
-        self.impl.RotateOrbitalsBack()
+        self.impl.optimize_orbitals(opt_thresh, occ_thresh)
+        self.impl.rotate_orbitals_back()
 
-        self._orbitals = self.impl.GetOrbitals()
+        self._orbitals = self.impl.get_orbitals()
         return self._orbitals
 
     def get_orbitals(self, *args, **kwargs):
@@ -108,14 +108,14 @@ class Optimization:
     def get_integrals(self, *args, **kwargs):
         if self._orbitals is None:
             self.optimize_orbs(*args, **kwargs)
-        self.impl.CalculateAllIntegrals()
-        self._c = self.impl.GetC()
-        self._h = self.impl.GetHTensor()
-        self._g = self.impl.GetGTensor()
+        self.impl.calculate_all_integrals()
+        self._c = self.impl.get_c()
+        self._h = self.impl.get_h_tensor()
+        self._g = self.impl.get_g_tensor()
         return self._c, self._h, self._g
 
     def get_c(
         self, *args, **kwargs
     ):  # this is the sum of the energy of the frozen core electrons and the nuclear repulsion
-        self._c = self.impl.GetC()
+        self._c = self.impl.get_c()
         return self._c
