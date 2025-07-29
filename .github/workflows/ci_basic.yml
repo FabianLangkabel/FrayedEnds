@@ -5,19 +5,17 @@ name: test basic functionality
 
 on:
   push:
-    branches: [ main, devel ]
+    branches: [main, devel]
   pull_request:
-    branches: [ main, devel ]
+    branches: [main, devel]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.12']
-        os : [ macos-latest, ubuntu-24.04 ]
+        os: [macos-latest, ubuntu-24.04]
         include:
           - os: ubuntu-24.04
             cxx: /usr/bin/g++-13
@@ -25,42 +23,41 @@ jobs:
             cxx: clang++
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
+      - uses: actions/checkout@v4
 
-    - name: Install prerequisite MacOS packages
-      if: ${{ matrix.os == 'macos-latest' }}
-      run: |
-        brew install ninja boost eigen
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install prerequisites Ubuntu packages
-      if: ${{ matrix.os == 'ubuntu-24.04' }}
-      run: |
-        sudo apt-get update
-        sudo apt-get install ninja-build g++-13 liblapack-dev libboost-dev libboost-serialization-dev libeigen3-dev
-        
-    - name: Install basic python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        
-    - name: Test basic installation
-      run: |
-        git clone https://github.com/m-a-d-n-e-s-s/madness madness_source
-        mkdir madness_build
-        set MADNESS_DIR=$(realpath madness)
-        cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
-        make -C madness_build -j8
-        make --build madness_build/ --target install -j8 
-              
-              
-        MADNESS_DIR=$MADNESS_DIR pip install -e .
-        pip install pytest
+      - name: Install prerequisite MacOS packages
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          brew install ninja boost eigen
 
-   - name: run tests
-     run: |
-        cd tests 
-        pytest
+      - name: Install prerequisites Ubuntu packages
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build g++-13 liblapack-dev libboost-dev libboost-serialization-dev libeigen3-dev
 
+      - name: Install basic python dependencies
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Test basic installation
+        run: |
+          git clone https://github.com/m-a-d-n-e-s-s/madness madness_source
+          mkdir madness_build
+          set MADNESS_DIR=$(realpath madness)
+          cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
+          make -C madness_build -j8
+          make --build madness_build/ --target install -j8
+
+          MADNESS_DIR=$MADNESS_DIR pip install -e .
+          pip install pytest
+
+      - name: run tests
+        run: |
+          cd tests
+          pytest
