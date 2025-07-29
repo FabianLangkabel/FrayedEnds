@@ -24,7 +24,7 @@ try:
 except ImportError:
     HAS_PYSCF = ImportError
 
-SUPPORTED_RDM_METHODS = ["fci", "cisd", "qcisd"]
+SUPPORTED_RDM_METHODS = ["fci", "cisd", "mp2", "ccsd"]
 
 
 class PySCFInterface:
@@ -88,14 +88,32 @@ class PySCFInterface:
                 fcivec, self.tqmol.n_orbitals, self.tqmol.n_electrons
             )
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
-        elif hasattr(method, "lower") and method.lower() == "cisd":
+        elif method in ["cisd", "CISD"]:
             from pyscf import ci
-
             hf = self.tqmol._get_hf(**kwargs)
             cisd = ci.CISD(hf)
-            energy, civec = cisd.kernel()
+            cisd.kernel()
+            energy = cisd.e_tot
             rdm1 = cisd.make_rdm1()
             rdm2 = cisd.make_rdm2()
+            rdm2 = numpy.swapaxes(rdm2, 1, 2)
+        elif method in ["CCSD", "ccsd"]:
+            from pyscf import cc
+            hf = self.tqmol._get_hf(**kwargs)
+            ccsd = cc.CCSD(hf)
+            ccsd.kernel()
+            energy = ccsd.e_tot
+            rdm1 = ccsd.make_rdm1()
+            rdm2 = ccsd.make_rdm2()
+            rdm2 = numpy.swapaxes(rdm2, 1, 2)
+        elif method in ["MP2", "mp2"]:
+            from pyscf import mp
+            hf = self.tqmol._get_hf(**kwargs)
+            mp2 = mp.MP2(hf)
+            mp2.kernel()
+            energy = mp2.e_tot
+            rdm1 = mp2.make_rdm1()
+            rdm2 = mp2.make_rdm2()
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         else:
             raise Exception(
