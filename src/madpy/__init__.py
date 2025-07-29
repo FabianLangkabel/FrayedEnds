@@ -9,3 +9,4 @@ from .mrafunctionfactory import MRAFunctionFactory
 from .nwchem_converter import NWChem_Converter
 from .optimization import Optimization, transform_rdms
 from .pyscf_interface import PySCFInterface
+from .methods import optimize_basis

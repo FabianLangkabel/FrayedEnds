@@ -24,6 +24,27 @@ class MadMolecule {
 
     SavedFct get_vnuc(MadnessProcess& mp);
 
+    double get_nuclear_repulsion()const{
+        return mol.nuclear_repulsion_energy();
+    }
+    double get_nuclear_charge()const{
+        return mol.total_nuclear_charge();
+    }
+
+    int get_core_n_electrons()const{
+        int result = 0;
+        for (auto atom: mol.get_atoms()){
+            auto n = atom.get_atomic_number();
+            std::cout << "atom " << atom.get_atomic_number() << "\n";
+            if(n>2) result  = 2;
+            if(n>10) result = 10;
+            if(n>18) result = 18;
+            if(n>36) result = 36;
+            if(n>54) result = 54;
+        }
+        return result;
+    }
+
     madness::Molecule mol;
 
   private:

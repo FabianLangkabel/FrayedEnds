@@ -113,5 +113,64 @@ def test_fci(data):
 
     del world
 
+@pytest.mark.parametrize("method", madpy.pyscf_interface.SUPPORTED_RDM_METHODS)
+@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.87799), ("be 0.0 0.0 0.0",-14.5907)])
+def test_pyscf_methods(method, data):
+    geom, test_energy = data
+    geom = geom.lower()
+    world = madpy.MadWorld()
+    n = 2
+    if "be" in geom:
+        n = 3
+    madpno = madpy.MadPNO(world, geom, n_orbitals=n)
+    orbitals = madpno.get_orbitals()
+    print(len(orbitals))
+    c = madpno.get_nuclear_repulsion()
+    Vnuc = madpno.get_nuclear_potential()
+    del madpno
+
+    energy = 0.0
+    for iteration in range(3):
+        integrals = madpy.Integrals(world)
+        orbitals = integrals.orthonormalize(orbitals=orbitals)
+        V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
+        T = integrals.compute_kinetic_integrals(orbitals)
+        G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
+        del integrals
+
+        print(V.shape)
+        mol = madpy.PySCFInterface(
+            geometry=geom, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
+        )
+        rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
+        print("iteration {} energy {:+2.5f}".format(iteration, energy))
+
+        opti = madpy.Optimization(world, Vnuc, c)
+        orbitals = opti.get_orbitals(
+            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+        )
+        del opti
+
+    # for 2 electrons cisd and ccsd are basically exact
+    # for mp2 we are not that close to fci
+    atol = 1.e-4
+    if method.lower() == "mp2":
+        atol = 1.e-2
+        if "be" in geom:
+            atol = 1.e-1
+    assert numpy.isclose(energy, test_energy, atol=atol)
+
+    del world
+
+@pytest.mark.parametrize("method", ["spa","ccsd","fci"])
+@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.87799), ("be 0.0 0.0 0.0",-14.5907)])
+def test_methods(data, method):
+    geom, test_energy = data
+    geom = geom.lower()
+    world = madpy.MadWorld()
+    energy, orbitals, rdm1, rdm2 =madpy.optimize_basis(world=world, many_body_method=method, geometry=geom)
+    assert numpy.isclose(energy, test_energy, atol=1.e-4)
+    del world
+
 if __name__ == "__main__":
     test_spa("he 0.0 0.0 0.0")
