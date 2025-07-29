@@ -73,11 +73,18 @@ class PySCFInterface:
 
     def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
         if method in ["fci", "FCI"]:
+            from pyscf import fci
             c, h1, h2 = self.tqmol.get_integrals(ordering="chem")
-            energy, fcivec = pyscf.fci.direct_spin0.kernel(
+            if self.tqmol.n_electrons %2 == 0:
+                solver = fci.direct_spin1
+            else:
+                solver = fci.direct_spin0
+
+            energy, fcivec = solver.kernel(
                 h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons
             )
-            rdm1, rdm2 = pyscf.fci.direct_spin0.make_rdm12(
+            energy = energy + c
+            rdm1, rdm2 = solver.make_rdm12(
                 fcivec, self.tqmol.n_orbitals, self.tqmol.n_electrons
             )
             rdm2 = numpy.swapaxes(rdm2, 1, 2)

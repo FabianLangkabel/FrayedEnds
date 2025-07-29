@@ -5,7 +5,7 @@ import tequila as tq
 
 import madpy
 
-method = "cisd"  # "fci"
+method = "fci"  # "cisd"
 
 true_start = time()
 # initialize the PNO interface
