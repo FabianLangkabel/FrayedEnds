@@ -53,9 +53,11 @@ jobs:
         run: |
           git clone https://github.com/m-a-d-n-e-s-s/madness madness_source
           mkdir madness_build
-          set MADNESS_DIR=$(realpath madness)
+          export MADNESS_DIR=$(realpath madness)
           echo "Madness Dir:"
           echo $MADNESS_DIR
+          echo "test"
+          echo $(realpath madness)
           cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
           make -C madness_build -j8
           sudo cmake --build madness_build/ --target install -j8
