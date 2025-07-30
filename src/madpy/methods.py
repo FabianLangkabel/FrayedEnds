@@ -1,3 +1,5 @@
+import numpy
+
 from .optimization import Optimization
 from .integrals import Integrals
 from .madpno import MadPNO
@@ -11,7 +13,14 @@ if HAS_TEQUILA:
 else:
     tq = None
 
-def optimize_basis(world:MadWorld, geometry, n_orbitals=None, many_body_method="fci", orbitals=None, *args, **kwargs):
+def optimize_basis(world:MadWorld,
+                   geometry,
+                   n_orbitals=None,
+                   many_body_method="fci",
+                   orbitals=None,
+                   maxiter=10,
+                   econv=1.e-4,
+                   *args, **kwargs):
     many_body_method = many_body_method.lower()
 
     mol = MadMolecule(geometry)
@@ -30,8 +39,8 @@ def optimize_basis(world:MadWorld, geometry, n_orbitals=None, many_body_method="
         orbitals = madpno.get_orbitals()
         del madpno
 
-    energy = 0.0
-    for iteration in range(3):
+    current = 0.0
+    for iteration in range(maxiter):
         integrals = Integrals(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
@@ -58,7 +67,12 @@ def optimize_basis(world:MadWorld, geometry, n_orbitals=None, many_body_method="
             rdm1, rdm2, energy = many_body_method(T,V,G,c,*args, **kwargs)
         else:
             raise Exception(f"many_body_method={str(many_body_method)} is neither a string nor callable")
+
         print("iteration {} energy {:+2.5f}".format(iteration, energy))
+
+        if numpy.isclose(energy, current, atol=econv):
+            break
+        current = energy
 
         opti = Optimization(world, Vnuc, c)
         orbitals = opti.get_orbitals(

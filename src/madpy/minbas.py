@@ -1,5 +1,5 @@
 import os
-
+from .madworld import redirect_output
 from ._madpy_impl import MinBasProjector
 
 
@@ -21,14 +21,16 @@ class AtomicBasisProjector:
 
         self.impl = MinBasProjector(madworld._impl, input_string)
 
-        print("calling run")
         self.impl.run()
-        print("done")
         orbitals = self.impl.get_atomic_basis()
         self.orbitals = orbitals
 
     def get_nuclear_repulsion(self):
         return self.impl.get_nuclear_repulsion()
+
+    @redirect_output("minbas_scf.log")
+    def solve_scf(self, thresh=1.e-4):
+        return self.impl.solve_scf(thresh)
 
     def get_nuclear_potential(self):
         return self.impl.get_nuclear_potential()

@@ -29,11 +29,17 @@ class Integrals:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
 
-    def orthonormalize(self, orbitals, method="symmetric", *args, **kwargs):
-        return self.impl.orthonormalize(orbitals, method, *args, **kwargs)
+    def orthonormalize(self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs):
+        return self.normalize(self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs))
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
+
+    def project_on(self, kernel, target, *args, **kwargs):
+        return self.impl.project_on(kernel, target)
+
+    def normalize(self, orbitals, *args, **kwargs):
+        return self.impl.normalize(orbitals, *args, **kwargs)
 
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)

@@ -35,6 +35,7 @@ class PySCFInterface:
         one_body_integrals,
         two_body_integrals,
         constant_term,
+        frozen_core=False,
         *args,
         **kwargs,
     ):
@@ -59,6 +60,7 @@ class PySCFInterface:
             one_body_integrals=one_body_integrals,
             two_body_integrals=two_body_integrals,
             nuclear_repulsion=constant_term,
+            frozen_core=frozen_core,
             *args,
             **kwargs,
         )
@@ -90,7 +92,7 @@ class PySCFInterface:
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         elif method in ["cisd", "CISD"]:
             from pyscf import ci
-            hf = self.tqmol._get_hf(**kwargs)
+            hf = self.tqmol._get_hf(do_not_solve=False,**kwargs)
             cisd = ci.CISD(hf)
             cisd.kernel()
             energy = cisd.e_tot
@@ -99,7 +101,7 @@ class PySCFInterface:
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         elif method in ["CCSD", "ccsd"]:
             from pyscf import cc
-            hf = self.tqmol._get_hf(**kwargs)
+            hf = self.tqmol._get_hf(do_not_solve=False, **kwargs)
             ccsd = cc.CCSD(hf)
             ccsd.kernel()
             energy = ccsd.e_tot
@@ -108,7 +110,7 @@ class PySCFInterface:
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         elif method in ["MP2", "mp2"]:
             from pyscf import mp
-            hf = self.tqmol._get_hf(**kwargs)
+            hf = self.tqmol._get_hf(do_not_solve=False,**kwargs)
             mp2 = mp.MP2(hf)
             mp2.kernel()
             energy = mp2.e_tot
