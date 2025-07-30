@@ -65,8 +65,9 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_two_body_integrals", &Integrals::compute_two_body_integrals, nb::arg("all_orbs"))
         .def("transform", &Integrals::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals::project_out, nb::arg("kernel"), nb::arg("target"))
-        .def("orthonormalize", &Integrals::orthonormalize, nb::arg("all_orbs"), nb::arg("method") = "symmetric",
-             nb::arg("rr_thresh") = 0.0);
+        .def("project_on", &Integrals::project_on, nb::arg("kernel"), nb::arg("target"))
+        .def("normalize", &Integrals::normalize)
+        .def("orthonormalize", &Integrals::orthonormalize);
 
     nb::class_<Optimization>(m, "Optimization")
         .def(nb::init<MadnessProcess&>())
@@ -112,6 +113,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("get_nuclear_potential", &MinBasProjector::get_nuclear_potential)
         .def("get_basis_name", &MinBasProjector::get_basis_name)
         .def("get_atomic_basis", &MinBasProjector::get_atomic_basis)
+        .def("solve_scf", &MinBasProjector::solve_scf)
         .def("get_nuclear_repulsion", &MinBasProjector::get_nuclear_repulsion);
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")

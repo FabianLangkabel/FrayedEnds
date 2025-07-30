@@ -40,6 +40,20 @@ class MinBasProjector {
         Vnuc = calc.potentialmanager->vnuclear();
     }
 
+    std::vector<SavedFct> solve_scf(const double thresh=1.e-4){
+        SCF calc(*(madness_process.world), parser);
+        calc.set_protocol<3>(*(madness_process.world), thresh);
+        calc.make_nuclear_potential(*(madness_process.world));
+        MolecularEnergy E(*(madness_process.world), calc);
+        double energy = E.value(calc.molecule.get_all_coords().flat()); // ugh! (indeed)
+
+        std::vector<SavedFct> result;
+        for(const auto f: calc.amo){
+            result.push_back(SavedFct(f));
+        }
+        return result;
+    }
+
     std::vector<SavedFct> get_atomic_basis() const {
         std::vector<SavedFct> result;
         for (auto x : atomicbasis) {

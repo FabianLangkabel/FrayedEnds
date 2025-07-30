@@ -114,61 +114,93 @@ def test_fci(data):
     del world
 
 @pytest.mark.parametrize("method", madpy.pyscf_interface.SUPPORTED_RDM_METHODS)
-@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.87799), ("be 0.0 0.0 0.0",-14.5907)])
-def test_pyscf_methods(method, data):
-    geom, test_energy = data
+@pytest.mark.parametrize("geom", ["h 0.0 0.0 0.0\nh 0.0 0.0 0.75", "Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
+def test_pyscf_methods(geom, method):
     geom = geom.lower()
     world = madpy.MadWorld()
-    n = 2
-    if "be" in geom:
-        n = 3
-    madpno = madpy.MadPNO(world, geom, n_orbitals=n)
-    orbitals = madpno.get_orbitals()
+    minbas = madpy.AtomicBasisProjector(world, geom)
+    orbitals = minbas.orbitals
     print(len(orbitals))
-    c = madpno.get_nuclear_repulsion()
-    Vnuc = madpno.get_nuclear_potential()
-    del madpno
+    c = minbas.get_nuclear_repulsion()
+    Vnuc = minbas.get_nuclear_potential()
+    del minbas
 
-    energy = 0.0
-    for iteration in range(3):
-        integrals = madpy.Integrals(world)
-        orbitals = integrals.orthonormalize(orbitals=orbitals)
-        V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
-        T = integrals.compute_kinetic_integrals(orbitals)
-        G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
-        del integrals
 
-        print(V.shape)
-        mol = madpy.PySCFInterface(
-            geometry=geom, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
-        )
-        rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
-        print("iteration {} energy {:+2.5f}".format(iteration, energy))
+    integrals = madpy.Integrals(world)
+    orbitals = integrals.orthonormalize(orbitals=orbitals)
+    V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
+    T = integrals.compute_kinetic_integrals(orbitals)
+    G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
+    del integrals
 
-        opti = madpy.Optimization(world, Vnuc, c)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
-        )
-        del opti
 
-    # for 2 electrons cisd and ccsd are basically exact
-    # for mp2 we are not that close to fci
-    atol = 1.e-4
-    if method.lower() == "mp2":
-        atol = 1.e-2
-        if "be" in geom:
-            atol = 1.e-1
-    assert numpy.isclose(energy, test_energy, atol=atol)
+    mol = madpy.PySCFInterface(
+        geometry=geom, one_body_integrals=T + V, two_body_integrals=G, constant_term=c, frozen_core=False
+    )
+    rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
+
+    mol = tq.Molecule(geometry=geom, basis_set="sto-3g", frozen_core=False)
+    test_energy = mol.compute_energy(method=method)
+    assert numpy.isclose(energy, test_energy)
 
     del world
 
-@pytest.mark.parametrize("method", ["spa","ccsd","fci"])
-@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.87799), ("be 0.0 0.0 0.0",-14.5907)])
+# this test tests a lot of stuff
+# good for consistency check
+# not the best test for individual debugging
+@pytest.mark.parametrize("geom", ["Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
+def test_pyscf_methods_with_frozen_core(geom, method="fci"):
+    geom = geom.lower()
+    world = madpy.MadWorld(thresh=1.e-7)
+    minbas = madpy.AtomicBasisProjector(world, geom)
+    sto3g = minbas.orbitals
+    hf_orbitals = minbas.solve_scf()
+    core_orbitals = [hf_orbitals[0]]
+    c = minbas.get_nuclear_repulsion()
+    Vnuc = minbas.get_nuclear_potential()
+    del minbas
+
+    integrals = madpy.Integrals(world)
+    sto3g = integrals.orthonormalize(orbitals=sto3g)
+    # the core orbital is currently at the CBS (so it will be better than sto-3g)
+    # need to project back, so that we can compare to sto-3g
+    core_orbitals = integrals.project_on(kernel=sto3g, target=core_orbitals)
+    core_orbitals = integrals.normalize(core_orbitals)
+
+    rest = integrals.project_out(kernel=core_orbitals, target=sto3g)
+    rest = integrals.normalize(rest)
+    print("before rr_cholesky: ", len(rest))
+    rest = integrals.orthonormalize(rest, method="rr_cholesky", rr_thresh=1.e-3)
+    print("after rr_cholesky: ", len(rest))
+    orbitals = core_orbitals + rest
+    orbitals = integrals.orthonormalize(orbitals)
+    S = integrals.compute_overlap_integrals(orbitals=orbitals)
+    print(S)
+    V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
+    T = integrals.compute_kinetic_integrals(orbitals)
+    G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
+    del integrals
+
+
+    mol = madpy.PySCFInterface(
+        geometry=geom, one_body_integrals=T + V, two_body_integrals=G, constant_term=c, frozen_core=True
+    )
+    rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
+
+    mol = tq.Molecule(geometry=geom, basis_set="sto-3g", frozen_core=True)
+    test_energy = mol.compute_energy(method=method)
+    # we are projecting the CBS core orbital to sto-3g, not necessarility the same as the sto-3g core
+    assert numpy.isclose(energy, test_energy, atol=1.e-3)
+
+    del world
+
+@pytest.mark.parametrize("method", ["spa","fci"])
+@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8775), ("be 0.0 0.0 0.0",-14.602)]) # values are for maxiter=1
 def test_methods(data, method):
     geom, test_energy = data
     geom = geom.lower()
     world = madpy.MadWorld()
-    energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom)
+    energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, maxiter=1)
     assert numpy.isclose(energy, test_energy, atol=1.e-4)
     del world
 

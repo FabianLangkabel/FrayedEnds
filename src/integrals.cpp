@@ -101,7 +101,25 @@ nb::ndarray<nb::numpy, double, nb::ndim<4>> Integrals::compute_two_body_integral
         two_body_integrals.ptr(), {orbitals.size(), orbitals.size(), orbitals.size(), orbitals.size()});
     return numpy_array;
 }
+std::vector<SavedFct>  Integrals::normalize(std::vector<SavedFct> all_orbs){
 
+    std::vector<real_function_3d> basis;
+    for (SavedFct orb : all_orbs)
+        basis.push_back(madness_process.loadfct(orb));
+
+    madness::normalize(*(madness_process.world), basis);
+
+    std::vector<SavedFct> result;
+    for (auto x : basis)
+        result.push_back(SavedFct(x));
+    for (size_t k = 0; k < result.size(); k++)
+        result[k].info = all_orbs[k].info;
+    for (size_t k = 0; k < result.size(); k++)
+        result[k].type = all_orbs[k].type;
+
+    return result;
+
+}
 std::vector<SavedFct> Integrals::orthonormalize(std::vector<SavedFct> all_orbs, const std::string method,
                                                 double rr_thresh) {
     std::vector<real_function_3d> basis;
