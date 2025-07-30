@@ -59,8 +59,8 @@ jobs:
           echo "test"
           echo $(realpath madness)
           cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
-          make -C madness_build -j8
-          sudo cmake --build madness_build/ --target install -j8
+          make -C madness_build -j4
+          sudo cmake --build madness_build/ --target install -j4
 
           MADNESS_DIR=$MADNESS_DIR pip install -e .
           pip install pytest

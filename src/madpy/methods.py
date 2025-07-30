@@ -20,8 +20,8 @@ def optimize_basis(world:MadWorld, geometry, n_orbitals=None, many_body_method="
     Vnuc = mol.get_vnuc(world)
     if n_orbitals is None:
         # as many orbitals as electrons
-        # no frozen core support yet
-        n_orbitals = mol.n_electrons - mol.n_core_electrons
+        # we also need the core orbitals (so no frozen-core effects here)
+        n_orbitals = mol.n_electrons
 
     if orbitals is None:
         madpno = MadPNO(world, geometry, n_orbitals=n_orbitals)

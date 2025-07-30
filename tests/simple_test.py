@@ -168,7 +168,7 @@ def test_methods(data, method):
     geom, test_energy = data
     geom = geom.lower()
     world = madpy.MadWorld()
-    energy, orbitals, rdm1, rdm2 =madpy.optimize_basis(world=world, many_body_method=method, geometry=geom)
+    energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom)
     assert numpy.isclose(energy, test_energy, atol=1.e-4)
     del world
 
