@@ -36,7 +36,7 @@ class MadWorld:
         "L": 50.0,
         "k": 7,
         "thresh": 1.0e-5,
-        "initial_level": 5,
+        "initial_level": 3,
         "truncate_mode": 1,
         "refine": True,
         "n_threads": -1,

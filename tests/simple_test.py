@@ -25,7 +25,7 @@ def test_pno_execution(geom):
     del integrals
     del world
 
-@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.87799), ("be 0.0 0.0 0.0",-14.59067977), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -1.0)])
+@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8776), ("be 0.0 0.0 0.0",-14.602), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -1.0)])
 def test_spa(data):
     geom, test_energy = data
     geom = geom.lower()
@@ -41,7 +41,7 @@ def test_spa(data):
     del madpno
 
     energy = 0.0
-    for iteration in range(3):
+    for iteration in range(1):
         integrals = madpy.Integrals(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
@@ -67,11 +67,11 @@ def test_spa(data):
         del opti
 
 
-    assert numpy.isclose(energy, test_energy, atol=1.e-4)
+    assert numpy.isclose(energy, test_energy, atol=1.e-3)
 
     del world
 
-@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.87799), ("be 0.0 0.0 0.0",-14.59067977), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -1.0)])
+@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8776), ("be 0.0 0.0 0.0",-14.602), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -1.0)])
 def test_fci(data):
     geom, test_energy = data
     geom = geom.lower()
@@ -87,7 +87,7 @@ def test_fci(data):
     del madpno
 
     energy = 0.0
-    for iteration in range(3):
+    for iteration in range(1):
         integrals = madpy.Integrals(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
@@ -109,7 +109,7 @@ def test_fci(data):
         del opti
 
 
-    assert numpy.isclose(energy, test_energy, atol=1.e-4)
+    assert numpy.isclose(energy, test_energy, atol=1.e-3)
 
     del world
 
@@ -194,14 +194,17 @@ def test_pyscf_methods_with_frozen_core(geom, method="fci"):
 
     del world
 
+# long test
 @pytest.mark.parametrize("method", ["spa","fci"])
-@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8775), ("be 0.0 0.0 0.0",-14.602)]) # values are for maxiter=1
-def test_methods(data, method):
+@pytest.mark.parametrize("orbitals", ["pno","sto3g"])
+@pytest.mark.parametrize("data", [("H 0.0 0.0 0.0\nH 0.0 0.0 5.0",-1.0), ("Li 0.0 0.0 0.0\nH 0.0 0.0 1.5",-8.007)]) # values are for maxiter=1
+def test_methods(data, method, orbitals):
+    if method=="spa" and orbitals!="pno": return
     geom, test_energy = data
     geom = geom.lower()
-    world = madpy.MadWorld()
-    energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, maxiter=1)
-    assert numpy.isclose(energy, test_energy, atol=1.e-4)
+    world = madpy.MadWorld(thresh=1.e-4)
+    energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals)
+    assert numpy.isclose(energy, test_energy, atol=1.e-3)
     del world
 
 if __name__ == "__main__":

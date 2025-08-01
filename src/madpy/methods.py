@@ -6,6 +6,7 @@ from .madpno import MadPNO
 from .pyscf_interface import PySCFInterface, SUPPORTED_RDM_METHODS
 from .madworld import MadWorld
 from .madmolecule import MadMolecule
+from .minbas import AtomicBasisProjector
 
 from .pyscf_interface import HAS_TEQUILA
 if HAS_TEQUILA:
@@ -22,6 +23,7 @@ def optimize_basis(world:MadWorld,
                    econv=1.e-4,
                    *args, **kwargs):
     many_body_method = many_body_method.lower()
+    if hasattr(orbitals, "lower"): orbitals = orbitals.lower()
 
     mol = MadMolecule(geometry)
 
@@ -32,12 +34,33 @@ def optimize_basis(world:MadWorld,
         # we also need the core orbitals (so no frozen-core effects here)
         n_orbitals = mol.n_electrons
 
-    if orbitals is None:
+    if orbitals is None or "pno" in orbitals:
         madpno = MadPNO(world, geometry, n_orbitals=n_orbitals)
         if many_body_method == "spa" and "edges" not in kwargs:
             kwargs["edges"] = madpno.get_spa_edges()
         orbitals = madpno.get_orbitals()
         del madpno
+    elif "sto" in orbitals and "3g" in orbitals:
+        minbas = AtomicBasisProjector(world, geometry, aobasis="sto-3g")
+        orbitals = minbas.orbitals
+        for x in orbitals: x.type="active"
+        # test if we have frozen core: if yes, we need the HF orbitals as core orbitals
+        if mol.n_core_electrons > 0:
+            hf = minbas.solve_scf()
+            core = [hf[k] for k in range(mol.n_core_electrons//2)]
+            integrals = Integrals(world)
+            orbitals = integrals.orthonormalize(orbitals, method="symmetric")
+            orbitals = integrals.project_out(kernel=core, target=orbitals)
+            orbitals = integrals.normalize(orbitals)
+            # most likely no linear dependencies since core at CBS is different from sto-3g orbitals
+            orbitals = integrals.orthonormalize(orbitals, method="rr_cholesky", rr_thresh=1.e-5)
+            for x in core: x.type="frozen_occ"
+            for x in orbitals: x.type="active"
+            orbitals = core + orbitals
+            # just to be save
+            orbitals = integrals.normalize(orbitals)
+
+
 
     current = 0.0
     for iteration in range(maxiter):
