@@ -3,11 +3,13 @@ import pytest
 import tequila as tq
 import madpy
 
+# all tests run on the same thread
+# not ideal ... 
+world = madpy.MadWorld()
+
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
 def test_pno_execution(geom):
-    world = madpy.MadWorld()
-
     madpno = madpy.MadPNO(world, geom, n_orbitals=2)
     orbitals = madpno.get_orbitals()
 
@@ -23,13 +25,11 @@ def test_pno_execution(geom):
 
     del madpno
     del integrals
-    del world
 
 @pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8776), ("be 0.0 0.0 0.0",-14.602), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -1.0)])
 def test_spa(data):
     geom, test_energy = data
     geom = geom.lower()
-    world = madpy.MadWorld()
     n = 2
     if "be" in geom:
         n = 3
@@ -69,13 +69,10 @@ def test_spa(data):
 
     assert numpy.isclose(energy, test_energy, atol=1.e-3)
 
-    del world
-
 @pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8776), ("be 0.0 0.0 0.0",-14.602), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -1.0)])
 def test_fci(data):
     geom, test_energy = data
     geom = geom.lower()
-    world = madpy.MadWorld()
     n = 2
     if "be" in geom:
         n = 3
@@ -111,13 +108,10 @@ def test_fci(data):
 
     assert numpy.isclose(energy, test_energy, atol=1.e-3)
 
-    del world
-
 @pytest.mark.parametrize("method", madpy.pyscf_interface.SUPPORTED_RDM_METHODS)
 @pytest.mark.parametrize("geom", ["h 0.0 0.0 0.0\nh 0.0 0.0 0.75", "Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods(geom, method):
     geom = geom.lower()
-    world = madpy.MadWorld()
     minbas = madpy.AtomicBasisProjector(world, geom)
     orbitals = minbas.orbitals
     print(len(orbitals))
@@ -143,15 +137,12 @@ def test_pyscf_methods(geom, method):
     test_energy = mol.compute_energy(method=method)
     assert numpy.isclose(energy, test_energy)
 
-    del world
-
 # this test tests a lot of stuff
 # good for consistency check
 # not the best test for individual debugging
 @pytest.mark.parametrize("geom", ["Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods_with_frozen_core(geom, method="fci"):
     geom = geom.lower()
-    world = madpy.MadWorld(thresh=1.e-7)
     minbas = madpy.AtomicBasisProjector(world, geom)
     sto3g = minbas.orbitals
     hf_orbitals = minbas.solve_scf()
@@ -192,8 +183,6 @@ def test_pyscf_methods_with_frozen_core(geom, method="fci"):
     # we are projecting the CBS core orbital to sto-3g, not necessarility the same as the sto-3g core
     assert numpy.isclose(energy, test_energy, atol=1.e-3)
 
-    del world
-
 # long test
 @pytest.mark.parametrize("method", ["spa","fci"])
 @pytest.mark.parametrize("orbitals", ["pno","sto3g"])
@@ -202,10 +191,8 @@ def test_methods(data, method, orbitals):
     if method=="spa" and orbitals!="pno": return
     geom, test_energy = data
     geom = geom.lower()
-    world = madpy.MadWorld(thresh=1.e-4)
     energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals)
     assert numpy.isclose(energy, test_energy, atol=1.e-3)
-    del world
 
 if __name__ == "__main__":
     test_spa("he 0.0 0.0 0.0")
