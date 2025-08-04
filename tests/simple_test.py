@@ -8,11 +8,14 @@ import madpy
 world = None
 
 def test_startup():
-    global world = madpy.MadWorld()
+    global world
+    world = madpy.MadWorld()
 
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
 def test_pno_execution(geom):
+    global world
+
     madpno = madpy.MadPNO(world, geom, n_orbitals=2)
     orbitals = madpno.get_orbitals()
 
@@ -31,6 +34,8 @@ def test_pno_execution(geom):
 
 @pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8776), ("be 0.0 0.0 0.0",-14.5889), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -0.9792)])
 def test_spa(data):
+    global world
+
     geom, test_energy = data
     geom = geom.lower()
     n = 2
@@ -76,6 +81,7 @@ def test_spa(data):
 @pytest.mark.parametrize("method", madpy.pyscf_interface.SUPPORTED_RDM_METHODS)
 @pytest.mark.parametrize("geom", ["h 0.0 0.0 0.0\nh 0.0 0.0 0.75", "Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods(geom, method):
+    global world
     geom = geom.lower()
     minbas = madpy.AtomicBasisProjector(world, geom)
     orbitals = minbas.orbitals
@@ -111,6 +117,7 @@ def test_pyscf_methods(geom, method):
 # not the best test for individual debugging
 @pytest.mark.parametrize("geom", ["Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods_with_frozen_core(geom, method="fci"):
+    global world
     geom = geom.lower()
     minbas = madpy.AtomicBasisProjector(world, geom)
     sto3g = minbas.orbitals
@@ -157,6 +164,7 @@ def test_pyscf_methods_with_frozen_core(geom, method="fci"):
 @pytest.mark.parametrize("orbitals", ["pno","sto3g"])
 @pytest.mark.parametrize("data", [("H 0.0 0.0 0.0\nH 0.0 0.0 5.0",-1.0), ("Li 0.0 0.0 0.0\nH 0.0 0.0 1.5",-8.007)]) # values are for maxiter=1
 def test_methods(data, method, orbitals):
+    global world
     if method=="spa" and orbitals!="pno": return
     geom, test_energy = data
     geom = geom.lower()
@@ -164,6 +172,7 @@ def test_methods(data, method, orbitals):
     assert numpy.isclose(energy, test_energy, atol=1.e-3)
 
 def test_teardown():
+    global world
     del world
 
 if __name__ == "__main__":
