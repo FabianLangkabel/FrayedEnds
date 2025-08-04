@@ -17,12 +17,12 @@ def potential(x, y, z):
     return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
 
 
-world = mad.MadWorld(n_threads=0)
+world = mad.MadWorld()
 
 factory = mad.MRAFunctionFactory(world, potential)
 mra_pot = factory.get_function()
 
-world.change_nthreads(-1)
+
 
 eigen = mad.Eigensolver(world, mra_pot)
 orbitals = eigen.get_orbitals(
