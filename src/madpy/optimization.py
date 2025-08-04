@@ -68,7 +68,6 @@ class Optimization:
         return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.impl = OptInterface(madworld._impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
