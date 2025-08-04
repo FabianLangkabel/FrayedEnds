@@ -97,7 +97,10 @@ def test_pyscf_methods(geom, method):
     )
     rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
 
+    if method = ""
     mol = tq.Molecule(geometry=geom, basis_set="sto-3g", frozen_core=False)
+    if "fci" in method:
+        method = "fci"
     test_energy = mol.compute_energy(method=method)
     assert numpy.isclose(energy, test_energy)
 

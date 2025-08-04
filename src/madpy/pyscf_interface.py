@@ -78,16 +78,19 @@ class PySCFInterface:
         if "fci" in method:
             from pyscf import fci
             c, h1, h2 = self.tqmol.get_integrals(ordering="chem")
+            ci0 = None
             if method=="fci_dhf_slow":
-                solver = fci.fci_dhf_slow
+                solver = fci.fci_dhf_slow.FCI()
             elif self.tqmol.n_electrons %2 == 0:
-                solver = fci.direct_spin1
+                solver = fci.direct_spin1.FCI()
             else:
-                solver = fci.direct_spin0
+                solver = fci.direct_spin0.FCI()
 
-            energy, fcivec = solver.kernel(
-                h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons
-            )
+            if method=="fci_dhf_slow": # doesn't converge great
+                energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons, nroots=10)
+            else:
+                energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons)
+
             energy = energy + c
             rdm1, rdm2 = solver.make_rdm12(
                 fcivec, self.tqmol.n_orbitals, self.tqmol.n_electrons
