@@ -5,10 +5,10 @@ import madpy
 
 # all tests run on the same thread
 # not ideal ... 
-global world = None
+world = None
 
 def test_startup():
-    world = madpy.MadWorld()
+    global world = madpy.MadWorld()
 
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
