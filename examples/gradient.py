@@ -6,7 +6,7 @@ import time
 
 world = madpy.MadWorld()
 
-distance_list = [0.05 * i for i in range(1,50)]
+distance_list = [0.72+0.01 * i for i in range(5)]
 Energy_list=[]
 Gradient_list=[]
 
@@ -18,7 +18,7 @@ for distance in distance_list:
     molecule.add_atom(0.0,0.0,0.0,"H")
     molecule.add_atom(0.0,0.0,distance,"H")
 
-    madpno = madpy.MadPNO(world, geometry, n_orbitals=2)
+    madpno = madpy.MadPNO(world, geometry, n_orbitals=4)
     orbitals = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
@@ -45,7 +45,7 @@ for distance in distance_list:
         result = tq.minimize(E, silent=True)
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
-        print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
+        print("iteration {} energy {:+2.7f}".format(iteration, result.energy))
         
         
         if iteration == 5:

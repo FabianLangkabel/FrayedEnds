@@ -24,7 +24,7 @@ try:
 except ImportError:
     HAS_PYSCF = ImportError
 
-SUPPORTED_RDM_METHODS = ["fci", "cisd", "mp2", "ccsd"]
+SUPPORTED_RDM_METHODS = ["fci", "cisd", "mp2", "ccsd", "fci_dhf_slow"]
 
 
 class PySCFInterface:
@@ -74,23 +74,29 @@ class PySCFInterface:
         return self.tqmol.compute_energy(method=method, *args, **kwargs)
 
     def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
-        if method in ["fci", "FCI"]:
+        method = method.lower()
+        if "fci" in method:
             from pyscf import fci
             c, h1, h2 = self.tqmol.get_integrals(ordering="chem")
-            if self.tqmol.n_electrons %2 == 0:
-                solver = fci.direct_spin1
+            ci0 = None
+            if method=="fci_dhf_slow":
+                solver = fci.fci_dhf_slow.FCI()
+            elif self.tqmol.n_electrons %2 == 0:
+                solver = fci.direct_spin1.FCI()
             else:
-                solver = fci.direct_spin0
+                solver = fci.direct_spin0.FCI()
 
-            energy, fcivec = solver.kernel(
-                h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons
-            )
+            if method=="fci_dhf_slow": # doesn't converge great
+                energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons, nroots=10)
+            else:
+                energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons)
+
             energy = energy + c
             rdm1, rdm2 = solver.make_rdm12(
                 fcivec, self.tqmol.n_orbitals, self.tqmol.n_electrons
             )
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
-        elif method in ["cisd", "CISD"]:
+        elif "ci" in method:
             from pyscf import ci
             hf = self.tqmol._get_hf(do_not_solve=False,**kwargs)
             cisd = ci.CISD(hf)
@@ -99,7 +105,7 @@ class PySCFInterface:
             rdm1 = cisd.make_rdm1()
             rdm2 = cisd.make_rdm2()
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
-        elif method in ["CCSD", "ccsd"]:
+        elif "cc" in method:
             from pyscf import cc
             hf = self.tqmol._get_hf(do_not_solve=False, **kwargs)
             ccsd = cc.CCSD(hf)
@@ -108,7 +114,7 @@ class PySCFInterface:
             rdm1 = ccsd.make_rdm1()
             rdm2 = ccsd.make_rdm2()
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
-        elif method in ["MP2", "mp2"]:
+        elif "mp2" in method:
             from pyscf import mp
             hf = self.tqmol._get_hf(do_not_solve=False,**kwargs)
             mp2 = mp.MP2(hf)
