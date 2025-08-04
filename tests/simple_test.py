@@ -5,7 +5,10 @@ import madpy
 
 # all tests run on the same thread
 # not ideal ... 
-world = madpy.MadWorld()
+world = None
+
+def test_startup():
+    world = madpy.MadWorld()
 
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
@@ -193,6 +196,9 @@ def test_methods(data, method, orbitals):
     geom = geom.lower()
     energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals)
     assert numpy.isclose(energy, test_energy, atol=1.e-3)
+
+def test_teardown():
+    del world
 
 if __name__ == "__main__":
     test_spa("he 0.0 0.0 0.0")
