@@ -57,9 +57,9 @@ class Optimization {
 
     int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
-    double coulomb_lo = 0.001;
+    double coulomb_lo = 0.0001;
     double coulomb_eps = 1e-6;
-    double BSH_lo = 0.01;
+    double BSH_lo = 0.0001;
     double BSH_eps = 1e-6;
 
   private:
