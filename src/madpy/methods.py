@@ -30,6 +30,8 @@ def optimize_basis(world:MadWorld,
                    orbitals=None,
                    maxiter=10,
                    econv=1.e-4,
+                   dconv=None,
+                   occ_thresh=None,
                    *args, **kwargs):
     many_body_method = many_body_method.lower()
     if hasattr(orbitals, "lower"): orbitals = orbitals.lower()
@@ -107,9 +109,13 @@ def optimize_basis(world:MadWorld,
             break
         current = energy
 
+        if dconv is None:
+            dconv = 10*econv
+        if occ_thresh is None:
+            occ_thresh = econv
         opti = Optimization(world, Vnuc, c)
         orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=dconv, occ_thresh=occ_thresh
         )
         del opti
 
