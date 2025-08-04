@@ -25,11 +25,24 @@ class PyFuncFactory {
         // for this process n_threads always has to be 0, otherwise the python function can not be converted to a MRA
         // function
         std::cout.precision(6);
-        // std::cout << "Creating function with functor" << std::endl;
+
+        // save the current number of threads and set it to 0
+        std::size_t nthreads_at_start = ThreadPool::size();
+        if (nthreads_at_start != 0){
+            ThreadPool::end();
+            ThreadPool::begin(0);
+            std::cout << "Changed number of threads to " << ThreadPool::size() << "." << std::endl;
+        }
+
         PyFunctor functor(pyfunc);
-        // std::cout << "Functor created" << std::endl;
         MRA_func = FunctionFactory<double, 3>(*(mp.world)).functor(functor);
-        // std::cout << "Function created" << std::endl;
+        
+
+        if (nthreads_at_start != 0){
+            ThreadPool::end();
+            ThreadPool::begin(nthreads_at_start);
+            std::cout << "Created MRA Function and changed number of threads back to " << ThreadPool::size() << "." << std::endl;
+        }
     }
     ~PyFuncFactory() { MRA_func.clear(); }
     SavedFct get_mra_function() { return SavedFct(MRA_func); }
