@@ -3,16 +3,25 @@ import numpy
 from .optimization import Optimization
 from .integrals import Integrals
 from .madpno import MadPNO
-from .pyscf_interface import PySCFInterface, SUPPORTED_RDM_METHODS
+from .pyscf_interface import PySCFInterface
+from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
 from .madworld import MadWorld
 from .madmolecule import MadMolecule
 from .minbas import AtomicBasisProjector
 
+SUPPORTED_RDM_METHODS = ["spa"] + PYSCF_METHODS
+AVAILABLE_RDM_METHODS = []
+
 from .pyscf_interface import HAS_TEQUILA
 if HAS_TEQUILA:
     import tequila as tq
+    AVAILABLE_RDM_METHODS += ["spa"]
 else:
     tq = None
+
+from .pyscf_interface import HAS_PYSCF
+if HAS_PYSCF:
+    AVAILABLE_RDM_METHODS += PYSCF_METHODS
 
 def optimize_basis(world:MadWorld,
                    geometry,
@@ -76,7 +85,8 @@ def optimize_basis(world:MadWorld,
                 geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
             )
             rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, return_energy=True)
-        elif many_body_method == "spa":
+        elif many_body_method in ["spa"]:
+            # todo make module
             mol = tq.Molecule(geometry=geometry, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c, *args, **kwargs)
             U = mol.make_ansatz(name="HCB-SPA", *args, **kwargs)
             H = mol.make_hardcore_boson_hamiltonian()
@@ -89,7 +99,7 @@ def optimize_basis(world:MadWorld,
         elif callable(many_body_method):
             rdm1, rdm2, energy = many_body_method(T,V,G,c,*args, **kwargs)
         else:
-            raise Exception(f"many_body_method={str(many_body_method)} is neither a string nor callable")
+            raise Exception(f"many_body_method={str(many_body_method)} is neither a string that encodes a supported method nor callable\nsupported methods are: {SUPPORTED_RDM_METHODS}")
 
         print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
