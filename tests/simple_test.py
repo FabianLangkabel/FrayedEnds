@@ -5,7 +5,7 @@ import madpy
 
 # all tests run on the same thread
 # not ideal ... 
-world = None
+global world = None
 
 def test_startup():
     world = madpy.MadWorld()
