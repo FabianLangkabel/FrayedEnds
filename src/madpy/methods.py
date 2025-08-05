@@ -3,23 +3,19 @@ import numpy
 from .optimization import Optimization
 from .integrals import Integrals
 from .madpno import MadPNO
-from .pyscf_interface import PySCFInterface
+from .pyscf_interface import PySCFInterface, HAS_PYSCF
 from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
+from .tequila_interface import TequilaInterface, HAS_TEQUILA
+from .tequila_interface import SUPPORTED_RDM_METHODS as TEQUILA_METHODS
 from .madworld import MadWorld
 from .madmolecule import MadMolecule
 from .minbas import AtomicBasisProjector
 
-SUPPORTED_RDM_METHODS = ["spa"] + PYSCF_METHODS
+SUPPORTED_RDM_METHODS = TEQUILA_METHODS + PYSCF_METHODS
 AVAILABLE_RDM_METHODS = []
 
-from .pyscf_interface import HAS_TEQUILA
 if HAS_TEQUILA:
-    import tequila as tq
-    AVAILABLE_RDM_METHODS += ["spa"]
-else:
-    tq = None
-
-from .pyscf_interface import HAS_PYSCF
+    AVAILABLE_RDM_METHODS += TEQUILA_METHODS
 if HAS_PYSCF:
     AVAILABLE_RDM_METHODS += PYSCF_METHODS
 
@@ -82,20 +78,16 @@ def optimize_basis(world:MadWorld,
         G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
         del integrals
 
-        if many_body_method in SUPPORTED_RDM_METHODS:
+        if many_body_method in PYSCF_METHODS:
             mol = PySCFInterface(
                 geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
             )
             rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, return_energy=True)
         elif many_body_method in ["spa"]:
-            # todo make module
-            mol = tq.Molecule(geometry=geometry, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c, *args, **kwargs)
-            U = mol.make_ansatz(name="HCB-SPA", *args, **kwargs)
-            H = mol.make_hardcore_boson_hamiltonian()
-            E = tq.ExpectationValue(H=H, U=U)
-            result = tq.minimize(E, silent=True)
-            rdm1, rdm2 = mol.compute_rdms(U=U, use_hcb=True, variables=result.variables)
-            energy = result.energy
+            mol = TequilaInterface(
+                geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
+            )
+            rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, *args, **kwargs)
         elif many_body_method == "dmrg":
             raise Exception("not here yet")
         elif callable(many_body_method):

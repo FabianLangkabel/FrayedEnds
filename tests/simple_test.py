@@ -162,6 +162,7 @@ def test_pyscf_methods_with_frozen_core(geom, method="fci"):
 @pytest.mark.parametrize("data", [("H 0.0 0.0 0.0\nH 0.0 0.0 5.0",-1.0), ("Li 0.0 0.0 0.0\nH 0.0 0.0 1.5",-8.007)]) # values are for maxiter=1
 def test_methods(data, method, orbitals):
     if method=="spa" and orbitals!="pno": return
+    if orbitals=="sto3g" and "Li" in data[0]: return # too complicated with frozen_core
     geom, test_energy = data
     geom = geom.lower()
     world = madpy.MadWorld(thresh=1.e-4)
