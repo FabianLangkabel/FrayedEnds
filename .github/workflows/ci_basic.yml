@@ -68,7 +68,7 @@ jobs:
       - name: run tests
         run: |
           cd tests
-          pytest test_basic.py
+          pytest test_basics.py
           pytest test_methods.py
           pytest test_methods_fc.py
           pytest test_pyscf.py
