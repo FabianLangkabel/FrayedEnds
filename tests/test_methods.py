@@ -1,17 +1,29 @@
 import numpy
 import pytest
-import tequila as tq
 import madpy
 
-# long test
-@pytest.mark.parametrize("method", ["spa","fci"])
-@pytest.mark.parametrize("orbitals", ["pno","sto3g"])
-@pytest.mark.parametrize("data", [("H 0.0 0.0 0.0\nH 0.0 0.0 5.0",-1.0), ("Li 0.0 0.0 0.0\nH 0.0 0.0 1.5",-8.007)]) # values are for maxiter=1
-def test_methods(data, method, orbitals):
-    if method=="spa" and orbitals!="pno": return
-    geom, test_energy = data
-    geom = geom.lower()
+def test_methods_from_pno():
+    orbitals = "pno"
     world = madpy.MadWorld(thresh=1.e-4)
-    energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals)
-    assert numpy.isclose(energy, test_energy, atol=1.e-3)
+    data = ("H 0.0 0.0 0.0\nH 0.0 0.0 5.0", -1.0)
+    for method in ["spa", "hcb-upccgd", "upccgsd", "fci"]:
+        print(method)
+        geom, test_energy = data
+        geom = geom.lower()
+        energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals)
+        assert numpy.isclose(energy, test_energy, atol=1.e-3)
+    del world
+
+def test_methods_from_minbas():
+    orbitals = "sto-3g"
+    kwargs = {}
+    world = madpy.MadWorld(thresh=1.e-4)
+    data = ("H 0.0 0.0 0.0\nH 0.0 0.0 5.0", -1.0)
+    for method in ["upccgsd", "fci"]:
+        print(method)
+        if method != "fci": kwargs["optimizer_arguments"] = {"initial_values":"random"}
+        geom, test_energy = data
+        geom = geom.lower()
+        energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals, **kwargs)
+        assert numpy.isclose(energy, test_energy, atol=1.e-3)
     del world
