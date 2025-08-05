@@ -35,7 +35,6 @@ class PySCFInterface:
         one_body_integrals,
         two_body_integrals,
         constant_term,
-        frozen_core=False,
         *args,
         **kwargs,
     ):
@@ -60,7 +59,6 @@ class PySCFInterface:
             one_body_integrals=one_body_integrals,
             two_body_integrals=two_body_integrals,
             nuclear_repulsion=constant_term,
-            frozen_core=frozen_core,
             *args,
             **kwargs,
         )

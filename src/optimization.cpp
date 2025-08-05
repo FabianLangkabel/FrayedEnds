@@ -653,12 +653,10 @@ double Optimization::calculate_lagrange_multiplier_element_as_core(int z, int i)
     return element;
 }
 
-void Optimization::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh) {
+bool Optimization::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter) {
 
     bool converged = false;
-    int iterstep = 0;
-    while (!converged) {
-        iterstep++;
+    for (auto iterstep=0; iterstep<maxiter; iterstep++) {
         std::cout << "---------------------------------------------------" << std::endl;
         std::cout << "Start iteration step: " << iterstep << std::endl;
 
@@ -710,6 +708,7 @@ void Optimization::optimize_orbitals(double optimization_thresh, double NO_occup
         // Calculate new energy
         calculate_energies();
     }
+    return converged;
 }
 
 std::vector<real_function_3d> Optimization::get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update) {

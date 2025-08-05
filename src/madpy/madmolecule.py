@@ -41,7 +41,6 @@ class MadMolecule:
     def nuclear_repulsion_second_derivative(self, atom1: int, atom2: int, axis1: int, axis2: int):
         return self.impl.nuclear_repulsion_second_derivative(atom1, atom2, axis1, axis2)
 
-
     def get_vnuc(self, madworld):
         return self.impl.get_vnuc(madworld._impl)
 
