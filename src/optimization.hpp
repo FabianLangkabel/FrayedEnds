@@ -44,7 +44,7 @@ class Optimization {
     void calculate_lagrange_multiplier();
     double calculate_lagrange_multiplier_element_as_as(int z, int i);
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
-    void optimize_orbitals(double optimization_thresh, double NO_occupation_thresh);
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter);
     std::vector<real_function_3d> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
     void rotate_orbitals_back();
     void save_orbitals(std::string OutputPath);
@@ -57,9 +57,9 @@ class Optimization {
 
     int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
-    double coulomb_lo = 0.0001;
+    double coulomb_lo = 0.001;
     double coulomb_eps = 1e-6;
-    double BSH_lo = 0.0001;
+    double BSH_lo = 0.001;
     double BSH_eps = 1e-6;
 
   private:
