@@ -83,7 +83,7 @@ def optimize_basis(world:MadWorld,
                 geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
             )
             rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, return_energy=True)
-        elif many_body_method in ["spa"]:
+        elif many_body_method in TEQUILA_METHODS:
             mol = TequilaInterface(
                 geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
             )
