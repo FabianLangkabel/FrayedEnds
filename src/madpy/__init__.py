@@ -9,5 +9,6 @@ from .mrafunctionfactory import MRAFunctionFactory
 from .nwchem_converter import NWChem_Converter
 from .optimization import Optimization, transform_rdms
 from .pyscf_interface import PySCFInterface
+from .block2_interface import Block2Interface
 from .tequila_interface import TequilaInterface
 from .methods import optimize_basis
