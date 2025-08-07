@@ -28,7 +28,7 @@ def optimize_basis(world:MadWorld,
                    n_orbitals=None,
                    many_body_method="fci",
                    orbitals=None,
-                   maxiter=10,
+                   maxiter=4,
                    econv=1.e-4,
                    dconv=None,
                    occ_thresh=None,
@@ -37,13 +37,11 @@ def optimize_basis(world:MadWorld,
     if hasattr(orbitals, "lower"): orbitals = orbitals.lower()
 
     mol = MadMolecule(geometry)
-
     c = mol.get_nuclear_repulsion()
     Vnuc = mol.get_vnuc(world)
+
     if n_orbitals is None:
-        # as many orbitals as electrons
-        # we also need the core orbitals (so no frozen-core effects here)
-        n_orbitals = mol.n_electrons
+        n_orbitals = mol.n_core_electrons//2 + (mol.n_electrons - mol.n_core_electrons)
 
     if orbitals is None or "pno" in orbitals:
         madpno = MadPNO(world, geometry, n_orbitals=n_orbitals)
@@ -87,7 +85,7 @@ def optimize_basis(world:MadWorld,
                 geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
             )
             rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, return_energy=True)
-        elif many_body_method in ["spa"]:
+        elif many_body_method in TEQUILA_METHODS:
             mol = TequilaInterface(
                 geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
             )

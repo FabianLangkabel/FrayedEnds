@@ -62,6 +62,7 @@ class Optimization:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
+    converged = None # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -80,6 +81,7 @@ class Optimization:
         rdm2,
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
+        maxiter=3,
         *args,
         **kwargs,
     ):
@@ -92,15 +94,15 @@ class Optimization:
         self.impl.calculate_core_energy()
         self.impl.calculate_energies()
 
-        self.impl.optimize_orbitals(opt_thresh, occ_thresh)
+        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
         self.impl.rotate_orbitals_back()
 
         self._orbitals = self.impl.get_orbitals()
-        return self._orbitals
+        return self._orbitals, converged
 
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is None:
-            self._orbitals = self.optimize_orbs(*args, **kwargs)
+            self._orbitals, self.converged = self.optimize_orbs(*args, **kwargs)
             assert self._orbitals is not None
         return self._orbitals
 

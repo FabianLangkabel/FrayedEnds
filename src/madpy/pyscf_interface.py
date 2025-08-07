@@ -35,7 +35,6 @@ class PySCFInterface:
         one_body_integrals,
         two_body_integrals,
         constant_term,
-        frozen_core=False,
         *args,
         **kwargs,
     ):
@@ -60,7 +59,6 @@ class PySCFInterface:
             one_body_integrals=one_body_integrals,
             two_body_integrals=two_body_integrals,
             nuclear_repulsion=constant_term,
-            frozen_core=frozen_core,
             *args,
             **kwargs,
         )
@@ -78,12 +76,12 @@ class PySCFInterface:
         if "fci" in method:
             from pyscf import fci
             c, h1, h2 = self.tqmol.get_integrals(ordering="chem")
-            if method=="fci_dhf_slow":
-                solver = fci.fci_dhf_slow.FCI()
+            if method in fci.__dict__:
+                solver = fci.__dict__[method].FCI()
             elif self.tqmol.n_electrons %2 == 0:
-                solver = fci.direct_spin1.FCI()
-            else:
                 solver = fci.direct_spin0.FCI()
+            else:
+                solver = fci.direct_spin1.FCI()
 
             if method=="fci_dhf_slow": # doesn't converge great
                 energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons, nroots=self.tqmol.n_orbitals)

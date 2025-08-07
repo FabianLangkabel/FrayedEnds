@@ -34,13 +34,16 @@ class TequilaInterface:
 
         return tq.Molecule(geometry=geometry, one_body_integrals=one_body_integrals, two_body_integrals=two_body_integrals, nuclear_repulsion=constant_term)
 
-    def compute_rdms(self, method="spa", optimize_orbitals=False, *args, **kwargs):
+    def compute_rdms(self, method="spa", optimize_orbitals=False, optimizer_arguments=None, *args, **kwargs):
         method = method.lower()
         if method == "spa": method = "hcb-spa"
         if method == "upccgd": method = "hcb-upccgd"
         if method == "upccd": method = "hcb-upccd"
+        if optimizer_arguments is None: optimizer_arguments={}
 
-        if "hcb" in method:
+        use_hcb = "hcb" in method
+
+        if use_hcb:
             U = self.mol.make_ansatz(name=method, *args, **kwargs)
             H = self.mol.make_hardcore_boson_hamiltonian()
         else:
@@ -49,10 +52,10 @@ class TequilaInterface:
 
         trafo = None
         if optimize_orbitals:
-            oo_options = {"initial_guess":"near_zero", "silent":True}
-            if not "oo_options" in kwargs:
+            oo_options = {"silent":True}
+            if "oo_options" in kwargs:
                 oo_options = {**oo_options, **kwargs["oo_options"]}
-            opt = tq.quantumchemistry.optimize_orbitals(molecule=self.mol, circuit=U, use_hcb="hcb" in method, **oo_options)
+            opt = tq.quantumchemistry.optimize_orbitals(molecule=self.mol, circuit=U, use_hcb=use_hcb, **oo_options)
             if "hcb" in method:
                 H = opt.molecule.make_hardcore_boson_hamiltonian()
             else:
@@ -60,12 +63,14 @@ class TequilaInterface:
             trafo = opt.mo_coeff.T
 
         E = tq.ExpectationValue(H=H, U=U)
-        result = tq.minimize(E, silent=True)
-        rdm1, rdm2 = self.mol.compute_rdms(U=U, use_hcb=True, variables=result.variables)
+        optimizer_arguments_default = {"silent":True, "initial_values": "near_zero"}
+        optimizer_arguments = {**optimizer_arguments_default, **optimizer_arguments}
+        result = tq.minimize(E, **optimizer_arguments)
+        rdm1, rdm2 = self.mol.compute_rdms(U=U, use_hcb=use_hcb, variables=result.variables)
         energy = result.energy
 
         if trafo is not None:
-            pass
+            raise Exception("orbital optimization not yet supported: need to re-transform the rdms")
 
         return rdm1, rdm2, energy
 
