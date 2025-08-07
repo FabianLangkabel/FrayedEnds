@@ -27,3 +27,20 @@ def test_methods_from_minbas():
         energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-3, orbitals=orbitals, **kwargs)
         assert numpy.isclose(energy, test_energy, atol=1.e-3)
     del world
+
+def test_dmrg():
+    geom = "H 0.0 0.0 0.0\nH 0.0 0.0 1.0\nH 0.0 0.0 2.0\nH 0.0 0.0 3.0"
+
+    # initialize madness
+    thresh = 1.e-4
+    world = madpy.MadWorld(thresh=thresh)
+    energies = []
+    for method in ["dmrg", "fci"]:
+        energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom,
+                                                            econv=thresh, orbitals="sto3g", maxiter=1)
+        energies.append(energy)
+
+    assert numpy.isclose(energies[0], energies[1])
+    del world
+
+

@@ -25,6 +25,7 @@ class Block2Interface(PySCFInterface):
         c, h1, g2 = self.tqmol.get_integrals(ordering="chem")
         g2 = g2.elems
 
+        # todo no hardcoding but customizeable parameters
         driver = DMRGDriver()
         driver.initialize_system(n_sites=mol.n_orbitals, n_elec=mol.n_electrons, spin=spin)
         mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=1)
