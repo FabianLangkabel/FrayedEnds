@@ -4,7 +4,7 @@ import numpy
 # define geometry (Angstrom)
 geom = """
 H 0.0 0.0 0.0
-H 0.0 0.0 0.75
+H 0.0 0.0 5.0
 """
 
 # initialize madness
