@@ -67,10 +67,6 @@ class PySCFInterface:
                 kwargs.pop("ordering")
             two_body_integrals = tq.quantumchemistry.NBodyTensor(two_body_integrals, ordering=ordering)
 
-        self.one_body_integrals = one_body_integrals
-        self.two_body_integrals = two_body_integrals
-        self.constant_term = constant_term
-
         if n_electrons==None and geometry==None:
             raise Exception("Please provide either a number of electrons or a geometry.")
         elif geometry!=None:
@@ -87,9 +83,13 @@ class PySCFInterface:
             )
             self.n_electrons = self.tqmol.n_electrons
             self.n_orbitals = self.tqmol.n_orbitals
+            self.constant_term, self.one_body_integrals, self.two_body_integrals = self.tqmol.get_integrals(ordering="chem")
         else:
             self.n_electrons = n_electrons
             self.n_orbitals = one_body_integrals.shape[0] # needs to be adapted to allow for frozen core calculations
+            self.one_body_integrals = one_body_integrals
+            self.two_body_integrals = two_body_integrals
+            self.constant_term = constant_term
 
     def compute_energy(self, method: str, *args, **kwargs):
         if method not in SUPPORTED_FCI_METHODS and self.tqmol==None:
