@@ -24,9 +24,8 @@ try:
 except ImportError:
     HAS_PYSCF = ImportError
 
-SUPPORTED_RDM_METHODS = ["cisd", "mp2", "ccsd"]
-SUPPORTED_FCI_METHODS = ['fci', 'direct_spin1', 'direct_spin0', 'direct_uhf', 'direct_spin1_symm', 'direct_spin0_symm', 'fci_dhf_slow', 'direct_nosym']
-SUPPORTED_RDM_METHODS += SUPPORTED_FCI_METHODS
+SUPPORTED_RDM_METHODS = ['cisd', 'mp2', 'ccsd', 'fci', 'fci_direct_spin1', 'fci_direct_spin0', 'fci_dhf_slow', 'fci_direct_nosym']
+
 
 class PySCFInterface:
 
@@ -85,14 +84,14 @@ class PySCFInterface:
             self.n_orbitals = self.tqmol.n_orbitals
             self.constant_term, self.one_body_integrals, self.two_body_integrals = self.tqmol.get_integrals(ordering="chem")
         else:
-            self.n_electrons = n_electrons
-            self.n_orbitals = one_body_integrals.shape[0] # needs to be adapted to allow for frozen core calculations
+            self.n_electrons = n_electrons # needs to be adapted to allow for frozen core calculations
+            self.n_orbitals = one_body_integrals.shape[0] 
             self.one_body_integrals = one_body_integrals
             self.two_body_integrals = two_body_integrals
             self.constant_term = constant_term
 
     def compute_energy(self, method: str, *args, **kwargs):
-        if method not in SUPPORTED_FCI_METHODS and self.tqmol==None:
+        if "fci" not in method and self.tqmol==None:
             raise Exception("For cisd, mp2 or ccsd you need to provide a molecular geometry.")
         if method in SUPPORTED_RDM_METHODS:
             return self.compute_rdms(method=method, return_energy=True, *args, **kwargs)[0]
@@ -100,15 +99,20 @@ class PySCFInterface:
 
     def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
         method = method.lower()
-        if method in SUPPORTED_FCI_METHODS:
+        if "fci" in method:
             from pyscf import fci
             c, h1, h2 = self.constant_term, self.one_body_integrals, self.two_body_integrals
-            if method in fci.__dict__:
+            if method=="fci":
+                if self.n_electrons %2 == 0:
+                    solver = fci.direct_spin0.FCI()
+                else:
+                    solver = fci.direct_spin1.FCI()
+            elif method=="fci_dhf_slow":
                 solver = fci.__dict__[method].FCI()
-            elif self.n_electrons %2 == 0:
-                solver = fci.direct_spin0.FCI()
             else:
-                solver = fci.direct_spin1.FCI()
+                nofci_m=method.replace("fci_","")
+                solver = fci.__dict__[nofci_m].FCI()
+        
 
             if method=="fci_dhf_slow": # doesn't converge great
                 energy, fcivec = solver.kernel(h1, h2.elems, self.n_orbitals, self.n_electrons, nroots=self.n_orbitals)
