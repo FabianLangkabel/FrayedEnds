@@ -24,17 +24,20 @@ try:
 except ImportError:
     HAS_PYSCF = ImportError
 
-SUPPORTED_RDM_METHODS = ["fci", "cisd", "mp2", "ccsd", "fci_dhf_slow"]
+SUPPORTED_RDM_METHODS = ['cisd', 'mp2', 'ccsd', 'fci', 'fci_direct_spin1', 'fci_direct_spin0', 'fci_dhf_slow', 'fci_direct_nosym']
 
 
 class PySCFInterface:
 
+    tqmol = None
+
     def __init__(
         self,
-        geometry,
         one_body_integrals,
         two_body_integrals,
         constant_term,
+        n_electrons=None,
+        geometry=None,
         *args,
         **kwargs,
     ):
@@ -53,45 +56,73 @@ class PySCFInterface:
             )
         if not TQ_PYSCF_INTERFACE_WORKING:
             raise Exception("tq-pyscf interface broken :-(")
+        
+        if isinstance(two_body_integrals, tq.quantumchemistry.NBodyTensor):
+            two_body_integrals.reorder(to="chem")
+        else:
+            ordering = None  # will be auto-detected
+            if "ordering" in kwargs:
+                ordering = kwargs["ordering"]
+                kwargs.pop("ordering")
+            two_body_integrals = tq.quantumchemistry.NBodyTensor(two_body_integrals, ordering=ordering)
 
-        mol = tq.Molecule(
-            geometry=geometry,
-            one_body_integrals=one_body_integrals,
-            two_body_integrals=two_body_integrals,
-            nuclear_repulsion=constant_term,
-            *args,
-            **kwargs,
-        )
-        self.tqmol = tq.quantumchemistry.QuantumChemistryPySCF.from_tequila(
-            molecule=mol
-        )
+        if n_electrons==None and geometry==None:
+            raise Exception("Please provide either a number of electrons or a geometry.")
+        elif geometry!=None:
+            mol = tq.Molecule(
+                geometry=geometry,
+                one_body_integrals=one_body_integrals,
+                two_body_integrals=two_body_integrals,
+                nuclear_repulsion=constant_term,
+                *args,
+                **kwargs,
+            )
+            self.tqmol = tq.quantumchemistry.QuantumChemistryPySCF.from_tequila(
+                molecule=mol
+            )
+            self.n_electrons = self.tqmol.n_electrons
+            self.n_orbitals = self.tqmol.n_orbitals
+            self.constant_term, self.one_body_integrals, self.two_body_integrals = self.tqmol.get_integrals(ordering="chem")
+        else:
+            self.n_electrons = n_electrons # needs to be adapted to allow for frozen core calculations
+            self.n_orbitals = one_body_integrals.shape[0] 
+            self.one_body_integrals = one_body_integrals
+            self.two_body_integrals = two_body_integrals
+            self.constant_term = constant_term
 
     def compute_energy(self, method: str, *args, **kwargs):
+        if "fci" not in method and self.tqmol==None:
+            raise Exception("For cisd, mp2 or ccsd you need to provide a molecular geometry.")
         if method in SUPPORTED_RDM_METHODS:
-            return self.compute_rdms(method=method, *args, **kwargs)[0]
+            return self.compute_rdms(method=method, return_energy=True, *args, **kwargs)[0]
         return self.tqmol.compute_energy(method=method, *args, **kwargs)
 
     def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
         method = method.lower()
         if "fci" in method:
             from pyscf import fci
-            c, h1, h2 = self.tqmol.get_integrals(ordering="chem")
-            if method in fci.__dict__:
+            c, h1, h2 = self.constant_term, self.one_body_integrals, self.two_body_integrals
+            if method=="fci":
+                if self.n_electrons %2 == 0:
+                    solver = fci.direct_spin0.FCI()
+                else:
+                    solver = fci.direct_spin1.FCI()
+            elif method=="fci_dhf_slow":
                 solver = fci.__dict__[method].FCI()
-            elif self.tqmol.n_electrons %2 == 0:
-                solver = fci.direct_spin0.FCI()
             else:
-                solver = fci.direct_spin1.FCI()
+                nofci_m=method.replace("fci_","")
+                solver = fci.__dict__[nofci_m].FCI()
+        
 
             if method=="fci_dhf_slow": # doesn't converge great
-                energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons, nroots=self.tqmol.n_orbitals)
-                if len(fcivec) == self.tqmol.n_orbitals: fcivec = fcivec[0]
+                energy, fcivec = solver.kernel(h1, h2.elems, self.n_orbitals, self.n_electrons, nroots=self.n_orbitals)
+                if len(fcivec) == self.n_orbitals: fcivec = fcivec[0]
             else:
-                energy, fcivec = solver.kernel(h1, h2.elems, self.tqmol.n_orbitals, self.tqmol.n_electrons)
+                energy, fcivec = solver.kernel(h1, h2.elems, self.n_orbitals, self.n_electrons)
 
             energy = energy + c
             rdm1, rdm2 = solver.make_rdm12(
-                fcivec, self.tqmol.n_orbitals, self.tqmol.n_electrons
+                fcivec, self.n_orbitals, self.n_electrons
             )
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         elif "ci" in method:

@@ -6,7 +6,7 @@ import time
 
 world = madpy.MadWorld()
 
-distance_list = [0.72+0.01 * i for i in range(5)]
+distance_list = [0.74+0.005 * i for i in range(2)]
 Energy_list=[]
 Gradient_list=[]
 
@@ -18,7 +18,7 @@ for distance in distance_list:
     molecule.add_atom(0.0,0.0,0.0,"H")
     molecule.add_atom(0.0,0.0,distance,"H")
 
-    madpno = madpy.MadPNO(world, geometry, n_orbitals=4)
+    madpno = madpy.MadPNO(world, geometry, n_orbitals=8)
     orbitals = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
