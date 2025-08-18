@@ -656,7 +656,9 @@ double Optimization::calculate_lagrange_multiplier_element_as_core(int z, int i)
 bool Optimization::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter) {
 
     bool converged = false;
-    for (auto iterstep=0; iterstep<maxiter; iterstep++) {
+    int iterstep = 0;
+    while (!converged && iterstep < maxiter) {
+        iterstep++;
         std::cout << "---------------------------------------------------" << std::endl;
         std::cout << "Start iteration step: " << iterstep << std::endl;
 
