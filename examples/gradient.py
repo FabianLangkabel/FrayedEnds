@@ -4,9 +4,9 @@ import tequila as tq
 import time
 
 
-world = madpy.MadWorld()
+world = madpy.MadWorld3D()
 
-distance_list = [0.74+0.005 * i for i in range(1)]
+distance_list = [0.01+0.01 * i for i in range(2)]
 Energy_list=[]
 Gradient_list=[]
 
@@ -24,7 +24,7 @@ for distance in distance_list:
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = madpy.Integrals(world)
+    integrals = madpy.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
 
 
@@ -32,7 +32,7 @@ for distance in distance_list:
     current=0.0
     for iteration in range(6):
 
-        integrals = madpy.Integrals(world)
+        integrals = madpy.Integrals3D(world)
         G = integrals.compute_two_body_integrals(orbitals).elems
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
@@ -52,7 +52,7 @@ for distance in distance_list:
         current = result.energy
         
 
-        opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
+        opti = madpy.Optimization3D(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
         c = opti.get_c() # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 
@@ -75,9 +75,9 @@ for distance in distance_list:
     true_end = time.time()
     print("Total time: ", true_end - true_start)
 
-
-print("Energy list: ", Energy_list)
-print("Gradient list: ", Gradient_list)
+print("distance_list=", distance_list)
+print("Energy_list=", Energy_list)
+print("Gradient_list=", Gradient_list)
 
 del madpno
 del integrals
