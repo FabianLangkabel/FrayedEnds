@@ -4,90 +4,95 @@
 
 using namespace madness;
 
-Eigensolver3D::Eigensolver3D(MadnessProcess& mp) : madness_process(mp) {
+template <std::size_t NDIM>
+Eigensolver<NDIM>::Eigensolver(MadnessProcess<NDIM>& mp) : madness_process(mp) {
     std::cout.precision(6);
 }
 
-Eigensolver3D::~Eigensolver3D() {
+template <std::size_t NDIM>
+Eigensolver<NDIM>::~Eigensolver() {
     V.clear();
     orbitals.clear();
 }
 
 // Function to solve the eigenvalue problem for the given potential
-void Eigensolver3D::solve(SavedFct input_V, int num_levels, int max_iter) {
-    Function<double, 3> V = madness_process.loadfct(input_V);
+template <std::size_t NDIM>
+void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_iter) {
+    Function<double, NDIM> V = madness_process.loadfct(input_V);
     std::cout << "Potential loaded" << std::endl;
     // Create the guess generator
-    GuessGenerator<double, 3> guess_generator(*(madness_process.world)); // Guess generator for all potentials
+    GuessGenerator<double, NDIM> guess_generator(*(madness_process.world)); // Guess generator for all potentials
     // Create the guess functions
-    std::vector<Function<double, 3>> guesses = guess_generator.create_guesses(num_levels, V);
+    std::vector<Function<double, NDIM>> guesses = guess_generator.create_guesses(num_levels, V);
 
     // plot guess functions
     // for (int i = 0; i < guesses.size(); i++) {
-    //    madness_process.plot("g-" + std::to_string(i) + ".dat", SavedFct(guesses[i]));
+    //    madness_process.plot("g-" + std::to_string(i) + ".dat", SavedFct<NDIM>(guesses[i]));
     //}
 
     // Diagonalize the Hamiltonian matrix
-    std::pair<Tensor<double>, std::vector<Function<double, 3>>> tmp = diagonalize(guesses, V);
-    std::vector<Function<double, 3>> diagonalized_guesses = tmp.second;
+    std::pair<Tensor<double>, std::vector<Function<double, NDIM>>> tmp = diagonalize(guesses, V);
+    std::vector<Function<double, NDIM>> diagonalized_guesses = tmp.second;
 
     // store the eigenfunctions in vector eigenfunctions
-    std::vector<Function<double, 3>> eigenfunctions;
+    std::vector<Function<double, NDIM>> eigenfunctions;
 
     // Generate and solve the diagonalized guesses and store them in eigenfunctions (Optimization with BSH Operator)
     for (int i = 0; i < num_levels; i++) {
-        Function<double, 3> phi = optimize(V, diagonalized_guesses[i], i, eigenfunctions, max_iter);
+        Function<double, NDIM> phi = optimize(V, diagonalized_guesses[i], i, eigenfunctions, max_iter);
         eigenfunctions.push_back(phi);
     }
 
     // diagonalize the eigenfunctions again
-    std::pair<Tensor<double>, std::vector<Function<double, 3>>> diagonalized = diagonalize(eigenfunctions, V);
+    std::pair<Tensor<double>, std::vector<Function<double, NDIM>>> diagonalized = diagonalize(eigenfunctions, V);
     std::cout << "Diagonalize" << std::endl;
     orbitals = diagonalized.second;
 }
 
 // Function to solve the eigenvalue problem for the given potential with given guesses
-std::vector<Function<double, 3>> Eigensolver3D::solve_with_input_guesses(SavedFct input_V,
-                                                                         const std::vector<SavedFct>& input_guesses,
+template <std::size_t NDIM>
+std::vector<Function<double, NDIM>> Eigensolver<NDIM>::solve_with_input_guesses(SavedFct<NDIM> input_V,
+                                                                         const std::vector<SavedFct<NDIM>>& input_guesses,
                                                                          int num_levels, int max_iter) {
-    Function<double, 3> V = madness_process.loadfct(input_V);
-    std::vector<Function<double, 3>> guesses;
+    Function<double, NDIM> V = madness_process.loadfct(input_V);
+    std::vector<Function<double, NDIM>> guesses;
 
     for (const auto& guess : input_guesses) {
         guesses.push_back(madness_process.loadfct(guess));
     }
 
     // Diagonalize the Hamiltonian matrix
-    std::pair<Tensor<double>, std::vector<Function<double, 3>>> tmp = diagonalize(guesses, V);
-    std::vector<Function<double, 3>> diagonalized_guesses = tmp.second;
+    std::pair<Tensor<double>, std::vector<Function<double, NDIM>>> tmp = diagonalize(guesses, V);
+    std::vector<Function<double, NDIM>> diagonalized_guesses = tmp.second;
 
     // store the eigenfunctions in vector eigenfunctions
-    std::vector<Function<double, 3>> eigenfunctions;
+    std::vector<Function<double, NDIM>> eigenfunctions;
 
     // Generate and solve the diagonalized guesses and store them in eigenfunctions (Optimization with BSH Operator)
     for (int i = 0; i < num_levels; i++) {
-        Function<double, 3> phi = optimize(V, diagonalized_guesses[i], i, eigenfunctions, max_iter);
+        Function<double, NDIM> phi = optimize(V, diagonalized_guesses[i], i, eigenfunctions, max_iter);
         eigenfunctions.push_back(phi);
     }
 
     // diagonalize the eigenfunctions again
-    std::pair<Tensor<double>, std::vector<Function<double, 3>>> diagonalized = diagonalize(eigenfunctions, V);
+    std::pair<Tensor<double>, std::vector<Function<double, NDIM>>> diagonalized = diagonalize(eigenfunctions, V);
     std::cout << "Diagonalize" << std::endl;
-    std::vector<Function<double, 3>> y = diagonalized.second;
+    std::vector<Function<double, NDIM>> y = diagonalized.second;
 
     return y;
 }
 
 // Function to calculate the energy
-double Eigensolver3D::energy(const Function<double, 3>& phi, const Function<double, 3>& V) {
+template <std::size_t NDIM>
+double Eigensolver<NDIM>::energy(const Function<double, NDIM>& phi, const Function<double, NDIM>& V) {
     double potential_energy = inner(phi, V * phi); // <phi|Vphi> = <phi|V|phi>
     double kinetic_energy = 0.0;
 
-    for (int axis = 0; axis < 3; axis++) {
-        Derivative<double, 3> D =
-            free_space_derivative<double, 3>(*(madness_process.world), axis); // Derivative operator
+    for (int axis = 0; axis < NDIM; axis++) {
+        Derivative<double, NDIM> D =
+            free_space_derivative<double, NDIM>(*(madness_process.world), axis); // Derivative operator
 
-        Function<double, 3> dphi = D(phi);
+        Function<double, NDIM> dphi = D(phi);
         kinetic_energy += 0.5 * inner(dphi, dphi); // (1/2) <dphi/dx | dphi/dx>
     }
 
@@ -96,8 +101,9 @@ double Eigensolver3D::energy(const Function<double, 3>& phi, const Function<doub
 }
 
 // Function to calculate the Hamiltonian matrix, Overlap matrix and Diagonal matrix
-std::pair<Tensor<double>, std::vector<Function<double, 3>>>
-Eigensolver3D::diagonalize(const std::vector<Function<double, 3>>& functions, const Function<double, 3>& V) {
+template <std::size_t NDIM>
+std::pair<Tensor<double>, std::vector<Function<double, NDIM>>>
+Eigensolver<NDIM>::diagonalize(const std::vector<Function<double, NDIM>>& functions, const Function<double, NDIM>& V) {
     const int num = functions.size();
 
     auto H = Tensor<double>(num, num);           // Hamiltonian matrix
@@ -111,12 +117,12 @@ Eigensolver3D::diagonalize(const std::vector<Function<double, 3>>& functions, co
         std::cout << energy1 << std::endl;
         for (int j = 0; j < num; j++) {
             double kin_energy = 0.0;
-            for (int axis = 0; axis < 3; axis++) {
-                Derivative<double, 3> D =
-                    free_space_derivative<double, 3>(*(madness_process.world), axis); // Derivative operator
+            for (int axis = 0; axis < NDIM; axis++) {
+                Derivative<double, NDIM> D =
+                    free_space_derivative<double, NDIM>(*(madness_process.world), axis); // Derivative operator
 
-                Function<double, 3> dx_i = D(functions[i]);
-                Function<double, 3> dx_j = D(functions[j]);
+                Function<double, NDIM> dx_i = D(functions[i]);
+                Function<double, NDIM> dx_j = D(functions[j]);
 
                 kin_energy += 0.5 * inner(dx_i, dx_j); // (1/2) <dphi/dx | dphi/dx>
             }
@@ -145,7 +151,7 @@ Eigensolver3D::diagonalize(const std::vector<Function<double, 3>>& functions, co
 
     std::cout << "dia_matrix: \n" << diag_matrix << std::endl;
 
-    std::vector<Function<double, 3>> y;
+    std::vector<Function<double, NDIM>> y;
 
     // y = U * functions
     y = transform(*(madness_process.world), functions, U);
@@ -156,16 +162,17 @@ Eigensolver3D::diagonalize(const std::vector<Function<double, 3>>& functions, co
 }
 
 // Function to optimize the eigenfunction for each energy level
-Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Function<double, 3> guess_function, int N,
-                                            const std::vector<Function<double, 3>>& prev_phi, int max_iter) {
+template <std::size_t NDIM>
+Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V, const Function<double, NDIM> guess_function, int N,
+                                            const std::vector<Function<double, NDIM>>& prev_phi, int max_iter) {
 
     // Create the initial guess wave function
-    Function<double, 3> phi = guess_function;
+    Function<double, NDIM> phi = guess_function;
 
     phi.scale(1.0 / phi.norm2()); // phi *= 1.0/norm
     double E = energy(phi, V);
 
-    NonlinearSolverND<3> solver;
+    NonlinearSolverND<NDIM> solver;
     int count_shift = 0; // counter how often the potential was shifted
 
     for (int iter = 0; iter <= max_iter; iter++) {
@@ -184,12 +191,12 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
             count_shift++;
         }
 
-        Function<double, 3> Vphi = (V + shift) * phi;
+        Function<double, NDIM> Vphi = (V + shift) * phi;
         Vphi.truncate();
 
-        SeparatedConvolution<double, 3> op = BSHOperator<3>(*(madness_process.world), sqrt(-2 * E), 0.001, 1e-7);
+        SeparatedConvolution<double, NDIM> op = BSHOperator<NDIM>(*(madness_process.world), sqrt(-2 * E), 0.001, 1e-7);
 
-        Function<double, 3> r = phi + 2.0 * op(Vphi); // the residual
+        Function<double, NDIM> r = phi + 2.0 * op(Vphi); // the residual
         double err = r.norm2();
 
         // Q = 1 - sum(|phi_prev><phi_prev|) = 1 - |phi_0><phi_0| - |phi_1><phi_1| - ...
@@ -222,11 +229,11 @@ Function<double, 3> Eigensolver3D::optimize(Function<double, 3>& V, const Functi
     print("Final energy without shift: ", E);
     return phi;
 }
-
-std::vector<SavedFct> Eigensolver3D::get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const {
-    std::vector<SavedFct> sav_orbs;
+template <std::size_t NDIM>
+std::vector<SavedFct<NDIM>> Eigensolver<NDIM>::get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const {
+    std::vector<SavedFct<NDIM>> sav_orbs;
     for (auto i = 0; i < (core_dim + as_dim + froz_virt_dim); ++i) {
-        SavedFct sav_orb(orbitals[i]);
+        SavedFct<NDIM> sav_orb(orbitals[i]);
         if (i < core_dim) {
             sav_orb.type = "frozen_occ";
         } else if (i < core_dim + as_dim) {
@@ -238,3 +245,6 @@ std::vector<SavedFct> Eigensolver3D::get_orbitals(int core_dim, int as_dim, int 
     }
     return sav_orbs;
 }
+
+template class Eigensolver<2>;
+template class Eigensolver<3>;

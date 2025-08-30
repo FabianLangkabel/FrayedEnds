@@ -39,21 +39,22 @@ inline std::string read_binary_file(const std::string& filename) {
 
 // This class is used to save the MRA function
 // The constructor is called with the respective MRA function and the MRA data is saved in the saved_str member
+template <std::size_t NDIM>
 class SavedFct {
   public:
     std::string saved_str = ""; // should this be private?
     std::string info = "";
     std::string type = "";
 
-    SavedFct(Function<double, 3> f) : type("unknown"), info("None") { saved_str = get_data_string(f); }
+    SavedFct(Function<double, NDIM> f) : type("unknown"), info("None") { saved_str = get_data_string(f); }
 
-    SavedFct(Function<double, 3> f, const std::string type) : type(type) { saved_str = get_data_string(f); }
+    SavedFct(Function<double, NDIM> f, const std::string type) : type(type) { saved_str = get_data_string(f); }
 
-    SavedFct(Function<double, 3> f, const std::string type, const std::string info) : type(type), info(info) {
+    SavedFct(Function<double, NDIM> f, const std::string type, const std::string info) : type(type), info(info) {
         saved_str = get_data_string(f);
     }
 
-    std::string get_data_string(Function<double, 3> f) const {
+    std::string get_data_string(Function<double, NDIM> f) const {
         std::string filename = "saved_fct0504030201"; // TODO: use the cloud for this
         save(f, filename);
         std::string data_string = read_binary_file(filename + ".00000");
@@ -112,7 +113,8 @@ class SavedFct {
 };
 
 // Helper function to convert a string into a binary .00000 file
-inline void write_binary_file(const SavedFct& Sf,
+template <std::size_t NDIM>
+inline void write_binary_file(const SavedFct<NDIM>& Sf,
                               const std::string& filename) { // TODO: make sure the filename is unique
     std::string filename2 = filename + ".00000";
     // Open the file in binary mode
@@ -128,3 +130,6 @@ inline void write_binary_file(const SavedFct& Sf,
     // Close the file
     file.close();
 }
+
+template class SavedFct<2>;
+template class SavedFct<3>;

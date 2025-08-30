@@ -23,18 +23,18 @@ using namespace madchem;
 
 class NWChem_Converter {
   public:
-    NWChem_Converter(MadnessProcess& mp);
+    NWChem_Converter(MadnessProcess<3>& mp);
     ~NWChem_Converter();
 
     void read_nwchem_file(std::string nwchem_file);
 
-    std::vector<SavedFct> get_normalized_aos();
-    std::vector<SavedFct> get_mos();
-    SavedFct get_vnuc() { return SavedFct(Vnuc); }
+    std::vector<SavedFct<3>> get_normalized_aos();
+    std::vector<SavedFct<3>> get_mos();
+    SavedFct<3> get_vnuc() { return SavedFct<3>(Vnuc); }
     double get_nuclear_repulsion_energy() { return nuclear_repulsion_energy; }
 
   private:
-    MadnessProcess& madness_process;
+    MadnessProcess<3>& madness_process;
     std::vector<std::vector<double>> atoms;
     std::vector<real_function_3d> aos;
     std::vector<real_function_3d> mos;
