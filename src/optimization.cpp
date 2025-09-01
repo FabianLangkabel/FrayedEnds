@@ -1,4 +1,4 @@
-#include "Optimization.hpp"
+#include "optimization.hpp"
 
 using namespace madness;
 
