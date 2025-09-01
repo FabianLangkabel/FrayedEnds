@@ -3,6 +3,12 @@
 #include <madness/mra/mra.h>
 #include <madness/mra/operator.h>
 
+
+//the CoulombOperatorND class is a generalization of the CoulombOperator class from madness/mra/operator.h for 1 and 2 dimensions
+//Applying a CoulombOperatorND<N> object to a function of the same dimension N results in the convolution of the function with the Coulomb kernel 1/r
+
+
+
 using namespace madness;
 
 template <std::size_t NDIM>
