@@ -7,18 +7,22 @@ from .pyscf_interface import PySCFInterface, HAS_PYSCF
 from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
 from .tequila_interface import TequilaInterface, HAS_TEQUILA
 from .tequila_interface import SUPPORTED_RDM_METHODS as TEQUILA_METHODS
+from .block2_interface import Block2Interface, HAS_BLOCK2
+from .block2_interface import SUPPORTED_RDM_METHDOS as BLOCK2_METHODS
 from .madworld import MadWorld2D, MadWorld3D
 from .madmolecule import MadMolecule
 from .minbas import AtomicBasisProjector
 from .eigensolver import Eigensolver2D, Eigensolver3D
 
-SUPPORTED_RDM_METHODS = TEQUILA_METHODS + PYSCF_METHODS
+SUPPORTED_RDM_METHODS = TEQUILA_METHODS + PYSCF_METHODS + BLOCK2_METHODS
 AVAILABLE_RDM_METHODS = []
 
 if HAS_TEQUILA:
     AVAILABLE_RDM_METHODS += TEQUILA_METHODS
 if HAS_PYSCF:
     AVAILABLE_RDM_METHODS += PYSCF_METHODS
+if HAS_BLOCK2:
+    AVAILABLE_RDM_METHODS += BLOCK2_METHODS
 
 def optimize_basis_3D(world:MadWorld3D,
                    Vnuc: SavedFct3D = None,
@@ -120,7 +124,10 @@ def optimize_basis_3D(world:MadWorld3D,
                 )
             rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, *args, **kwargs)
         elif many_body_method == "dmrg":
-            raise Exception("not here yet")
+            mol = Block2Interface(
+                geometry=geometry, one_body_integrals=T + V, two_body_integrals=G, constant_term=c
+            )
+            rdm1, rdm2, energy = mol.compute_rdms(return_energy=True)
         elif callable(many_body_method):
             rdm1, rdm2, energy = many_body_method(T,V,G,c,*args, **kwargs)
         else:

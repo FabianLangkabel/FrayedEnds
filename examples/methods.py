@@ -14,11 +14,11 @@ world = madpy.MadWorld3D(thresh=thresh)
 # the many-body method to determine the RDMs
 print("supported are: ", madpy.methods.SUPPORTED_RDM_METHODS)
 print("available are: ", madpy.methods.AVAILABLE_RDM_METHODS)
-method="fci_dhf_slow" #dhf_slow allows complex integrals, but doesn't converge great, sometimes needs manual tweeking with initial guess
+method="fci" #"fci_dhf_slow" #dhf_slow allows complex integrals, but doesn't converge great, sometimes needs manual tweeking with initial guess
 
 # initial orbitals
 # can also just be a vector of MRA functions imported from somewhere else
-orbitals = "manual" # "pno", "sto-3g"
+orbitals = "pno" # "pno", "sto-3g"
 if orbitals == "manual":
     world.change_nthreads(0)
     f1 = madpy.MRAFunctionFactory3D(world, pyfunc=lambda x,y,z:  numpy.exp(-0.5*(x**2+y**2+z**2)**0.5)).get_function(type="active")
