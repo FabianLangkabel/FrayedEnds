@@ -17,12 +17,12 @@ def potential(x: float, y: float, z: float) -> float: # Qdot potential
     return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
 
 
-world = mad.MadWorld() # This is required for any MADNESS calculation as it initializes the required environment
+world = mad.MadWorld3D() # This is required for any MADNESS calculation as it initializes the required environment
 
-factory = mad.MRAFunctionFactory(world, potential) # This transform a python function into a MRA function which can be read by MADNESS
+factory = mad.MRAFunctionFactory3D(world, potential) # This transform a python function into a MRA function which can be read by MADNESS
 mra_pot = factory.get_function() # Potential as MRA function
 
-eigen = mad.Eigensolver(world, mra_pot) # This sets up the eigensolver, which provides initial guess orbitals
+eigen = mad.Eigensolver3D(world, mra_pot) # This sets up the eigensolver, which provides initial guess orbitals
 orbitals = eigen.get_orbitals(
     0, n_orbitals, 0, n_states=5
 )  # The first three numbers are the numbers of frozen_core, active and frozen_virtual orbitals (in this case all orbitals are active)
@@ -34,7 +34,7 @@ for i in range(len(orbitals)):
 
 current = 0.0
 for iteration in range(6):
-    integrals = mad.Integrals(world) # Setup for integrals
+    integrals = mad.Integrals3D(world) # Setup for integrals
     G = integrals.compute_two_body_integrals(orbitals, ordering="chem") # g-tensor (electron-electron interaction)
     T = integrals.compute_kinetic_integrals(orbitals) # Kinetic energy
     V = integrals.compute_potential_integrals(orbitals, mra_pot) # Potential energy (h-tensor=T+V)
@@ -47,7 +47,7 @@ for iteration in range(6):
     print("iteration {} FCI energy {:+2.8f}".format(iteration, e))
 
     # Orbital optimization
-    opti = mad.Optimization(world, mra_pot, nuc_repulsion=0.0)
+    opti = mad.Optimization3D(world, mra_pot, nuc_repulsion=0.0)
     orbitals = opti.get_orbitals(
         orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     ) # Optimizes the orbitals and returns the new ones

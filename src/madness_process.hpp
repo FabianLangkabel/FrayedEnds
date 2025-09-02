@@ -31,6 +31,8 @@ class RedirectOutput {
 };
 
 class MadMolecule; // Forward declaration
+
+template <std::size_t NDIM>
 class MadnessProcess {
   public:
     World* world;
@@ -49,16 +51,17 @@ class MadnessProcess {
     void change_nthreads(int n_threads);
 
     // load a function from a SavedFct object
-    Function<double, 3> loadfct(const SavedFct& Sf);
+    Function<double, NDIM> loadfct(const SavedFct<NDIM>& Sf);
 
     // load a function from a binary file
-    Function<double, 3> loadfct_from_file(const std::string& filename);
+    Function<double, NDIM> loadfct_from_file(const std::string& filename);
 
-    void plot(std::string filename, SavedFct f, std::string axis = "z", int datapoints = 2001);
+    void plot(std::string filename, SavedFct<NDIM> f, std::string axis, int datapoints);
 
-    void plane_plot(std::string filename, SavedFct f, std::string plane = "yz", double zoom = 1.0, int datapoints = 151,
-                    std::vector<double> origin = {0.0, 0.0, 0.0});
+    void plane_plot(std::string filename, SavedFct<NDIM> f, std::string plane, double zoom, int datapoints,
+                    std::vector<double> origin);
 
-    void cube_plot(std::string filename, SavedFct f, MadMolecule molecule, double zoom = 1.0, int datapoints = 151,
-                   std::vector<double> origin = {0.0, 0.0, 0.0});
+    
+    void cube_plot(std::string filename, SavedFct<3> f, MadMolecule molecule, double zoom, int datapoints,
+                   std::vector<double> origin); //only defined for NDIM=3
 };

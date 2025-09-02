@@ -14,25 +14,27 @@
 #include "npy.hpp"
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
+#include "coulomboperator_nd.hpp"
 
 using namespace madness;
 
+template <std::size_t NDIM>
 class Optimization {
   public:
-    Optimization(MadnessProcess& mp);
+    Optimization(MadnessProcess<NDIM>& mp);
     ~Optimization();
 
     // input
-    void give_initial_orbitals(std::vector<SavedFct> all_orbs);
+    void give_initial_orbitals(std::vector<SavedFct<NDIM>> all_orbs);
     void give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements);
 
     // output
     double get_c();
     std::vector<double> get_h_tensor();
     std::vector<double> get_g_tensor();
-    std::vector<SavedFct> get_orbitals();
+    std::vector<SavedFct<NDIM>> get_orbitals();
 
-    void give_potential_and_repulsion(SavedFct potential, double nuclear_repulsion);
+    void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
     void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files,
                              std::vector<std::string> frozen_virt_orb_files);
     void read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file);
@@ -45,7 +47,7 @@ class Optimization {
     double calculate_lagrange_multiplier_element_as_as(int z, int i);
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
     bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter);
-    std::vector<real_function_3d> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
+    std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
     void rotate_orbitals_back();
     void save_orbitals(std::string OutputPath);
     void save_effective_hamiltonian(std::string OutputPath);
@@ -63,20 +65,20 @@ class Optimization {
     double BSH_eps = 1e-6;
 
   private:
-    MadnessProcess& madness_process;
+    MadnessProcess<NDIM>& madness_process;
 
     // Madness + Molecule
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy = 0.0;
-    real_function_3d Vnuc;
+    Function<double, NDIM> Vnuc;
 
     // Orbitals
     std::vector<std::string> frozen_occ_orbs_files;
     std::vector<std::string> active_orbs_files;
     std::vector<std::string> frozen_virt_orb_files;
-    std::vector<real_function_3d> frozen_occ_orbs;
-    std::vector<real_function_3d> active_orbs;
-    std::vector<real_function_3d> frozen_virt_orb;
+    std::vector<Function<double, NDIM>> frozen_occ_orbs;
+    std::vector<Function<double, NDIM>> active_orbs;
+    std::vector<Function<double, NDIM>> frozen_virt_orb;
     int core_dim;
     int as_dim;
     int froz_virt_dim;
@@ -106,6 +108,6 @@ class Optimization {
     madness::Tensor<double> LagrangeMultiplier_AS_Core;
 
     // Stored AS orbital combinations
-    std::vector<real_function_3d> orbs_kl;      // |kl>
-    std::vector<real_function_3d> coul_orbs_mn; // 1/r|mn>
+    std::vector<Function<double, NDIM>> orbs_kl;      // |kl>
+    std::vector<Function<double, NDIM>> coul_orbs_mn; // 1/r|mn>
 };

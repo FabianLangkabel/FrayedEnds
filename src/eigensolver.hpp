@@ -21,35 +21,36 @@
 
 using namespace madness;
 
-class Eigensolver3D {
+template <std::size_t NDIM>
+class Eigensolver {
   public:
-    Eigensolver3D(MadnessProcess& mp);
+    Eigensolver(MadnessProcess<NDIM>& mp);
 
-    ~Eigensolver3D();
+    ~Eigensolver();
 
     // Function to solve the eigenvalue problem for the given potential
-    void solve(SavedFct input_V, int num_levels, int max_iter);
+    void solve(SavedFct<NDIM> input_V, int num_levels, int max_iter);
 
     // Function to solve the eigenvalue problem for the given potential with given guesses
-    std::vector<Function<double, 3>> solve_with_input_guesses(SavedFct input_V,
-                                                              const std::vector<SavedFct>& input_guesses,
+    std::vector<Function<double, NDIM> > solve_with_input_guesses(SavedFct<NDIM> input_V,
+                                                              const std::vector<SavedFct<NDIM> >& input_guesses,
                                                               int num_levels, int max_iter);
 
     // Function to calculate the energy
-    double energy(const Function<double, 3>& phi, const Function<double, 3>& V);
-    std::vector<SavedFct> get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const;
+    double energy(const Function<double, NDIM>& phi, const Function<double, NDIM>& V);
+    std::vector<SavedFct<NDIM> > get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const;
 
   private:
-    MadnessProcess& madness_process;
+    MadnessProcess<NDIM>& madness_process;
 
-    Function<double, 3> V;
-    std::vector<Function<double, 3>> orbitals;
+    Function<double, NDIM> V;
+    std::vector<Function<double, NDIM> > orbitals;
 
     // Function to calculate the Hamiltonian matrix, Overlap matrix and Diagonal matrix
-    std::pair<Tensor<double>, std::vector<Function<double, 3>>>
-    diagonalize(const std::vector<Function<double, 3>>& functions, const Function<double, 3>& V);
+    std::pair<Tensor<double>, std::vector<Function<double, NDIM> > >
+    diagonalize(const std::vector<Function<double, NDIM> >& functions, const Function<double, NDIM>& V);
 
     // Function to optimize the eigenfunction for each energy level
-    Function<double, 3> optimize(Function<double, 3>& V, const Function<double, 3> guess_function, int N,
-                                 const std::vector<Function<double, 3>>& prev_phi, int max_iter);
+    Function<double, NDIM> optimize(Function<double, NDIM>& V, const Function<double, NDIM> guess_function, int N,
+                                 const std::vector<Function<double, NDIM> >& prev_phi, int max_iter);
 };

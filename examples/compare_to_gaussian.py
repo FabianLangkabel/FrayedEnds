@@ -2,14 +2,14 @@ import madpy
 import tequila as tq
 import numpy
 
-world = madpy.MadWorld(thresh=1.e-6, k=9)
+world = madpy.MadWorld3D(thresh=1.e-6, k=9)
 method = "fci"
 geom = """
 H 0.0 0.0 0.0
 H 0.0 0.0 1.0
 """
 orbitals = "sto-3g"
-energy, orbitals, rdm1, rdm2 = madpy.optimize_basis(world=world, many_body_method=method, geometry=geom, econv=1.e-7, orbitals=orbitals)
+energy, orbitals, rdm1, rdm2 = madpy.optimize_basis_3D(world=world, many_body_method=method, geometry=geom, econv=1.e-7, orbitals=orbitals)
 print("2 MRA orbitals: ", energy)
 
 for basis in ["sto-3g", "sto-6g", "6-31G", "cc-pVDZ", "cc-pVTZ", "cc-pVQZ", "cc-pV5Z"]:

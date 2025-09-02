@@ -3,7 +3,7 @@ from madpy.minbas import AtomicBasisProjector
 
 geom = "Li 0.0 0.0 -10\nH 0.0 0.0 10"
 
-world = mad.MadWorld()
+world = mad.MadWorld3D()
 
 bp = AtomicBasisProjector(world, geom)
 

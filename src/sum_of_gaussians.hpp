@@ -3,6 +3,10 @@
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 
+
+// this is not really needed anymore and might be too specific to keep here
+
+
 using namespace madness;
 
 // class to create a charge density which can be represented by a sum of gaussian funcions (rho=\sum
@@ -48,14 +52,14 @@ class CoulombPotentialFromChargeDensity {
     double Q;
     std::vector<std::vector<double>> charge_locations;
 
-    CoulombPotentialFromChargeDensity(MadnessProcess& mp, std::vector<double> sl, double Q,
+    CoulombPotentialFromChargeDensity(MadnessProcess<3>& mp, std::vector<double> sl, double Q,
                                       std::vector<std::vector<double>> cl)
         : madness_process(mp), sharpness_list(sl), Q(Q), charge_locations(cl) {
         std::cout.precision(6);
     }
 
     ~CoulombPotentialFromChargeDensity() {}
-    SavedFct create_charge_density() {
+    SavedFct<3> create_charge_density() {
         SumOfGaussians Rho(sharpness_list, Q, charge_locations); // charge density
         Function<double, 3> f = FunctionFactory<double, 3>(*(madness_process.world))
                                     .special_level(10)
@@ -65,11 +69,11 @@ class CoulombPotentialFromChargeDensity {
         f = Rho.Q / norm * f; // renormalize such that Q=\int dV rho
         return SavedFct(f);
     }
-    SavedFct create_potential() {
+    SavedFct<3> create_potential() {
         Function<double, 3> Vnuc = make_potential(*(madness_process.world), sharpness_list, Q, charge_locations);
         return SavedFct(Vnuc);
     }
 
   private:
-    MadnessProcess& madness_process;
+    MadnessProcess<3>& madness_process;
 };
