@@ -7,21 +7,51 @@
 using namespace madness;
 namespace nb = nanobind;
 
-// helper class to create a functor from a Python function
-class PyFunctor : public FunctionFunctorInterface<double, 3> {
-  public:
-    std::function<double(double, double, double)> f;
+template <std::size_t NDIM>
+struct FunctionType;
 
-    PyFunctor(std::function<double(double, double, double)> pyfunc) : f(pyfunc) {}
-
-    double operator()(const Vector<double, 3>& r) const override { return f(r[0], r[1], r[2]); }
+template <>
+struct FunctionType<1> {
+    using type = std::function<double(double)>;
 };
 
+template <>
+struct FunctionType<2> {
+    using type = std::function<double(double, double)>;
+};
+
+template <>
+struct FunctionType<3> {
+    using type = std::function<double(double, double, double)>;
+};
+
+// helper class to create a functor from a Python function
+template <std::size_t NDIM>
+class PyFunctor : public FunctionFunctorInterface<double, NDIM> {
+  public:
+    using FuncType = typename FunctionType<NDIM>::type;
+    FuncType f;
+
+    PyFunctor(FuncType pyfunc) : f(pyfunc) {}
+
+    double operator()(const Vector<double, NDIM>& r) const override { 
+        if constexpr (NDIM == 1) {
+            return f(r[0]);
+        } else if constexpr (NDIM == 2) {
+            return f(r[0], r[1]);
+        } else if constexpr (NDIM == 3) {
+            return f(r[0], r[1], r[2]);
+        } 
+    }
+};
+
+template <std::size_t NDIM>
 class PyFuncFactory {
   public:
-    Function<double, 3> MRA_func;
+    Function<double, NDIM> MRA_func;
+    using FuncType = typename FunctionType<NDIM>::type;
 
-    PyFuncFactory(MadnessProcess& mp, std::function<double(double, double, double)> pyfunc) {
+    PyFuncFactory(MadnessProcess<NDIM>& mp, FuncType pyfunc) {
         // for this process n_threads always has to be 0, otherwise the python function can not be converted to a MRA
         // function
         std::cout.precision(6);
@@ -34,8 +64,8 @@ class PyFuncFactory {
             std::cout << "Changed number of threads to " << ThreadPool::size() << "." << std::endl;
         }
 
-        PyFunctor functor(pyfunc);
-        MRA_func = FunctionFactory<double, 3>(*(mp.world)).functor(functor);
+        PyFunctor<NDIM> functor(pyfunc);
+        MRA_func = FunctionFactory<double, NDIM>(*(mp.world)).functor(functor);
         
 
         if (nthreads_at_start != 0){
@@ -45,5 +75,9 @@ class PyFuncFactory {
         }
     }
     ~PyFuncFactory() { MRA_func.clear(); }
-    SavedFct get_mra_function() { return SavedFct(MRA_func); }
+    SavedFct<NDIM> get_mra_function() { return SavedFct(MRA_func); }
 };
+
+
+template class PyFuncFactory<2>;
+template class PyFuncFactory<3>;

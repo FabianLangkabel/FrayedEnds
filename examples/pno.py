@@ -8,7 +8,7 @@ true_start = time()
 # initialize the PNO interface
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
 
-world = madpy.MadWorld()
+world = madpy.MadWorld3D()
 
 madpno = madpy.MadPNO(world, geom, n_orbitals=2)
 orbitals = madpno.get_orbitals()
@@ -17,7 +17,7 @@ print(madpy.get_function_info(orbitals))
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 
-integrals = madpy.Integrals(world)
+integrals = madpy.Integrals3D(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
 for i in range(len(orbitals)):
@@ -26,7 +26,7 @@ for i in range(len(orbitals)):
 c = nuc_repulsion
 for iteration in range(6):
 
-    integrals = madpy.Integrals(world)
+    integrals = madpy.Integrals3D(world)
     G = integrals.compute_two_body_integrals(orbitals).elems
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
@@ -44,7 +44,7 @@ for iteration in range(6):
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
-    opti = madpy.Optimization(world, Vnuc, nuc_repulsion)
+    opti = madpy.Optimization3D(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
     c = opti.get_c() # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 
