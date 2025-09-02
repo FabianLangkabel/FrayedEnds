@@ -23,7 +23,7 @@ namespace nb = nanobind;
 
 class MinBasProjector {
   public:
-    MinBasProjector(MadnessProcess& mp, std::string argv) : madness_process(mp) {
+    MinBasProjector(MadnessProcess<3>& mp, std::string argv) : madness_process(mp) {
         auto [argc, charArray] = stringToCharPointerArray(argv);
         parser = commandlineparser(argc, charArray);
         freeCharPointerArray(charArray, argc);
@@ -40,24 +40,24 @@ class MinBasProjector {
         Vnuc = calc.potentialmanager->vnuclear();
     }
 
-    std::vector<SavedFct> solve_scf(const double thresh=1.e-4){
+    std::vector<SavedFct<3> > solve_scf(const double thresh=1.e-4){
         SCF calc(*(madness_process.world), parser);
         calc.set_protocol<3>(*(madness_process.world), thresh);
         calc.make_nuclear_potential(*(madness_process.world));
         MolecularEnergy E(*(madness_process.world), calc);
         double energy = E.value(calc.molecule.get_all_coords().flat()); // ugh! (indeed)
 
-        std::vector<SavedFct> result;
+        std::vector<SavedFct<3> > result;
         for(const auto f: calc.amo){
-            result.push_back(SavedFct(f));
+            result.push_back(SavedFct<3>(f));
         }
         return result;
     }
 
-    std::vector<SavedFct> get_atomic_basis() const {
-        std::vector<SavedFct> result;
+    std::vector<SavedFct<3> > get_atomic_basis() const {
+        std::vector<SavedFct<3> > result;
         for (auto x : atomicbasis) {
-            SavedFct y(x);
+            SavedFct<3> y(x);
             result.push_back(y);
         }
         return result;
@@ -65,12 +65,12 @@ class MinBasProjector {
 
     std::string get_basis_name() const { return basisname; }
 
-    SavedFct get_nuclear_potential() { return SavedFct(Vnuc); }
+    SavedFct<3> get_nuclear_potential() { return SavedFct<3>(Vnuc); }
 
     double get_nuclear_repulsion() const { return nuclear_repulsion; }
 
   private:
-    MadnessProcess& madness_process;
+    MadnessProcess<3>& madness_process;
     commandlineparser parser;
     std::vector<madness::Function<double, 3>> atomicbasis;
     std::string basisname;

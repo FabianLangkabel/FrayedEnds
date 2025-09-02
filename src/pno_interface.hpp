@@ -92,7 +92,7 @@ inline void freeCharPointerArray(char** charArray, size_t size) {
 
 class PNOInterface {
   public:
-    PNOInterface(MadnessProcess& mp, std::string argv) : madness_process(mp) {
+    PNOInterface(MadnessProcess<3>& mp, std::string argv) : madness_process(mp) {
 
         auto [argc, charArray] = stringToCharPointerArray(argv);
         parser = commandlineparser(argc, charArray);
@@ -103,7 +103,7 @@ class PNOInterface {
         Vnuc.clear();
     }
 
-    SavedFct get_nuclear_potential() { return SavedFct(Vnuc); }
+    SavedFct<3> get_nuclear_potential() { return SavedFct<3>(Vnuc); }
 
     void run(const size_t basis_size) {
         std::cout.precision(6);
@@ -316,15 +316,15 @@ class PNOInterface {
         sto3g = nemo.get_calc()->project_ao_basis(*(madness_process.world), nemo.get_calc()->aobasis);
     }
 
-    std::vector<SavedFct> get_pnos(int core_dim, int as_dim, int froz_virt_dim) const {
+    std::vector<SavedFct<3>> get_pnos(int core_dim, int as_dim, int froz_virt_dim) const {
         if (core_dim + as_dim + froz_virt_dim != basis.size()) {
             std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << core_dim << " "
                       << as_dim << " " << froz_virt_dim << " " << basis.size() << std::endl;
         }
-        std::vector<SavedFct> pnos;
+        std::vector<SavedFct<3>> pnos;
         size_t offset = 0;
         for (auto i = 0; i < basis.size(); ++i) {
-            SavedFct pnorb(basis[i]);
+            SavedFct<3> pnorb(basis[i]);
             if (i < core_dim) {
                 pnorb.type = "frozen_occ";
                 pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
@@ -351,15 +351,15 @@ class PNOInterface {
     }
     double get_nuclear_repulsion() const { return nuclear_repulsion; }
 
-    std::vector<SavedFct> get_sto3g() const {
-        std::vector<SavedFct> result;
+    std::vector<SavedFct<3>> get_sto3g() const {
+        std::vector<SavedFct<3>> result;
         for (auto x : sto3g)
-            result.push_back(SavedFct(x, "atomic"));
+            result.push_back(SavedFct<3>(x, "atomic"));
         return result;
     }
 
   private:
-    MadnessProcess& madness_process;
+    MadnessProcess<3>& madness_process;
 
     commandlineparser parser;
     vecfuncT basis;

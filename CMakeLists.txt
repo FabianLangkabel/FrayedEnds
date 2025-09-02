@@ -62,6 +62,7 @@ nanobind_add_module(
   src/eigensolver.cpp
   src/nwchem_converter.cpp
   src/madmolecule.cpp
+  src/coulomboperator_nd.hpp
 )
 
 # Install directive for scikit-build-core
