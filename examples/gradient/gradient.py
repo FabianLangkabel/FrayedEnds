@@ -6,7 +6,7 @@ import time
 
 world = madpy.MadWorld3D()
 
-distance_list = [0.01+0.01 * i for i in range(2)]
+distance_list = [0.01+0.01 * i for i in range(107,200)]
 Energy_list=[]
 Gradient_list=[]
 
@@ -18,7 +18,7 @@ for distance in distance_list:
     molecule.add_atom(0.0,0.0,0.0,"H")
     molecule.add_atom(0.0,0.0,distance,"H")
     pno_start = time.time()
-    madpno = madpy.MadPNO(world, geometry, n_orbitals=2)
+    madpno = madpy.MadPNO(world, geometry, n_orbitals=4)
     orbitals = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
@@ -30,10 +30,10 @@ for distance in distance_list:
 
     c = nuc_repulsion
     current=0.0
-    for iteration in range(6):
+    for iteration in range(8):
 
         integrals = madpy.Integrals3D(world)
-        G = integrals.compute_two_body_integrals(orbitals).elems
+        G = integrals.compute_two_body_integrals(orbitals)
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
         S = integrals.compute_overlap_integrals(orbitals)

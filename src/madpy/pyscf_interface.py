@@ -57,14 +57,14 @@ class PySCFInterface:
         if not TQ_PYSCF_INTERFACE_WORKING:
             raise Exception("tq-pyscf interface broken :-(")
         
-        if isinstance(two_body_integrals, tq.quantumchemistry.NBodyTensor):
-            two_body_integrals.reorder(to="chem")
-        else:
+        if not isinstance(two_body_integrals, tq.quantumchemistry.NBodyTensor):
             ordering = None  # will be auto-detected
             if "ordering" in kwargs:
                 ordering = kwargs["ordering"]
                 kwargs.pop("ordering")
             two_body_integrals = tq.quantumchemistry.NBodyTensor(two_body_integrals, ordering=ordering)
+        
+        two_body_integrals.reorder(to="chem")
 
         if n_electrons==None and geometry==None:
             raise Exception("Please provide either a number of electrons or a geometry.")
