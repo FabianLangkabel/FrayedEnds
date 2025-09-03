@@ -42,7 +42,7 @@ u = None
 for iteration in range(6):
 
     integrals = madpy.Integrals3D(world)
-    G = integrals.compute_two_body_integrals(orbitals).elems
+    G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)

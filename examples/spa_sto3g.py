@@ -27,7 +27,7 @@ def run(R):
 
     integrals = madpy.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=atomics)
-    G = integrals.compute_two_body_integrals(orbitals).elems
+    G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
@@ -75,7 +75,7 @@ def run(R):
         world.plot_lines(orbitals, f"orbitals-iteration-{iteration}")
 
         integrals = madpy.Integrals3D(world)
-        G = integrals.compute_two_body_integrals(orbitals).elems
+        G = integrals.compute_two_body_integrals(orbitals)
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
         S = integrals.compute_overlap_integrals(orbitals)

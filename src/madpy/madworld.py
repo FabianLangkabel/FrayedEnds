@@ -33,7 +33,7 @@ class MadWorld3D:
     _impl = None
 
     madness_parameters = {
-        "L": 50.0,
+        "L": 50.0, #half the box size, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
@@ -137,7 +137,7 @@ class MadWorld2D:
     _impl = None
 
     madness_parameters = {
-        "L": 50.0,
+        "L": 50.0, # 
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
