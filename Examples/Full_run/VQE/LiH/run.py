@@ -55,6 +55,12 @@ del pno
 del red
 OrbOpt_helper.PNO_cleanup()
 
+
+plt=mad.Optimization(box_size, wavelet_order, madness_thresh)
+for i in range(len(all_orbs)):
+    plt.plot("pno_" + i.__str__()+".dat", all_orbs[i])
+del plt
+
 print("h1:",h1)
 print("g2:",g2 )
 
@@ -128,6 +134,7 @@ for it in range(iterations):
 
     all_orbs=opti.GetOrbitals()
     c=opti.GetC()
+    print("Nuclear repulsion:",c)
     h1_elements=opti.GetHTensor()
     g2_elements=opti.GetGTensor()
     for i in range(len(all_orbs)):
