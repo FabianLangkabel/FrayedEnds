@@ -101,7 +101,7 @@ def convert_geometry_from_angstrom_to_bohr(geom):
     return geom_new
 
 def create_molecule_file(geometry_bohr):
-    molecule_file_str = """geometry
+    molecule_file_str = """molecule
 units Bohr
 no_orient 1
 eprec 1.e-6"""
@@ -186,8 +186,8 @@ def PNO_input(params: ParametersQC, molecule_file, n_pno=None, n_virt=0, maxrank
             "Currently only closed shell supported for MRA-PNO-MP2, you demanded multiplicity={} for the surrogate".format(params.multiplicity))
     
     data["dft"] = {"charge": params.charge, "xc": "hf", "k": 7, "econv": 1.e-4, "dconv": 5.e-4,
-                       "localize": "boys",
-                       "ncf": "( none , 1.0 )"}
+                       "localize": "boys"}
+    data["nemo"] = {"ncf": "( none , 1.0 )"}
     data["pno"] = {"maxrank": maxrank, "f12": "false", "thresh": 1.e-4, "diagonal": True}
     if not params.frozen_core:            
         data["pno"]["freeze"] = 0
@@ -212,6 +212,9 @@ def PNO_input(params: ParametersQC, molecule_file, n_pno=None, n_virt=0, maxrank
     for k, v in data["pno"].items():
         input_str += "{}={}; ".format(k, v)
     input_str = input_str[:-2] + "\""
+    input_str += " --nemo=\""
+    for k, v in data["nemo"].items():
+        input_str += "{}={}; ".format(k, v)
     input_str += " --pnoint=\""
     for k, v in data["pnoint"].items():
         input_str += "{}={}; ".format(k, v)

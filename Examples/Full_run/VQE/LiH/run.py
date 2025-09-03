@@ -17,7 +17,7 @@ start_time = time.time()
 iteration_energies = [] #Stores the energies at the beginning of each iteration step after the VQE
 all_occ_number = [] #Stores the orbital occupations at the beginning of each iteration step after the VQE
 
-iterations = 6 #Iterations of the VQE and Orbital-Optimization algorithm
+iterations = 12 #Iterations of the VQE and Orbital-Optimization algorithm
 
 #Parameters for the PNO and Orbital-Optimization calculations
 box_size = 50.0 # the system is in a volume of dimensions (box_size*2)^3
@@ -27,7 +27,7 @@ optimization_thresh = 0.001
 NO_occupation_thresh = 0.001
 
 molecule_name = "LiH"
-distance = 4.0 # Distance between the Li and H atom in Bohr
+distance = 57.0 # Distance between the Li and H atom in Bohr
 distance = distance/2
 geometry_bohr = '''
 Li 0.0 0.0 ''' + distance.__str__() + '''
@@ -55,6 +55,9 @@ del pno
 del red
 OrbOpt_helper.PNO_cleanup()
 
+print("h1:",h1)
+print("g2:",g2 )
+
 print("Starting VQE and Orbital-Optimization")
 for it in range(iterations):
     print("---------------------------------------------------")
@@ -69,7 +72,8 @@ for it in range(iterations):
         h1=np.array(h1_elements).reshape(as_dim,as_dim)
         g2=np.array(g2_elements).reshape(as_dim,as_dim,as_dim,as_dim)
         g2=tq.quantumchemistry.NBodyTensor(g2, ordering="dirac")
-        g2=g2.reorder(to="openfermion")
+        print("h1:",h1)
+        print("g2:",g2.elems)
         params.frozen_core = False
         mol = tq.Molecule(parameters=params, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, frozen_core=False, n_electrons=as_dim) #TODO: replace charge with n_electrons
        
@@ -92,7 +96,8 @@ for it in range(iterations):
     # Compute 1rdm and 2rdm
     rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables, use_hcb=True)
     rdm1, rdm2 = OrbOpt_helper.transform_rdms(opt.mo_coeff.transpose(), rdm1, rdm2)
-
+    print("1-RDM:", rdm1)
+    print("2-RDM:", rdm2)
     rdm1_list=rdm1.reshape(-1).tolist()
     rdm2_list=rdm2.reshape(-1).tolist()
     all_occ_number.append(np.sort(np.linalg.eig(rdm1)[0])[::-1])
