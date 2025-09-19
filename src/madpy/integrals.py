@@ -11,14 +11,17 @@ class Integrals3D:
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface3D(madworld._impl)
 
-    def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
-        g_elems = self.impl.compute_two_body_integrals(orbitals)
+    def compute_two_body_integrals(self, orbitals, ordering="phys", truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, nocc = 2):
+        g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
             return g.reorder(to=ordering)
         else:
             return g
-
+    
+    def compute_frozen_core_interaction(self, frozen_core_orbs, active_orbs, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, nocc = 2):
+        return self.impl.compute_frozen_core_interaction(frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc)
+    
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
 
@@ -58,13 +61,16 @@ class Integrals2D:
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface2D(madworld._impl)
 
-    def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
-        g_elems = self.impl.compute_two_body_integrals(orbitals)
+    def compute_two_body_integrals(self, orbitals, ordering="phys", truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, nocc = 2):
+        g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
             return g.reorder(to=ordering)
         else:
             return g
+    
+    def compute_frozen_core_interaction(self, frozen_core_orbs, active_orbs, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, nocc = 2):
+        return self.impl.compute_frozen_core_interaction(frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc)
 
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)

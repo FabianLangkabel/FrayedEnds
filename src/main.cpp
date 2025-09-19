@@ -87,7 +87,8 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_potential_integrals", &Integrals<3>::compute_potential_integrals, nb::arg("all_orbs"),
              nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals<3>::compute_kinetic_integrals, nb::arg("all_orbs"))
-        .def("compute_two_body_integrals", &Integrals<3>::compute_two_body_integrals, nb::arg("all_orbs"))
+        .def("compute_two_body_integrals", &Integrals<3>::compute_two_body_integrals)
+        .def("compute_frozen_core_interaction", &Integrals<3>::compute_frozen_core_interaction)
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
@@ -101,7 +102,8 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_potential_integrals", &Integrals<2>::compute_potential_integrals, nb::arg("all_orbs"),
              nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals<2>::compute_kinetic_integrals, nb::arg("all_orbs"))
-        .def("compute_two_body_integrals", &Integrals<2>::compute_two_body_integrals, nb::arg("all_orbs"))
+        .def("compute_two_body_integrals", &Integrals<2>::compute_two_body_integrals)
+        .def("compute_frozen_core_interaction", &Integrals<2>::compute_frozen_core_interaction)
         .def("transform", &Integrals<2>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<2>::project_on, nb::arg("kernel"), nb::arg("target"))

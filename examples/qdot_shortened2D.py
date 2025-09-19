@@ -17,7 +17,7 @@ def potential(x: float, y: float) -> float: # Qdot potential
     return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
 
 
-world = mad.MadWorld2D() # This is required for any MADNESS calculation as it initializes the required environment
+world = mad.MadWorld2D(L=200) # This is required for any MADNESS calculation as it initializes the required environment
 
 factory = mad.MRAFunctionFactory2D(world, potential) # This transform a python function into a MRA function which can be read by MADNESS
 mra_pot = factory.get_function() # Potential as MRA function

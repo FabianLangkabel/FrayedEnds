@@ -883,7 +883,7 @@ void Optimization<NDIM>::rotate_orbitals_back() {
     TransformMatrix(&as_one_rdm, RotationMatrixBack);
     TransformTensor(as_two_rdm, RotationMatrixBack);
     active_orbs = transform(*(madness_process.world), active_orbs, RotationMatrixBack);
-    calculate_all_integrals();
+    //calculate_all_integrals(); unnecessary since this is done by the integrator class now
 }
 
 template <std::size_t NDIM>
