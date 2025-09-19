@@ -33,7 +33,7 @@ class MadWorld3D:
     _impl = None
 
     madness_parameters = {
-        "L": 50.0, #half the box size, units: bohr
+        "L": 50.0, #half the box length, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
@@ -124,12 +124,12 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.cube_plot(
-                filename, mra_function.data, molecule, zoom, datapoints, origin
+            self._impl.cube_plot(
+                filename, mra_function.data, molecule.impl, zoom, datapoints, origin
             )
         else:
-            self.impl.cube_plot(
-                filename, mra_function, molecule, zoom, datapoints, origin
+            self._impl.cube_plot(
+                filename, mra_function, molecule.impl, zoom, datapoints, origin
             )
 
 
@@ -137,7 +137,7 @@ class MadWorld2D:
     _impl = None
 
     madness_parameters = {
-        "L": 50.0, # 
+        "L": 50.0, #half the box length, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,

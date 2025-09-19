@@ -232,6 +232,9 @@ class MadPNO:
         # Define the patterns for the files to delete
         patterns = [
             "*.00000",  # Files ending with .00000
+            "*.00001", 
+            "*.00002", 
+            "*.00003",
             "N7madness*",  # Files starting with N7madness
             "mad.calc_info.json",  # Specific file
             "mad.restartaodata",  # Specific file
