@@ -124,11 +124,11 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.cube_plot(
+            self._impl.cube_plot(
                 filename, mra_function.data, molecule, zoom, datapoints, origin
             )
         else:
-            self.impl.cube_plot(
+            self._impl.cube_plot(
                 filename, mra_function, molecule, zoom, datapoints, origin
             )
 
