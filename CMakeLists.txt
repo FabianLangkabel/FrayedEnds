@@ -62,6 +62,8 @@ nanobind_add_module(
   src/eigensolver.cpp
   src/nwchem_converter.cpp
   src/moleculargeometry.cpp
+  src/nwchem_converter_open_shell.cpp
+  src/madmolecule.cpp
   src/coulomboperator_nd.hpp
 )
 

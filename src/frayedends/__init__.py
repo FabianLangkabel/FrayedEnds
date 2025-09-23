@@ -9,6 +9,7 @@ from .minbas import AtomicBasisProjector
 from .moleculargeometry import MolecularGeometry
 from .mrafunctionfactory import MRAFunctionFactory2D, MRAFunctionFactory3D
 from .nwchem_converter import NWChem_Converter
+from .nwchem_converter_open_shell import NWChem_Converter_open_shell
 from .optimization import Optimization2D, Optimization3D, transform_rdms
 from .pyscf_interface import PySCFInterface
 from .tequila_interface import TequilaInterface
