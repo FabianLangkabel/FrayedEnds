@@ -7,6 +7,7 @@ from .madworld import MadWorld2D, MadWorld3D, get_function_info
 from .minbas import AtomicBasisProjector
 from .mrafunctionfactory import MRAFunctionFactory2D, MRAFunctionFactory3D
 from .nwchem_converter import NWChem_Converter
+from .nwchem_converter_open_shell import NWChem_Converter_open_shell
 from .optimization import Optimization3D, Optimization2D, transform_rdms
 from .pyscf_interface import PySCFInterface
 from .tequila_interface import TequilaInterface

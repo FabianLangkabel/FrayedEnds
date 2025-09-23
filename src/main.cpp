@@ -8,6 +8,7 @@
 #include "integrals.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
+#include "nwchem_converter_open_shell.hpp"
 #include "minbas.hpp"
 #include "madness_process.hpp"
 #include "madmolecule.hpp"
@@ -221,4 +222,13 @@ NB_MODULE(_madpy_impl, m) {
         .def("get_mos", &NWChem_Converter::get_mos)
         .def("get_vnuc", &NWChem_Converter::get_vnuc)
         .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy);
+
+    nb::class_<NWChem_Converter_open_shell>(m, "NWChem_Converter_open_shell")
+        .def(nb::init<MadnessProcess<3>&>())
+        .def("read_nwchem_file", &NWChem_Converter_open_shell::read_nwchem_file)
+        .def("get_normalized_aos", &NWChem_Converter_open_shell::get_normalized_aos)
+        .def("get_alpha_mos", &NWChem_Converter_open_shell::get_alpha_mos)
+        .def("get_beta_mos", &NWChem_Converter_open_shell::get_beta_mos)
+        .def("get_vnuc", &NWChem_Converter_open_shell::get_vnuc)
+        .def("get_nuclear_repulsion_energy", &NWChem_Converter_open_shell::get_nuclear_repulsion_energy);
 }

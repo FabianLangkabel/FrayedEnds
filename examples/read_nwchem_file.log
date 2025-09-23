@@ -1,0 +1,16 @@
+
+NWChem used angstroms.
+Conversion to a.u. is 1.889727e+00.
+Units have been converted to a.u.
+H at (0.000000e+00, 0.000000e+00, 0.000000e+00).
+H at (0.000000e+00, 0.000000e+00, 4.724317e+00).
+H at (0.000000e+00, 0.000000e+00, -4.724317e+00).
+Using Cartesian orbitals.
+Reading basis for H (Hydrogen).
+   Function 1: Type S, exps = [ 1.301000e+01 1.962000e+00 4.446000e-01 ], coeffs = [ 1.968500e-02 1.379770e-01 4.781480e-01 ]
+   Function 2: Type S, exps = [ 1.220000e-01 ], coeffs = [ 1.000000e+00 ]
+   Function 3: Type P, exps = [ 7.270000e-01 ], coeffs = [ 1.000000e+00 ]
+Processing basis functions for each atom.
+Atom: H at (0.000000e+00, 0.000000e+00, 0.000000e+00): 5 basis functions.
+Atom: H at (0.000000e+00, 0.000000e+00, 4.724317e+00): 5 basis functions.
+Atom: H at (0.000000e+00, 0.000000e+00, -4.724317e+00): 5 basis functions.
