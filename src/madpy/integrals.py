@@ -2,6 +2,7 @@ from tequila.quantumchemistry import NBodyTensor
 
 from ._madpy_impl import Integrals3D as IntegralsInterface3D
 from ._madpy_impl import Integrals2D as IntegralsInterface2D
+from ._madpy_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D
 
 
 class Integrals3D:
@@ -91,6 +92,31 @@ class Integrals2D:
 
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
+
+    def compute_nuclear_derivative(
+        self,
+        molecule,
+    ):
+        pass
+
+class Integrals_open_shell_3D:
+
+    impl = None
+
+    def __init__(self, madworld, *args, **kwargs):
+        self.impl = IntegralsInterface_open_shell_3D(madworld._impl)
+
+    def compute_two_body_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
+        G = self.impl.compute_two_body_integrals(alpha_orbitals, beta_orbitals)
+        return G[0], G[1], G[2]
+
+    def compute_kinetic_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
+        T = self.impl.compute_kinetic_integrals(alpha_orbitals, beta_orbitals)
+        return T[0], T[1]
+
+    def compute_potential_integrals(self, alpha_orbitals, beta_orbitals, V, *args, **kwargs):
+        Pot = self.impl.compute_potential_integrals(alpha_orbitals, beta_orbitals, V)
+        return Pot[0], Pot[1]
 
     def compute_nuclear_derivative(
         self,

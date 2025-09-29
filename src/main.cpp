@@ -2,10 +2,12 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "optimization.hpp"
+#include "optimization_open_shell.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
 #include "pyfuncfactory.hpp"
 #include "integrals.hpp"
+#include "integrals_open_shell.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
 #include "nwchem_converter_open_shell.hpp"
@@ -109,6 +111,12 @@ NB_MODULE(_madpy_impl, m) {
         .def("normalize", &Integrals<2>::normalize)
         .def("orthonormalize", &Integrals<2>::orthonormalize);
 
+    nb::class_<Integrals_open_shell<3>>(m, "Integrals_open_shell_3D")
+        .def(nb::init<MadnessProcess<3>&>())
+        .def("compute_potential_integrals", &Integrals_open_shell<3>::compute_potential_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"), nb::arg("potential"))
+        .def("compute_kinetic_integrals", &Integrals_open_shell<3>::compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
+        .def("compute_two_body_integrals", &Integrals_open_shell<3>::compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"));
+
     nb::class_<Optimization<3>>(m, "Optimization3D")
         .def(nb::init<MadnessProcess<3>&>())
         .def("give_initial_orbitals", &Optimization<3>::give_initial_orbitals)
@@ -166,6 +174,33 @@ NB_MODULE(_madpy_impl, m) {
         .def_rw("coulomb_eps", &Optimization<2>::coulomb_eps)
         .def_rw("BSH_lo", &Optimization<2>::BSH_lo)
         .def_rw("BSH_eps", &Optimization<2>::BSH_eps);
+
+    nb::class_<Optimization_open_shell<3>>(m, "Optimization_open_shell_3D")
+        .def(nb::init<MadnessProcess<3>&>())
+        .def("give_initial_orbitals", &Optimization_open_shell<3>::give_initial_orbitals)
+        .def("give_rdm_and_rotate_orbitals", &Optimization_open_shell<3>::give_rdm_and_rotate_orbitals)
+        .def("give_potential_and_repulsion", &Optimization_open_shell<3>::give_potential_and_repulsion)
+        .def("calculate_all_integrals", &Optimization_open_shell<3>::calculate_all_integrals)
+        .def("calculate_core_energy", &Optimization_open_shell<3>::calculate_core_energy)
+        .def("calculate_energies", &Optimization_open_shell<3>::calculate_energies)
+        .def("calculate_lagrange_multiplier", &Optimization_open_shell<3>::calculate_lagrange_multiplier)
+        .def("calculate_lagrange_multiplier_element_as_as", &Optimization_open_shell<3>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core", &Optimization_open_shell<3>::calculate_lagrange_multiplier_element_as_core)
+        .def("optimize_orbitals", &Optimization_open_shell<3>::optimize_orbitals)
+        .def("get_all_active_orbital_updates", &Optimization_open_shell<3>::get_all_active_orbital_updates)
+        .def("rotate_orbitals_back", &Optimization_open_shell<3>::rotate_orbitals_back)
+        .def("save_orbitals", &Optimization_open_shell<3>::save_orbitals)
+        .def("save_effective_hamiltonian", &Optimization_open_shell<3>::save_effective_hamiltonian)
+        .def("get_orbitals", &Optimization_open_shell<3>::get_orbitals)
+        .def("get_c", &Optimization_open_shell<3>::get_c)
+        .def("get_h_tensor", &Optimization_open_shell<3>::get_h_tensor)
+        .def("get_g_tensor", &Optimization_open_shell<3>::get_g_tensor)
+        .def_rw("nocc", &Optimization_open_shell<3>::nocc)
+        .def_rw("truncation_tol", &Optimization_open_shell<3>::truncation_tol)
+        .def_rw("coulomb_lo", &Optimization_open_shell<3>::coulomb_lo)
+        .def_rw("coulomb_eps", &Optimization_open_shell<3>::coulomb_eps)
+        .def_rw("BSH_lo", &Optimization_open_shell<3>::BSH_lo)
+        .def_rw("BSH_eps", &Optimization_open_shell<3>::BSH_eps);
 
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<MadnessProcess<3>&, const std::string&>())

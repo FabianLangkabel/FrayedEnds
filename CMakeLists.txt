@@ -53,10 +53,12 @@ nanobind_add_module(
   # Source code goes here
   src/main.cpp
   src/optimization.cpp
+  src/optimization_open_shell.cpp
   src/functionsaver.hpp
   src/pno_interface.hpp
   src/sum_of_gaussians.hpp
   src/integrals.cpp
+  src/integrals_open_shell.cpp
   src/madness_process.cpp
   src/pyfuncfactory.hpp
   src/eigensolver.cpp
