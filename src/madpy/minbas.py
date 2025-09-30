@@ -7,15 +7,30 @@ class AtomicBasisProjector:
 
     impl = None
 
-    def __init__(self, madworld, geometry, aobasis="sto-3g", *args, **kwargs):
+    def __init__(self, madworld, geometry, units=None, aobasis="sto-3g", *args, **kwargs):
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
             self.create_molecule_file(geometry_angstrom=geometry)
             geometry = "molecule"
-
+        
+        if units is None:
+                if self.silent==False:
+                    print("Warning: No units passed with geometry, assuming units are angstrom.")
+                units = "angstrom"
+        else:
+            units = units.lower()
+            if units in ["angstrom", "ang", "a", "å"]:
+                units = "angstrom"
+            elif units in ["bohr", "atomic units", "au", "a.u."]:
+                units = "bohr"
+            else:
+                if self.silent==False:
+                    print("Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom.")
+                units = "angstrom"
+        
         input_string = self.parameter_string(
-            madworld, molecule_file=geometry, aobasis=aobasis, *args, **kwargs
+            madworld, molecule_file=geometry, units=units, aobasis=aobasis, *args, **kwargs
         )
         print(input_string)
 
@@ -36,7 +51,7 @@ class AtomicBasisProjector:
         return self.impl.get_nuclear_potential()
 
     def parameter_string(
-        self, madworld, molecule_file, aobasis="sto-3g", **kwargs
+        self, madworld, molecule_file, units, aobasis="sto-3g", **kwargs
     ) -> str:
         data = {}
 
@@ -51,11 +66,18 @@ class AtomicBasisProjector:
             "aobasis": "sto-3g",
         }
 
-        input_str = (
-            'dft --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
-            + molecule_file
-            + '"'
-        )
+        if units=="bohr":
+            input_str = (
+                'dft --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec=1.e-6; source_name='
+                + molecule_file
+                + '"'
+            )
+        else:
+            input_str = (
+                'dft --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
+                + molecule_file
+                + '"'
+            )
         input_str += ' --dft="'
         for k, v in data["dft"].items():
             input_str += "{}={}; ".format(k, v)

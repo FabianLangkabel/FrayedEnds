@@ -8,7 +8,7 @@ from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
 from .tequila_interface import TequilaInterface, HAS_TEQUILA
 from .tequila_interface import SUPPORTED_RDM_METHODS as TEQUILA_METHODS
 from .madworld import MadWorld2D, MadWorld3D
-from .madmolecule import MadMolecule
+from .moleculargeometry import MolecularGeometry
 from .minbas import AtomicBasisProjector
 from .eigensolver import Eigensolver2D, Eigensolver3D
 
@@ -45,7 +45,7 @@ def optimize_basis_3D(world:MadWorld3D,
         if n_orbitals==None:
             n_orbitals = n_electrons #as of right now there is no frozen core implemented for calculations with a custom potential
     else:
-        mol = MadMolecule(geometry)
+        mol = MolecularGeometry(geometry)
         c = mol.get_nuclear_repulsion()
         Vnuc = mol.get_vnuc(world)
         if n_orbitals is None:

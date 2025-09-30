@@ -1,5 +1,5 @@
 #include "madness_process.hpp"
-#include "madmolecule.hpp"
+#include "moleculargeometry.hpp"
 
 using namespace madness;
 
@@ -103,7 +103,7 @@ void MadnessProcess<NDIM>::plane_plot(std::string filename, SavedFct<NDIM> f, st
 }
 
 template <>
-void MadnessProcess<3>::cube_plot(std::string filename, SavedFct<3> f, MadMolecule molecule, double zoom, int datapoints,
+void MadnessProcess<3>::cube_plot(std::string filename, SavedFct<3> f, MolecularGeometry molecule, double zoom, int datapoints,
                                std::vector<double> origin) {
     PlotParameters params;
     std::string outfile = filename + ".cube";
