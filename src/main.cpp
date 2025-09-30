@@ -10,11 +10,12 @@
 #include "nwchem_converter.hpp"
 #include "minbas.hpp"
 #include "madness_process.hpp"
-#include "madmolecule.hpp"
+#include "moleculargeometry.hpp"
 
 namespace nb = nanobind;
 
 NB_MODULE(_madpy_impl, m) {
+
     nb::class_<MadnessProcess<3>>(m, "MadnessProcess3D")
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
@@ -53,18 +54,19 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
     nb::class_<madness::real_function_2d>(m, "real_function_2d").def(nb::init<>());
 
-    nb::class_<MadMolecule>(m, "MadMolecule")
-        .def(nb::init<>())
-        .def("add_atom", &MadMolecule::add_atom)
-        .def("to_json", &MadMolecule::to_json)
-        .def("get_nuclear_repulsion", &MadMolecule::get_nuclear_repulsion)
-        .def("get_nuclear_charge", &MadMolecule::get_nuclear_charge)
-        .def("get_core_n_electrons", &MadMolecule::get_core_n_electrons)
-        .def("compute_nuclear_derivative", &MadMolecule::compute_nuclear_derivative)
-        .def("compute_second_nuclear_derivative", &MadMolecule::compute_second_nuclear_derivative)
-        .def("nuclear_repulsion_derivative", &MadMolecule::nuclear_repulsion_derivative)
-        .def("nuclear_repulsion_second_derivative", &MadMolecule::nuclear_repulsion_second_derivative)
-        .def("get_vnuc", &MadMolecule::get_vnuc);
+    nb::class_<MolecularGeometry>(m, "MolecularGeometry")
+        .def(nb::init<const std::string&>())
+        .def_rw("units", &MolecularGeometry::units)
+        .def("add_atom", &MolecularGeometry::add_atom)
+        .def("to_json", &MolecularGeometry::to_json)
+        .def("get_nuclear_repulsion", &MolecularGeometry::get_nuclear_repulsion)
+        .def("get_nuclear_charge", &MolecularGeometry::get_nuclear_charge)
+        .def("get_core_n_electrons", &MolecularGeometry::get_core_n_electrons)
+        .def("compute_nuclear_derivative", &MolecularGeometry::compute_nuclear_derivative)
+        .def("compute_second_nuclear_derivative", &MolecularGeometry::compute_second_nuclear_derivative)
+        .def("nuclear_repulsion_derivative", &MolecularGeometry::nuclear_repulsion_derivative)
+        .def("nuclear_repulsion_second_derivative", &MolecularGeometry::nuclear_repulsion_second_derivative)
+        .def("get_vnuc", &MolecularGeometry::get_vnuc);
 
     nb::class_<SavedFct<3>>(m, "SavedFct3D")
         .def(nb::init<const Function<double, 3>&>())

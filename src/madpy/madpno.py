@@ -26,6 +26,7 @@ class MadPNO:
         self,
         madworld,
         geometry,
+        units=None,
         n_orbitals=None,
         no_compute=False,
         maxrank=None,
@@ -58,9 +59,25 @@ class MadPNO:
             except Exception:
                 maxrank = n_orbitals
 
+        if units is None:
+                if self.silent==False:
+                    print("Warning: No units passed with geometry, assuming units are angstrom.")
+                units = "angstrom"
+        else:
+            units = units.lower()
+            if units in ["angstrom", "ang", "a", "å"]:
+                units = "angstrom"
+            elif units in ["bohr", "atomic units", "au", "a.u."]:
+                units = "bohr"
+            else:
+                if self.silent==False:
+                    print("Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom.")
+                units = "angstrom"
+        
         pno_input_string = self.parameter_string(
             madworld,
             molecule_file=geometry,
+            units=units,
             maxrank=maxrank,
             diagonal=diagonal,
             frozen_core=frozen_core,
@@ -153,6 +170,7 @@ class MadPNO:
         self,
         madworld,
         molecule_file,
+        units,
         maxrank=10,
         diagonal=True,
         frozen_core=True,
@@ -191,12 +209,18 @@ class MadPNO:
         for key in data.keys():
             if key in kwargs:
                 data[key] = {**data[key], **kwargs[key]}
-
-        input_str = (
-            'pno --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
-            + molecule_file
-            + '"'
-        )
+        if units=="bohr":
+            input_str = (
+                'pno --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec=1.e-6; source_name='
+                + molecule_file
+                + '"'
+            )
+        else:
+            input_str = (
+                'pno --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
+                + molecule_file
+                + '"'
+            )
         input_str += ' --dft="'
         for k, v in data["dft"].items():
             input_str += "{}={}; ".format(k, v)

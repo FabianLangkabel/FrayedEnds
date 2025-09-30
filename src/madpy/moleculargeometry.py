@@ -1,20 +1,38 @@
-from ._madpy_impl import MadMolecule as MadMoleculeImpl
+from ._madpy_impl import MolecularGeometry as MolecularGeometryImpl
+from tequila import Molecule
 import re
 
-class MadMolecule:
+class MolecularGeometry:
     impl = None
+    silent = False
 
-    def __init__(self, geometry:str=None, *args, **kwargs):
-        self.impl = MadMoleculeImpl(*args, **kwargs)
+    def __init__(self, geometry:str=None, units=None, silent=False, *args, **kwargs):
+        self.silent = silent
+
+        if units is None:
+                if not self.silent:
+                    print("Warning: No units passed with geometry, assuming units are angstrom.")
+                units = "angstrom"
+        else:
+            units = units.lower()
+            if units in ["angstrom", "ang", "a", "å"]:
+                units = "angstrom"
+            elif units in ["bohr", "atomic units", "au", "a.u."]:
+                units = "bohr"
+            else:
+                if not self.silent:
+                    print("Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom.")
+                units = "angstrom"
+
+        self.impl = MolecularGeometryImpl(units)
         if geometry is not None:
             geometry = geometry.lower()
             geometry = geometry.strip()
             # Replace tabs with spaces
             geometry = geometry.replace('\t', ' ')
             # Replace multiple whitespace characters with a single space
-            geometry
             re.sub(r'\s+', ' ', geometry).strip()
-
+            
             for line in geometry.split("\n"):
                 data = line.split(" ")
                 x = eval(data[1])
@@ -23,6 +41,9 @@ class MadMolecule:
                 s = data[0]
                 self.add_atom(x, y, z, s)
 
+    def check_units(self):
+        return self.impl.units
+    
     def add_atom(self, pos_x, pos_y, pos_z, symbol):
         self.impl.add_atom(pos_x, pos_y, pos_z, symbol)
 
@@ -57,3 +78,12 @@ class MadMolecule:
     @property
     def n_core_electrons(self):
         return self.impl.get_core_n_electrons()
+
+    #conversion from tequila molecule to molecular geometry
+    def from_tq_mol(tq_mol, units="angstrom"):
+        geometry=tq_mol.parameters.get_geometry_string(desired_units=units)
+        return MolecularGeometry(geometry, units=units)
+    
+    #conversion from molecular geometry to tequila molecule
+    def to_tq_mol(self, *args, **kwargs):
+        pass #TO DO

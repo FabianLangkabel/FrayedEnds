@@ -9,11 +9,12 @@
 #include <cstdio>
 #include <unistd.h>
 
-class MadMolecule {
+class MolecularGeometry {
   public:
-    MadMolecule();
+    MolecularGeometry(std::string units);
+    std::string units;
 
-    void add_atom(float pos_x, float pos_y, float pos_z, std::string symbol);
+    void add_atom(double pos_x, double pos_y, double pos_z, std::string symbol);
 
     std::string to_json();
 
