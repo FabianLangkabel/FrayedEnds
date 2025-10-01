@@ -17,7 +17,7 @@ class NWChem_Converter:
         return self.get_normalized_aos(*args, **kwargs)
 
     def __init__(self, madworld, *args, **kwargs):
-        self.impl = converter(madworld._impl)
+        self.impl = converter(madworld.impl)
 
     @redirect_output("read_nwchem_file.log")
     def read_nwchem_file(self, file, *args, **kwargs):

@@ -86,7 +86,7 @@ class MadPNO:
             *args,
             **kwargs,
         )
-        self.impl = PNOInterface(madworld._impl, pno_input_string)
+        self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
             self._orbitals = self.compute_orbitals(

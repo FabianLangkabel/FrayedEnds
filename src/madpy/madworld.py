@@ -30,7 +30,7 @@ def get_function_info(orbitals):
 
 
 class MadWorld3D:
-    _impl = None
+    impl = None
 
     madness_parameters = {
         "L": 50.0, #half the box length, units: bohr
@@ -52,7 +52,7 @@ class MadWorld3D:
             else:
                 raise ValueError(f"Unknown parameter: {k}")
 
-        self._impl = MadnessProcess3D(
+        self.impl = MadnessProcess3D(
             self.madness_parameters["L"],
             self.madness_parameters["k"],
             self.madness_parameters["thresh"],
@@ -64,12 +64,12 @@ class MadWorld3D:
 
     def __getattr__(self, name):
         if name in self.madness_parameters:
-            return getattr(self._impl, name)
+            return getattr(self.impl, name)
         raise AttributeError(f"'MadWorld' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
         if (
-            hasattr(self, "_impl")
+            hasattr(self, "impl")
             and hasattr(self, "madness_parameters")
             and name in self.madness_parameters
         ):
@@ -80,13 +80,13 @@ class MadWorld3D:
         return dict(self.madness_parameters)
 
     def change_nthreads(self, nthreads):
-        self._impl.change_nthreads(nthreads)
+        self.impl.change_nthreads(nthreads)
 
     def line_plot(self, filename, mra_function, axis="z", datapoints=2001):
         if hasattr(mra_function, "data"):
-            self._impl.plot(filename, mra_function.data, axis, datapoints)
+            self.impl.plot(filename, mra_function.data, axis, datapoints)
         else:
-            self._impl.plot(filename, mra_function, axis, datapoints)
+            self.impl.plot(filename, mra_function, axis, datapoints)
 
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
@@ -106,11 +106,11 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self._impl.plane_plot(
+            self.impl.plane_plot(
                 filename, mra_function.data, plane, zoom, datapoints, origin
             )
         else:
-            self._impl.plane_plot(
+            self.impl.plane_plot(
                 filename, mra_function, plane, zoom, datapoints, origin
             )
 
@@ -124,17 +124,17 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self._impl.cube_plot(
+            self.impl.cube_plot(
                 filename, mra_function.data, molecule.impl, zoom, datapoints, origin
             )
         else:
-            self._impl.cube_plot(
+            self.impl.cube_plot(
                 filename, mra_function, molecule.impl, zoom, datapoints, origin
             )
 
 
 class MadWorld2D:
-    _impl = None
+    impl = None
 
     madness_parameters = {
         "L": 50.0, #half the box length, units: bohr
@@ -156,7 +156,7 @@ class MadWorld2D:
             else:
                 raise ValueError(f"Unknown parameter: {k}")
 
-        self._impl = MadnessProcess2D(
+        self.impl = MadnessProcess2D(
             self.madness_parameters["L"],
             self.madness_parameters["k"],
             self.madness_parameters["thresh"],
@@ -168,12 +168,12 @@ class MadWorld2D:
 
     def __getattr__(self, name):
         if name in self.madness_parameters:
-            return getattr(self._impl, name)
+            return getattr(self.impl, name)
         raise AttributeError(f"'MadWorld' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
         if (
-            hasattr(self, "_impl")
+            hasattr(self, "impl")
             and hasattr(self, "madness_parameters")
             and name in self.madness_parameters
         ):
@@ -184,13 +184,13 @@ class MadWorld2D:
         return dict(self.madness_parameters)
 
     def change_nthreads(self, nthreads):
-        self._impl.change_nthreads(nthreads)
+        self.impl.change_nthreads(nthreads)
 
     def line_plot(self, filename, mra_function, axis="y", datapoints=2001):
         if hasattr(mra_function, "data"):
-            self._impl.plot(filename, mra_function.data, axis, datapoints)
+            self.impl.plot(filename, mra_function.data, axis, datapoints)
         else:
-            self._impl.plot(filename, mra_function, axis, datapoints)
+            self.impl.plot(filename, mra_function, axis, datapoints)
 
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
@@ -210,11 +210,11 @@ class MadWorld2D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self._impl.plane_plot(
+            self.impl.plane_plot(
                 filename, mra_function.data, plane, zoom, datapoints, origin
             )
         else:
-            self._impl.plane_plot(
+            self.impl.plane_plot(
                 filename, mra_function, plane, zoom, datapoints, origin
             )
 

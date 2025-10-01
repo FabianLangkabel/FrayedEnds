@@ -7,7 +7,7 @@ class MRAFunctionFactory3D:
     test = 0
 
     def __init__(self, madworld, pyfunc, *args, **kwargs):
-        self.impl = FuncFactory3D(madworld._impl, pyfunc)
+        self.impl = FuncFactory3D(madworld.impl, pyfunc)
 
     def get_function(self, type=None, info=None):
         tmp=self.impl.get_mra_function()
@@ -22,7 +22,7 @@ class MRAFunctionFactory2D:
     test = 0
 
     def __init__(self, madworld, pyfunc, *args, **kwargs):
-        self.impl = FuncFactory2D(madworld._impl, pyfunc)
+        self.impl = FuncFactory2D(madworld.impl, pyfunc)
 
     def get_function(self, type=None, info=None):
         tmp=self.impl.get_mra_function()

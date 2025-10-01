@@ -36,7 +36,7 @@ class AtomicBasisProjector:
         )
         print(input_string)
 
-        self.impl = MinBasProjector(madworld._impl, input_string)
+        self.impl = MinBasProjector(madworld.impl, input_string)
 
         self.impl.run()
         orbitals = self.impl.get_atomic_basis()

@@ -9,7 +9,7 @@ class Eigensolver3D:
     impl = None
 
     def __init__(self, madworld, potential, *args, **kwargs):
-        self.impl = EigenInterface3D(madworld._impl)
+        self.impl = EigenInterface3D(madworld.impl)
         self._potential = potential
 
     @redirect_output("mad_eigensolver.log")
@@ -39,7 +39,7 @@ class Eigensolver2D:
     impl = None
 
     def __init__(self, madworld, potential, *args, **kwargs):
-        self.impl = EigenInterface2D(madworld._impl)
+        self.impl = EigenInterface2D(madworld.impl)
         self._potential = potential
 
     @redirect_output("mad_eigensolver.log")

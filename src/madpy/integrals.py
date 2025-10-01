@@ -9,7 +9,7 @@ class Integrals3D:
     impl = None
 
     def __init__(self, madworld, *args, **kwargs):
-        self.impl = IntegralsInterface3D(madworld._impl)
+        self.impl = IntegralsInterface3D(madworld.impl)
 
     def compute_two_body_integrals(self, orbitals, ordering="phys", truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, nocc = 2):
         g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
@@ -59,7 +59,7 @@ class Integrals2D:
     impl = None
 
     def __init__(self, madworld, *args, **kwargs):
-        self.impl = IntegralsInterface2D(madworld._impl)
+        self.impl = IntegralsInterface2D(madworld.impl)
 
     def compute_two_body_integrals(self, orbitals, ordering="phys", truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, nocc = 2):
         g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
