@@ -27,6 +27,7 @@ class MadPNO:
         madworld,
         geometry,
         units=None,
+        silent=False,
         n_orbitals=None,
         no_compute=False,
         maxrank=None,
@@ -35,6 +36,7 @@ class MadPNO:
         *args,
         **kwargs,
     ):
+        self.silent = silent
         # todo: replace geometry with instalce of molecule class (expose to python)
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")

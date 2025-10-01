@@ -839,6 +839,11 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
         int i = orbital_indicies_for_update[idx];
         double en = LagrangeMultiplier_AS_AS(i, i) * rdm_ii_inv[idx];
+        if (en > 0) {
+            std::cout << "Warning: Positive Lagrange multiplier for orbital " << i << ": " << en << std::endl;
+            en = -1e-3; // Set to small negative value to avoid issues
+            std::cout << "Setting it to " << en <<"." << std::endl;
+        }
         SeparatedConvolution<double, NDIM> bsh_op =
             BSHOperator<NDIM>(*(madness_process.world), sqrt(-2 * en), BSH_lo, BSH_eps);
         Function<double, NDIM> r = active_orbs[i] + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
