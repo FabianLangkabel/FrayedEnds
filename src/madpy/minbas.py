@@ -6,8 +6,10 @@ from ._madpy_impl import MinBasProjector
 class AtomicBasisProjector:
 
     impl = None
+    silent = False
 
-    def __init__(self, madworld, geometry, units=None, aobasis="sto-3g", *args, **kwargs):
+    def __init__(self, madworld, geometry, units=None, silent= False, aobasis="sto-3g", *args, **kwargs):
+        self.silent = silent
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
