@@ -70,7 +70,7 @@ class Optimization3D:
         return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
-        self.impl = OptInterface3D(madworld._impl)
+        self.impl = OptInterface3D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
@@ -139,7 +139,7 @@ class Optimization2D:
         return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
-        self.impl = OptInterface2D(madworld._impl)
+        self.impl = OptInterface2D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
