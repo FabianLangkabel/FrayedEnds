@@ -15,7 +15,6 @@ def cleanup(globals):
         ):
             # Check if the object is not the World
             if not isinstance(obj, MadWorld3D) and not isinstance(obj, MadWorld2D):
-                print("deleting ", name)
                 del globals[name]
 
 
