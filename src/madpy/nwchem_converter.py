@@ -1,5 +1,6 @@
 from ._madpy_impl import NWChem_Converter as converter
 from .madworld import redirect_output
+from .mrafunctionwrapper import MRAFunction3D
 
 
 class NWChem_Converter:
@@ -25,18 +26,22 @@ class NWChem_Converter:
 
     def get_normalized_aos(self, *args, **kwargs):
         if self._normalized_aos is None:
-            self._normalized_aos = self.impl.get_normalized_aos(*args, **kwargs)
+            normalized_aos_impl = self.impl.get_normalized_aos(*args, **kwargs)
+            self._normalized_aos = [
+                MRAFunction3D(ao, type="ao") for ao in normalized_aos_impl
+            ]
             assert self._normalized_aos is not None
         return self._normalized_aos
 
     def get_mos(self, *args, **kwargs):
         if self._mos is None:
-            self._mos = self.impl.get_mos(*args, **kwargs)
+            mos_impl = self.impl.get_mos()
+            self._mos = [MRAFunction3D(mo, type="mo") for mo in mos_impl]
             assert self._mos is not None
         return self._mos
 
     def get_Vnuc(self):
-        return self.impl.get_vnuc()
+        return MRAFunction3D(self.impl.get_vnuc())
 
     def get_nuclear_repulsion_energy(self):
         return self.impl.get_nuclear_repulsion_energy()

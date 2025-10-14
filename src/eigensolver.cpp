@@ -1,24 +1,18 @@
 #include "eigensolver.hpp"
 #include "madness_process.hpp"
-#include "functionsaver.hpp"
-
 using namespace madness;
 
-template <std::size_t NDIM>
-Eigensolver<NDIM>::Eigensolver(MadnessProcess<NDIM>& mp) : madness_process(mp) {
+template <std::size_t NDIM> Eigensolver<NDIM>::Eigensolver(MadnessProcess<NDIM>& mp) : madness_process(mp) {
     std::cout.precision(6);
 }
 
-template <std::size_t NDIM>
-Eigensolver<NDIM>::~Eigensolver() {
+template <std::size_t NDIM> Eigensolver<NDIM>::~Eigensolver() {
     V.clear();
     orbitals.clear();
 }
 
 // Function to solve the eigenvalue problem for the given potential
-template <std::size_t NDIM>
-void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_iter) {
-    Function<double, NDIM> V = madness_process.loadfct(input_V);
+template <std::size_t NDIM> void Eigensolver<NDIM>::solve(Function<double, NDIM> V, int num_levels, int max_iter) {
     std::cout << "Potential loaded" << std::endl;
     // Create the guess generator
     GuessGenerator<double, NDIM> guess_generator(*(madness_process.world)); // Guess generator for all potentials
@@ -27,7 +21,7 @@ void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_it
 
     // plot guess functions
     // for (int i = 0; i < guesses.size(); i++) {
-    //    madness_process.plot("g-" + std::to_string(i) + ".dat", SavedFct<NDIM>(guesses[i]));
+    //    madness_process.plot("g-" + std::to_string(i) + ".dat", Function<double, NDIM>(guesses[i]));
     //}
 
     // Diagonalize the Hamiltonian matrix
@@ -51,15 +45,8 @@ void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_it
 
 // Function to solve the eigenvalue problem for the given potential with given guesses
 template <std::size_t NDIM>
-std::vector<Function<double, NDIM>> Eigensolver<NDIM>::solve_with_input_guesses(SavedFct<NDIM> input_V,
-                                                                         const std::vector<SavedFct<NDIM>>& input_guesses,
-                                                                         int num_levels, int max_iter) {
-    Function<double, NDIM> V = madness_process.loadfct(input_V);
-    std::vector<Function<double, NDIM>> guesses;
-
-    for (const auto& guess : input_guesses) {
-        guesses.push_back(madness_process.loadfct(guess));
-    }
+std::vector<Function<double, NDIM>> Eigensolver<NDIM>::solve_with_input_guesses(
+    Function<double, NDIM> V, const std::vector<Function<double, NDIM>>& guesses, int num_levels, int max_iter) {
 
     // Diagonalize the Hamiltonian matrix
     std::pair<Tensor<double>, std::vector<Function<double, NDIM>>> tmp = diagonalize(guesses, V);
@@ -163,8 +150,9 @@ Eigensolver<NDIM>::diagonalize(const std::vector<Function<double, NDIM>>& functi
 
 // Function to optimize the eigenfunction for each energy level
 template <std::size_t NDIM>
-Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V, const Function<double, NDIM> guess_function, int N,
-                                            const std::vector<Function<double, NDIM>>& prev_phi, int max_iter) {
+Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V,
+                                                   const Function<double, NDIM> guess_function, int N,
+                                                   const std::vector<Function<double, NDIM>>& prev_phi, int max_iter) {
 
     // Create the initial guess wave function
     Function<double, NDIM> phi = guess_function;
@@ -229,21 +217,8 @@ Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V, co
     print("Final energy without shift: ", E);
     return phi;
 }
-template <std::size_t NDIM>
-std::vector<SavedFct<NDIM>> Eigensolver<NDIM>::get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const {
-    std::vector<SavedFct<NDIM>> sav_orbs;
-    for (auto i = 0; i < (core_dim + as_dim + froz_virt_dim); ++i) {
-        SavedFct<NDIM> sav_orb(orbitals[i]);
-        if (i < core_dim) {
-            sav_orb.type = "frozen_occ";
-        } else if (i < core_dim + as_dim) {
-            sav_orb.type = "active";
-        } else if (i < core_dim + as_dim + froz_virt_dim) {
-            sav_orb.type = "frozen_virt";
-        }
-        sav_orbs.push_back(sav_orb);
-    }
-    return sav_orbs;
+template <std::size_t NDIM> std::vector<Function<double, NDIM>> Eigensolver<NDIM>::get_orbitals() const {
+    return orbitals;
 }
 
 template class Eigensolver<2>;

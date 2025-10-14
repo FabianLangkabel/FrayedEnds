@@ -15,7 +15,6 @@
 #include <madness/chem/correlationfactor.h>
 #include <madness/chem/potentialmanager.h>
 #include "npy.hpp"
-#include "functionsaver.hpp"
 #include "madness_process.hpp"
 
 using namespace madness;
@@ -28,9 +27,9 @@ class NWChem_Converter {
 
     void read_nwchem_file(std::string nwchem_file);
 
-    std::vector<SavedFct<3>> get_normalized_aos();
-    std::vector<SavedFct<3>> get_mos();
-    SavedFct<3> get_vnuc() { return SavedFct<3>(Vnuc); }
+    std::vector<Function<double, 3>> get_normalized_aos();
+    std::vector<Function<double, 3>> get_mos();
+    Function<double, 3> get_vnuc() { return Vnuc; }
     double get_nuclear_repulsion_energy() { return nuclear_repulsion_energy; }
 
   private:

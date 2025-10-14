@@ -6,15 +6,13 @@ import tequila as tq
 import madpy
 
 
-def run(R):
+def run(R, world):
     energies = {}
     # initialize the PNO interface
     geom = "H 0.0 0.0 0.0\nH 0.0 0.0 {}\nH 0.0 0.0 {}\nH 0.0 0.0 {}".format(
         R, 2 * R, 3 * R
     )  # geometry in Angstrom
     print(geom)
-
-    world = madpy.MadWorld3D()
 
     madpno = madpy.MadPNO(world, geom, n_orbitals=4, maxrank=1)
     orbitals = madpno.get_orbitals()
@@ -123,19 +121,15 @@ def run(R):
             break
         current = result.energy
 
-    del madpno
-    del integrals
-    del opti
-    del world
-
     return energies
 
 
 results = []
 x = list(numpy.linspace(start=0.65, stop=1.2, num=5, endpoint=False))
+world = madpy.MadWorld3D()
 for R in x:
     start = time.time()
-    energies = run(R=R)
+    energies = run(R=R, world=world)
     end = time.time()
     print(f"took {end-start}s")
     results += [energies]

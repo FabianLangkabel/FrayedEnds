@@ -1,6 +1,8 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/array.h>
+#include <nanobind/stl/pair.h>
 #include "optimization.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
@@ -21,7 +23,6 @@ NB_MODULE(_madpy_impl, m) {
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
         .def("change_nthreads", &MadnessProcess<3>::change_nthreads, nb::arg("n_threads"))
-        .def("loadfct", &MadnessProcess<3>::loadfct)
         .def("loadfct_from_file", &MadnessProcess<3>::loadfct_from_file)
         .def("plot", &MadnessProcess<3>::plot)
         .def("plane_plot", &MadnessProcess<3>::plane_plot)
@@ -33,13 +34,12 @@ NB_MODULE(_madpy_impl, m) {
         .def_ro("truncate_mode", &MadnessProcess<3>::truncate_mode)
         .def_ro("refine", &MadnessProcess<3>::refine)
         .def_ro("n_threads", &MadnessProcess<3>::n_threads);
-    
+
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
         .def("change_nthreads", &MadnessProcess<2>::change_nthreads, nb::arg("n_threads"))
-        .def("loadfct", &MadnessProcess<2>::loadfct)
         .def("loadfct_from_file", &MadnessProcess<2>::loadfct_from_file)
         .def("plot", &MadnessProcess<2>::plot)
         .def("plane_plot", &MadnessProcess<2>::plane_plot)
@@ -53,6 +53,9 @@ NB_MODULE(_madpy_impl, m) {
 
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
     nb::class_<madness::real_function_2d>(m, "real_function_2d").def(nb::init<>());
+
+    m.def("save_3D_function", &madness::save<double, 3>);
+    m.def("save_2D_function", &madness::save<double, 2>);
 
     nb::class_<MolecularGeometry>(m, "MolecularGeometry")
         .def(nb::init<const std::string&>())
@@ -68,24 +71,11 @@ NB_MODULE(_madpy_impl, m) {
         .def("nuclear_repulsion_second_derivative", &MolecularGeometry::nuclear_repulsion_second_derivative)
         .def("get_vnuc", &MolecularGeometry::get_vnuc);
 
-    nb::class_<SavedFct<3>>(m, "SavedFct3D")
-        .def(nb::init<const Function<double, 3>&>())
-        .def(nb::init<const std::string&>())
-        .def_rw("info", &SavedFct<3>::info)
-        .def_rw("type", &SavedFct<3>::type)
-        .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"));
-
-    nb::class_<SavedFct<2>>(m, "SavedFct2D")
-        .def(nb::init<const Function<double, 2>&>())
-        .def(nb::init<const std::string&>())
-        .def_rw("info", &SavedFct<2>::info)
-        .def_rw("type", &SavedFct<2>::type)
-        .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"));
-
     nb::class_<Integrals<3>>(m, "Integrals3D")
         .def(nb::init<MadnessProcess<3>&>())
         .def("hello", &Integrals<3>::hello)
-        .def("compute_overlap_integrals", &Integrals<3>::compute_overlap_integrals, nb::arg("all_orbs"), nb::arg("other"))
+        .def("compute_overlap_integrals", &Integrals<3>::compute_overlap_integrals, nb::arg("all_orbs"),
+             nb::arg("other"))
         .def("compute_potential_integrals", &Integrals<3>::compute_potential_integrals, nb::arg("all_orbs"),
              nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals<3>::compute_kinetic_integrals, nb::arg("all_orbs"))
@@ -100,7 +90,8 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<Integrals<2>>(m, "Integrals2D")
         .def(nb::init<MadnessProcess<2>&>())
         .def("hello", &Integrals<2>::hello)
-        .def("compute_overlap_integrals", &Integrals<2>::compute_overlap_integrals, nb::arg("all_orbs"), nb::arg("other"))
+        .def("compute_overlap_integrals", &Integrals<2>::compute_overlap_integrals, nb::arg("all_orbs"),
+             nb::arg("other"))
         .def("compute_potential_integrals", &Integrals<2>::compute_potential_integrals, nb::arg("all_orbs"),
              nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals<2>::compute_kinetic_integrals, nb::arg("all_orbs"))
@@ -123,8 +114,10 @@ NB_MODULE(_madpy_impl, m) {
         .def("calculate_core_energy", &Optimization<3>::calculate_core_energy)
         .def("calculate_energies", &Optimization<3>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<3>::calculate_lagrange_multiplier)
-        .def("calculate_lagrange_multiplier_element_as_as", &Optimization<3>::calculate_lagrange_multiplier_element_as_as)
-        .def("calculate_lagrange_multiplier_element_as_core", &Optimization<3>::calculate_lagrange_multiplier_element_as_core)
+        .def("calculate_lagrange_multiplier_element_as_as",
+             &Optimization<3>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core",
+             &Optimization<3>::calculate_lagrange_multiplier_element_as_core)
         .def("optimize_orbitals", &Optimization<3>::optimize_orbitals)
         .def("get_all_active_orbital_updates", &Optimization<3>::get_all_active_orbital_updates)
         .def("rotate_orbitals_back", &Optimization<3>::rotate_orbitals_back)
@@ -152,8 +145,10 @@ NB_MODULE(_madpy_impl, m) {
         .def("calculate_core_energy", &Optimization<2>::calculate_core_energy)
         .def("calculate_energies", &Optimization<2>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<2>::calculate_lagrange_multiplier)
-        .def("calculate_lagrange_multiplier_element_as_as", &Optimization<2>::calculate_lagrange_multiplier_element_as_as)
-        .def("calculate_lagrange_multiplier_element_as_core", &Optimization<2>::calculate_lagrange_multiplier_element_as_core)
+        .def("calculate_lagrange_multiplier_element_as_as",
+             &Optimization<2>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core",
+             &Optimization<2>::calculate_lagrange_multiplier_element_as_core)
         .def("optimize_orbitals", &Optimization<2>::optimize_orbitals)
         .def("get_all_active_orbital_updates", &Optimization<2>::get_all_active_orbital_updates)
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
@@ -199,7 +194,7 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<PyFuncFactory<3>>(m, "PyFuncFactory3D")
         .def(nb::init<MadnessProcess<3>&, std::function<double(double, double, double)>&>())
         .def("get_mra_function", &PyFuncFactory<3>::get_mra_function);
-    
+
     nb::class_<PyFuncFactory<2>>(m, "PyFuncFactory2D")
         .def(nb::init<MadnessProcess<2>&, std::function<double(double, double)>&>())
         .def("get_mra_function", &PyFuncFactory<2>::get_mra_function);

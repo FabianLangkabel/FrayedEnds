@@ -1,6 +1,5 @@
 #pragma once
 
-#include "functionsaver.hpp"
 #include <iomanip>
 #include <madness/mra/vmra.h>
 #include <madness/chem/SCF.h>
@@ -17,6 +16,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include "madness_process.hpp"
+#include <utility>
 
 using namespace madness;
 namespace nb = nanobind;
@@ -103,7 +103,7 @@ class PNOInterface {
         Vnuc.clear();
     }
 
-    SavedFct<3> get_nuclear_potential() { return SavedFct<3>(Vnuc); }
+    Function<double, 3> get_nuclear_potential() { return Vnuc; }
 
     void run(const size_t basis_size) {
         std::cout.precision(6);
@@ -316,47 +316,41 @@ class PNOInterface {
         sto3g = nemo.get_calc()->project_ao_basis(*(madness_process.world), nemo.get_calc()->aobasis);
     }
 
-    std::vector<SavedFct<3>> get_pnos(int core_dim, int as_dim, int froz_virt_dim) const {
+    std::vector<std::pair<Function<double, 3>, std::string>> get_pnos(int core_dim, int as_dim,
+                                                                      int froz_virt_dim) const {
         if (core_dim + as_dim + froz_virt_dim != basis.size()) {
-            std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << core_dim << " "
-                      << as_dim << " " << froz_virt_dim << " " << basis.size() << std::endl;
+            std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() (" << core_dim
+                      << " + " << as_dim << " + " << froz_virt_dim << " != " << basis.size() << ")" << std::endl;
         }
-        std::vector<SavedFct<3>> pnos;
+        std::vector<std::pair<Function<double, 3>, std::string>> pnos_with_info;
         size_t offset = 0;
         for (auto i = 0; i < basis.size(); ++i) {
-            SavedFct<3> pnorb(basis[i]);
+            std::pair<Function<double, 3>, std::string> pnorb_with_info;
+            pnorb_with_info.first = basis[i];
             if (i < core_dim) {
-                pnorb.type = "frozen_occ";
-                pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
-                pnorb.info += "pair1=" + std::to_string(ids[i].first) + " ";
-                pnorb.info += "pair2=" + std::to_string(ids[i].second) + " ";
+                pnorb_with_info.second = "occ=" + std::to_string(occ[i]) + " ";
+                pnorb_with_info.second += "pair1=" + std::to_string(ids[i].first) + " ";
+                pnorb_with_info.second += "pair2=" + std::to_string(ids[i].second) + " ";
             } else if (i < core_dim + as_dim) {
-                pnorb.type = "active";
-                pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
+                pnorb_with_info.second = "occ=" + std::to_string(occ[i]) + " ";
                 if (occ[i] != 2.0)
                     offset = core_dim;
                 else
                     offset = 0;
-                pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
-                pnorb.info += "pair2=" + std::to_string(ids[i].second + offset) + " ";
+                pnorb_with_info.second += "pair1=" + std::to_string(ids[i].first + offset) + " ";
+                pnorb_with_info.second += "pair2=" + std::to_string(ids[i].second + offset) + " ";
             } else if (i < core_dim + as_dim + froz_virt_dim) {
-                pnorb.type = "frozen_virt";
-                pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
-                pnorb.info += "pair1=" + std::to_string(ids[i].first + core_dim) + " ";
-                pnorb.info += "pair2=" + std::to_string(ids[i].second + core_dim) + " ";
+                pnorb_with_info.second = "occ=" + std::to_string(occ[i]) + " ";
+                pnorb_with_info.second += "pair1=" + std::to_string(ids[i].first + core_dim) + " ";
+                pnorb_with_info.second += "pair2=" + std::to_string(ids[i].second + core_dim) + " ";
             }
-            pnos.push_back(pnorb);
+            pnos_with_info.push_back(pnorb_with_info);
         }
-        return pnos;
+        return pnos_with_info;
     }
     double get_nuclear_repulsion() const { return nuclear_repulsion; }
 
-    std::vector<SavedFct<3>> get_sto3g() const {
-        std::vector<SavedFct<3>> result;
-        for (auto x : sto3g)
-            result.push_back(SavedFct<3>(x, "atomic"));
-        return result;
-    }
+    std::vector<Function<double, 3>> get_sto3g() const { return sto3g; }
 
   private:
     MadnessProcess<3>& madness_process;

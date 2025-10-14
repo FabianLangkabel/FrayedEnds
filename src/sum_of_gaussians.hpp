@@ -1,11 +1,8 @@
 #include <madness/mra/mra.h>
 #include <madness/mra/operator.h>
-#include "functionsaver.hpp"
 #include "madness_process.hpp"
 
-
 // this is not really needed anymore and might be too specific to keep here
-
 
 using namespace madness;
 
@@ -59,7 +56,7 @@ class CoulombPotentialFromChargeDensity {
     }
 
     ~CoulombPotentialFromChargeDensity() {}
-    SavedFct<3> create_charge_density() {
+    Function<double, 3> create_charge_density() {
         SumOfGaussians Rho(sharpness_list, Q, charge_locations); // charge density
         Function<double, 3> f = FunctionFactory<double, 3>(*(madness_process.world))
                                     .special_level(10)
@@ -67,11 +64,11 @@ class CoulombPotentialFromChargeDensity {
                                     .functor(Rho);
         double norm = f.trace();
         f = Rho.Q / norm * f; // renormalize such that Q=\int dV rho
-        return SavedFct(f);
+        return f;
     }
-    SavedFct<3> create_potential() {
+    Function<double, 3> create_potential() {
         Function<double, 3> Vnuc = make_potential(*(madness_process.world), sharpness_list, Q, charge_locations);
-        return SavedFct(Vnuc);
+        return Vnuc;
     }
 
   private:

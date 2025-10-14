@@ -13,5 +13,4 @@ data = []
 for i in range(len(orbitals)):
     world.line_plot(f"atomic{i}.dat", orbitals[i])
 
-del bp
-del world
+mad.cleanup(globals())

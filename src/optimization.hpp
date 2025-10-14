@@ -12,31 +12,33 @@
 #include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
 #include "npy.hpp"
-#include "functionsaver.hpp"
 #include "madness_process.hpp"
 #include "coulomboperator_nd.hpp"
+#include <array>
 
 using namespace madness;
 
-template <std::size_t NDIM>
-class Optimization {
+template <std::size_t NDIM> class Optimization {
   public:
     Optimization(MadnessProcess<NDIM>& mp);
     ~Optimization();
 
     // input
-    void give_initial_orbitals(std::vector<SavedFct<NDIM>> all_orbs);
+    void give_initial_orbitals(std::vector<Function<double, NDIM>> initial_fr_occ_orbs,
+                               std::vector<Function<double, NDIM>> initial_act_orbs,
+                               std::vector<Function<double, NDIM>> initial_fr_virt_orb);
     void give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements);
 
     // output
     double get_c();
     std::vector<double> get_h_tensor();
     std::vector<double> get_g_tensor();
-    std::vector<SavedFct<NDIM>> get_orbitals();
+    std::array<std::vector<Function<double, NDIM>>, 3> get_orbitals();
 
-    void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
-    void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files,
-                             std::vector<std::string> frozen_virt_orb_files);
+    void give_potential_and_repulsion(Function<double, NDIM> potential, double nuclear_repulsion);
+    void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files,
+                               std::vector<std::string> active_orbs_files,
+                               std::vector<std::string> frozen_virt_orb_files);
     void read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file);
     void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
     void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);

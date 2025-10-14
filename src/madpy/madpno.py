@@ -5,6 +5,7 @@ import numpy
 
 from ._madpy_impl import PNOInterface
 from .madworld import get_function_info, redirect_output
+from .mrafunctionwrapper import MRAFunction3D
 
 
 class MadPNO:
@@ -33,6 +34,7 @@ class MadPNO:
         maxrank=None,
         diagonal=True,
         frozen_core=True,
+        do_cleanup=True,
         *args,
         **kwargs,
     ):
@@ -62,9 +64,11 @@ class MadPNO:
                 maxrank = n_orbitals
 
         if units is None:
-                if self.silent==False:
-                    print("Warning: No units passed with geometry, assuming units are angstrom.")
-                units = "angstrom"
+            if self.silent == False:
+                print(
+                    "Warning: No units passed with geometry, assuming units are angstrom."
+                )
+            units = "angstrom"
         else:
             units = units.lower()
             if units in ["angstrom", "ang", "a", "å"]:
@@ -72,10 +76,12 @@ class MadPNO:
             elif units in ["bohr", "atomic units", "au", "a.u."]:
                 units = "bohr"
             else:
-                if self.silent==False:
-                    print("Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom.")
+                if self.silent == False:
+                    print(
+                        "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
+                    )
                 units = "angstrom"
-        
+
         pno_input_string = self.parameter_string(
             madworld,
             molecule_file=geometry,
@@ -90,7 +96,7 @@ class MadPNO:
 
         if not no_compute:
             self._orbitals = self.compute_orbitals(
-                n_orbitals=n_orbitals, *args, **kwargs
+                n_orbitals=n_orbitals, do_cleanup=do_cleanup, *args, **kwargs
             )
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
@@ -149,24 +155,51 @@ class MadPNO:
             raise Exception("orbitals not yet computed")
 
     def get_nuclear_potential(self, *args, **kwargs):
-        return self.impl.get_nuclear_potential()
+        return MRAFunction3D(self.impl.get_nuclear_potential())
 
     def get_nuclear_repulsion(self, *args, **kwargs):
         return self.impl.get_nuclear_repulsion()
 
     def get_sto3g(self, *args, **kwargs):
-        return self.impl.get_sto3g()
+        orbs_impl = self.impl.get_sto3g()
+        return [MRAFunction3D(orb_impl, type="atomic") for orb_impl in orbs_impl]
 
     @redirect_output("madpno.log")
-    def compute_orbitals(self, n_orbitals, frozen_virt_dim=0, *args, **kwargs):
+    def compute_orbitals(
+        self, n_orbitals, do_cleanup=True, frozen_virt_dim=0, *args, **kwargs
+    ):
         self.impl.run(n_orbitals)
         frozen_occ_dim = self.impl.get_frozen_core_dim()
         active_dim = n_orbitals - frozen_occ_dim - frozen_virt_dim
         # package the orbitals
-        orbitals = self.impl.get_pnos(frozen_occ_dim, active_dim, frozen_virt_dim)
-        self.cleanup(*args, **kwargs)
-        self._orbitals = orbitals
-        return orbitals
+        orbitals_with_info = self.impl.get_pnos(
+            frozen_occ_dim, active_dim, frozen_virt_dim
+        )  # this returns a list of pairs (mrafunction, info)
+        res_orbitals = []
+        for i in range(len(orbitals_with_info)):
+            if i < frozen_occ_dim:
+                orb = MRAFunction3D(
+                    orbitals_with_info[i][0],
+                    type="frozen_occ",
+                    info=orbitals_with_info[i][1],
+                )
+            elif i < frozen_occ_dim + active_dim:
+                orb = MRAFunction3D(
+                    orbitals_with_info[i][0],
+                    type="active",
+                    info=orbitals_with_info[i][1],
+                )
+            else:
+                orb = MRAFunction3D(
+                    orbitals_with_info[i][0],
+                    type="frozen_virt",
+                    info=orbitals_with_info[i][1],
+                )
+            res_orbitals.append(orb)
+        if do_cleanup:
+            self.pno_cleanup(*args, **kwargs)
+        self._orbitals = res_orbitals
+        return self._orbitals
 
     def parameter_string(
         self,
@@ -211,7 +244,7 @@ class MadPNO:
         for key in data.keys():
             if key in kwargs:
                 data[key] = {**data[key], **kwargs[key]}
-        if units=="bohr":
+        if units == "bohr":
             input_str = (
                 'pno --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec=1.e-6; source_name='
                 + molecule_file
@@ -254,12 +287,14 @@ class MadPNO:
         f.write(molecule_file_str)
         f.close()
 
-    def cleanup(*args, **kwargs):
+    def pno_cleanup(
+        *args, **kwargs
+    ):  # please note that pno_cleanup will delete mrafunctions saved to files in the current directory
         # Define the patterns for the files to delete
         patterns = [
             "*.00000",  # Files ending with .00000
-            "*.00001", 
-            "*.00002", 
+            "*.00001",
+            "*.00002",
             "*.00003",
             "N7madness*",  # Files starting with N7madness
             "mad.calc_info.json",  # Specific file

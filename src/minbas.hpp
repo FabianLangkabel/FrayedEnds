@@ -1,6 +1,5 @@
 #pragma once
 
-#include "functionsaver.hpp"
 #include <iomanip>
 #include <madness/mra/vmra.h>
 #include <madness/chem/SCF.h>
@@ -40,32 +39,21 @@ class MinBasProjector {
         Vnuc = calc.potentialmanager->vnuclear();
     }
 
-    std::vector<SavedFct<3> > solve_scf(const double thresh=1.e-4){
+    std::vector<Function<double, 3>> solve_scf(const double thresh = 1.e-4) {
         SCF calc(*(madness_process.world), parser);
         calc.set_protocol<3>(*(madness_process.world), thresh);
         calc.make_nuclear_potential(*(madness_process.world));
         MolecularEnergy E(*(madness_process.world), calc);
         double energy = E.value(calc.molecule.get_all_coords().flat()); // ugh! (indeed)
 
-        std::vector<SavedFct<3> > result;
-        for(const auto f: calc.amo){
-            result.push_back(SavedFct<3>(f));
-        }
-        return result;
+        return calc.amo;
     }
 
-    std::vector<SavedFct<3> > get_atomic_basis() const {
-        std::vector<SavedFct<3> > result;
-        for (auto x : atomicbasis) {
-            SavedFct<3> y(x);
-            result.push_back(y);
-        }
-        return result;
-    }
+    std::vector<Function<double, 3>> get_atomic_basis() const { return atomicbasis; }
 
     std::string get_basis_name() const { return basisname; }
 
-    SavedFct<3> get_nuclear_potential() { return SavedFct<3>(Vnuc); }
+    Function<double, 3> get_nuclear_potential() { return Vnuc; }
 
     double get_nuclear_repulsion() const { return nuclear_repulsion; }
 

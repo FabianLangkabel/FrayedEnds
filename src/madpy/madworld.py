@@ -1,6 +1,22 @@
+import inspect
 from functools import wraps
 
 from ._madpy_impl import MadnessProcess2D, MadnessProcess3D, RedirectOutput
+
+
+def cleanup(globals):
+    for name, obj in list(globals.items()):
+        if (
+            not name.startswith("__")
+            and not callable(obj)
+            and not inspect.ismodule(obj)
+            and not isinstance(obj, type)
+            and hasattr(obj, "__class__")
+        ):
+            # Check if the object is not the World
+            if not isinstance(obj, MadWorld3D) and not isinstance(obj, MadWorld2D):
+                print("deleting ", name)
+                del globals[name]
 
 
 def redirect_output(filename="madness.out"):
@@ -33,7 +49,7 @@ class MadWorld3D:
     impl = None
 
     madness_parameters = {
-        "L": 50.0, #half the box length, units: bohr
+        "L": 50.0,  # half the box length, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
@@ -82,11 +98,15 @@ class MadWorld3D:
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
 
+    # this returns what is usually wrapped in MRAFunction3D as self.impl, to get a MRAFunction3D use MRAFunction3D.load_from_file(...)
+    def mraf_from_file(self, filename) -> "real_function_3d":
+        return self.impl.loadfct_from_file(filename)
+
     def line_plot(self, filename, mra_function, axis="z", datapoints=2001):
         if hasattr(mra_function, "data"):
             self.impl.plot(filename, mra_function.data, axis, datapoints)
         else:
-            self.impl.plot(filename, mra_function, axis, datapoints)
+            self.impl.plot(filename, mra_function.impl, axis, datapoints)
 
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
@@ -111,7 +131,7 @@ class MadWorld3D:
             )
         else:
             self.impl.plane_plot(
-                filename, mra_function, plane, zoom, datapoints, origin
+                filename, mra_function.impl, plane, zoom, datapoints, origin
             )
 
     def cube_plot(
@@ -129,7 +149,7 @@ class MadWorld3D:
             )
         else:
             self.impl.cube_plot(
-                filename, mra_function, molecule.impl, zoom, datapoints, origin
+                filename, mra_function.impl, molecule.impl, zoom, datapoints, origin
             )
 
 
@@ -137,7 +157,7 @@ class MadWorld2D:
     impl = None
 
     madness_parameters = {
-        "L": 50.0, #half the box length, units: bohr
+        "L": 50.0,  # half the box length, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
@@ -186,11 +206,15 @@ class MadWorld2D:
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
 
+    # this returns what is usually wrapped in MRAFunction2D as self.impl, to get a MRAFunction2D use MRAFunction2D.load_from_file(...)
+    def mraf_from_file(self, filename) -> "real_function_2d":
+        return self.impl.loadfct_from_file(filename)
+
     def line_plot(self, filename, mra_function, axis="y", datapoints=2001):
         if hasattr(mra_function, "data"):
             self.impl.plot(filename, mra_function.data, axis, datapoints)
         else:
-            self.impl.plot(filename, mra_function, axis, datapoints)
+            self.impl.plot(filename, mra_function.impl, axis, datapoints)
 
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
@@ -215,6 +239,5 @@ class MadWorld2D:
             )
         else:
             self.impl.plane_plot(
-                filename, mra_function, plane, zoom, datapoints, origin
+                filename, mra_function.impl, plane, zoom, datapoints, origin
             )
-

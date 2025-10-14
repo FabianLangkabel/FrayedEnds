@@ -1,8 +1,9 @@
 import numpy as np
 
-from ._madpy_impl import Optimization3D as OptInterface3D
 from ._madpy_impl import Optimization2D as OptInterface2D
+from ._madpy_impl import Optimization3D as OptInterface3D
 from .madworld import redirect_output
+from .mrafunctionwrapper import MRAFunction2D, MRAFunction3D
 
 
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
@@ -63,7 +64,7 @@ class Optimization3D:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -88,8 +89,11 @@ class Optimization3D:
     ):
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
-        self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
-        self.impl.give_initial_orbitals(orbitals)
+        self.impl.give_potential_and_repulsion(self._Vnuc.impl, self._nuclear_repulsion)
+        fr_occ_orbs = [orb.impl for orb in orbitals if orb.type == "frozen_occ"]
+        active_orbs = [orb.impl for orb in orbitals if orb.type == "active"]
+        fr_virt_orbs = [orb.impl for orb in orbitals if orb.type == "frozen_virt"]
+        self.impl.give_initial_orbitals(fr_occ_orbs, active_orbs, fr_virt_orbs)
         self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
         self.impl.calculate_all_integrals()
         self.impl.calculate_core_energy()
@@ -98,7 +102,14 @@ class Optimization3D:
         converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
         self.impl.rotate_orbitals_back()
 
-        self._orbitals = self.impl.get_orbitals()
+        [fr_o_orbs_impl, act_orbs_impl, fr_v_orbs_impl] = self.impl.get_orbitals()
+        self._orbitals = []
+        for orb in fr_o_orbs_impl:
+            self._orbitals.append(MRAFunction3D(orb, type="frozen_occ"))
+        for orb in act_orbs_impl:
+            self._orbitals.append(MRAFunction3D(orb, type="active"))
+        for orb in fr_v_orbs_impl:
+            self._orbitals.append(MRAFunction3D(orb, type="frozen_virt"))
         return self._orbitals, converged
 
     def get_orbitals(self, *args, **kwargs):
@@ -132,7 +143,7 @@ class Optimization2D:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -157,8 +168,11 @@ class Optimization2D:
     ):
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
-        self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
-        self.impl.give_initial_orbitals(orbitals)
+        self.impl.give_potential_and_repulsion(self._Vnuc.impl, self._nuclear_repulsion)
+        fr_occ_orbs = [orb.impl for orb in orbitals if orb.type == "frozen_occ"]
+        active_orbs = [orb.impl for orb in orbitals if orb.type == "active"]
+        fr_virt_orbs = [orb.impl for orb in orbitals if orb.type == "frozen_virt"]
+        self.impl.give_initial_orbitals(fr_occ_orbs, active_orbs, fr_virt_orbs)
         self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
         self.impl.calculate_all_integrals()
         self.impl.calculate_core_energy()
@@ -167,7 +181,14 @@ class Optimization2D:
         converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
         self.impl.rotate_orbitals_back()
 
-        self._orbitals = self.impl.get_orbitals()
+        [fr_o_orbs_impl, act_orbs_impl, fr_v_orbs_impl] = self.impl.get_orbitals()
+        self._orbitals = []
+        for orb in fr_o_orbs_impl:
+            self._orbitals.append(MRAFunction2D(orb, type="frozen_occ"))
+        for orb in act_orbs_impl:
+            self._orbitals.append(MRAFunction2D(orb, type="active"))
+        for orb in fr_v_orbs_impl:
+            self._orbitals.append(MRAFunction2D(orb, type="frozen_virt"))
         return self._orbitals, converged
 
     def get_orbitals(self, *args, **kwargs):
