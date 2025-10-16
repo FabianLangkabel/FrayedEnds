@@ -14,7 +14,7 @@
 
 namespace nb = nanobind;
 
-NB_MODULE(_madpy_impl, m) {
+NB_MODULE(_frayedends_impl, m) {
 
     nb::class_<MadnessProcess<3>>(m, "MadnessProcess3D")
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
@@ -33,7 +33,7 @@ NB_MODULE(_madpy_impl, m) {
         .def_ro("truncate_mode", &MadnessProcess<3>::truncate_mode)
         .def_ro("refine", &MadnessProcess<3>::refine)
         .def_ro("n_threads", &MadnessProcess<3>::n_threads);
-    
+
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
@@ -85,7 +85,8 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<Integrals<3>>(m, "Integrals3D")
         .def(nb::init<MadnessProcess<3>&>())
         .def("hello", &Integrals<3>::hello)
-        .def("compute_overlap_integrals", &Integrals<3>::compute_overlap_integrals, nb::arg("all_orbs"), nb::arg("other"))
+        .def("compute_overlap_integrals", &Integrals<3>::compute_overlap_integrals, nb::arg("all_orbs"),
+             nb::arg("other"))
         .def("compute_potential_integrals", &Integrals<3>::compute_potential_integrals, nb::arg("all_orbs"),
              nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals<3>::compute_kinetic_integrals, nb::arg("all_orbs"))
@@ -100,7 +101,8 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<Integrals<2>>(m, "Integrals2D")
         .def(nb::init<MadnessProcess<2>&>())
         .def("hello", &Integrals<2>::hello)
-        .def("compute_overlap_integrals", &Integrals<2>::compute_overlap_integrals, nb::arg("all_orbs"), nb::arg("other"))
+        .def("compute_overlap_integrals", &Integrals<2>::compute_overlap_integrals, nb::arg("all_orbs"),
+             nb::arg("other"))
         .def("compute_potential_integrals", &Integrals<2>::compute_potential_integrals, nb::arg("all_orbs"),
              nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals<2>::compute_kinetic_integrals, nb::arg("all_orbs"))
@@ -123,8 +125,10 @@ NB_MODULE(_madpy_impl, m) {
         .def("calculate_core_energy", &Optimization<3>::calculate_core_energy)
         .def("calculate_energies", &Optimization<3>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<3>::calculate_lagrange_multiplier)
-        .def("calculate_lagrange_multiplier_element_as_as", &Optimization<3>::calculate_lagrange_multiplier_element_as_as)
-        .def("calculate_lagrange_multiplier_element_as_core", &Optimization<3>::calculate_lagrange_multiplier_element_as_core)
+        .def("calculate_lagrange_multiplier_element_as_as",
+             &Optimization<3>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core",
+             &Optimization<3>::calculate_lagrange_multiplier_element_as_core)
         .def("optimize_orbitals", &Optimization<3>::optimize_orbitals)
         .def("get_all_active_orbital_updates", &Optimization<3>::get_all_active_orbital_updates)
         .def("rotate_orbitals_back", &Optimization<3>::rotate_orbitals_back)
@@ -152,8 +156,10 @@ NB_MODULE(_madpy_impl, m) {
         .def("calculate_core_energy", &Optimization<2>::calculate_core_energy)
         .def("calculate_energies", &Optimization<2>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<2>::calculate_lagrange_multiplier)
-        .def("calculate_lagrange_multiplier_element_as_as", &Optimization<2>::calculate_lagrange_multiplier_element_as_as)
-        .def("calculate_lagrange_multiplier_element_as_core", &Optimization<2>::calculate_lagrange_multiplier_element_as_core)
+        .def("calculate_lagrange_multiplier_element_as_as",
+             &Optimization<2>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core",
+             &Optimization<2>::calculate_lagrange_multiplier_element_as_core)
         .def("optimize_orbitals", &Optimization<2>::optimize_orbitals)
         .def("get_all_active_orbital_updates", &Optimization<2>::get_all_active_orbital_updates)
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
@@ -199,7 +205,7 @@ NB_MODULE(_madpy_impl, m) {
     nb::class_<PyFuncFactory<3>>(m, "PyFuncFactory3D")
         .def(nb::init<MadnessProcess<3>&, std::function<double(double, double, double)>&>())
         .def("get_mra_function", &PyFuncFactory<3>::get_mra_function);
-    
+
     nb::class_<PyFuncFactory<2>>(m, "PyFuncFactory2D")
         .def(nb::init<MadnessProcess<2>&, std::function<double(double, double)>&>())
         .def("get_mra_function", &PyFuncFactory<2>::get_mra_function);

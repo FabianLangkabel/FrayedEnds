@@ -3,7 +3,7 @@ import os
 
 import numpy
 
-from ._madpy_impl import PNOInterface
+from ._frayedends_impl import PNOInterface
 from .madworld import get_function_info, redirect_output
 
 
@@ -62,9 +62,11 @@ class MadPNO:
                 maxrank = n_orbitals
 
         if units is None:
-                if self.silent==False:
-                    print("Warning: No units passed with geometry, assuming units are angstrom.")
-                units = "angstrom"
+            if self.silent == False:
+                print(
+                    "Warning: No units passed with geometry, assuming units are angstrom."
+                )
+            units = "angstrom"
         else:
             units = units.lower()
             if units in ["angstrom", "ang", "a", "å"]:
@@ -72,10 +74,12 @@ class MadPNO:
             elif units in ["bohr", "atomic units", "au", "a.u."]:
                 units = "bohr"
             else:
-                if self.silent==False:
-                    print("Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom.")
+                if self.silent == False:
+                    print(
+                        "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
+                    )
                 units = "angstrom"
-        
+
         pno_input_string = self.parameter_string(
             madworld,
             molecule_file=geometry,
@@ -211,7 +215,7 @@ class MadPNO:
         for key in data.keys():
             if key in kwargs:
                 data[key] = {**data[key], **kwargs[key]}
-        if units=="bohr":
+        if units == "bohr":
             input_str = (
                 'pno --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec=1.e-6; source_name='
                 + molecule_file
@@ -258,8 +262,8 @@ class MadPNO:
         # Define the patterns for the files to delete
         patterns = [
             "*.00000",  # Files ending with .00000
-            "*.00001", 
-            "*.00002", 
+            "*.00001",
+            "*.00002",
             "*.00003",
             "N7madness*",  # Files starting with N7madness
             "mad.calc_info.json",  # Specific file

@@ -1,6 +1,7 @@
 from functools import wraps
 
-from ._madpy_impl import MadnessProcess2D, MadnessProcess3D, RedirectOutput
+from ._frayedends_impl import (MadnessProcess2D, MadnessProcess3D,
+                               RedirectOutput)
 
 
 def redirect_output(filename="madness.out"):
@@ -33,7 +34,7 @@ class MadWorld3D:
     impl = None
 
     madness_parameters = {
-        "L": 50.0, #half the box length, units: bohr
+        "L": 50.0,  # half the box length, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
@@ -137,7 +138,7 @@ class MadWorld2D:
     impl = None
 
     madness_parameters = {
-        "L": 50.0, #half the box length, units: bohr
+        "L": 50.0,  # half the box length, units: bohr
         "k": 7,
         "thresh": 1.0e-5,
         "initial_level": 3,
@@ -217,4 +218,3 @@ class MadWorld2D:
             self.impl.plane_plot(
                 filename, mra_function, plane, zoom, datapoints, origin
             )
-

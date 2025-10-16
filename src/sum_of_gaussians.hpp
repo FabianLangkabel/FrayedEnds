@@ -3,9 +3,7 @@
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 
-
 // this is not really needed anymore and might be too specific to keep here
-
 
 using namespace madness;
 
