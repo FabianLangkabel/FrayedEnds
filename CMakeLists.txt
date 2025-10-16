@@ -38,7 +38,7 @@ find_package(nanobind CONFIG REQUIRED)
 
 # We also need madness installed (not part of this build yet)
 find_package(MADNESS REQUIRED COMPONENTS MADchem)
-message(STATUS "MadPy using MADNESS installation at: ${MADNESS_DIR}")
+message(STATUS "FrayedEnds using MADNESS installation at: ${MADNESS_DIR}")
 
 # We are now ready to compile the actual extension module
 nanobind_add_module(
