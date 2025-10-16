@@ -1,4 +1,4 @@
-from ._madpy_impl import NWChem_Converter as converter
+from ._frayedends_impl import NWChem_Converter as converter
 from .madworld import redirect_output
 
 

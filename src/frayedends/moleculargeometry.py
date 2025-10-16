@@ -1,18 +1,23 @@
-from ._madpy_impl import MolecularGeometry as MolecularGeometryImpl
-from tequila import Molecule
 import re
+
+from tequila import Molecule
+
+from ._frayedends_impl import MolecularGeometry as MolecularGeometryImpl
+
 
 class MolecularGeometry:
     impl = None
     silent = False
 
-    def __init__(self, geometry:str=None, units=None, silent=False, *args, **kwargs):
+    def __init__(self, geometry: str = None, units=None, silent=False, *args, **kwargs):
         self.silent = silent
 
         if units is None:
-                if not self.silent:
-                    print("Warning: No units passed with geometry, assuming units are angstrom.")
-                units = "angstrom"
+            if not self.silent:
+                print(
+                    "Warning: No units passed with geometry, assuming units are angstrom."
+                )
+            units = "angstrom"
         else:
             units = units.lower()
             if units in ["angstrom", "ang", "a", "å"]:
@@ -21,7 +26,9 @@ class MolecularGeometry:
                 units = "bohr"
             else:
                 if not self.silent:
-                    print("Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom.")
+                    print(
+                        "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
+                    )
                 units = "angstrom"
 
         self.impl = MolecularGeometryImpl(units)
@@ -29,10 +36,10 @@ class MolecularGeometry:
             geometry = geometry.lower()
             geometry = geometry.strip()
             # Replace tabs with spaces
-            geometry = geometry.replace('\t', ' ')
+            geometry = geometry.replace("\t", " ")
             # Replace multiple whitespace characters with a single space
-            re.sub(r'\s+', ' ', geometry).strip()
-            
+            re.sub(r"\s+", " ", geometry).strip()
+
             for line in geometry.split("\n"):
                 data = line.split(" ")
                 x = eval(data[1])
@@ -43,7 +50,7 @@ class MolecularGeometry:
 
     def check_units(self):
         return self.impl.units
-    
+
     def add_atom(self, pos_x, pos_y, pos_z, symbol):
         self.impl.add_atom(pos_x, pos_y, pos_z, symbol)
 
@@ -52,14 +59,20 @@ class MolecularGeometry:
 
     def compute_nuclear_derivative(self, madworld, atom, axis):
         return self.impl.compute_nuclear_derivative(madworld.impl, atom, axis)
-    
-    def compute_second_nuclear_derivative(self,madworld, atom: int, axis1: int, axis2: int):
-        return self.impl.compute_second_nuclear_derivative(madworld.impl, atom, axis1, axis2)
+
+    def compute_second_nuclear_derivative(
+        self, madworld, atom: int, axis1: int, axis2: int
+    ):
+        return self.impl.compute_second_nuclear_derivative(
+            madworld.impl, atom, axis1, axis2
+        )
 
     def nuclear_repulsion_derivative(self, atom: int, axis: int):
         return self.impl.nuclear_repulsion_derivative(atom, axis)
-        
-    def nuclear_repulsion_second_derivative(self, atom1: int, atom2: int, axis1: int, axis2: int):
+
+    def nuclear_repulsion_second_derivative(
+        self, atom1: int, atom2: int, axis1: int, axis2: int
+    ):
         return self.impl.nuclear_repulsion_second_derivative(atom1, atom2, axis1, axis2)
 
     def get_vnuc(self, madworld):
@@ -79,11 +92,11 @@ class MolecularGeometry:
     def n_core_electrons(self):
         return self.impl.get_core_n_electrons()
 
-    #conversion from tequila molecule to molecular geometry
+    # conversion from tequila molecule to molecular geometry
     def from_tq_mol(tq_mol, units="angstrom"):
-        geometry=tq_mol.parameters.get_geometry_string(desired_units=units)
+        geometry = tq_mol.parameters.get_geometry_string(desired_units=units)
         return MolecularGeometry(geometry, units=units)
-    
-    #conversion from molecular geometry to tequila molecule
+
+    # conversion from molecular geometry to tequila molecule
     def to_tq_mol(self, *args, **kwargs):
-        pass #TO DO
+        pass  # TO DO

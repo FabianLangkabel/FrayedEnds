@@ -1,7 +1,7 @@
 import numpy as np
 
-from ._madpy_impl import Optimization3D as OptInterface3D
-from ._madpy_impl import Optimization2D as OptInterface2D
+from ._frayedends_impl import Optimization2D as OptInterface2D
+from ._frayedends_impl import Optimization3D as OptInterface3D
 from .madworld import redirect_output
 
 
@@ -63,7 +63,7 @@ class Optimization3D:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -132,7 +132,7 @@ class Optimization2D:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):

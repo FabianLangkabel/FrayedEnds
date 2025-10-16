@@ -21,8 +21,7 @@
 
 using namespace madness;
 
-template <std::size_t NDIM>
-class Eigensolver {
+template <std::size_t NDIM> class Eigensolver {
   public:
     Eigensolver(MadnessProcess<NDIM>& mp);
 
@@ -32,25 +31,25 @@ class Eigensolver {
     void solve(SavedFct<NDIM> input_V, int num_levels, int max_iter);
 
     // Function to solve the eigenvalue problem for the given potential with given guesses
-    std::vector<Function<double, NDIM> > solve_with_input_guesses(SavedFct<NDIM> input_V,
-                                                              const std::vector<SavedFct<NDIM> >& input_guesses,
-                                                              int num_levels, int max_iter);
+    std::vector<Function<double, NDIM>> solve_with_input_guesses(SavedFct<NDIM> input_V,
+                                                                 const std::vector<SavedFct<NDIM>>& input_guesses,
+                                                                 int num_levels, int max_iter);
 
     // Function to calculate the energy
     double energy(const Function<double, NDIM>& phi, const Function<double, NDIM>& V);
-    std::vector<SavedFct<NDIM> > get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const;
+    std::vector<SavedFct<NDIM>> get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const;
 
   private:
     MadnessProcess<NDIM>& madness_process;
 
     Function<double, NDIM> V;
-    std::vector<Function<double, NDIM> > orbitals;
+    std::vector<Function<double, NDIM>> orbitals;
 
     // Function to calculate the Hamiltonian matrix, Overlap matrix and Diagonal matrix
-    std::pair<Tensor<double>, std::vector<Function<double, NDIM> > >
-    diagonalize(const std::vector<Function<double, NDIM> >& functions, const Function<double, NDIM>& V);
+    std::pair<Tensor<double>, std::vector<Function<double, NDIM>>>
+    diagonalize(const std::vector<Function<double, NDIM>>& functions, const Function<double, NDIM>& V);
 
     // Function to optimize the eigenfunction for each energy level
     Function<double, NDIM> optimize(Function<double, NDIM>& V, const Function<double, NDIM> guess_function, int N,
-                                 const std::vector<Function<double, NDIM> >& prev_phi, int max_iter);
+                                    const std::vector<Function<double, NDIM>>& prev_phi, int max_iter);
 };

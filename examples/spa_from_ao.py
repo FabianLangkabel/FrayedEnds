@@ -2,15 +2,15 @@ from time import time
 
 import tequila as tq
 
-import madpy
+import frayedends
 
 true_start = time()
 # initialize the PNO interface
 geom = "Li 0.0 0.0 0.0\nH 0.0 0.0 3.0"  # geometry in Angstrom
 
-world = madpy.MadWorld3D()
+world = frayedends.MadWorld3D()
 
-madpno = madpy.MadPNO(world, geom, n_orbitals=3)
+madpno = frayedends.MadPNO(world, geom, n_orbitals=3)
 orbitals = madpno.get_orbitals()
 edges = madpno.get_spa_edges()
 atomics = madpno.get_sto3g()
@@ -21,7 +21,7 @@ Vnuc = madpno.get_nuclear_potential()
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
-integrals = madpy.Integrals3D(world)
+integrals = frayedends.Integrals3D(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
 for i in range(len(atomics)):
@@ -41,7 +41,7 @@ c = nuc_repulsion
 u = None
 for iteration in range(6):
 
-    integrals = madpy.Integrals3D(world)
+    integrals = frayedends.Integrals3D(world)
     G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
@@ -65,12 +65,12 @@ for iteration in range(6):
     result = tq.minimize(E, silent=True)
     rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
     # print(rdm1)
-    # rdm1, rdm2 = madpy.transform_rdms(TransformationMatrix=u, rdm1=rdm1, rdm2=rdm2)
+    # rdm1, rdm2 = frayedends.transform_rdms(TransformationMatrix=u, rdm1=rdm1, rdm2=rdm2)
     # print(rdm1)
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
-    opti = madpy.Optimization3D(world, Vnuc, nuc_repulsion)
+    opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(
         orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )
