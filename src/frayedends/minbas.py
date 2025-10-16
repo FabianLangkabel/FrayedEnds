@@ -23,7 +23,7 @@ class AtomicBasisProjector:
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
-            self.create_molecule_file(geometry_angstrom=geometry)
+            self.create_molecule_file(geometry=geometry)
             geometry = "molecule"
 
         if units is None:
@@ -106,9 +106,9 @@ class AtomicBasisProjector:
 
         return input_str
 
-    def create_molecule_file(self, geometry_angstrom, filename="molecule"):
+    def create_molecule_file(self, geometry, filename="molecule"):
         molecule_file_str = "molecule\n"
-        molecule_file_str += geometry_angstrom
+        molecule_file_str += geometry
         molecule_file_str += "\nend"
         molecule_file_str = os.linesep.join(
             [s for s in molecule_file_str.splitlines() if s]
