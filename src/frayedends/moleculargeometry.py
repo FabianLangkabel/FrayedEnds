@@ -38,8 +38,8 @@ class MolecularGeometry:
             # Replace tabs with spaces
             geometry = geometry.replace("\t", " ")
             # Replace multiple whitespace characters with a single space
-            re.sub(r"\s+", " ", geometry).strip()
-
+            geometry=re.sub(r" {2}", " ", geometry)
+            print(geometry)
             for line in geometry.split("\n"):
                 data = line.split(" ")
                 x = eval(data[1])

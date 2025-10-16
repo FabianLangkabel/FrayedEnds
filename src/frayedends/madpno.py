@@ -44,7 +44,7 @@ class MadPNO:
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
-            self.create_molecule_file(geometry_angstrom=geometry)
+            self.create_molecule_file(geometry=geometry)
             geometry = "molecule"
 
         if maxrank is None:
@@ -247,9 +247,9 @@ class MadPNO:
 
         return input_str
 
-    def create_molecule_file(self, geometry_angstrom, filename="molecule"):
+    def create_molecule_file(self, geometry, filename="molecule"):
         molecule_file_str = "molecule\n"
-        molecule_file_str += geometry_angstrom
+        molecule_file_str += geometry
         molecule_file_str += "\nend"
         molecule_file_str = os.linesep.join(
             [s for s in molecule_file_str.splitlines() if s]
@@ -262,10 +262,7 @@ class MadPNO:
         # Define the patterns for the files to delete
         patterns = [
             "*.00000",  # Files ending with .00000
-            "*.00001",
-            "*.00002",
-            "*.00003",
-            "N7madness*",  # Files starting with N7madness
+            "MacroTask*",  # Files starting with N7madness
             "mad.calc_info.json",  # Specific file
             "mad.restartaodata",  # Specific file
             "pnoinfo.txt",  # Specific file

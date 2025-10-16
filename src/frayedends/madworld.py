@@ -1,8 +1,21 @@
 from functools import wraps
+import inspect
 
 from ._frayedends_impl import (MadnessProcess2D, MadnessProcess3D,
                                RedirectOutput)
 
+def cleanup(globals):
+    for name, obj in list(globals.items()):
+        if (
+            not name.startswith("__")
+            and not callable(obj)
+            and not inspect.ismodule(obj)
+            and not isinstance(obj, type)
+            and hasattr(obj, "__class__")
+        ):
+            # Check if the object is not the World
+            if not isinstance(obj, MadWorld3D) and not isinstance(obj, MadWorld2D):
+                del globals[name]
 
 def redirect_output(filename="madness.out"):
     def decorator(func):
