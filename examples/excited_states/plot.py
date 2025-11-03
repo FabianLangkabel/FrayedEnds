@@ -15,7 +15,7 @@ plt.xlabel("internuclear distance (Å)")
 plt.ylabel("potential energy (eV)")
 plt.grid(True)
 plt.legend(loc="best")
-plt.xlim(0, 5.5)
+#plt.xlim(0, 5.5)
 #plt.ylim(-1.2, -0.9)  # optional
 plt.tight_layout()
 plt.show()
