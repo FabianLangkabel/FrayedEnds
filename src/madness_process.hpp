@@ -30,10 +30,9 @@ class RedirectOutput {
     int originalStdout;
 };
 
-class MadMolecule; // Forward declaration
+class MolecularGeometry; // Forward declaration
 
-template <std::size_t NDIM>
-class MadnessProcess {
+template <std::size_t NDIM> class MadnessProcess {
   public:
     World* world;
     double L;
@@ -61,7 +60,6 @@ class MadnessProcess {
     void plane_plot(std::string filename, SavedFct<NDIM> f, std::string plane, double zoom, int datapoints,
                     std::vector<double> origin);
 
-    
-    void cube_plot(std::string filename, SavedFct<3> f, MadMolecule molecule, double zoom, int datapoints,
-                   std::vector<double> origin); //only defined for NDIM=3
+    void cube_plot(std::string filename, SavedFct<3> f, MolecularGeometry molecule, double zoom, int datapoints,
+                   std::vector<double> origin); // only defined for NDIM=3
 };

@@ -3,7 +3,7 @@ import os
 
 import numpy
 
-from ._madpy_impl import PNOInterface
+from ._frayedends_impl import PNOInterface
 from .madworld import get_function_info, redirect_output
 
 
@@ -26,6 +26,8 @@ class MadPNO:
         self,
         madworld,
         geometry,
+        units=None,
+        silent=False,
         n_orbitals=None,
         no_compute=False,
         maxrank=None,
@@ -34,6 +36,7 @@ class MadPNO:
         *args,
         **kwargs,
     ):
+        self.silent = silent
         # todo: replace geometry with instalce of molecule class (expose to python)
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")
@@ -41,7 +44,7 @@ class MadPNO:
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
-            self.create_molecule_file(geometry_angstrom=geometry)
+            self.create_molecule_file(geometry=geometry)
             geometry = "molecule"
 
         if maxrank is None:
@@ -58,16 +61,36 @@ class MadPNO:
             except Exception:
                 maxrank = n_orbitals
 
+        if units is None:
+            if self.silent == False:
+                print(
+                    "Warning: No units passed with geometry, assuming units are angstrom."
+                )
+            units = "angstrom"
+        else:
+            units = units.lower()
+            if units in ["angstrom", "ang", "a", "å"]:
+                units = "angstrom"
+            elif units in ["bohr", "atomic units", "au", "a.u."]:
+                units = "bohr"
+            else:
+                if self.silent == False:
+                    print(
+                        "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
+                    )
+                units = "angstrom"
+
         pno_input_string = self.parameter_string(
             madworld,
             molecule_file=geometry,
+            units=units,
             maxrank=maxrank,
             diagonal=diagonal,
             frozen_core=frozen_core,
             *args,
             **kwargs,
         )
-        self.impl = PNOInterface(madworld._impl, pno_input_string)
+        self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
             self._orbitals = self.compute_orbitals(
@@ -153,6 +176,7 @@ class MadPNO:
         self,
         madworld,
         molecule_file,
+        units,
         maxrank=10,
         diagonal=True,
         frozen_core=True,
@@ -191,12 +215,18 @@ class MadPNO:
         for key in data.keys():
             if key in kwargs:
                 data[key] = {**data[key], **kwargs[key]}
-
-        input_str = (
-            'pno --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
-            + molecule_file
-            + '"'
-        )
+        if units == "bohr":
+            input_str = (
+                'pno --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec=1.e-6; source_name='
+                + molecule_file
+                + '"'
+            )
+        else:
+            input_str = (
+                'pno --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
+                + molecule_file
+                + '"'
+            )
         input_str += ' --dft="'
         for k, v in data["dft"].items():
             input_str += "{}={}; ".format(k, v)
@@ -217,9 +247,9 @@ class MadPNO:
 
         return input_str
 
-    def create_molecule_file(self, geometry_angstrom, filename="molecule"):
+    def create_molecule_file(self, geometry, filename="molecule"):
         molecule_file_str = "molecule\n"
-        molecule_file_str += geometry_angstrom
+        molecule_file_str += geometry
         molecule_file_str += "\nend"
         molecule_file_str = os.linesep.join(
             [s for s in molecule_file_str.splitlines() if s]
@@ -232,7 +262,7 @@ class MadPNO:
         # Define the patterns for the files to delete
         patterns = [
             "*.00000",  # Files ending with .00000
-            "N7madness*",  # Files starting with N7madness
+            "MacroTask*",  # Files starting with N7madness
             "mad.calc_info.json",  # Specific file
             "mad.restartaodata",  # Specific file
             "pnoinfo.txt",  # Specific file

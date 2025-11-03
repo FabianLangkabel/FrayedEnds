@@ -1,9 +1,9 @@
-import madpy as mad
-from madpy.minbas import AtomicBasisProjector
+import frayedends as fe
+from frayedends.minbas import AtomicBasisProjector
 
 geom = "Li 0.0 0.0 -10\nH 0.0 0.0 10"
 
-world = mad.MadWorld3D()
+world = fe.MadWorld3D()
 
 bp = AtomicBasisProjector(world, geom)
 

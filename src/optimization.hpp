@@ -18,8 +18,7 @@
 
 using namespace madness;
 
-template <std::size_t NDIM>
-class Optimization {
+template <std::size_t NDIM> class Optimization {
   public:
     Optimization(MadnessProcess<NDIM>& mp);
     ~Optimization();
@@ -35,8 +34,9 @@ class Optimization {
     std::vector<SavedFct<NDIM>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
-    void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files, std::vector<std::string> active_orbs_files,
-                             std::vector<std::string> frozen_virt_orb_files);
+    void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files,
+                               std::vector<std::string> active_orbs_files,
+                               std::vector<std::string> frozen_virt_orb_files);
     void read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file);
     void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
     void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);

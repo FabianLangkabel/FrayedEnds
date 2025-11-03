@@ -1,5 +1,5 @@
-from ._madpy_impl import Eigensolver3D as EigenInterface3D
-from ._madpy_impl import Eigensolver2D as EigenInterface2D
+from ._frayedends_impl import Eigensolver2D as EigenInterface2D
+from ._frayedends_impl import Eigensolver3D as EigenInterface3D
 from .madworld import redirect_output
 
 
@@ -9,7 +9,7 @@ class Eigensolver3D:
     impl = None
 
     def __init__(self, madworld, potential, *args, **kwargs):
-        self.impl = EigenInterface3D(madworld._impl)
+        self.impl = EigenInterface3D(madworld.impl)
         self._potential = potential
 
     @redirect_output("mad_eigensolver.log")
@@ -32,14 +32,15 @@ class Eigensolver3D:
             return self._orbitals
         else:
             return self.solve(*args, **kwargs)
-        
+
+
 class Eigensolver2D:
     _orbitals = None  # Placeholder for orbitals
     _potential = None
     impl = None
 
     def __init__(self, madworld, potential, *args, **kwargs):
-        self.impl = EigenInterface2D(madworld._impl)
+        self.impl = EigenInterface2D(madworld.impl)
         self._potential = potential
 
     @redirect_output("mad_eigensolver.log")

@@ -39,8 +39,7 @@ inline std::string read_binary_file(const std::string& filename) {
 
 // This class is used to save the MRA function
 // The constructor is called with the respective MRA function and the MRA data is saved in the saved_str member
-template <std::size_t NDIM>
-class SavedFct {
+template <std::size_t NDIM> class SavedFct {
   public:
     std::string saved_str = ""; // should this be private?
     std::string info = "";
