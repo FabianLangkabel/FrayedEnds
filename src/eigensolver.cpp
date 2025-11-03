@@ -4,20 +4,17 @@
 
 using namespace madness;
 
-template <std::size_t NDIM>
-Eigensolver<NDIM>::Eigensolver(MadnessProcess<NDIM>& mp) : madness_process(mp) {
+template <std::size_t NDIM> Eigensolver<NDIM>::Eigensolver(MadnessProcess<NDIM>& mp) : madness_process(mp) {
     std::cout.precision(6);
 }
 
-template <std::size_t NDIM>
-Eigensolver<NDIM>::~Eigensolver() {
+template <std::size_t NDIM> Eigensolver<NDIM>::~Eigensolver() {
     V.clear();
     orbitals.clear();
 }
 
 // Function to solve the eigenvalue problem for the given potential
-template <std::size_t NDIM>
-void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_iter) {
+template <std::size_t NDIM> void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_iter) {
     Function<double, NDIM> V = madness_process.loadfct(input_V);
     std::cout << "Potential loaded" << std::endl;
     // Create the guess generator
@@ -51,9 +48,9 @@ void Eigensolver<NDIM>::solve(SavedFct<NDIM> input_V, int num_levels, int max_it
 
 // Function to solve the eigenvalue problem for the given potential with given guesses
 template <std::size_t NDIM>
-std::vector<Function<double, NDIM>> Eigensolver<NDIM>::solve_with_input_guesses(SavedFct<NDIM> input_V,
-                                                                         const std::vector<SavedFct<NDIM>>& input_guesses,
-                                                                         int num_levels, int max_iter) {
+std::vector<Function<double, NDIM>>
+Eigensolver<NDIM>::solve_with_input_guesses(SavedFct<NDIM> input_V, const std::vector<SavedFct<NDIM>>& input_guesses,
+                                            int num_levels, int max_iter) {
     Function<double, NDIM> V = madness_process.loadfct(input_V);
     std::vector<Function<double, NDIM>> guesses;
 
@@ -163,8 +160,9 @@ Eigensolver<NDIM>::diagonalize(const std::vector<Function<double, NDIM>>& functi
 
 // Function to optimize the eigenfunction for each energy level
 template <std::size_t NDIM>
-Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V, const Function<double, NDIM> guess_function, int N,
-                                            const std::vector<Function<double, NDIM>>& prev_phi, int max_iter) {
+Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V,
+                                                   const Function<double, NDIM> guess_function, int N,
+                                                   const std::vector<Function<double, NDIM>>& prev_phi, int max_iter) {
 
     // Create the initial guess wave function
     Function<double, NDIM> phi = guess_function;

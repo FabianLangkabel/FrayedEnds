@@ -1,7 +1,7 @@
 import numpy as np
 
-from ._madpy_impl import Optimization3D as OptInterface3D
-from ._madpy_impl import Optimization2D as OptInterface2D
+from ._frayedends_impl import Optimization2D as OptInterface2D
+from ._frayedends_impl import Optimization3D as OptInterface3D
 from .madworld import redirect_output
 
 
@@ -63,14 +63,14 @@ class Optimization3D:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):
         return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
-        self.impl = OptInterface3D(madworld._impl)
+        self.impl = OptInterface3D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
@@ -132,14 +132,14 @@ class Optimization2D:
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
     @property
     def orbitals(self, *args, **kwargs):
         return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
-        self.impl = OptInterface2D(madworld._impl)
+        self.impl = OptInterface2D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 

@@ -1,20 +1,21 @@
 import numpy
 import pytest
 import tequila as tq
-import madpy
+
+import frayedends
 
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
 def test_pno_execution(geom):
-    world = madpy.MadWorld3D()
+    world = frayedends.MadWorld3D()
 
-    madpno = madpy.MadPNO(world, geom, n_orbitals=2)
+    madpno = frayedends.MadPNO(world, geom, n_orbitals=2)
     orbitals = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = madpy.Integrals3D(world)
+    integrals = frayedends.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
     V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
@@ -25,15 +26,23 @@ def test_pno_execution(geom):
     del integrals
     del world
 
-@pytest.mark.parametrize("data", [("he 0.0 0.0 0.0",-2.8776), ("be 0.0 0.0 0.0",-14.5889), ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -0.9792)])
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        ("he 0.0 0.0 0.0", -2.8776),
+        ("be 0.0 0.0 0.0", -14.5889),
+        ("h 0.0 0.0 0.0\nh 0.0 0.0 10.0", -0.9792),
+    ],
+)
 def test_spa(data):
     geom, test_energy = data
     geom = geom.lower()
-    world = madpy.MadWorld3D()
+    world = frayedends.MadWorld3D()
     n = 2
     if "be" in geom:
         n = 3
-    madpno = madpy.MadPNO(world, geom, n_orbitals=n)
+    madpno = frayedends.MadPNO(world, geom, n_orbitals=n)
     orbitals = madpno.get_orbitals()
     edges = madpno.get_spa_edges()
     c = madpno.get_nuclear_repulsion()
@@ -42,7 +51,7 @@ def test_spa(data):
 
     energy = 0.0
     for iteration in range(1):
-        integrals = madpy.Integrals3D(world)
+        integrals = frayedends.Integrals3D(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
         T = integrals.compute_kinetic_integrals(orbitals)
@@ -60,13 +69,12 @@ def test_spa(data):
         print(result.energy)
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
-        opti = madpy.Optimization3D(world, Vnuc, c)
+        opti = frayedends.Optimization3D(world, Vnuc, c)
         orbitals = opti.get_orbitals(
             orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
         )
         del opti
 
-
-    assert numpy.isclose(energy, test_energy, atol=1.e-3)
+    assert numpy.isclose(energy, test_energy, atol=1.0e-3)
 
     del world
