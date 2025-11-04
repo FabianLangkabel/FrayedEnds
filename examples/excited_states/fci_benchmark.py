@@ -1,7 +1,7 @@
 import tequila as tq
 import numpy as np
 
-distance = np.arange(1.5, 0.2, -0.01).tolist() #0.01 would be better
+distance = np.arange(1.5, 0.2, -0.03).tolist() #0.01 would be better
 
 for d in distance:
     print(-d - 2.55, -d, d, d + 2.5)
