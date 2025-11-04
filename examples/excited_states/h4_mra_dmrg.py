@@ -3,7 +3,7 @@ import madpy as mad
 import time
 import numpy as np
 
-distance = np.arange(2, 0.2, -0.01).tolist()
+distance = np.arange(1.5, 0.2, -0.01).tolist()
 iteration_energies = []
 iterations = 6
 molecule_name = "h4"
