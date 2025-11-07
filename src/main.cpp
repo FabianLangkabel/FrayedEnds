@@ -115,7 +115,8 @@ NB_MODULE(_madpy_impl, m) {
         .def(nb::init<MadnessProcess<3>&>())
         .def("compute_potential_integrals", &Integrals_open_shell<3>::compute_potential_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals_open_shell<3>::compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
-        .def("compute_two_body_integrals", &Integrals_open_shell<3>::compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"));
+        .def("compute_two_body_integrals", &Integrals_open_shell<3>::compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
+        .def("compute_effective_hamiltonian", &Integrals_open_shell<3>::compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"));
 
     nb::class_<Optimization<3>>(m, "Optimization3D")
         .def(nb::init<MadnessProcess<3>&>())

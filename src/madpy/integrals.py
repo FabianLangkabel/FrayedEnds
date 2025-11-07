@@ -117,6 +117,10 @@ class Integrals_open_shell_3D:
     def compute_potential_integrals(self, alpha_orbitals, beta_orbitals, V, *args, **kwargs):
         Pot = self.impl.compute_potential_integrals(alpha_orbitals, beta_orbitals, V)
         return Pot[0], Pot[1]
+    
+    def compute_effective_hamiltonian(self, core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset, *args, **kwargs):
+        H_eff = self.impl.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset)
+        return H_eff
 
     def compute_nuclear_derivative(
         self,
