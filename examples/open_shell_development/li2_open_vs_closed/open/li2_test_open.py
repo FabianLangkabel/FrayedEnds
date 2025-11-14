@@ -99,10 +99,7 @@ for i in range(len(alpha_mos)):
 import numpy as np
 
 integrals = mad.Integrals_open_shell_3D(world)
-H_eff = integrals.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy)
-c = H_eff[0]
-h1 = H_eff[1]
-g2 = H_eff[2]
+c, h1, g2 = integrals.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy)
 g2[0] = g2[0].transpose(0,2,1,3)
 g2[1] = g2[1].transpose(0,2,1,3)
 g2[2] = g2[2].transpose(0,2,1,3)
