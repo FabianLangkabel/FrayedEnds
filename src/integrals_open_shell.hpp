@@ -15,6 +15,7 @@
 #include <fstream>
 #include <chrono>
 #include <algorithm>
+#include <memory>
 #include <nanobind/nanobind.h>
 
 using namespace madness;
@@ -29,27 +30,24 @@ class Integrals_open_shell {
     Integrals_open_shell(MadnessProcess<NDIM>& mp);
     ~Integrals_open_shell() {};
 
-    madness::Tensor<double> potential_integrals_alpha_alpha;
-    madness::Tensor<double> potential_integrals_beta_beta;
-    madness::Tensor<double> kinetic_integrals_alpha_alpha;
-    madness::Tensor<double> kinetic_integrals_beta_beta;
-    madness::Tensor<double> two_body_integrals_alpha_alpha;
-    madness::Tensor<double> two_body_integrals_alpha_beta;
-    madness::Tensor<double> two_body_integrals_beta_beta;
+    // Utility Functions
+    std::array<std::vector<Function<double, NDIM>>, 2> read_orbitals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
 
-    std::vector<Numpy2D> compute_potential_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs, SavedFct<NDIM> potential);
-    std::vector<Numpy2D> compute_kinetic_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
-    std::vector<Numpy4D> compute_two_body_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
+    // Nanobind bindings
+    std::vector<Numpy2D> nb_compute_potential_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs, SavedFct<NDIM> potential);
+    std::vector<Numpy2D> nb_compute_kinetic_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
+    std::vector<Numpy4D> nb_compute_two_body_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
+    nb::tuple nb_compute_effective_hamiltonian(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals, SavedFct<NDIM> potential, double energy_offset);
 
-    // Calculate effective hamiltonian
-    madness::Tensor<double> h1_t;
-    madness::Tensor<double> g2_t;
-    std::array<madness::Tensor<double>, 2> one_integrals;
-
-    double effective_hamiltonian_core_energy;
-    std::vector<madness::Tensor<double>> effective_hamiltonian_one_body_terms;
-    std::vector<madness::Tensor<double>> effective_hamiltonian_two_body_terms;
-    nb::tuple compute_effective_hamiltonian(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals, SavedFct<NDIM> potential, double energy_offset);
+    // Integrators
+    std::array<madness::Tensor<double>, 2> compute_potential_integrals(std::array<std::vector<Function<double, NDIM>>, 2> orbitals, Function<double, NDIM> V);
+    std::array<madness::Tensor<double>, 2> compute_kinetic_integrals(std::array<std::vector<Function<double, NDIM>>, 2> orbitals);
+    std::array<madness::Tensor<double>, 3> compute_two_body_integrals(std::array<std::vector<Function<double, NDIM>>, 2> orbitals);
+    double compute_core_energy(std::array<std::vector<Function<double, NDIM>>, 2> core_orbitals, Function<double, NDIM> V, double energy_offset);
+    std::vector<std::vector<madness::Tensor<double>>> compute_core_as_integrals_two_body(
+      std::array<std::vector<Function<double, NDIM>>, 2> core_orbitals, std::array<std::vector<Function<double, NDIM>>, 2> active_orbitals,
+      bool calc_akal, bool calc_akla, bool calc_akln, bool calc_abak, bool calc_baak
+    );
 
   private:
     MadnessProcess<NDIM>& madness_process;

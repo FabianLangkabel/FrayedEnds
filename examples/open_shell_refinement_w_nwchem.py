@@ -87,6 +87,11 @@ g2[0] = g2[0].transpose(0,2,1,3)
 g2[1] = g2[1].transpose(0,2,1,3)
 g2[2] = g2[2].transpose(0,2,1,3)
 
+# Alternative
+# G = integrals.compute_two_body_integrals(alpha_mos, beta_mos) #Physics Notation
+# T = integrals.compute_kinetic_integrals(alpha_mos, beta_mos)
+# V = integrals.compute_potential_integrals(alpha_mos, beta_mos, Vnuc)
+
 #Run DMRG
 from pyblock2._pyscf.ao2mo import integrals as itg
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
@@ -105,7 +110,7 @@ energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises,
 print('DMRG energy = %20.15f' % energy)
 
 
-'''
+
 # Extract rdms
 rdm_1 = driver.get_1pdm(ket)
 rdm_2 = driver.get_2pdm(ket) 
@@ -132,4 +137,3 @@ for i in range(len(beta_mos)):
 opti = mad.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
 #orbs = opti.get_orbitals(orbitals=[alpha_mos, beta_mos], rdm1=[], rdm2=[], opt_thresh=0.001, occ_thresh=0.001)
 opti.optimize_orbs(orbitals=[alpha_mos, beta_mos], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001)
-'''

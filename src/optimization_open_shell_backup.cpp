@@ -5,7 +5,6 @@ using namespace madness;
 template <std::size_t NDIM>
 Optimization_open_shell<NDIM>::Optimization_open_shell(MadnessProcess<NDIM>& mp) : madness_process(mp) {
     std::cout.precision(6);
-    Integrator = new Integrals_open_shell(mp);
 }
 
 template <std::size_t NDIM>
@@ -20,7 +19,6 @@ Optimization_open_shell<NDIM>::~Optimization_open_shell() {
     //orbs_kl.clear();
     coul_orbs_mn[0].clear();
     coul_orbs_mn[1].clear();
-    delete Integrator;
 }
 
 template <std::size_t NDIM>
@@ -367,37 +365,138 @@ void Optimization_open_shell<NDIM>::Transform_ab_mixed_Tensor(madness::Tensor<do
 
 template <std::size_t NDIM>
 void Optimization_open_shell<NDIM>::calculate_all_integrals() {
+    //Old Code der schon übersetzt wurde!!!
+    /*
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    // Initializing the Coulomb operator
+    auto coul_op_parallel =
+        std::shared_ptr<SeparatedConvolution<double, NDIM>>(CoulombOperatorNDPtr<NDIM>(*(madness_process.world), coulomb_lo, coulomb_eps));
+
+    // Multiplication of AS orbital pairs and their Coulomb element (are needed more often and are therefore stored)
+    auto t1 = std::chrono::high_resolution_clock::now();
+    orbs_kl.clear();
+    for (int k = 0; k < as_dim; k++) {
+        std::vector<Function<double, NDIM>> kl = active_orbs[k] * active_orbs;
+        orbs_kl.insert(std::end(orbs_kl), std::begin(kl), std::end(kl));
+    }
+    orbs_kl = truncate(orbs_kl, truncation_tol);
+    coul_orbs_mn = apply(*(madness_process.world), *coul_op_parallel, orbs_kl);
+    coul_orbs_mn = truncate(coul_orbs_mn, truncation_tol);
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    // AS-AS one electron integrals
+    as_integrals_one_body = madness::Tensor<double>(as_dim, as_dim);
+    for (int k = 0; k < as_dim; k++) {
+        for (int l = 0; l < as_dim; l++) {
+            // Kinetic
+            for (int axis = 0; axis < NDIM; axis++) {
+                Derivative<double, NDIM> D = free_space_derivative<double, NDIM>(*(madness_process.world), axis);
+                Function<double, NDIM> d_orb_k = D(active_orbs[k]);
+                Function<double, NDIM> d_orb_l = D(active_orbs[l]);
+                as_integrals_one_body(k, l) += 0.5 * inner(d_orb_k, d_orb_l);
+            }
+            // Nuclear
+            Function<double, NDIM> Vnuc_orb_l;
+            Vnuc_orb_l = Vnuc * active_orbs[l];
+
+            as_integrals_one_body(k, l) += inner(active_orbs[k], Vnuc_orb_l);
+        }
+    }
+    auto t3 = std::chrono::high_resolution_clock::now();
+
+    // AS two electron integrals
+    as_integrals_two_body = madness::Tensor<double>(as_dim, as_dim, as_dim, as_dim);
+    madness::Tensor<double> Inner_prods = matrix_inner(*(madness_process.world), orbs_kl, coul_orbs_mn, false);
+    for (int k = 0; k < as_dim; k++) {
+        for (int l = 0; l < as_dim; l++) {
+            for (int m = 0; m < as_dim; m++) {
+                for (int n = 0; n < as_dim; n++) {
+                    as_integrals_two_body(k, m, l, n) = Inner_prods(k * as_dim + l, m * as_dim + n);
+                }
+            }
+        }
+    }
+    auto t4 = std::chrono::high_resolution_clock::now();
+    */
+
+
 
 
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    as_integrals_one_body = Integrator->compute_potential_integrals(active_orbs, Vnuc);
-    {
-        std::array<madness::Tensor<double>, 2> kin_Integrals = Integrator->compute_kinetic_integrals(active_orbs);
-        as_integrals_one_body[0] += kin_Integrals[0];
-        as_integrals_one_body[1] += kin_Integrals[1];
+    // Initializing the Coulomb operator
+    auto coul_op_parallel =
+        std::shared_ptr<SeparatedConvolution<double, NDIM>>(CoulombOperatorNDPtr<NDIM>(*(madness_process.world), coulomb_lo, coulomb_eps));
+
+
+    // Alpha-Alpha AS one electron integrals
+    madness::Tensor<double> as_integrals_one_body_alpha_alpha = madness::Tensor<double>(as_dims[0], as_dims[0]);
+    madness::Tensor<double> potential_integrals_alpha_alpha = madness::matrix_inner(*(madness_process.world), active_orbs[0], Vnuc * active_orbs[0]);
+    for (int k = 0; k < as_dims[0]; k++) {
+        for (int l = 0; l < as_dims[0]; l++) {
+            // Kinetic
+            for (int axis = 0; axis < NDIM; axis++) {
+                Derivative<double, NDIM> D = free_space_derivative<double, NDIM>(*(madness_process.world), axis);
+                Function<double, NDIM> d_orb_k = D(active_orbs[0][k]);
+                Function<double, NDIM> d_orb_l = D(active_orbs[0][l]);
+                as_integrals_one_body_alpha_alpha(k, l) += 0.5 * inner(d_orb_k, d_orb_l);
+            }
+            as_integrals_one_body_alpha_alpha(k, l) += potential_integrals_alpha_alpha(k, l);
+        }
     }
-    std::array<madness::Tensor<double>, 3> as_integrals_two_body_temp = Integrator->compute_two_body_integrals(active_orbs);
-    
-    //In refinement code noch "alte" Spin-Reihenfolge der 2e Integrale
-    as_integrals_two_body[0] = as_integrals_two_body_temp[0];
-    as_integrals_two_body[1] = as_integrals_two_body_temp[2];
-    as_integrals_two_body[2] = as_integrals_two_body_temp[1];
 
+    // Beta-Beta AS one electron integrals
+    madness::Tensor<double> as_integrals_one_body_beta_beta = madness::Tensor<double>(as_dims[1], as_dims[1]);
+    madness::Tensor<double> potential_integrals_beta_beta = madness::matrix_inner(*(madness_process.world), active_orbs[1], Vnuc * active_orbs[1]);
+    for (int k = 0; k < as_dims[1]; k++) {
+        for (int l = 0; l < as_dims[1]; l++) {
+            // Kinetic
+            for (int axis = 0; axis < NDIM; axis++) {
+                Derivative<double, NDIM> D = free_space_derivative<double, NDIM>(*(madness_process.world), axis);
+                Function<double, NDIM> d_orb_k = D(active_orbs[1][k]);
+                Function<double, NDIM> d_orb_l = D(active_orbs[1][l]);
+                as_integrals_one_body_beta_beta(k, l) += 0.5 * inner(d_orb_k, d_orb_l);
+            }
+            as_integrals_one_body_beta_beta(k, l) += potential_integrals_beta_beta(k, l);
+        }
+    }
+    as_integrals_one_body[0] = as_integrals_one_body_alpha_alpha;
+    as_integrals_one_body[1] = as_integrals_one_body_beta_beta;
 
-    //Coul orb wird auch beim Integrieren benötigt, muss damit noch kombiniert und zwischengespeichert werden!!!
+    //alpha alpha interaction
+    madness::Tensor<double> two_body_integrals_alpha_alpha = madness::Tensor<double>(as_dims[0], as_dims[0], as_dims[0], as_dims[0]);
     {
-        auto coul_op_parallel = std::shared_ptr<SeparatedConvolution<double, NDIM>>(CoulombOperatorNDPtr<NDIM>(*(madness_process.world), coulomb_lo, coulomb_eps));
         std::vector<Function<double, NDIM>> orbs_kl_alpha;
         for (int k = 0; k < as_dims[0]; k++) {
             std::vector<Function<double, NDIM>> kl = active_orbs[0][k] * active_orbs[0];
             orbs_kl_alpha.insert(std::end(orbs_kl_alpha), std::begin(kl), std::end(kl));
         }
         orbs_kl_alpha = truncate(orbs_kl_alpha, truncation_tol);
+
         std::vector<Function<double, NDIM>> coul_orbs_mn_alpha = apply(*(madness_process.world), *coul_op_parallel, orbs_kl_alpha);
         coul_orbs_mn_alpha = truncate(coul_orbs_mn_alpha, truncation_tol);
         coul_orbs_mn[0] = coul_orbs_mn_alpha;
+
+        madness::Tensor<double> Inner_prods = matrix_inner(*(madness_process.world), orbs_kl_alpha, coul_orbs_mn_alpha, false);
+        std::vector<double> flat;
+        for (int k = 0; k < as_dims[0]; k++) {
+            for (int l = 0; l < as_dims[0]; l++) {
+                for (int m = 0; m < as_dims[0]; m++) {
+                    for (int n = 0; n < as_dims[0]; n++) {
+                        auto tmp = Inner_prods(k * as_dims[0] + l, m * as_dims[0] + n);
+                        two_body_integrals_alpha_alpha(k, m, l, n) = tmp;
+                        flat.push_back(tmp);
+                    }
+                }
+            }
+        }
+    }
+
+    //beta beta interaction
+    madness::Tensor<double> two_body_integrals_beta_beta = madness::Tensor<double>(as_dims[1], as_dims[1], as_dims[1], as_dims[1]);
+    {
         std::vector<Function<double, NDIM>> orbs_kl_beta;
         for (int k = 0; k < as_dims[1]; k++) {
             std::vector<Function<double, NDIM>> kl = active_orbs[1][k] * active_orbs[1];
@@ -408,7 +507,87 @@ void Optimization_open_shell<NDIM>::calculate_all_integrals() {
         std::vector<Function<double, NDIM>> coul_orbs_mn_beta = apply(*(madness_process.world), *coul_op_parallel, orbs_kl_beta);
         coul_orbs_mn_beta = truncate(coul_orbs_mn_beta, truncation_tol);
         coul_orbs_mn[1] = coul_orbs_mn_beta;
+
+        madness::Tensor<double> Inner_prods = matrix_inner(*(madness_process.world), orbs_kl_beta, coul_orbs_mn_beta, false);
+        std::vector<double> flat;
+        for (int k = 0; k < as_dims[1]; k++) {
+            for (int l = 0; l < as_dims[1]; l++) {
+                for (int m = 0; m < as_dims[1]; m++) {
+                    for (int n = 0; n < as_dims[1]; n++) {
+                        auto tmp = Inner_prods(k * as_dims[1] + l, m * as_dims[1] + n);
+                        two_body_integrals_beta_beta(k, m, l, n) = tmp;
+                        flat.push_back(tmp);
+                    }
+                }
+            }
+        }
     }
+    
+    madness::Tensor<double> two_body_integrals_alpha_beta = madness::Tensor<double>(as_dims[0], as_dims[1], as_dims[0], as_dims[1]);
+    {
+        std::vector<Function<double, NDIM>> orbs_kl_alpha;
+        for (int k = 0; k < as_dims[0]; k++) {
+            std::vector<Function<double, NDIM>> kl = active_orbs[0][k] * active_orbs[0];
+            orbs_kl_alpha.insert(std::end(orbs_kl_alpha), std::begin(kl), std::end(kl));
+        }
+        orbs_kl_alpha = truncate(orbs_kl_alpha, truncation_tol);
+
+        std::vector<Function<double, NDIM>> orbs_mn_beta;
+        for (int m = 0; m < as_dims[1]; m++) {
+            std::vector<Function<double, NDIM>> mn = active_orbs[1][m] * active_orbs[1];
+            orbs_mn_beta.insert(std::end(orbs_mn_beta), std::begin(mn), std::end(mn));
+        }
+        orbs_mn_beta = truncate(orbs_mn_beta, truncation_tol);
+
+
+        std::vector<Function<double, NDIM>> coul_orbs_mn_beta = apply(*(madness_process.world), *coul_op_parallel, orbs_mn_beta);
+        coul_orbs_mn_beta = truncate(coul_orbs_mn_beta, truncation_tol);
+
+        madness::Tensor<double> Inner_prods = matrix_inner(*(madness_process.world), orbs_kl_alpha, coul_orbs_mn_beta, false);
+        for (int k = 0; k < as_dims[0]; k++) {
+            for (int l = 0; l < as_dims[0]; l++) {
+                for (int m = 0; m < as_dims[1]; m++) {
+                    for (int n = 0; n < as_dims[1]; n++) {
+                        auto tmp = Inner_prods(k * as_dims[0] + l, m * as_dims[1] + n);
+                        two_body_integrals_alpha_beta(k, m, l, n) = tmp;
+                    }
+                }
+            }
+        }
+    }
+    as_integrals_two_body[0] = two_body_integrals_alpha_alpha;
+    as_integrals_two_body[1] = two_body_integrals_alpha_beta;
+    as_integrals_two_body[2] = two_body_integrals_beta_beta;
+
+
+    /*
+    // AS two electron integrals
+    as_integrals_two_body = madness::Tensor<double>(as_dim, as_dim, as_dim, as_dim);
+    madness::Tensor<double> Inner_prods = matrix_inner(*(madness_process.world), orbs_kl, coul_orbs_mn, false);
+    for (int k = 0; k < as_dim; k++) {
+        for (int l = 0; l < as_dim; l++) {
+            for (int m = 0; m < as_dim; m++) {
+                for (int n = 0; n < as_dim; n++) {
+                    as_integrals_two_body(k, m, l, n) = Inner_prods(k * as_dim + l, m * as_dim + n);
+                }
+            }
+        }
+    }
+    auto t4 = std::chrono::high_resolution_clock::now();
+    auto end_time = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Integral timings:" << std::endl;
+    std::cout << "AS-AS one-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+              << " seconds" << std::endl;
+    std::cout << "AS-AS two-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t4 - t3).count()
+              << " seconds" << std::endl;
+    std::cout << "Core-AS one-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t5 - t4).count()
+              << " seconds" << std::endl;
+    std::cout << "Core-AS two-electron integrals: " << std::chrono::duration_cast<std::chrono::seconds>(t6 - t5).count()
+              << " seconds" << std::endl;
+    std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
+              << " seconds" << std::endl;
+    */
 
 
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -422,7 +601,7 @@ void Optimization_open_shell<NDIM>::calculate_all_integrals() {
 
 
 
-    //Integrale die noch fehlen
+    //Old Code der noch übersetzt werden muss
     /*
     // Core-AS one electron integrals
     core_as_integrals_one_body_ak = madness::Tensor<double>(as_dim, as_dim);
