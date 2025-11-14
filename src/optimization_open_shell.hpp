@@ -15,6 +15,7 @@
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 #include "coulomboperator_nd.hpp"
+#include "integrals_open_shell.hpp"
 
 using namespace madness;
 
@@ -64,6 +65,9 @@ class Optimization_open_shell {
 
   private:
     MadnessProcess<NDIM>& madness_process;
+
+    //Integrator
+    Integrals_open_shell<NDIM>* Integrator;
 
     // Madness + Molecule
     std::vector<std::vector<double>> atoms;

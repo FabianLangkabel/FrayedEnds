@@ -225,20 +225,20 @@ class Optimization_open_shell_3D:
         *args,
         **kwargs,
     ):
-        #rdm1_list = rdm1.reshape(-1).tolist()
-        #rdm2_list = rdm2.reshape(-1).tolist()
+        rdm1_list = [rdm1[0].reshape(-1).tolist(), rdm1[1].reshape(-1).tolist()]
+        rdm2_list = [rdm2[0].reshape(-1).tolist(), rdm2[1].reshape(-1).tolist(), rdm2[2].reshape(-1).tolist()]
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
         self.impl.give_initial_orbitals(orbitals[0], orbitals[1])
-        #self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
-        #self.impl.calculate_all_integrals()
-        #self.impl.calculate_core_energy()
-        #self.impl.calculate_energies()
+        self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
+        self.impl.calculate_all_integrals()
+        self.impl.calculate_core_energy()
+        self.impl.calculate_energies()
 
-        #converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
-        #self.impl.rotate_orbitals_back()
+        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
+        self.impl.rotate_orbitals_back()
 
-        #self._orbitals = self.impl.get_orbitals()
-        #return self._orbitals, converged
+        self._orbitals = self.impl.get_orbitals()
+        return self._orbitals, converged
 
     '''
     def get_orbitals(self, *args, **kwargs):
