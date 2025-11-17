@@ -33,6 +33,7 @@ total_start = time.perf_counter()
 
 for d in distance:
     dist_start = time.perf_counter()
+    # linear H4 molecule with equidistant spacing d
     nwchem_input = '''
     title "molecule"
     memory stack 1500 mb heap 100 mb global 1400 mb
