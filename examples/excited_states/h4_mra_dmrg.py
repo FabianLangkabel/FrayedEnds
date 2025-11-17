@@ -3,7 +3,8 @@ import madpy as mad
 import time
 import numpy as np
 
-distance = np.arange(1.5, 0.2, -0.03).tolist()
+# distance = np.arange(1.5, 0.2, -0.03).tolist() for H2 pair getting closer
+distance = np.arange(2.5, 0.50, -0.05).tolist()
 iteration_energies = []
 iterations = 6
 molecule_name = "h4"
@@ -32,15 +33,16 @@ total_start = time.perf_counter()
 
 for d in distance:
     dist_start = time.perf_counter()
+    # linear H4 molecule with equidistant spacing d
     nwchem_input = '''
     title "molecule"
     memory stack 1500 mb heap 100 mb global 1400 mb
     charge 0  
     geometry units angstrom noautosym nocenter
-        H 0.0 0.0 ''' + (-d - 2.55).__str__() + '''
-        H 0.0 0.0 ''' + (-d).__str__() + '''
-        H 0.0 0.0 ''' + d.__str__() + '''
-        H 0.0 0.0 ''' + (d + 2.55).__str__() + '''
+        H 0.0 0.0 ''' + (-d-d/2).__str__() + '''
+        H 0.0 0.0 ''' + (-d/2).__str__() + '''
+        H 0.0 0.0 ''' + (d/2).__str__() + '''
+        H 0.0 0.0 ''' + (d+d/2).__str__() + '''
     end
     basis  
       * library ''' + basisset + '''
@@ -50,6 +52,12 @@ for d in distance:
     end   
     task scf  
     '''
+    # two H2 molecules getting closer and closer to a H4 molecule
+    # H 0.0 0.0 ''' + (-d - 2.55).__str__() + '''
+    # H 0.0 0.0 ''' + (-d).__str__() + '''
+    # H 0.0 0.0 ''' + d.__str__() + '''
+    # H 0.0 0.0 ''' + (d + 2.55).__str__() + '''
+
     with open("nwchem", "w") as f:
         f.write(nwchem_input)
     programm = sp.call("/opt/anaconda3/envs/frayedends/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
@@ -71,6 +79,9 @@ for d in distance:
 
     for i in range(len(orbs)):
         orbs[i].type="active"
+
+    for i in range(len(orbs)):
+        world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
 
     '''
     Calculate initial integrals
@@ -111,7 +122,7 @@ for d in distance:
     np.savetxt("initial_energies.txt", energies)
 
     with open("results.dat", "a") as f:
-        f.write(f"{2 * d:.6f} {-1} {0.00} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
+        f.write(f"{d:.6f} {-1} {0.00} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
     for iter in range(iterations):
         iter_start = time.perf_counter()
@@ -121,6 +132,8 @@ for d in distance:
         '''
         opti = mad.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
+        for i in range(len(orbs)):
+            world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
 
         '''
         DMRG with refined orbitals
@@ -150,18 +163,18 @@ for d in distance:
         iter_time = iter_end - iter_start
         print(f"Iteration {iter} time: {iter_time:.2f} s")
         with open("iteration_times.dat", "a") as f:
-            f.write(f"{2*d:.6f} {iter} {iter_time:.6f}\n")
+            f.write(f"{d:.6f} {iter} {iter_time:.6f}\n") # for H2 pair use 2*d
 
         with open("results.dat", "a") as f:
-            f.write(f"{2 * d:.6f} {iter} {iter_time:.6f} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
+            f.write(f"{d:.6f} {iter} {iter_time:.6f} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
-        results.append({"distance": 2*d, "iteration": iter, "iteration_time": iter_time, "energies": energies})
+        results.append({"distance": d, "iteration": iter, "iteration_time": iter_time, "energies": energies}) # for H2 pair use 2*d
 
     dist_end = time.perf_counter()
     dist_time = dist_end - dist_start
-    print(f"Distance {2*d:.6f} took {dist_time:.2f} s")
+    print(f"Distance {d:.6f} took {dist_time:.2f} s") # for H2 pair use 2*d
     with open("distance_times.dat", "a") as f:
-        f.write(f"{2*d:.6f} {dist_time:.6f}\n")
+        f.write(f"{d:.6f} {dist_time:.6f}\n") # for H2 pair use 2*d
 
     del integrals
     del opti
