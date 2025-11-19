@@ -6,7 +6,8 @@ from pyscf import fci
 
 import madpy as mad
 
-distance = np.arange(2.5, 0.50, -0.05).tolist()
+#distance = np.arange(1.5, 0.2, -0.03).tolist() # for H2 pair getting closer
+distance = np.arange(2.5, 0.45, -0.05).tolist()
 iteration_energies = []
 n_electrons = 4  # Number of electrons
 iterations = 6
@@ -98,13 +99,13 @@ for d in distance:
         iter_time = iter_end - iter_start
         print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e_elec, e_tot))
 
-        with open("iteration_times.dat", "a") as f:
-            f.write(f"{d:.6f} {iteration} {iter_time:.6f}\n")
+        with open("iteration_times_fci_opt.dat", "a") as f:
+            f.write(f"{d:.6f} {iteration} {iter_time:.6f}\n") # for H2 pair use 2*d
 
-        with open("results.dat", "a") as f:
-            f.write(f"{d:.6f} {iteration} {iter_time:.6f} {e_tot: .15f}" + "\n")
+        with open("results_fci_opt.dat", "a") as f:
+            f.write(f"{d:.6f} {iteration} {iter_time:.6f} {e_tot: .15f}" + "\n") # for H2 pair use 2*d
 
-        results.append({"distance": d, "iteration": iteration, "iteration_time": iter_time, "energy": e})
+        results.append({"distance": d, "iteration": iteration, "iteration_time": iter_time, "energy": e}) # for H2 pair use 2*d
 
         # Orbital optimization
         opti = mad.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
@@ -121,9 +122,9 @@ for d in distance:
 
     dist_end = time.perf_counter()
     dist_time = dist_end - dist_start
-    print(f"Distance {d:.6f} took {dist_time:.2f} s")
-    with open("distance_times.dat", "a") as f:
-        f.write(f"{d:.6f} {dist_time:.6f}\n")
+    print(f"Distance {d:.6f} took {dist_time:.2f} s") # for H2 pair use 2*d
+    with open("distance_times_fci_opt.dat", "a") as f:
+        f.write(f"{d:.6f} {dist_time:.6f}\n") # for H2 pair use 2*d
 
     del integrals
     del opti
