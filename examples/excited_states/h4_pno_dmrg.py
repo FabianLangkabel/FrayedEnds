@@ -56,18 +56,18 @@ for d in distance:
     for i in range(len(orbs)):
         orbs[i].type="active"
 
-    for i in range(len(orbs)):
-        world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
+    # for i in range(len(orbs)):
+    #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
 
     '''
     Calculate initial integrals
     '''
     integrals = mad.Integrals3D(world)
-    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems #Physics Notation
+    G = integrals.compute_two_body_integrals(orbs).elems #Physics Notation
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
     S = integrals.compute_overlap_integrals(orbs)
-    G_chem = G
+    G_chem = G.transpose(0,2,1,3)
     #del integrals
 
     '''
@@ -79,7 +79,7 @@ for d in distance:
     from pyblock2.driver.core import DMRGDriver, SymmetryTypes
     import numpy as np
 
-    driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
+    driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
     driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
     mpo = driver.get_qc_mpo(h1e=T+V, g2e=G_chem, ecore=nuc_repulsion, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
