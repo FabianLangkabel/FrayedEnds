@@ -671,14 +671,14 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         iterstep++;
         std::cout << "---------------------------------------------------" << std::endl;
         std::cout << "Start iteration step: " << iterstep << std::endl;
-
+        
         // Update LagrangeMultiplier
         calculate_lagrange_multiplier();
-
+        
         // Update orbitals
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();
         highest_error = 0;
-
+        
         std::vector<int> as_orbital_indicies_for_update;
         for (int idx = 0; idx < active_orbs.size(); idx++) {
             if (abs(as_one_rdm(idx, idx)) >= NO_occupation_thresh) {
@@ -689,20 +689,25 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
                           << std::endl;
             }
         }
-
+        
         std::vector<Function<double, NDIM>> AllActiveOrbitalUpdates =
             get_all_active_orbital_updates(as_orbital_indicies_for_update);
-
+        
         for (int idx = 0; idx < as_orbital_indicies_for_update.size(); idx++) {
             int actIdx = as_orbital_indicies_for_update[idx];
             active_orbs[actIdx] = active_orbs[actIdx] - AllActiveOrbitalUpdates[idx];
         }
-
+        
         auto end_orb_update_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
         std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
         // Orthonormalize orbitals
+        // Project out frozen orbitals
+        if (core_dim > 0){
+            auto Q = madness::QProjector<double, NDIM>(frozen_occ_orbs);
+            active_orbs = Q(active_orbs);
+        }
         active_orbs = orthonormalize_symmetric(active_orbs);
         // orbitals = orthonormalize_cd(orbitals);
         active_orbs = truncate(active_orbs, truncation_tol);
