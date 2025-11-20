@@ -1,9 +1,8 @@
-import inspect
 from functools import wraps
+import inspect
 
 from ._frayedends_impl import (MadnessProcess2D, MadnessProcess3D,
                                RedirectOutput)
-
 
 def cleanup(globals):
     for name, obj in list(globals.items()):
@@ -17,7 +16,6 @@ def cleanup(globals):
             # Check if the object is not the World
             if not isinstance(obj, MadWorld3D) and not isinstance(obj, MadWorld2D):
                 del globals[name]
-
 
 def redirect_output(filename="madness.out"):
     def decorator(func):
@@ -83,21 +81,19 @@ class MadWorld3D:
 
     def get_function_defaults(self):
         res = self.impl.get_function_defaults()
-        return {
-            "cell_width": res[0],
-            "k": res[1],
-            "thresh": res[2],
-            "initial_level": res[3],
-            "truncate_mode": res[4],
-            "refine": res[5],
-            "n_threads": res[6],
-        }
-
+        return {"cell_width": res[0],
+        "k": res[1],
+        "thresh": res[2],
+        "initial_level": res[3],
+        "truncate_mode": res[4],
+        "refine": res[5],
+        "n_threads": res[6],}
+    
     def set_function_defaults(self, **kwargs):
         for k, v in kwargs.items():
             if k in self.madness_parameters.keys():
-                self.madness_parameters[k] = v
-
+                self.madness_parameters[k]=v
+        
         self.impl.L = self.madness_parameters["L"]
         self.impl.k = self.madness_parameters["k"]
         self.impl.thresh = self.madness_parameters["thresh"]
@@ -201,21 +197,19 @@ class MadWorld2D:
 
     def get_function_defaults(self):
         res = self.impl.get_function_defaults()
-        return {
-            "cell_width": res[0],
-            "k": res[1],
-            "thresh": res[2],
-            "initial_level": res[3],
-            "truncate_mode": res[4],
-            "refine": res[5],
-            "n_threads": res[6],
-        }
-
+        return {"cell_width": res[0],
+        "k": res[1],
+        "thresh": res[2],
+        "initial_level": res[3],
+        "truncate_mode": res[4],
+        "refine": res[5],
+        "n_threads": res[6],}
+    
     def set_function_defaults(self, **kwargs):
         for k, v in kwargs.items():
             if k in self.madness_parameters.keys():
-                self.madness_parameters[k] = v
-
+                self.madness_parameters[k]=v
+        
         self.impl.L = self.madness_parameters["L"]
         self.impl.k = self.madness_parameters["k"]
         self.impl.thresh = self.madness_parameters["thresh"]

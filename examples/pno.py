@@ -33,11 +33,7 @@ for iteration in range(30):
     S = integrals.compute_overlap_integrals(orbitals)
 
     mol = tq.Molecule(
-        geom,
-        units="angstrom",
-        one_body_integrals=T + V,
-        two_body_integrals=G,
-        nuclear_repulsion=c,
+        geom, units="angstrom", one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
     )
 
     U = mol.make_ansatz(name="UpCCGD")

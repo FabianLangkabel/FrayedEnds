@@ -65,7 +65,7 @@ class MadPNO:
                         "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
                     )
                 units = "angstrom"
-
+        
         if maxrank is None:
             # safe option, with this we always compute enough pnos
             maxrank = n_orbitals
@@ -195,7 +195,7 @@ class MadPNO:
 
         data["dft"] = {
             "xc": "hf",
-            "L": madworld.get_function_defaults()["cell_width"] / 2,
+            "L": madworld.get_function_defaults()["cell_width"]/2,
             "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-4,
             "dconv": 5.0e-4,
