@@ -43,17 +43,17 @@ for distance in distance_list:
 
         # FCI calculation
         e, fcivec = fci.direct_spin0.kernel(
-        T + V, G.elems, n_orbitals, n_electrons
+            T + V, G.elems, n_orbitals, n_electrons
         )  # Computes the energy and the FCI vector
         rdm1, rdm2 = fci.direct_spin0.make_rdm12(
-        fcivec, n_orbitals, n_electrons
+            fcivec, n_orbitals, n_electrons
         )  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
 
-        print("iteration {} energy {:+2.7f}".format(iteration, e+c))
-        if abs(e+c - current) < 1e-6:
+        print("iteration {} energy {:+2.7f}".format(iteration, e + c))
+        if abs(e + c - current) < 1e-6:
             break
-        current = e+c
+        current = e + c
 
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(
@@ -65,7 +65,7 @@ for distance in distance_list:
 
         for i in range(len(orbitals)):
             world.line_plot(f"orb{i}.dat", orbitals[i])
-    Energy_list.append(e+c)
+    Energy_list.append(e + c)
     # gradient calculation
     part_deriv_V = molecule.compute_nuclear_derivative(world, 1, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
