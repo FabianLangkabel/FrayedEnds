@@ -78,8 +78,8 @@ class AtomicBasisProjector:
 
         data["dft"] = {
             "xc": "hf",
-            "L": madworld.L,
-            "k": madworld.k,
+            "L": madworld.get_function_defaults()["cell_width"] / 2,
+            "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-4,
             "dconv": 5.0e-4,
             "localize": "boys",
