@@ -1,6 +1,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/tuple.h>
 #include "optimization.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
@@ -20,36 +21,40 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
+        .def("get_function_defaults", &MadnessProcess<3>::get_function_defaults)
+        .def("update_function_defaults", &MadnessProcess<3>::update_function_defaults)
         .def("change_nthreads", &MadnessProcess<3>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<3>::loadfct)
         .def("loadfct_from_file", &MadnessProcess<3>::loadfct_from_file)
         .def("plot", &MadnessProcess<3>::plot)
         .def("plane_plot", &MadnessProcess<3>::plane_plot)
         .def("cube_plot", &MadnessProcess<3>::cube_plot)
-        .def_ro("L", &MadnessProcess<3>::L)
-        .def_ro("k", &MadnessProcess<3>::k)
-        .def_ro("thresh", &MadnessProcess<3>::thresh)
-        .def_ro("initial_level", &MadnessProcess<3>::initial_level)
-        .def_ro("truncate_mode", &MadnessProcess<3>::truncate_mode)
-        .def_ro("refine", &MadnessProcess<3>::refine)
-        .def_ro("n_threads", &MadnessProcess<3>::n_threads);
+        .def_rw("L", &MadnessProcess<3>::L)
+        .def_rw("k", &MadnessProcess<3>::k)
+        .def_rw("thresh", &MadnessProcess<3>::thresh)
+        .def_rw("initial_level", &MadnessProcess<3>::initial_level)
+        .def_rw("truncate_mode", &MadnessProcess<3>::truncate_mode)
+        .def_rw("refine", &MadnessProcess<3>::refine)
+        .def_rw("n_threads", &MadnessProcess<3>::n_threads);
 
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
+        .def("get_function_defaults", &MadnessProcess<2>::get_function_defaults)
+        .def("update_function_defaults", &MadnessProcess<2>::update_function_defaults)
         .def("change_nthreads", &MadnessProcess<2>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<2>::loadfct)
         .def("loadfct_from_file", &MadnessProcess<2>::loadfct_from_file)
         .def("plot", &MadnessProcess<2>::plot)
         .def("plane_plot", &MadnessProcess<2>::plane_plot)
-        .def_ro("L", &MadnessProcess<2>::L)
-        .def_ro("k", &MadnessProcess<2>::k)
-        .def_ro("thresh", &MadnessProcess<2>::thresh)
-        .def_ro("initial_level", &MadnessProcess<2>::initial_level)
-        .def_ro("truncate_mode", &MadnessProcess<2>::truncate_mode)
-        .def_ro("refine", &MadnessProcess<2>::refine)
-        .def_ro("n_threads", &MadnessProcess<2>::n_threads);
+        .def_rw("L", &MadnessProcess<2>::L)
+        .def_rw("k", &MadnessProcess<2>::k)
+        .def_rw("thresh", &MadnessProcess<2>::thresh)
+        .def_rw("initial_level", &MadnessProcess<2>::initial_level)
+        .def_rw("truncate_mode", &MadnessProcess<2>::truncate_mode)
+        .def_rw("refine", &MadnessProcess<2>::refine)
+        .def_rw("n_threads", &MadnessProcess<2>::n_threads);
 
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
     nb::class_<madness::real_function_2d>(m, "real_function_2d").def(nb::init<>());
@@ -73,14 +78,16 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<3>::info)
         .def_rw("type", &SavedFct<3>::type)
-        .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"));
+        .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"))
+        .def("load_from_file", &SavedFct<3>::load_from_file, nb::arg("filepath"));
 
     nb::class_<SavedFct<2>>(m, "SavedFct2D")
         .def(nb::init<const Function<double, 2>&>())
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<2>::info)
         .def_rw("type", &SavedFct<2>::type)
-        .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"));
+        .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"))
+        .def("load_from_file", &SavedFct<2>::load_from_file, nb::arg("filepath"));
 
     nb::class_<Integrals<3>>(m, "Integrals3D")
         .def(nb::init<MadnessProcess<3>&>())

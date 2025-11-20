@@ -76,22 +76,34 @@ class MadWorld3D:
             self.madness_parameters["n_threads"],
         )
 
-    def __getattr__(self, name):
-        if name in self.madness_parameters:
-            return getattr(self.impl, name)
-        raise AttributeError(f"'MadWorld' object has no attribute '{name}'")
-
-    def __setattr__(self, name, value):
-        if (
-            hasattr(self, "impl")
-            and hasattr(self, "madness_parameters")
-            and name in self.madness_parameters
-        ):
-            raise AttributeError(f"Cannot modify read-only attribute '{name}'")
-        super().__setattr__(name, value)
-
     def get_params(self):
         return dict(self.madness_parameters)
+
+    def get_function_defaults(self):
+        res = self.impl.get_function_defaults()
+        return {"cell_width": res[0],
+        "k": res[1],
+        "thresh": res[2],
+        "initial_level": res[3],
+        "truncate_mode": res[4],
+        "refine": res[5],
+        "n_threads": res[6],}
+    
+    def set_function_defaults(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.madness_parameters.keys():
+                self.madness_parameters[k]=v
+        
+        self.impl.L = self.madness_parameters["L"]
+        self.impl.k = self.madness_parameters["k"]
+        self.impl.thresh = self.madness_parameters["thresh"]
+        self.impl.initial_level = self.madness_parameters["initial_level"]
+        self.impl.truncate_mode = self.madness_parameters["truncate_mode"]
+        self.impl.refine = self.madness_parameters["refine"]
+        if "n_threads" in kwargs.keys():
+            self.change_nthreads(self.madness_parameters["n_threads"])
+
+        self.impl.update_function_defaults()
 
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
@@ -180,22 +192,34 @@ class MadWorld2D:
             self.madness_parameters["n_threads"],
         )
 
-    def __getattr__(self, name):
-        if name in self.madness_parameters:
-            return getattr(self.impl, name)
-        raise AttributeError(f"'MadWorld' object has no attribute '{name}'")
-
-    def __setattr__(self, name, value):
-        if (
-            hasattr(self, "impl")
-            and hasattr(self, "madness_parameters")
-            and name in self.madness_parameters
-        ):
-            raise AttributeError(f"Cannot modify read-only attribute '{name}'")
-        super().__setattr__(name, value)
-
     def get_params(self):
         return dict(self.madness_parameters)
+
+    def get_function_defaults(self):
+        res = self.impl.get_function_defaults()
+        return {"cell_width": res[0],
+        "k": res[1],
+        "thresh": res[2],
+        "initial_level": res[3],
+        "truncate_mode": res[4],
+        "refine": res[5],
+        "n_threads": res[6],}
+    
+    def set_function_defaults(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.madness_parameters.keys():
+                self.madness_parameters[k]=v
+        
+        self.impl.L = self.madness_parameters["L"]
+        self.impl.k = self.madness_parameters["k"]
+        self.impl.thresh = self.madness_parameters["thresh"]
+        self.impl.initial_level = self.madness_parameters["initial_level"]
+        self.impl.truncate_mode = self.madness_parameters["truncate_mode"]
+        self.impl.refine = self.madness_parameters["refine"]
+        if "n_threads" in kwargs.keys():
+            self.change_nthreads(self.madness_parameters["n_threads"])
+
+        self.impl.update_function_defaults()
 
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
