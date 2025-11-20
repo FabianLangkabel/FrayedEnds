@@ -5,12 +5,12 @@ import tequila as tq
 import frayedends
 
 true_start = time()
-# initialize the PNO interface
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
 
 world = frayedends.MadWorld3D()
 
-madpno = frayedends.MadPNO(world, geom, n_orbitals=2)
+# initialize the PNO interface
+madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=2)
 orbitals = madpno.get_orbitals()
 print(frayedends.get_function_info(orbitals))
 
@@ -24,7 +24,7 @@ for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
 c = nuc_repulsion
-for iteration in range(6):
+for iteration in range(30):
 
     integrals = frayedends.Integrals3D(world)
     G = integrals.compute_two_body_integrals(orbitals)
@@ -33,7 +33,7 @@ for iteration in range(6):
     S = integrals.compute_overlap_integrals(orbitals)
 
     mol = tq.Molecule(
-        geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
+        geom, units="angstrom", one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
     )
 
     U = mol.make_ansatz(name="UpCCGD")
@@ -42,7 +42,7 @@ for iteration in range(6):
     result = tq.minimize(E, silent=True)
     rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
-    print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
+    print("iteration {} energy {:+2.10f}".format(iteration, result.energy))
 
     opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(
