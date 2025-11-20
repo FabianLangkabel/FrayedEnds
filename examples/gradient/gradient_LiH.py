@@ -5,7 +5,6 @@ import tequila as tq
 
 import frayedends
 
-
 world = frayedends.MadWorld3D(thresh=1e-6)
 
 distance_list = [30.1631 + 0.025 * i for i in range(1)]
@@ -67,7 +66,7 @@ for distance in distance_list:
             # print("h1:",T+V)
             # print("g2:",G.elems)
             # print("s:",S)
-            print(T+V)
+            print(T + V)
             print(G.elems)
             mol = tq.Molecule(
                 geometry,
