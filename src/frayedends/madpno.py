@@ -47,20 +47,6 @@ class MadPNO:
             self.create_molecule_file(geometry=geometry)
             geometry = "molecule"
 
-        if maxrank is None:
-            # safe option, with this we always compute enough pnos
-            maxrank = n_orbitals
-            # more effective
-            try:
-                from tequila.quantumchemistry import ParametersQC
-
-                ne = ParametersQC(geometry=geometry).n_electrons
-                np = ne // 2
-                maxrank = int(numpy.ceil(n_orbitals / np))
-
-            except Exception:
-                maxrank = n_orbitals
-
         if units is None:
             if self.silent == False:
                 print(
@@ -79,6 +65,20 @@ class MadPNO:
                         "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
                     )
                 units = "angstrom"
+
+        if maxrank is None:
+            # safe option, with this we always compute enough pnos
+            maxrank = n_orbitals
+            # more effective
+            try:
+                from tequila.quantumchemistry import ParametersQC
+
+                ne = ParametersQC(geometry=geometry, units=units).n_electrons
+                np = ne // 2
+                maxrank = int(numpy.ceil(n_orbitals / np))
+
+            except Exception:
+                maxrank = n_orbitals
 
         pno_input_string = self.parameter_string(
             madworld,
@@ -195,8 +195,8 @@ class MadPNO:
 
         data["dft"] = {
             "xc": "hf",
-            "L": madworld.L,
-            "k": madworld.k,
+            "L": madworld.get_function_defaults()["cell_width"] / 2,
+            "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-4,
             "dconv": 5.0e-4,
             "localize": "boys",
@@ -205,7 +205,7 @@ class MadPNO:
         data["pno"] = {
             "maxrank": maxrank,
             "f12": "false",
-            "thresh": 1.0e-4,
+            "thresh": madworld.get_function_defaults()["thresh"],
             "diagonal": diagonal,
         }
 
@@ -262,7 +262,8 @@ class MadPNO:
         # Define the patterns for the files to delete
         patterns = [
             "*.00000",  # Files ending with .00000
-            "MacroTask*",  # Files starting with N7madness
+            "MacroTask*",  # Files starting with MacroTask
+            "N7madness7*",  # Files starting with N7madness7
             "mad.calc_info.json",  # Specific file
             "mad.restartaodata",  # Specific file
             "pnoinfo.txt",  # Specific file
