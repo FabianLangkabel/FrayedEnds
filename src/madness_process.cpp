@@ -35,9 +35,28 @@ template <std::size_t NDIM> MadnessProcess<NDIM>::~MadnessProcess() {
 }
 
 template <std::size_t NDIM> void MadnessProcess<NDIM>::change_nthreads(int n_threads) {
-    ThreadPool::end();
-    ThreadPool::begin(n_threads);
-    std::cout << "Changed number of threads to " << ThreadPool::size() << std::endl;
+    if (n_threads != ThreadPool::size()) {
+        ThreadPool::end();
+        ThreadPool::begin(n_threads);
+        std::cout << "Changed number of threads to " << ThreadPool::size() << std::endl;
+    }
+}
+
+template <std::size_t NDIM>
+std::tuple<double, long, double, int, int, bool, int> MadnessProcess<NDIM>::get_function_defaults() {
+    return std::make_tuple(FunctionDefaults<NDIM>::get_cell_width()[0], FunctionDefaults<NDIM>::get_k(),
+                           FunctionDefaults<NDIM>::get_thresh(), FunctionDefaults<NDIM>::get_initial_level(),
+                           FunctionDefaults<NDIM>::get_truncate_mode(), FunctionDefaults<NDIM>::get_refine(),
+                           ThreadPool::size());
+}
+
+template <std::size_t NDIM> void MadnessProcess<NDIM>::update_function_defaults() {
+    FunctionDefaults<NDIM>::set_k(k);
+    FunctionDefaults<NDIM>::set_thresh(thresh);
+    FunctionDefaults<NDIM>::set_refine(refine);
+    FunctionDefaults<NDIM>::set_initial_level(initial_level);
+    FunctionDefaults<NDIM>::set_truncate_mode(truncate_mode);
+    FunctionDefaults<NDIM>::set_cubic_cell(-L, L);
 }
 
 // load a function from a SavedFct object

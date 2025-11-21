@@ -703,6 +703,11 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
         // Orthonormalize orbitals
+        // Project out frozen orbitals
+        if (core_dim > 0) {
+            auto Q = madness::QProjector<double, NDIM>(frozen_occ_orbs);
+            active_orbs = Q(active_orbs);
+        }
         active_orbs = orthonormalize_symmetric(active_orbs);
         // orbitals = orthonormalize_cd(orbitals);
         active_orbs = truncate(active_orbs, truncation_tol);

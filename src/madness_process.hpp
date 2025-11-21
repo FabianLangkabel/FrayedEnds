@@ -6,6 +6,7 @@
 #include <madness/chem/molecular_functors.h>
 #include <cstdio>
 #include <unistd.h>
+#include <tuple>
 
 using namespace madness;
 
@@ -54,6 +55,10 @@ template <std::size_t NDIM> class MadnessProcess {
 
     // load a function from a binary file
     Function<double, NDIM> loadfct_from_file(const std::string& filename);
+
+    std::tuple<double, long, double, int, int, bool, int> get_function_defaults();
+
+    void update_function_defaults();
 
     void plot(std::string filename, SavedFct<NDIM> f, std::string axis, int datapoints);
 

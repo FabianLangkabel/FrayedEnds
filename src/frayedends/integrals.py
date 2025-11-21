@@ -11,10 +11,11 @@ class Integrals3D:
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface3D(madworld.impl)
 
+    # computes the g-tensor: the coulomb interaction between the provided orbitals
     def compute_two_body_integrals(
         self,
-        orbitals,
-        ordering="phys",
+        orbitals,  # active space orbitals
+        ordering="phys",  # ordering of the tensor, possible choices: "phys" (1212), "chem" (1122), "openfermion" (1221)
         truncation_tol=1e-6,
         coulomb_lo=0.001,
         coulomb_eps=1e-6,
@@ -29,6 +30,7 @@ class Integrals3D:
         else:
             return g
 
+    # computes coulomb interaction between frozen core orbitals and active space orbitals
     def compute_frozen_core_interaction(
         self,
         frozen_core_orbs,

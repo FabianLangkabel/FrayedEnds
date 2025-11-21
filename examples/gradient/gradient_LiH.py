@@ -5,86 +5,6 @@ import tequila as tq
 
 import frayedends
 
-
-def get_best_initial_values(mol):
-    tries = 20
-    U = mol.make_ansatz(name="HCB-UpCCGD")
-    best_opt = tq.quantumchemistry.optimize_orbitals(
-        molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random"
-    )
-    opt = tq.quantumchemistry.optimize_orbitals(
-        molecule=mol, circuit=U, silent=True, use_hcb=True
-    )
-    if opt.energy < best_opt.energy:
-        best_opt = opt
-
-    for _ in range(tries):
-        # opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, use_hcb=True, initial_guess="random")
-        initial_guess = np.eye(mol.n_orbitals) + np.random.normal(
-            scale=1.0, loc=0.0, size=mol.n_orbitals**2
-        ).reshape(mol.n_orbitals, mol.n_orbitals)
-        opt = tq.quantumchemistry.optimize_orbitals(
-            molecule=mol,
-            circuit=U,
-            silent=True,
-            use_hcb=True,
-            initial_guess=initial_guess,
-        )
-        if opt.energy < best_opt.energy:
-            best_opt = opt
-
-    return best_opt
-
-
-def transform_rdms(TransformationMatrix, rdm1, rdm2):
-    new_rdm1 = np.dot(
-        np.dot(TransformationMatrix.transpose(), rdm1), TransformationMatrix
-    )
-    n = rdm2.shape[0]
-
-    temp1 = np.zeros(shape=(n, n, n, n))
-    for i in range(n):
-        for j in range(n):
-            for k2 in range(n):
-                for l in range(n):
-                    k_value = 0
-                    for k in range(n):
-                        k_value += TransformationMatrix[k][k2] * rdm2[i][j][k][l]
-                    temp1[i][j][k2][l] = k_value
-
-    temp2 = np.zeros(shape=(n, n, n, n))
-    for i2 in range(n):
-        for j in range(n):
-            for k2 in range(n):
-                for l in range(n):
-                    i_value = 0
-                    for i in range(n):
-                        i_value += TransformationMatrix[i][i2] * temp1[i][j][k2][l]
-                    temp2[i2][j][k2][l] = i_value
-
-    temp3 = np.zeros(shape=(n, n, n, n))
-    for i2 in range(n):
-        for j in range(n):
-            for k2 in range(n):
-                for l2 in range(n):
-                    l_value = 0
-                    for l in range(n):
-                        l_value += TransformationMatrix[l][l2] * temp2[i2][j][k2][l]
-                    temp3[i2][j][k2][l2] = l_value
-
-    new_rdm2 = np.zeros(shape=(n, n, n, n))
-    for i2 in range(n):
-        for j2 in range(n):
-            for k2 in range(n):
-                for l2 in range(n):
-                    j_value = 0
-                    for j in range(n):
-                        j_value += TransformationMatrix[j][j2] * temp3[i2][j][k2][l2]
-                    new_rdm2[i2][j2][k2][l2] = j_value
-
-    return new_rdm1, new_rdm2
-
-
 world = frayedends.MadWorld3D(thresh=1e-6)
 
 distance_list = [30.1631 + 0.025 * i for i in range(1)]
@@ -146,6 +66,8 @@ for distance in distance_list:
             # print("h1:",T+V)
             # print("g2:",G.elems)
             # print("s:",S)
+            print(T + V)
+            print(G.elems)
             mol = tq.Molecule(
                 geometry,
                 one_body_integrals=T + V,
