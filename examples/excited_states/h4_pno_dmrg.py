@@ -1,4 +1,4 @@
-import madpy as mad
+import frayedends as fe
 import time
 import numpy as np
 
@@ -42,15 +42,15 @@ for d in distance:
             )
     '''
 
-    world = mad.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+    world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-    madpno = mad.MadPNO(world, geom, n_orbitals=8)
+    madpno = fe.MadPNO(world, geom, n_orbitals=8)
     orbs = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = mad.Integrals3D(world)
+    integrals = fe.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=orbs)
 
     for i in range(len(orbs)):
@@ -62,12 +62,12 @@ for d in distance:
     '''
     Calculate initial integrals
     '''
-    integrals = mad.Integrals3D(world)
-    G = integrals.compute_two_body_integrals(orbs).elems #Physics Notation
+    integrals = fe.Integrals3D(world)
+    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems #Physics Notation
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
     S = integrals.compute_overlap_integrals(orbs)
-    G_chem = G.transpose(0,2,1,3)
+    G_chem = G
     #del integrals
 
     '''
@@ -79,7 +79,7 @@ for d in distance:
     from pyblock2.driver.core import DMRGDriver, SymmetryTypes
     import numpy as np
 
-    driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
+    driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
     driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
     mpo = driver.get_qc_mpo(h1e=T+V, g2e=G_chem, ecore=nuc_repulsion, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
@@ -106,7 +106,7 @@ for d in distance:
         '''
         Refine orbitals
         '''
-        opti = mad.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
         # for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
@@ -120,7 +120,7 @@ for d in distance:
         S = integrals.compute_overlap_integrals(orbs)
         G_chem = G.transpose(0,2,1,3)
 
-        driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
+        driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
         driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
         mpo = driver.get_qc_mpo(h1e=T+V, g2e=G_chem, ecore=nuc_repulsion, iprint=0)
         ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
