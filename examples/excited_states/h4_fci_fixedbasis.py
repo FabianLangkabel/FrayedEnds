@@ -26,11 +26,9 @@ for d in distance:
 
     results.append({"distance": d, "fci_energy": fci_dis}) # for H2 pair use 2*d
 
-with open("fci_fb_results.dat", "w") as f:
+with open("results_fci_fb.dat", "w") as f:
     f.write("# distance   FCI\n")
     for res in results:
         d = res["distance"]
         E = res["fci_energy"]
         f.write(f"{d:8.3f}  {E:15.8f} \n")
-
-print("\nresults saved in fci_fb_results.dat\n")
