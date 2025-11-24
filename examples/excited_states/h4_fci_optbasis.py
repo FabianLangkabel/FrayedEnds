@@ -19,7 +19,7 @@ basisset = '6-31g'
 
 results = []
 
-with open("results.dat", "w") as f:
+with open("results_fci_opt.dat", "w") as f:
     header = "distance iteration iteration_time_s energy_0"
     f.write(header + "\n")
 
@@ -92,20 +92,9 @@ for d in distance:
                                                  n_electrons)  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
 
-        e_elec = e
-        e_tot = e_elec + nuclear_repulsion_energy
+        e_tot = e + nuclear_repulsion_energy
 
-        iter_end = time.perf_counter()
-        iter_time = iter_end - iter_start
         print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e_elec, e_tot))
-
-        with open("iteration_times_fci_opt.dat", "a") as f:
-            f.write(f"{d:.6f} {iteration} {iter_time:.6f}\n") # for H2 pair use 2*d
-
-        with open("results_fci_opt.dat", "a") as f:
-            f.write(f"{d:.6f} {iteration} {iter_time:.6f} {e_tot: .15f}" + "\n") # for H2 pair use 2*d
-
-        results.append({"distance": d, "iteration": iteration, "iteration_time": iter_time, "energy": e}) # for H2 pair use 2*d
 
         # Orbital optimization
         opti = mad.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
@@ -115,6 +104,17 @@ for d in distance:
 
         #for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}.dat", orbs[i])  # Plots the optimized orbitals
+
+        iter_end = time.perf_counter()
+        iter_time = iter_end - iter_start
+
+        with open("iteration_times_fci_opt.dat", "a") as f:
+            f.write(f"{d:.6f} {iteration} {iter_time:.6f}\n") # for H2 pair use 2*d
+
+        with open("results_fci_opt.dat", "a") as f:
+            f.write(f"{d:.6f} {iteration} {iter_time:.6f} {e_tot: .15f}" + "\n") # for H2 pair use 2*d
+
+        results.append({"distance": d, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot}) # for H2 pair use 2*d
 
         if np.isclose(e, current, atol=econv, rtol=0.0):
             break  # The loop terminates as soon as the energy changes less than econv in one iteration step
@@ -133,5 +133,5 @@ for d in distance:
 true_end = time.perf_counter()
 total_time = true_end - true_start
 print("Total time: ", total_time)
-with open("total_time.dat", "w") as f:
+with open("total_time_fci_opt.dat", "w") as f:
     f.write(f"total_runtime_s {total_time:.6f}\n")
