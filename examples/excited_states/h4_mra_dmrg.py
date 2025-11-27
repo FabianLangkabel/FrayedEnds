@@ -15,14 +15,18 @@ basisset = '6-31g'
 n_elec = 4
 number_roots = 3
 
-results = []
+iteration_results = []
 
-with open("results_nwchem_dmrg.dat", "w") as f:
+with open("iteration_nwchem_dmrg.dat", "w") as f:
     header = "distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots))
     f.write(header + "\n")
 
 with open("distance_times_nwchem_dmrg.dat", "w") as f:
     f.write("distance total_time_s\n")
+
+with open("results_nwchem_dmrg.dat", "w") as f:
+    header = "distance " + " ".join(f"energy_{i}" for i in range(number_roots))
+    f.write(header + "\n")
 
 '''
 ### Run NWChem calculation
@@ -121,7 +125,7 @@ for d in distance:
 
     np.savetxt("initial_energies.txt", energies)
 
-    with open("results_nwchem_dmrg.dat", "a") as f:
+    with open("iteration_nwchem_dmrg.dat", "a") as f:
         f.write(f"{d:.6f} {-1} {0.00} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
     for iter in range(iterations):
@@ -161,14 +165,14 @@ for d in distance:
 
         iter_end = time.perf_counter()
         iter_time = iter_end - iter_start
-        print(f"Iteration {iter} time: {iter_time:.2f} s")
-        with open("iteration_times_nwchem_dmrg.dat", "a") as f:
-            f.write(f"{d:.6f} {iter} {iter_time:.6f}\n") # for H2 pair use 2*d
 
-        with open("results_nwchem_dmrg.dat", "a") as f:
+        with open("iteration_nwchem_dmrg.dat", "a") as f:
             f.write(f"{d:.6f} {iter} {iter_time:.6f} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
-        results.append({"distance": d, "iteration": iter, "iteration_time": iter_time, "energies": energies}) # for H2 pair use 2*d
+        iteration_results.append({"distance": d, "iteration": iter, "iteration_time": iter_time, "energies": energies}) # for H2 pair use 2*d
+
+    with open("results_nwchem_dmrg.dat", "a") as f:
+        f.write(f"{d:.6f} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
     dist_end = time.perf_counter()
     dist_time = dist_end - dist_start
