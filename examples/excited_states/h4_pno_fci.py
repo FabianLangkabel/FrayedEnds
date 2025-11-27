@@ -6,14 +6,14 @@ from pyscf import fci
 distance = np.arange(1.5, 0.2, -0.03).tolist() # for H2 pair getting closer
 # distance = np.arange(2.5, 0.50, -0.05).tolist()
 iteration_energies = []
-iterations = 6
+iterations = 15
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
 basisset = '6-31g'
 n_electrons = 4
-econv = 1.e-8 # Energy convergence threshold
+econv = 1.e-6 # Energy convergence threshold
 
 results = []
 
@@ -46,15 +46,14 @@ for d in distance:
 
     world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-    madpno = fe.MadPNO(world, geom, n_orbitals=8)
+    madpno = fe.MadPNO(world, geom, n_orbitals=4)
     orbs = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals3D(world)
-    orbitals = integrals.orthonormalize(orbitals=orbs)
-
+    orbs = integrals.orthonormalize(orbitals=orbs)
     for i in range(len(orbs)):
         orbs[i].type="active"
 
@@ -99,7 +98,7 @@ for d in distance:
 
         results.append({"distance": 2*d, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot}) # for H2 pair use 2*d
 
-        if np.isclose(e, current, atol=econv, rtol=0.0):
+        if np.isclose(e_tot, current, atol=econv, rtol=0.0):
             break  # The loop terminates as soon as the energy changes less than econv in one iteration step
         current = e_tot
 

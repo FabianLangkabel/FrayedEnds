@@ -2,8 +2,8 @@ import frayedends as fe
 import time
 import numpy as np
 
-# distance = np.arange(1.5, 0.2, -0.03).tolist() for H2 pair getting closer
-distance = np.arange(2.5, 0.45, -0.05).tolist()
+distance = np.arange(1.5, 0.2, -0.03).tolist() # for H2 pair getting closer
+# distance = np.arange(2.5, 0.45, -0.05).tolist()
 iteration_energies = []
 iterations = 6
 molecule_name = "h4"
@@ -28,19 +28,21 @@ total_start = time.perf_counter()
 for d in distance:
     dist_start = time.perf_counter()
     # linear H4 molecule with equidistant spacing d
+    '''
     geom = ("H 0.0 0.0 " + (-d - d / 2).__str__() + "\n"
             "H 0.0 0.0 " + (-d / 2).__str__() + "\n"
             "H 0.0 0.0 " + (d / 2).__str__() + "\n"
             "H 0.0 0.0 " + (d + d / 2).__str__() + "\n"
             )
 
-    ''' for H2 molecules getting closer and closer to a H4 molecule
+    '''
+    # for H2 molecules getting closer and closer to a H4 molecule
     geom = ("H 0.0 0.0 " + (-d - 2.55).__str__() + "\n"
             "H 0.0 0.0 " + (-d).__str__() + "\n"
             "H 0.0 0.0 " + d.__str__() + "\n"
             "H 0.0 0.0 " + (d + 2.55).__str__() + "\n"
             )
-    '''
+
 
     world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
@@ -139,18 +141,18 @@ for d in distance:
         iter_time = iter_end - iter_start
         print(f"Iteration {iter} time: {iter_time:.2f} s")
         with open("iteration_times_pno_dmrg.dat", "a") as f:
-            f.write(f"{d:.6f} {iter} {iter_time:.6f}\n") # for H2 pair use 2*d
+            f.write(f"{2*d:.6f} {iter} {iter_time:.6f}\n") # for H2 pair use 2*d
 
-        with open("results_pno_dmrg.dat", "a") as f:
-            f.write(f"{d:.6f} {iter} {iter_time:.6f} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
+        with open("results_pno_dmrg_2.dat", "a") as f:
+            f.write(f"{2*d:.6f} {iter} {iter_time:.6f} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
-        results.append({"distance": d, "iteration": iter, "iteration_time": iter_time, "energies": energies}) # for H2 pair use 2*d
+        results.append({"distance": 2*d, "iteration": iter, "iteration_time": iter_time, "energies": energies}) # for H2 pair use 2*d
 
     dist_end = time.perf_counter()
     dist_time = dist_end - dist_start
-    print(f"Distance {d:.6f} took {dist_time:.2f} s") # for H2 pair use 2*d
+    print(f"Distance {2*d:.6f} took {dist_time:.2f} s") # for H2 pair use 2*d
     with open("distance_times_pno_dmrg.dat", "a") as f:
-        f.write(f"{d:.6f} {dist_time:.6f}\n") # for H2 pair use 2*d
+        f.write(f"{2*d:.6f} {dist_time:.6f}\n") # for H2 pair use 2*d
 
     del integrals
     del opti
