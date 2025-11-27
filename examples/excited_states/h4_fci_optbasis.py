@@ -18,7 +18,6 @@ econv = 1.e-6 # Energy convergence threshold
 basisset = '6-31g'
 
 iteration_results = []
-results = []
 
 with open("iteration_fci_opt.dat", "w") as f:
     header = "distance iteration iteration_time_s energy_0"
