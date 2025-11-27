@@ -16,7 +16,6 @@ n_electrons = 4
 econv = 1.e-6 # Energy convergence threshold
 
 iterations_results = []
-results = []
 
 with open("iterations_pno_fci.dat", "w") as f:
     header = "distance iteration iteration_time_s energy_0"
