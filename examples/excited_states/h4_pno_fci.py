@@ -15,14 +15,19 @@ basisset = '6-31g'
 n_electrons = 4
 econv = 1.e-6 # Energy convergence threshold
 
+iterations_results = []
 results = []
 
-with open("results_pno_fci.dat", "w") as f:
+with open("iterations_pno_fci.dat", "w") as f:
     header = "distance iteration iteration_time_s energy_0"
     f.write(header + "\n")
 
 with open("distance_times_pno_fci.dat", "w") as f:
     f.write("distance total_time_s\n")
+
+with open("results_pno_fci.dat", "w") as f:
+    header = "distance energy_0"
+    f.write(header + "\n")
 
 total_start = time.perf_counter()
 
@@ -90,17 +95,17 @@ for d in distance:
         iter_end = time.perf_counter()
         iter_time = iter_end - iter_start
 
-        with open("iteration_times_pno_fci.dat", "a") as f:
-            f.write(f"{2*d:.6f} {iteration} {iter_time:.6f}\n") # for H2 pair use 2*d
-
-        with open("results_pno_fci.dat", "a") as f:
+        with open("iterations_pno_fci.dat", "a") as f:
             f.write(f"{2*d:.6f} {iteration} {iter_time:.6f} {e_tot: .15f}" + "\n") # for H2 pair use 2*d
 
-        results.append({"distance": 2*d, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot}) # for H2 pair use 2*d
+        iterations_results.append({"distance": 2 * d, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot}) # for H2 pair use 2*d
 
         if np.isclose(e_tot, current, atol=econv, rtol=0.0):
             break  # The loop terminates as soon as the energy changes less than econv in one iteration step
         current = e_tot
+
+    with open("results_pno_fci.dat", "a") as f:
+        f.write(f"{2*d:.6f} {e_tot: .15f}" + "\n") # for H2 pair use 2*d
 
     dist_end = time.perf_counter()
     dist_time = dist_end - dist_start
