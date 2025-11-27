@@ -46,7 +46,7 @@ for d in distance:
 
     world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-    madpno = fe.MadPNO(world, geom, n_orbitals=4)
+    madpno = fe.MadPNO(world, geom, n_orbitals=8)
     orbs = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
