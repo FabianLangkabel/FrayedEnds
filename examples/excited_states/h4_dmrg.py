@@ -4,8 +4,8 @@ import time
 import numpy as np
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 
-distance = np.arange(1.5, 0.2, -0.03).tolist() for H2 pair getting closer
-# distance = np.arange(2.5, 0.45, -0.05).tolist()
+# distance = np.arange(1.5, 0.2, -0.03).tolist() for H2 pair getting closer
+distance = np.arange(2.5, 0.45, -0.05).tolist()
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
