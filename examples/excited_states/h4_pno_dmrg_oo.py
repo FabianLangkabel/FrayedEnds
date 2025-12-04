@@ -24,7 +24,7 @@ with open("distance_times_pno_dmrg.dat", "w") as f:
     f.write("distance total_time_s\n")
 
 with open("results_pno_dmrg.dat", "w") as f:
-    header = "distance" + " ".join(f"energy_{i}" for i in range(number_roots))
+    header = "distance " + " ".join(f"energy_{i}" for i in range(number_roots))
     f.write(header + "\n")
 
 total_start = time.perf_counter()
@@ -103,7 +103,7 @@ for d in distance:
 
     # np.savetxt("initial_energies.txt", energies)
 
-    with open("results_pno_dmrg.dat", "a") as f:
+    with open("iteration_pno_dmrg.dat", "a") as f:
         f.write(f"{d:.6f} {-1} {0.00} " + " ".join(f"{x:.15f}" for x in energies) + "\n") # for H2 pair use 2*d
 
     for iter in range(iterations):
