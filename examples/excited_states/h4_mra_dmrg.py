@@ -4,14 +4,14 @@ import time
 import numpy as np
 
 # distance = np.arange(1.5, 0.2, -0.03).tolist() for H2 pair getting closer
-distance = np.arange(2.5, 0.45, -0.05).tolist()
+distance = np.arange(2.5, 0.45, -0.05).tolist() # linear H4 molecule with equidistant spacing d
 iteration_energies = []
 iterations = 6
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-basisset = '6-31g'
+basisset = '6-31g'  # 'CC-PVDZ'
 n_elec = 4
 number_roots = 3
 
@@ -84,8 +84,8 @@ for d in distance:
     for i in range(len(orbs)):
         orbs[i].type="active"
 
-    for i in range(len(orbs)):
-        world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
+    #for i in range(len(orbs)):
+    #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i])
 
     '''
     Calculate initial integrals
