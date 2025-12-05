@@ -57,7 +57,7 @@ for d in distance:
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals3D(world)
-    orbitals = integrals.orthonormalize(orbitals=orbs)
+    orbs = integrals.orthonormalize(orbitals=orbs)
 
     for i in range(len(orbs)):
         orbs[i].type="active"
