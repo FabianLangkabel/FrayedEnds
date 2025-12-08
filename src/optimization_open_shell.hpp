@@ -26,7 +26,7 @@ class Optimization_open_shell {
     ~Optimization_open_shell();
 
     // input
-    void give_initial_orbitals(std::vector<SavedFct<NDIM>> alpha_orbitals, std::vector<SavedFct<NDIM>> beta_orbitals); //Adapted
+    void give_initial_orbitals(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals); //Adapted
     void give_rdm_and_rotate_orbitals(std::vector<std::vector<double>> one_rdm_elements, std::vector<std::vector<double>> two_rdm_elements); //Adapted
 
     // output
@@ -40,11 +40,10 @@ class Optimization_open_shell {
     void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);
     void Transform_ab_mixed_Tensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix_alpha, madness::Tensor<double>& TransformationMatrix_beta);
     void calculate_all_integrals();
-    void calculate_core_energy();
     void calculate_energies();
     void calculate_lagrange_multiplier();
     double calculate_lagrange_multiplier_element_as_as(int z, int i, int spin);
-    double calculate_lagrange_multiplier_element_as_core(int z, int i);
+    double calculate_lagrange_multiplier_element_as_core(int z, int i, int spin);
     bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
     void rotate_orbitals_back();
@@ -77,10 +76,8 @@ class Optimization_open_shell {
     // Orbitals
     std::array<std::vector<Function<double, NDIM>>, 2> frozen_occ_orbs;
     std::array<std::vector<Function<double, NDIM>>, 2> active_orbs;
-    std::array<std::vector<Function<double, NDIM>>, 2> frozen_virt_orbs;
     std::array<int, 2> core_dims;
     std::array<int, 2> as_dims;
-    std::array<int, 2> froz_virt_dims;
 
     // RDMs
     std::array<madness::Tensor<double>, 2> as_one_rdm;
@@ -91,12 +88,13 @@ class Optimization_open_shell {
     std::array<madness::Tensor<double>, 2> as_integrals_one_body; // (k,l)
     std::array<madness::Tensor<double>, 3> as_integrals_two_body; // (k,l,m,n)
 
-    madness::Tensor<double> core_as_integrals_one_body_ak;   // (a,k)
-    madness::Tensor<double> core_as_integrals_two_body_akln; // (a,k,l,n)
-    madness::Tensor<double> core_as_integrals_two_body_akal; // (a,k,l)
-    madness::Tensor<double> core_as_integrals_two_body_akla; // (a,k,l)
-    madness::Tensor<double> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
-    madness::Tensor<double> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
+    std::array<madness::Tensor<double>, 2> core_as_integrals_one_body_ak;   // (a,k)
+
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akln; // (a,k,l,n)
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akal; // (a,k,l)
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akla; // (a,k,l)
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
 
     // Energies
     double core_total_energy;
@@ -104,7 +102,7 @@ class Optimization_open_shell {
     // Refinement
     double highest_error;
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_AS;
-    madness::Tensor<double> LagrangeMultiplier_AS_Core;
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_Core;
 
     // Stored AS orbital combinations
     //std::vector<Function<double, NDIM>> orbs_kl;      // |kl> //Wird nicht benutzt
