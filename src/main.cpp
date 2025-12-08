@@ -182,7 +182,6 @@ NB_MODULE(_madpy_impl, m) {
         .def("give_rdm_and_rotate_orbitals", &Optimization_open_shell<3>::give_rdm_and_rotate_orbitals)
         .def("give_potential_and_repulsion", &Optimization_open_shell<3>::give_potential_and_repulsion)
         .def("calculate_all_integrals", &Optimization_open_shell<3>::calculate_all_integrals)
-        .def("calculate_core_energy", &Optimization_open_shell<3>::calculate_core_energy)
         .def("calculate_energies", &Optimization_open_shell<3>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization_open_shell<3>::calculate_lagrange_multiplier)
         .def("calculate_lagrange_multiplier_element_as_as", &Optimization_open_shell<3>::calculate_lagrange_multiplier_element_as_as)

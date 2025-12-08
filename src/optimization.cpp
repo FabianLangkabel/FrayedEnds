@@ -355,7 +355,7 @@ void Optimization<NDIM>::calculate_all_integrals() {
     auto t4 = std::chrono::high_resolution_clock::now();
 
     // Core-AS one electron integrals
-    core_as_integrals_one_body_ak = madness::Tensor<double>(as_dim, as_dim);
+    core_as_integrals_one_body_ak = madness::Tensor<double>(core_dim, as_dim);
     for (int a = 0; a < core_dim; a++) {
         for (int k = 0; k < as_dim; k++) {
             // Kinetic
@@ -643,17 +643,25 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_as_as(int z, in
             element -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_akla(a, k, z);
         }
     }
+
     return element;
 }
 
 template <std::size_t NDIM>
 double Optimization<NDIM>::calculate_lagrange_multiplier_element_as_core(int z, int i) {
+    double el_p1 = 0;
+    double el_p2 = 0;
+    double el_p3 = 0;
+    double el_p4 = 0;
+    
     double element = as_one_rdm(i, i) * core_as_integrals_one_body_ak(z, i);
+    el_p1 = as_one_rdm(i, i) * core_as_integrals_one_body_ak(z, i);
 
     for (int l = 0; l < as_dim; l++) {
         for (int n = 0; n < as_dim; n++) {
             for (int k = 0; k < as_dim; k++) {
                 element += as_two_rdm(k, l, i, n) * core_as_integrals_two_body_akln(z, k, l, n);
+                el_p2 += as_two_rdm(k, l, i, n) * core_as_integrals_two_body_akln(z, k, l, n);
             }
         }
     }
@@ -662,8 +670,11 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_as_core(int z, 
         for (int a = 0; a < core_dim; a++) {
             element += 0.5 * nocc * 2 * as_one_rdm(k, i) * core_as_integrals_two_body_abak(a, z, k);
             element -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_baak(a, z, k);
+            el_p3 += 0.5 * nocc * 2 * as_one_rdm(k, i) * core_as_integrals_two_body_abak(a, z, k);
+            el_p4 -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_baak(a, z, k);
         }
     }
+    std::cout << "z: " << z << ", i: " << i << ", p1: " << el_p1 << ", p2: " << el_p2 << ", p3: " << el_p3 << ", p4: " << el_p4 << std::endl;
     return element;
 }
 
@@ -679,6 +690,8 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
 
         // Update LagrangeMultiplier
         calculate_lagrange_multiplier();
+
+        std::cout << "AS-Core Lagrange Multiplier:" << std::endl << LagrangeMultiplier_AS_Core << std::endl;
 
         // Update orbitals
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();

@@ -403,6 +403,29 @@ double Integrals_open_shell<NDIM>::compute_core_energy(std::array<std::vector<Fu
 }
 
 template <std::size_t NDIM>
+std::array<madness::Tensor<double>, 2> Integrals_open_shell<NDIM>::compute_core_as_integrals_one_body(
+    std::array<std::vector<Function<double, NDIM>>, 2> core_orbitals, std::array<std::vector<Function<double, NDIM>>, 2> active_orbitals, Function<double, NDIM> V
+)
+{
+    std::array<madness::Tensor<double>, 2> Integrals;
+    for(int spin = 0; spin < 2; spin++)
+    {
+        Integrals[spin] = madness::matrix_inner(*(madness_process.world), core_orbitals[spin], V * active_orbitals[spin]);
+        for (int k = 0; k < core_orbitals[spin].size(); k++) {
+            for (int l = 0; l < active_orbitals[spin].size(); l++) {
+                for (int axis = 0; axis < NDIM; axis++) {
+                    Derivative<double, NDIM> D = free_space_derivative<double, NDIM>(*(madness_process.world), axis);
+                    Function<double, NDIM> d_orb_k = D(core_orbitals[spin][k]);
+                    Function<double, NDIM> d_orb_l = D(active_orbitals[spin][l]);
+                    Integrals[spin](k, l) += 0.5 * inner(d_orb_k, d_orb_l);
+                }
+            }
+        }
+    }
+    return Integrals;
+}
+
+template <std::size_t NDIM>
 std::vector<std::vector<madness::Tensor<double>>> Integrals_open_shell<NDIM>::compute_core_as_integrals_two_body(
     std::array<std::vector<Function<double, NDIM>>, 2> core_orbitals, std::array<std::vector<Function<double, NDIM>>, 2> active_orbitals,
     bool calc_akal, bool calc_akla, bool calc_akln, bool calc_abak, bool calc_baak
@@ -415,9 +438,9 @@ std::vector<std::vector<madness::Tensor<double>>> Integrals_open_shell<NDIM>::co
 
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akal; //stored as (a,k,l); a is alpha + beta list; no alpha-beta-interaction
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akla; //stored as (a,k,l); a is list of [spin]; no alpha-beta-interaction
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akln;
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_abak;
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_baak;
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akln; //stored as (a,k,l,n) 4 tensors: aaaa, bbbb, aabb, bbaa
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_abak; //stored as (a,b,k); 4 tensors: aaaa, bbbb, aabb, bbaa
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_baak; //stored as (a,b,k); 2 tensors: aaaa, bbbb
 
     if(calc_akal)
     {
@@ -479,6 +502,193 @@ std::vector<std::vector<madness::Tensor<double>>> Integrals_open_shell<NDIM>::co
                     }
                 }
             }
+        }
+    }
+
+    if(calc_akln)
+    {
+        // Internes "caching" -> später ausweiten
+        // 1. coul(ln) für alpha und beta berechnen und speichern
+        std::array<std::vector<Function<double, NDIM>>, 2> coul_orbs_ln;
+        std::vector<Function<double, NDIM>> orbs_kl_alpha;
+        for (int k = 0; k < active_orbitals[0].size(); k++) {
+            std::vector<Function<double, NDIM>> kl = active_orbitals[0][k] * active_orbitals[0];
+            orbs_kl_alpha.insert(std::end(orbs_kl_alpha), std::begin(kl), std::end(kl));
+        }
+        orbs_kl_alpha = truncate(orbs_kl_alpha, truncation_tol);
+        std::vector<Function<double, NDIM>> coul_orbs_ln_alpha = apply(*(madness_process.world), *coul_op_parallel, orbs_kl_alpha);
+        coul_orbs_ln_alpha = truncate(coul_orbs_ln_alpha, truncation_tol);
+        coul_orbs_ln[0] = coul_orbs_ln_alpha;
+
+        std::vector<Function<double, NDIM>> orbs_kl_beta;
+        for (int k = 0; k < active_orbitals[1].size(); k++) {
+            std::vector<Function<double, NDIM>> kl = active_orbitals[1][k] * active_orbitals[1];
+            orbs_kl_beta.insert(std::end(orbs_kl_beta), std::begin(kl), std::end(kl));
+        }
+        orbs_kl_beta = truncate(orbs_kl_beta, truncation_tol);
+        std::vector<Function<double, NDIM>> coul_orbs_ln_beta = apply(*(madness_process.world), *coul_op_parallel, orbs_kl_beta);
+        coul_orbs_ln_beta = truncate(coul_orbs_ln_beta, truncation_tol);
+        coul_orbs_ln[1] = coul_orbs_ln_beta;
+
+        // 2. for spin; for a; ak berechnen -> nicht alle ak Kombinationen auf einmal da das Memory intensiv wäre
+        // 3. Inner Produkt ak*coul(ln) für same spin
+        for (int spin = 0; spin < 2; spin++)
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[spin].size(), active_orbitals[spin].size(), active_orbitals[spin].size(), active_orbitals[spin].size());
+            for (int a = 0; a < core_orbitals[spin].size(); a++)
+            {
+                std::vector<Function<double, NDIM>> orbs_ak = core_orbitals[spin][a] * active_orbitals[spin];
+                orbs_ak = truncate(orbs_ak, truncation_tol);
+
+                madness::Tensor<double> Inner_prods_akln = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_ln[spin], false);
+                for (int k = 0; k < active_orbitals[spin].size(); k++) {
+                    for (int l = 0; l < active_orbitals[spin].size(); l++) {
+                        for (int n = 0; n < active_orbitals[spin].size(); n++) {
+                            ints(a, l, k, n) = Inner_prods_akln(k, l * active_orbitals[spin].size() + n);
+                        }
+                    }
+                }
+            }
+            core_as_integrals_two_body_akln.push_back(ints);
+        }
+        
+        // 2. for spin; for a; ak berechnen -> nicht alle ak Kombinationen auf einmal da das Memory intensiv wäre
+        // 4. Inner Produkt ak*coul(ln) für unterschiedliche spin
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[0].size(), active_orbitals[1].size(), active_orbitals[0].size(), active_orbitals[1].size());
+            for (int a = 0; a < core_orbitals[0].size(); a++)
+            {
+                std::vector<Function<double, NDIM>> orbs_ak = core_orbitals[0][a] * active_orbitals[0];
+                orbs_ak = truncate(orbs_ak, truncation_tol);
+
+                madness::Tensor<double> Inner_prods_akln = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_ln[1], false);
+                for (int k = 0; k < active_orbitals[0].size(); k++) {
+                    for (int l = 0; l < active_orbitals[1].size(); l++) {
+                        for (int n = 0; n < active_orbitals[1].size(); n++) {
+                            ints(a, l, k, n) = Inner_prods_akln(k, l * active_orbitals[1].size() + n);
+                        }
+                    }
+                }
+            }
+            core_as_integrals_two_body_akln.push_back(ints);
+        }
+
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[1].size(), active_orbitals[0].size(), active_orbitals[1].size(), active_orbitals[0].size());
+            for (int a = 0; a < core_orbitals[1].size(); a++)
+            {
+                std::vector<Function<double, NDIM>> orbs_ak = core_orbitals[1][a] * active_orbitals[1];
+                orbs_ak = truncate(orbs_ak, truncation_tol);
+
+                madness::Tensor<double> Inner_prods_akln = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_ln[0], false);
+                for (int k = 0; k < active_orbitals[1].size(); k++) {
+                    for (int l = 0; l < active_orbitals[0].size(); l++) {
+                        for (int n = 0; n < active_orbitals[0].size(); n++) {
+                            ints(a, l, k, n) = Inner_prods_akln(k, l * active_orbitals[0].size() + n);
+                        }
+                    }
+                }
+            }
+            core_as_integrals_two_body_akln.push_back(ints);
+        }
+    }
+
+    if(calc_abak)
+    {
+        std::array<std::vector<Function<double, NDIM>>, 2> orbs_aa;
+        for (int spin = 0; spin < 2; spin++)
+        {
+            for (int a = 0; a < core_orbitals[spin].size(); a++) {
+                orbs_aa[spin].push_back(core_orbitals[spin][a] * core_orbitals[spin][a]);   
+            }
+            orbs_aa[spin] = truncate(orbs_aa[spin], truncation_tol);
+        }
+
+        // aaaa, bbbb
+        for (int spin = 0; spin < 2; spin++)
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[spin].size(), core_orbitals[spin].size(), active_orbitals[spin].size());
+            for (int b = 0; b < core_orbitals[spin].size(); b++)
+            {
+                std::vector<Function<double, NDIM>> orbs_bk = core_orbitals[spin][b] * active_orbitals[spin];
+                orbs_bk = truncate(orbs_bk, truncation_tol);
+                std::vector<Function<double, NDIM>> coul_orbs_bk = apply(*(madness_process.world), *coul_op_parallel, orbs_bk);
+                coul_orbs_bk = truncate(coul_orbs_bk, truncation_tol);
+
+                madness::Tensor<double> Inner_prods_abak = matrix_inner(*(madness_process.world), orbs_aa[spin], coul_orbs_bk, false);
+                for (int a = 0; a < core_orbitals[spin].size(); a++) {
+                    for (int k = 0; k < active_orbitals[spin].size(); k++) {
+                            ints(a,b,k) = Inner_prods_abak(a, k);
+                    }
+                }
+            }
+            core_as_integrals_two_body_abak.push_back(ints);
+        }
+
+        //aabb
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[0].size(), core_orbitals[1].size(), active_orbitals[1].size());
+            for (int b = 0; b < core_orbitals[1].size(); b++)
+            {
+                std::vector<Function<double, NDIM>> orbs_bk = core_orbitals[1][b] * active_orbitals[1];
+                orbs_bk = truncate(orbs_bk, truncation_tol);
+                std::vector<Function<double, NDIM>> coul_orbs_bk = apply(*(madness_process.world), *coul_op_parallel, orbs_bk);
+                coul_orbs_bk = truncate(coul_orbs_bk, truncation_tol);
+
+                madness::Tensor<double> Inner_prods_abak = matrix_inner(*(madness_process.world), orbs_aa[0], coul_orbs_bk, false);
+                for (int a = 0; a < core_orbitals[0].size(); a++) {
+                    for (int k = 0; k < active_orbitals[1].size(); k++) {
+                        ints(a,b,k) = Inner_prods_abak(a, k);
+                    }
+                }
+            }
+            core_as_integrals_two_body_abak.push_back(ints);
+        }
+
+        //bbaa
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[1].size(), core_orbitals[0].size(), active_orbitals[0].size());
+            for (int b = 0; b < core_orbitals[0].size(); b++)
+            {
+                std::vector<Function<double, NDIM>> orbs_bk = core_orbitals[0][b] * active_orbitals[0];
+                orbs_bk = truncate(orbs_bk, truncation_tol);
+                std::vector<Function<double, NDIM>> coul_orbs_bk = apply(*(madness_process.world), *coul_op_parallel, orbs_bk);
+                coul_orbs_bk = truncate(coul_orbs_bk, truncation_tol);
+
+                madness::Tensor<double> Inner_prods_abak = matrix_inner(*(madness_process.world), orbs_aa[1], coul_orbs_bk, false);
+                for (int a = 0; a < core_orbitals[1].size(); a++) {
+                    for (int k = 0; k < active_orbitals[0].size(); k++) {
+                        ints(a,b,k) = Inner_prods_abak(a, k);
+                    }
+                }
+            }
+            core_as_integrals_two_body_abak.push_back(ints);
+        }
+    }
+
+    if(calc_baak)
+    {
+        for (int spin = 0; spin < 2; spin++)
+        {
+            madness::Tensor<double> ints = madness::Tensor<double>(core_orbitals[spin].size(), core_orbitals[spin].size(), active_orbitals[spin].size());
+            for (int a = 0; a < core_orbitals[spin].size(); a++)
+            {
+                std::vector<Function<double, NDIM>> orbs_ak = core_orbitals[spin][a] * active_orbitals[spin];
+                orbs_ak = truncate(orbs_ak, truncation_tol);
+                std::vector<Function<double, NDIM>> coul_orbs_ak = apply(*(madness_process.world), *coul_op_parallel, orbs_ak);
+                coul_orbs_ak = truncate(coul_orbs_ak, truncation_tol);
+
+                for (int b = 0; b < core_orbitals[spin].size(); b++)
+                {
+                    std::vector<Function<double, NDIM>> ba;
+                    ba.push_back(core_orbitals[spin][b] * core_orbitals[spin][a]);
+                    madness::Tensor<double> Inner_prods_baak = matrix_inner(*(madness_process.world), ba, coul_orbs_ak, false);
+                    for (int k = 0; k < active_orbitals[spin].size(); k++) {
+                        ints(a,b,k) = Inner_prods_baak(0, k);
+                    }
+                }
+            }
+            core_as_integrals_two_body_baak.push_back(ints);
         }
     }
 

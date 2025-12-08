@@ -135,5 +135,4 @@ for i in range(len(beta_mos)):
   beta_mos[i].type="active"
 
 opti = mad.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-#orbs = opti.get_orbitals(orbitals=[alpha_mos, beta_mos], rdm1=[], rdm2=[], opt_thresh=0.001, occ_thresh=0.001)
-opti.optimize_orbs(orbitals=[alpha_mos, beta_mos], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001)
+opti.optimize_orbs(orbitals=[[], [], alpha_mos, beta_mos], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001)

@@ -119,9 +119,6 @@ energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises,
     thrds=thrds, iprint=1)
 print('DMRG energy = %20.15f' % energy)
 
-
-
-'''
 # Extract rdms
 rdm_1 = driver.get_1pdm(ket)
 rdm_2 = driver.get_2pdm(ket) 
@@ -130,24 +127,12 @@ rdm_2_phys_aa = rdm_2[0].transpose(0, 1, 3, 2)
 rdm_2_phys_ab = rdm_2[1].transpose(0, 1, 3, 2)
 rdm_2_phys_bb = rdm_2[2].transpose(0, 1, 3, 2)
 
-one_body_en = np.einsum('ij,ij->', rdm_1[0], T_aa + V_aa) + np.einsum('ij,ij->', rdm_1[1], T_bb + V_bb)
-two_body_en = 0.5 * (np.einsum('ijkl,ikjl->', rdm_2_phys_aa, G_aa) 
-                     + 2 * np.einsum('ijkl,ikjl->', rdm_2_phys_ab, G_ab) 
-                     + np.einsum('ijkl,ikjl->', rdm_2_phys_bb, G_bb))
+one_body_en = np.einsum('ij,ij->', rdm_1[0], h1[0]) + np.einsum('ij,ij->', rdm_1[1], h1[1])
+two_body_en = 0.5 * (np.einsum('ijkl,ikjl->', rdm_2_phys_aa, g2[0]) 
+                     + 2 * np.einsum('ijkl,ikjl->', rdm_2_phys_ab, g2[1]) 
+                     + np.einsum('ijkl,ikjl->', rdm_2_phys_bb, g2[2]))
 rdm_energy = one_body_en + two_body_en + nuclear_repulsion_energy
 print('Energy from rdms = %20.15f' % rdm_energy)
 
-
-
-# Refine orbitals
-for i in range(len(alpha_mos)):
-    alpha_mos[i].type="active"
-for i in range(len(beta_mos)):
-  beta_mos[i].type="active"
-
-beta_mos.pop(2)
-
 opti = mad.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-#orbs = opti.get_orbitals(orbitals=[alpha_mos, beta_mos], rdm1=[], rdm2=[], opt_thresh=0.001, occ_thresh=0.001)
-opti.optimize_orbs(orbitals=[alpha_mos, beta_mos], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001)
-'''
+opti.optimize_orbs(orbitals=[core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001, maxiter=1)
