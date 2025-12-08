@@ -60,7 +60,7 @@ orbs[4].type = "active"
 import numpy as np
 
 opti = mad.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
-orbs = opti.get_orbitals(orbitals=orbs, rdm1=np.zeros((2,2)), rdm2=np.zeros((2,2,2,2)), opt_thresh=0.001, occ_thresh=0.001)
+orbs = opti.get_orbitals(orbitals=orbs, rdm1=np.zeros((3,3)), rdm2=np.zeros((3,3,3,3)), opt_thresh=0.001, occ_thresh=0.001)
 
 c, h1, g2 = opti.get_integrals()
 h1 = np.array(h1)
@@ -78,3 +78,15 @@ mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=0)
 ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=1)
 energy = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
 print('DMRG energy = %20.15f' % energy)
+
+# Extract rdms
+rdm_1 = driver.get_1pdm(ket)
+rdm_2 = driver.get_2pdm(ket) 
+
+one_body_en = np.einsum('ij,ij->', rdm_1, h1)
+two_body_en = 0.5 * np.einsum('ijkl,ikjl->', rdm_2, g2)
+rdm_energy = one_body_en + two_body_en + c
+print('Energy from rdms = %20.15f' % rdm_energy)
+
+opti = mad.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
+orbs = opti.optimize_orbs(orbitals=orbs, rdm1=rdm_1, rdm2=rdm_2, opt_thresh=0.001, occ_thresh=0.001, maxiter=1)
