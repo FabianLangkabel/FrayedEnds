@@ -46,14 +46,12 @@ for d in distance:
         geom = ("H 0.0 0.0 " + (-d - d / 2).__str__() + "\n"
                 "H 0.0 0.0 " + (-d / 2).__str__() + "\n"
                 "H 0.0 0.0 " + (d / 2).__str__() + "\n"
-                "H 0.0 0.0 " + (d + d / 2).__str__() + "\n"
-        )
+                "H 0.0 0.0 " + (d + d / 2).__str__() + "\n")
     elif geometry_mode == "h2_pair":  # for H2 molecules getting closer and closer to a H4 molecule
         geom = ("H 0.0 0.0 " + (-d - 1.5).__str__() + "\n"
                 "H 0.0 0.0 " + (-d).__str__() + "\n"
                 "H 0.0 0.0 " + d.__str__() + "\n"
-                "H 0.0 0.0 " + (d + 1.5).__str__() + "\n"
-        )
+                "H 0.0 0.0 " + (d + 1.5).__str__() + "\n")
     else:
         raise ValueError("Invalid geometry mode selected.")
 
