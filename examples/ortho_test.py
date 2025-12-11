@@ -1,8 +1,10 @@
+import os
+
 import numpy as np
 import tequila as tq
+from matplotlib import pyplot as plt
 
 import frayedends as fe
-
 
 n_electrons = 2  # Number of electrons
 n_orbitals = 6  # Number of orbitals (all active in this example)
@@ -13,6 +15,86 @@ def potential(x: float, y: float) -> float:  # The potential V(x, y), which bind
     a = -5.0
     r = np.array([x, y])
     return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
+
+def plot_orbitals_2d(orbitals, world, iteration, n_points=101, zoom_threshold=0.01):
+    """Plots 2D orbitals as heatmaps for visualization with automatic zooming
+
+    Args:
+        orbitals: List of SavedFct2D orbital objects
+        world: MadWorld2D object for generating plane plots
+        iteration: Current iteration number for labeling
+        n_points: Number of grid points for the plot
+        zoom_threshold: Fraction of max value to determine zoom region (default: 0.01 = 1%)
+    """
+    os.makedirs('orbital_plots', exist_ok=True)
+
+    n_orbs = len(orbitals)
+    fig, axes = plt.subplots(1, n_orbs, figsize=(4*n_orbs, 4))
+    if n_orbs == 1:
+        axes = [axes]
+
+    temp_files = []
+    for i, orb in enumerate(orbitals):
+        temp_file = f'_temp_orbital_{i}_iter_{iteration}.dat'
+        temp_files.append(temp_file)
+        world.plane_plot(temp_file, orb, datapoints=n_points)
+
+    for i, temp_file in enumerate(temp_files):
+        actual_file = f'plane_x1x2_{temp_file}'
+
+        data = np.loadtxt(actual_file)
+
+        # Reshape data to 2D grid (plane_plot outputs x, y, value)
+        x = data[:, 0]
+        y = data[:, 1]
+        z = data[:, 2]
+
+        x_unique = np.unique(x)
+        y_unique = np.unique(y)
+
+        # Reshape Z values into 2D grid
+        Z = z.reshape(len(y_unique), len(x_unique))
+        X, Y = np.meshgrid(x_unique, y_unique)
+
+        # Find region with significant orbital density for auto-zoom
+        z_max = np.max(np.abs(Z))
+        threshold = z_max * zoom_threshold
+        significant_mask = np.abs(Z) > threshold
+
+        if np.any(significant_mask):
+            # Find bounding box of significant region
+            y_indices, x_indices = np.where(significant_mask)
+            x_min_idx, x_max_idx = x_indices.min(), x_indices.max()
+            y_min_idx, y_max_idx = y_indices.min(), y_indices.max()
+
+            # Add padding (10% on each side)
+            x_range = x_max_idx - x_min_idx
+            y_range = y_max_idx - y_min_idx
+            x_pad = max(int(x_range * 0.1), 5)
+            y_pad = max(int(y_range * 0.1), 5)
+
+            x_min_idx = max(0, x_min_idx - x_pad)
+            x_max_idx = min(len(x_unique) - 1, x_max_idx + x_pad)
+            y_min_idx = max(0, y_min_idx - y_pad)
+            y_max_idx = min(len(y_unique) - 1, y_max_idx + y_pad)
+
+            axes[i].set_xlim(x_unique[x_min_idx], x_unique[x_max_idx])
+            axes[i].set_ylim(y_unique[y_min_idx], y_unique[y_max_idx])
+
+        vmax = np.max(np.abs(Z))
+        im = axes[i].contourf(X, Y, Z, levels=20, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
+        axes[i].set_title(f'Orbital {i}\n(max: {z_max:.2e})')
+        axes[i].set_xlabel('x')
+        axes[i].set_ylabel('y')
+        axes[i].set_aspect('equal')
+        plt.colorbar(im, ax=axes[i], format='%.1e')
+
+        os.remove(actual_file)
+
+    plt.suptitle(f'Iteration {iteration}')
+    plt.tight_layout()
+    plt.savefig(f'orbital_plots/orbitals_iteration_{iteration}.png', dpi=150)
+    plt.show()
 
 
 world = fe.MadWorld2D()  # This is required for any MADNESS calculation as it initializes the required environment
@@ -85,12 +167,13 @@ for iteration in range(6):
         orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )  # Optimizes the orbitals and returns the new ones
 
+    plot_orbitals_2d(orbitals, world, iteration)
+
     for i in range(len(orbitals)):
         world.plane_plot(f"es_orb{i}.dat", orbitals[i], datapoints=501)  # Plots the optimized orbitals
 
     if np.isclose(result.energy, current, atol=econv, rtol=0.0):
         break  # The loop terminates as soon as the energy changes less than econv in one iteration step
     current = result.energy
-
 
 fe.cleanup(globals()) #general cleanup function to ensure all objects are garbage collected in the correct order
