@@ -29,7 +29,7 @@ with open("distance_times_pno_dmrg.dat", "w") as f:
     f.write("distance total_time_s\n")
 
 with open("results_pno_dmrg.dat", "w") as f:
-    header = "distance" + " ".join(f"energy_{i}" for i in range(number_roots))
+    header = "distance " + " ".join(f"energy_{i}" for i in range(number_roots))
     f.write(header + "\n")
 
 total_start = time.perf_counter()
