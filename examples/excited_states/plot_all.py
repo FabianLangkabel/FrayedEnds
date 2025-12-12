@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 path = "/Users/truonthu/Documents/MRA-FrayedEnds/Data/linear_h4/"
 
 fci_fb_path = path + "results_fci_fb.dat"
-fci_opt_path = path + "results_fci_opt.dat"
+nwchem_fci_oo_path = path + "results_nwchem_fci_oo.dat"
 nwchem_dmrg_oo_path = path + "results_nwchem_dmrg_oo.dat" # oo for orbital optimization
 pno_dmrg_oo_path = path + "results_pno_dmrg_oo.dat"    # oo for orbital optimization
 pno_fci_oo_path = path + "results_pno_fci_oo.dat"      # oo for orbital optimization
@@ -16,7 +16,7 @@ pno_dmrg_path = path + "results_pno_dmrg.dat"
 
 
 fci_fb_data = np.genfromtxt(fci_fb_path, names=True)
-fci_opt_data = np.genfromtxt(fci_opt_path, names=True)
+nwchem_fci_oo_data = np.genfromtxt(nwchem_fci_oo_path, names=True)
 nwchem_dmrg_oo_data = np.genfromtxt(nwchem_dmrg_oo_path, names=True)    # oo for orbital optimization
 pno_dmrg_oo_data = np.genfromtxt(pno_dmrg_oo_path, names=True)          # oo for orbital optimization
 pno_fci_oo_data = np.genfromtxt(pno_fci_oo_path, names=True)            # oo for orbital optimization
@@ -27,13 +27,12 @@ nwchem_dmrg_ccpvdz_data = np.genfromtxt(nwchem_dmrg_ccpvdz_path, names=True)
 pno_dmrg_data = np.genfromtxt(pno_dmrg_path, names=True)
 
 fci_fb_distance = fci_fb_data['distance']
-fci_fb_energy = fci_fb_data['FCI']
+fci_fb_energy = fci_fb_data['energy_0']
 
 # With Orbital Optimization
 
-mask_fci_opt = fci_opt_data['iteration'] == 5
-fci_opt_distance = fci_opt_data['distance'][mask_fci_opt]
-fci_opt_energy_0 = fci_opt_data['energy_0'][mask_fci_opt]
+nwchem_fci_oo_distance = nwchem_fci_oo_data['distance']
+nwchem_fci_oo_energy_0 = nwchem_fci_oo_data['energy_0']
 
 nwchem_dmrg_oo_distance = nwchem_dmrg_oo_data['distance']
 nwchem_dmrg_oo_energy_0 = nwchem_dmrg_oo_data['energy_0']
@@ -60,7 +59,6 @@ nwchem_dmrg_ccpvdz_energy_0 = nwchem_dmrg_ccpvdz_data['energy_0']
 nwchem_dmrg_ccpvdz_energy_1 = nwchem_dmrg_ccpvdz_data['energy_1']
 nwchem_dmrg_ccpvdz_energy_2 = nwchem_dmrg_ccpvdz_data['energy_2']
 
-
 pno_dmrg_distance = pno_dmrg_data['distance']
 pno_dmrg_energy_0 = pno_dmrg_data['energy_0']
 pno_dmrg_energy_1 = pno_dmrg_data['energy_1']
@@ -69,7 +67,7 @@ pno_dmrg_energy_2 = pno_dmrg_data['energy_2']
 # Plot with Orbital Optimization
 plt.figure(figsize=(8,5), dpi=300)
 #plt.plot(fci_fb_distance, fci_fb_energy, color='tab:blue', label="6-31g FCI-fixed $E_0$")
-#plt.plot(fci_opt_distance, fci_opt_energy_0, color='tab:green', label="6-31g FCI OO $E_0$")
+#plt.plot(nwchem_fci_oo_distance, nwchem_fci_oo_energy_0, color='tab:green', label="6-31g FCI OO $E_0$")
 plt.plot(nwchem_dmrg_oo_distance, nwchem_dmrg_oo_energy_0, color='tab:orange', label="6-31g DMRG OO $E_0$")
 #plt.plot(pno_dmrg_oo_distance, pno_dmrg_oo_energy_0, color='tab:red', label="PNO DMRG OO $E_0$")
 #plt.plot(pno_fci_oo_distance, pno_fci_oo_energy_0, color='tab:brown', label="PNO FCI OO $E_0$")
