@@ -1,0 +1,50 @@
+15 active alpha orbitals and 15 active beta orbitals
+GiveInitialOrbitals took 0 seconds
+GiveRDMFiles took 0 seconds
+Calculate all integrals: 169 seconds
+      Active Space - One electron energy  -5.023435e+01
+      Active Space - Two-electron energy  1.678298e+01
+              AS-Core correlation energy  0.000000e+00
+                       Total core energy  0.000000e+00
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.154489e+01
+CalculateEnergies took 0 seconds
+---------------------------------------------------
+Start iteration step: 0
+CalculateLagrangeMultiplier took 0 seconds
+Alpha AS-Core Lagrange Multiplier:
+[empty tensor]
+
+Skip refinement of spin0active space orbital 9, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 10, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 11, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 12, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 13, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 14, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 9, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 10, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 11, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 12, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 13, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 14, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Error of spin 0 active space orbital 0: 2.582804e-02
+Error of spin 0 active space orbital 1: 2.264866e-02
+Error of spin 0 active space orbital 2: 1.982927e-02
+Error of spin 0 active space orbital 3: 5.660881e-02
+Error of spin 0 active space orbital 4: 5.660848e-02
+Error of spin 0 active space orbital 5: 1.059747e-01
+Error of spin 0 active space orbital 6: 6.090090e-02
+Error of spin 0 active space orbital 7: 1.020092e-01
+Error of spin 0 active space orbital 8: 1.020102e-01
+Error of spin 1 active space orbital 0: 2.600787e-02
+Error of spin 1 active space orbital 1: 2.266676e-02
+Error of spin 1 active space orbital 2: 1.974827e-02
+Error of spin 1 active space orbital 3: 5.680073e-02
+Error of spin 1 active space orbital 4: 5.680081e-02
+Error of spin 1 active space orbital 5: 1.031662e-01
+Error of spin 1 active space orbital 6: 1.192088e-01
+Error of spin 1 active space orbital 7: 1.107951e-01
+Error of spin 1 active space orbital 8: 1.107949e-01
+UpdateOrbitals took 569 seconds
+Highest error: 1.192088e-01
+Update Integrals

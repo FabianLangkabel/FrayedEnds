@@ -1,0 +1,40 @@
+6 active alpha orbitals and 6 active beta orbitals
+GiveInitialOrbitals took 22 seconds
+GiveRDMFiles took 0 seconds
+Calculate all integrals: -4 seconds
+      Active Space - One electron energy  -5.018643e+01
+      Active Space - Two-electron energy  1.675917e+01
+              AS-Core correlation energy  0.000000e+00
+                       Total core energy  0.000000e+00
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.152078e+01
+CalculateEnergies took 0 seconds
+---------------------------------------------------
+Start iteration step: 0
+CalculateLagrangeMultiplier took 0 seconds
+Alpha AS-Core Lagrange Multiplier:
+[empty tensor]
+
+Error of spin 0 active space orbital 0: 2.325172e-02
+Error of spin 0 active space orbital 1: 2.624678e-02
+Error of spin 0 active space orbital 2: 1.971963e-02
+Error of spin 0 active space orbital 3: 5.802200e-02
+Error of spin 0 active space orbital 4: 6.410682e-02
+Error of spin 0 active space orbital 5: 1.127439e-01
+Error of spin 1 active space orbital 0: 2.391000e-02
+Error of spin 1 active space orbital 1: 2.429626e-02
+Error of spin 1 active space orbital 2: 2.186539e-02
+Error of spin 1 active space orbital 3: 1.409517e-01
+Error of spin 1 active space orbital 4: 5.300769e-02
+Error of spin 1 active space orbital 5: 6.035492e-02
+UpdateOrbitals took 20 seconds
+Highest error: 1.409517e-01
+Update Integrals
+Calculate all integrals: 25 seconds
+      Active Space - One electron energy  -5.060703e+01
+      Active Space - Two-electron energy  1.686050e+01
+              AS-Core correlation energy  0.000000e+00
+                       Total core energy  0.000000e+00
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.184005e+01
+CalculateEnergies took 0 seconds

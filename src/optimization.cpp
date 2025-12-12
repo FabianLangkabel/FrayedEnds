@@ -796,6 +796,7 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     auto coul_op_parallel =
         std::shared_ptr<SeparatedConvolution<double, NDIM>>(CoulombOperatorNDPtr<NDIM>(*(madness_process.world), 0.001, 1e-6));
 
+
     if (core_dim > 0) {
         // Part 1
         std::vector<Function<double, NDIM>> orbs_aa;
@@ -865,6 +866,7 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     auto t7 = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
 
+    /*
     std::cout << "Refinement timings:" << std::endl;
     std::cout << "rdm_ii_inv calculation: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
               << " seconds" << std::endl;
@@ -880,6 +882,7 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
               << std::endl;
     std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
               << " seconds" << std::endl;
+    */
 
     return AllOrbitalUpdates;
 }
