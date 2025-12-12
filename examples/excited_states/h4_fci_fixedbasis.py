@@ -5,7 +5,7 @@ geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
 
 if geometry_mode == "equidistant":
-    distance = np.arange(0.5, 3.05, 0.05).tolist()  # for linear H4 molecule with equidistant spacing d
+    distance = np.arange(2.5, 0.45, -0.05).tolist()  # for linear H4 molecule with equidistant spacing d
 elif geometry_mode == "h2_pair":
     distance = np.arange(1.5, 0.25, -0.02).tolist() # for H2 pair getting closer
 else:
