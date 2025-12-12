@@ -1,0 +1,149 @@
+12 active alpha orbitals and 12 active beta orbitals
+GiveInitialOrbitals took 0 seconds
+GiveRDMFiles took 0 seconds
+akal: 30 seconds
+akla: 9 seconds
+akln: 33 seconds
+abak: 17 seconds
+baak: 8 seconds
+Calculate all integrals: 171 seconds
+Orbital Multiplication: 29 seconds
+One Body AS: 32 seconds
+Two Body AS: 0 seconds
+Core-AS: 108 seconds
+      Initial core enrgy (energy offset)  0.000000e+00
+                   Core - Kinetic energy  2.096013e+01
+        Core - Nuclear attraction energy  -6.309707e+01
+              Core - Two-electron energy  1.022100e+01
+                       Total core energy  -3.191594e+01
+      Active Space - One electron energy  -8.125816e+00
+      Active Space - Two-electron energy  6.550453e-01
+              AS-Core correlation energy  5.947224e+00
+                       Total core energy  -3.191594e+01
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.153301e+01
+CalculateEnergies took 0 seconds
+---------------------------------------------------
+Start iteration step: 0
+z: 0, i: 0, p1: 5.796378e-03, p2: -6.853749e-04, p3: -9.846155e-03, p4: 4.503998e-03
+z: 0, i: 1, p1: 2.363271e-03, p2: -2.794611e-04, p3: -4.014349e-03, p4: 1.836319e-03
+z: 0, i: 2, p1: 1.653925e-01, p2: -1.956439e-02, p3: -2.809656e-01, p4: 1.285234e-01
+z: 0, i: 3, p1: -2.602776e-08, p2: 4.487791e-09, p3: 4.712157e-08, p4: -2.287347e-08
+z: 0, i: 4, p1: 4.811465e-09, p2: -3.604560e-09, p3: -9.632145e-09, p4: 5.078207e-09
+z: 0, i: 5, p1: -8.883856e-09, p2: -6.727436e-10, p3: 1.759942e-08, p4: -9.181123e-09
+z: 0, i: 6, p1: -5.355934e-05, p2: -1.077858e-04, p3: 1.114811e-04, p4: -6.019819e-05
+z: 0, i: 7, p1: 7.601135e-08, p2: 1.563741e-07, p3: -1.583304e-07, p4: 8.553792e-08
+z: 0, i: 8, p1: -1.708881e-08, p2: -3.449433e-08, p3: 3.556738e-08, p4: -1.920579e-08
+z: 0, i: 9, p1: 1.507934e-11, p2: 4.216090e-10, p3: -4.212900e-11, p4: 2.634945e-11
+z: 0, i: 10, p1: -1.676188e-08, p2: -7.157096e-07, p3: 4.747573e-08, p4: -2.986536e-08
+z: 0, i: 11, p1: -3.858833e-16, p2: 7.957021e-11, p3: 1.119020e-15, p4: -7.010101e-16
+z: 1, i: 0, p1: -7.093721e-07, p2: 6.039499e-08, p3: 1.122275e-06, p4: -4.632073e-07
+z: 1, i: 1, p1: -8.412012e-07, p2: 6.799332e-08, p3: 1.344941e-06, p4: -5.621201e-07
+z: 1, i: 2, p1: 1.481590e-06, p2: -7.744459e-08, p3: -2.364919e-06, p4: 9.860560e-07
+z: 1, i: 3, p1: 1.406203e-03, p2: 3.549153e-04, p3: -2.488697e-03, p4: 1.158014e-03
+z: 1, i: 4, p1: 5.739057e-07, p2: 1.503729e-07, p3: -1.019962e-06, p4: 4.765190e-07
+z: 1, i: 5, p1: 4.294387e-06, p2: 1.097886e-06, p3: -7.601289e-06, p4: 3.537775e-06
+z: 1, i: 6, p1: -1.263721e-09, p2: -7.738606e-10, p3: 2.418690e-09, p4: -1.205615e-09
+z: 1, i: 7, p1: -5.811914e-10, p2: -9.583634e-11, p3: 6.679583e-10, p4: -1.412143e-10
+z: 1, i: 8, p1: 4.162845e-10, p2: 4.132992e-10, p3: -6.249090e-10, p4: 2.369924e-10
+z: 1, i: 9, p1: 7.366401e-08, p2: 2.696226e-07, p3: -3.652569e-07, p4: 2.759458e-07
+z: 1, i: 10, p1: -2.996624e-12, p2: -7.719527e-12, p3: 3.199543e-12, p4: -4.978703e-13
+z: 1, i: 11, p1: 2.147223e-11, p2: 1.783737e-10, p3: -4.037782e-11, p4: 1.962727e-11
+z: 2, i: 0, p1: -2.050206e-03, p2: 6.690573e-05, p3: 3.741381e-03, p4: -1.782901e-03
+z: 2, i: 1, p1: -8.358553e-04, p2: 2.728632e-05, p3: 1.525296e-03, p4: -7.268491e-04
+z: 2, i: 2, p1: -5.848636e-02, p2: 1.906106e-03, p3: 1.067462e-01, p4: -5.087065e-02
+z: 2, i: 3, p1: -6.343527e-09, p2: -1.662849e-09, p3: 5.962367e-09, p4: -5.579991e-10
+z: 2, i: 4, p1: 6.566360e-09, p2: 1.306811e-09, p3: -8.758143e-09, p4: 2.895293e-09
+z: 2, i: 5, p1: -9.914833e-09, p2: -1.071989e-09, p3: 1.357517e-08, p4: -4.604063e-09
+z: 2, i: 6, p1: -8.616502e-05, p2: -7.754169e-05, p3: 1.217054e-04, p4: -4.320679e-05
+z: 2, i: 7, p1: 1.227772e-07, p2: 1.141184e-07, p3: -1.735222e-07, p4: 6.164926e-08
+z: 2, i: 8, p1: -2.749900e-08, p2: -2.476533e-08, p3: 3.883423e-08, p4: -1.378414e-08
+z: 2, i: 9, p1: 6.385022e-11, p2: 6.874950e-11, p3: -1.016190e-10, p4: 4.095847e-11
+z: 2, i: 10, p1: -7.388394e-08, p2: -5.889527e-08, p3: 1.174968e-07, p4: -4.733893e-08
+z: 2, i: 11, p1: -1.718978e-15, p2: -4.883881e-11, p3: 2.722731e-15, p4: -1.095706e-15
+z: 0, i: 0, p1: -7.625675e-02, p2: 9.391663e-03, p3: 1.368069e-01, p4: -6.289714e-02
+z: 0, i: 1, p1: -1.407934e-03, p2: 1.734865e-04, p3: 2.525729e-03, p4: -1.161255e-03
+z: 0, i: 2, p1: -3.739554e-03, p2: 4.608317e-04, p3: 6.708632e-03, p4: -3.084448e-03
+z: 0, i: 3, p1: -1.477346e-08, p2: 1.777814e-09, p3: 2.865831e-08, p4: -1.414620e-08
+z: 0, i: 4, p1: -2.472249e-09, p2: -1.394639e-09, p3: 3.370768e-09, p4: -1.072835e-09
+z: 0, i: 5, p1: 2.739376e-09, p2: 2.149152e-09, p3: -5.060856e-09, p4: 2.396094e-09
+z: 0, i: 6, p1: -2.473553e-05, p2: -5.125853e-05, p3: 5.458073e-05, p4: -2.973284e-05
+z: 0, i: 7, p1: 2.337308e-08, p2: 5.013178e-08, p3: -5.162829e-08, p4: 2.814546e-08
+z: 0, i: 8, p1: 5.844017e-08, p2: 1.252318e-07, p3: -1.290777e-07, p4: 7.036410e-08
+z: 0, i: 9, p1: 1.568680e-12, p2: -2.025430e-11, p3: -3.930499e-12, p4: 2.333137e-12
+z: 0, i: 10, p1: -8.418317e-09, p2: -3.473061e-07, p3: 2.382553e-08, p4: -1.506827e-08
+z: 0, i: 11, p1: 5.653023e-18, p2: 8.807683e-11, p3: -2.781724e-17, p4: 1.632775e-17
+z: 1, i: 0, p1: 8.202433e-07, p2: -3.994005e-08, p3: -1.325684e-06, p4: 5.546673e-07
+z: 1, i: 1, p1: -4.193898e-08, p2: 2.649851e-08, p3: 8.423066e-08, p4: -4.318058e-08
+z: 1, i: 2, p1: -5.076630e-07, p2: 5.207394e-08, p3: 8.054439e-07, p4: -3.297356e-07
+z: 1, i: 3, p1: -6.928942e-04, p2: -1.686132e-04, p3: 1.243030e-03, p4: -5.795845e-04
+z: 1, i: 4, p1: 2.632358e-06, p2: 6.548242e-07, p3: -4.727019e-06, p4: 2.206018e-06
+z: 1, i: 5, p1: -3.594514e-06, p2: -8.957430e-07, p3: 6.455221e-06, p4: -3.012812e-06
+z: 1, i: 6, p1: 8.485619e-10, p2: 9.670920e-10, p3: -1.506653e-09, p4: 6.956941e-10
+z: 1, i: 7, p1: 2.023944e-10, p2: 5.406871e-10, p3: -3.390705e-10, p4: 1.476487e-10
+z: 1, i: 8, p1: 2.332517e-11, p2: 5.898921e-10, p3: -4.544703e-10, p4: 3.912883e-10
+z: 1, i: 9, p1: -3.330559e-08, p2: -1.307558e-07, p3: 1.837824e-07, p4: -1.396405e-07
+z: 1, i: 10, p1: -5.495316e-12, p2: -2.613115e-12, p3: 1.050815e-11, p4: -5.184754e-12
+z: 1, i: 11, p1: -1.155151e-13, p2: -1.565712e-13, p3: 2.170636e-13, p4: -1.055441e-13
+z: 2, i: 0, p1: 2.805349e-02, p2: -8.904057e-04, p3: -5.190500e-02, p4: 2.462998e-02
+z: 2, i: 1, p1: 5.176792e-04, p2: -1.641266e-05, p3: -9.577946e-04, p4: 4.545263e-04
+z: 2, i: 2, p1: 1.374995e-03, p2: -4.358873e-05, p3: -2.544151e-03, p4: 1.207374e-03
+z: 2, i: 3, p1: -5.939975e-09, p2: -8.251189e-10, p3: 6.629041e-09, p4: -1.517522e-09
+z: 2, i: 4, p1: 6.609796e-09, p2: -9.395925e-10, p3: -9.956332e-09, p4: 3.884236e-09
+z: 2, i: 5, p1: -3.350390e-10, p2: 2.894486e-10, p3: 7.659560e-10, p4: -4.283871e-10
+z: 2, i: 6, p1: -4.364528e-05, p2: -3.747801e-05, p3: 6.181729e-05, p4: -2.214358e-05
+z: 2, i: 7, p1: 4.149286e-08, p2: 3.704162e-08, p3: -5.881978e-08, p4: 2.109266e-08
+z: 2, i: 8, p1: 1.036981e-07, p2: 9.280994e-08, p3: -1.470007e-07, p4: 5.271528e-08
+z: 2, i: 9, p1: 4.658976e-12, p2: -5.454734e-11, p3: -7.348746e-12, p4: 2.943038e-12
+z: 2, i: 10, p1: -3.769541e-08, p2: -2.511046e-08, p3: 5.998773e-08, p4: -2.426754e-08
+z: 2, i: 11, p1: 2.523508e-17, p2: -5.692021e-11, p3: -4.991474e-17, p4: 1.949899e-17
+CalculateLagrangeMultiplier took 0 seconds
+Alpha AS-Core Lagrange Multiplier:
+[0,*]  -0.00023115  -0.00009422  -0.00661414   0.00000000  -0.00000000  -0.00000000  -0.00011006   0.00000016  -0.00000004   0.00000000  -0.00000071   0.00000000
+[1,*]   0.00000001   0.00000001   0.00000003   0.00043043   0.00000018   0.00000133  -0.00000000  -0.00000000   0.00000000   0.00000025  -0.00000000   0.00000000
+[2,*]  -0.00002482  -0.00001012  -0.00070473  -0.00000000   0.00000000  -0.00000000  -0.00008521   0.00000013  -0.00000003   0.00000000  -0.00000006  -0.00000000
+
+Skip refinement of spin0active space orbital 6, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 7, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 8, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 9, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 10, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 11, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 6, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 7, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 8, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 9, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 10, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 11, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Error of spin 0 active space orbital 0: 5.570642e-02
+Error of spin 0 active space orbital 1: 5.562368e-02
+Error of spin 0 active space orbital 2: 1.089866e-01
+Error of spin 0 active space orbital 3: 1.001324e-01
+Error of spin 0 active space orbital 4: 8.571382e-02
+Error of spin 0 active space orbital 5: 8.571775e-02
+Error of spin 1 active space orbital 0: 1.086020e-01
+Error of spin 1 active space orbital 1: 5.550627e-02
+Error of spin 1 active space orbital 2: 5.567411e-02
+Error of spin 1 active space orbital 3: 9.994840e-02
+Error of spin 1 active space orbital 4: 8.560466e-02
+Error of spin 1 active space orbital 5: 8.560773e-02
+UpdateOrbitals took 231 seconds
+Highest error: 1.089866e-01
+Update Integrals
+akal: 33 seconds
+akla: 10 seconds
+akln: 35 seconds
+abak: 19 seconds
+baak: 9 seconds
+Calculate all integrals: 200 seconds
+Orbital Multiplication: 36 seconds
+One Body AS: 44 seconds
+Two Body AS: 1 seconds
+Core-AS: 117 seconds
+      Active Space - One electron energy  -8.256472e+00
+      Active Space - Two-electron energy  6.678198e-01
+              AS-Core correlation energy  6.022775e+00
+                       Total core energy  -3.191594e+01
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.157534e+01
+CalculateEnergies took 0 seconds

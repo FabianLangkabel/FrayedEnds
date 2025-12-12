@@ -1,0 +1,78 @@
+12 active alpha orbitals and 12 active beta orbitals
+GiveInitialOrbitals took 0 seconds
+GiveRDMFiles took 0 seconds
+akal: 0 seconds
+akla: 8 seconds
+akln: 1 seconds
+abak: 16 seconds
+baak: 8 seconds
+Calculate all integrals: 109 seconds
+Orbital Multiplication: 30 seconds
+One Body AS: 33 seconds
+Two Body AS: 1 seconds
+Core-AS: 44 seconds
+      Initial core enrgy (energy offset)  0.000000e+00
+                   Core - Kinetic energy  2.096013e+01
+        Core - Nuclear attraction energy  -6.309707e+01
+              Core - Two-electron energy  1.022100e+01
+                       Total core energy  -3.191594e+01
+      Active Space - One electron energy  -8.125816e+00
+      Active Space - Two-electron energy  6.550453e-01
+              AS-Core correlation energy  5.947223e+00
+                       Total core energy  -3.191594e+01
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.153301e+01
+CalculateEnergies took 0 seconds
+---------------------------------------------------
+Start iteration step: 0
+CalculateLagrangeMultiplier took 0 seconds
+Skip refinement of spin0active space orbital 6, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 7, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 8, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 9, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 10, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin0active space orbital 11, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 6, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 7, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 8, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 9, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 10, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Skip refinement of spin1active space orbital 11, since the occupation is less than NO_occupation_thresh (1.000000e-03)
+Error of spin 0 active space orbital 0: 5.560842e-02
+Error of spin 0 active space orbital 1: 5.564088e-02
+Error of spin 0 active space orbital 2: 1.090257e-01
+Error of spin 0 active space orbital 3: 1.001328e-01
+Error of spin 0 active space orbital 4: 8.571554e-02
+Error of spin 0 active space orbital 5: 8.571552e-02
+Error of spin 1 active space orbital 0: 1.086773e-01
+Error of spin 1 active space orbital 1: 5.554330e-02
+Error of spin 1 active space orbital 2: 5.548124e-02
+Error of spin 1 active space orbital 3: 9.994951e-02
+Error of spin 1 active space orbital 4: 8.560680e-02
+Error of spin 1 active space orbital 5: 8.560778e-02
+Refinement timings:
+rdm_ii_inv calculation: 0 seconds
+one electron part: 1 seconds
+AS two electron part: 221 seconds
+BSH + Core-AS part: 22 seconds
+Full function: 246 seconds
+UpdateOrbitals took 246 seconds
+Highest error: 1.090257e-01
+Update Integrals
+akal: 0 seconds
+akla: 9 seconds
+akln: 2 seconds
+abak: 17 seconds
+baak: 8 seconds
+Calculate all integrals: 130 seconds
+Orbital Multiplication: 37 seconds
+One Body AS: 44 seconds
+Two Body AS: 1 seconds
+Core-AS: 47 seconds
+      Active Space - One electron energy  -8.256481e+00
+      Active Space - Two-electron energy  6.678208e-01
+              AS-Core correlation energy  6.022783e+00
+                       Total core energy  -3.191594e+01
+                Nuclear repulsion energy  1.190648e+01
+                            Total energy  -2.157534e+01
+CalculateEnergies took 0 seconds
