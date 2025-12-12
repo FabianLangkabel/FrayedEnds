@@ -1,0 +1,52 @@
+3 active alpha orbitals and 3 active beta orbitals
+GiveInitialOrbitals took 0 seconds
+GiveRDMFiles took 0 seconds
+Calculate all integrals: 77 seconds
+      Initial core enrgy (energy offset)  0.000000e+00
+                   Core - Kinetic energy  1.403654e+01
+        Core - Nuclear attraction energy  -3.479901e+01
+              Core - Two-electron energy  4.373791e+00
+                       Total core energy  -1.638868e+01
+      Active Space - One electron energy  -3.494879e+00
+      Active Space - Two-electron energy  2.343530e-01
+              AS-Core correlation energy  2.636053e+00
+                       Total core energy  -1.638868e+01
+                Nuclear repulsion energy  2.381296e+00
+                            Total energy  -1.463186e+01
+CalculateEnergies took 0 seconds
+---------------------------------------------------
+Start iteration step: 0
+z: 0, i: 0, p1: 1.860334e-01, p2: -7.202927e-03, p3: -3.671705e-01, p4: 1.860610e-01
+z: 0, i: 1, p1: 2.140258e-15, p2: 6.901039e-19, p3: -1.350964e-18, p4: 1.048754e-18
+z: 0, i: 2, p1: 1.811300e-16, p2: 4.334718e-17, p3: -3.293946e-16, p4: 1.581096e-16
+z: 1, i: 0, p1: -7.863736e-15, p2: 3.090598e-16, p3: 1.499186e-14, p4: -7.549009e-15
+z: 1, i: 1, p1: 1.152873e-17, p2: -9.734093e-19, p3: -3.452497e-18, p4: 3.046934e-19
+z: 1, i: 2, p1: 4.600935e-03, p2: 1.065842e-03, p3: -8.209980e-03, p4: 3.927394e-03
+z: 0, i: 0, p1: 1.860334e-01, p2: -7.202927e-03, p3: -3.671705e-01, p4: 1.860610e-01
+z: 0, i: 1, p1: 2.140226e-15, p2: 4.140783e-19, p3: -1.124042e-18, p4: 1.091837e-18
+z: 0, i: 2, p1: 1.802746e-16, p2: 4.332694e-17, p3: -3.296410e-16, p4: 1.581161e-16
+z: 1, i: 0, p1: -7.795726e-15, p2: 3.086376e-16, p3: 1.498613e-14, p4: -7.558781e-15
+z: 1, i: 1, p1: 1.154360e-17, p2: -1.317634e-18, p3: -3.055428e-18, p4: 1.334782e-19
+z: 1, i: 2, p1: 4.600935e-03, p2: 1.065842e-03, p3: -8.209980e-03, p4: 3.927394e-03
+CalculateLagrangeMultiplier took 0 seconds
+Alpha AS-Core Lagrange Multiplier:
+[0,*]  -0.00227903   0.00000000   0.00000000
+[1,*]  -0.00000000   0.00000000   0.00138419
+
+Error of spin 0 active space orbital 0: 1.453960e-01
+Error of spin 0 active space orbital 1: 1.143673e-01
+Error of spin 0 active space orbital 2: 1.105254e-01
+Error of spin 1 active space orbital 0: 1.453960e-01
+Error of spin 1 active space orbital 1: 1.143673e-01
+Error of spin 1 active space orbital 2: 1.105254e-01
+UpdateOrbitals took 29 seconds
+Highest error: 1.453960e-01
+Update Integrals
+Calculate all integrals: 97 seconds
+      Active Space - One electron energy  -3.340469e+00
+      Active Space - Two-electron energy  2.119181e-01
+              AS-Core correlation energy  2.462761e+00
+                       Total core energy  -1.638868e+01
+                Nuclear repulsion energy  2.381296e+00
+                            Total energy  -1.467318e+01
+CalculateEnergies took 0 seconds

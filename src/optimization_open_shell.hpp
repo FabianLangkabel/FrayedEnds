@@ -30,10 +30,8 @@ class Optimization_open_shell {
     void give_rdm_and_rotate_orbitals(std::vector<std::vector<double>> one_rdm_elements, std::vector<std::vector<double>> two_rdm_elements); //Adapted
 
     // output
-    double get_c();
-    std::vector<double> get_h_tensor();
-    std::vector<double> get_g_tensor();
-    std::vector<SavedFct<NDIM>> get_orbitals();
+    nb::tuple get_effective_hamiltonian();
+    std::vector<std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
     void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
@@ -47,15 +45,12 @@ class Optimization_open_shell {
     bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
     void rotate_orbitals_back();
-    void save_orbitals(std::string OutputPath);
-    void save_effective_hamiltonian(std::string OutputPath);
 
     // helper
     void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
     madness::Tensor<double> matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B,
                                        std::size_t n);
 
-    int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
     double coulomb_lo = 0.001;
     double coulomb_eps = 1e-6;
@@ -84,6 +79,11 @@ class Optimization_open_shell {
     std::array<madness::Tensor<double>, 3> as_two_rdm; //aaaa, abab, bbbb
     std::array<madness::Tensor<double>, 2> ActiveSpaceRotationMatrices;
 
+    // Stored relevant orbital combinations
+    std::array<std::vector<Function<double, NDIM>>, 2> orbs_kl;      // |kl> //alpha-alpha and beta-beta 
+    std::array<std::vector<Function<double, NDIM>>, 2> coul_orbs_mn; // 1/r|mn> //alpha-alpha and beta-beta 
+    std::array<std::vector<Function<double, NDIM>>, 2> orbs_aa;
+
     // Integrals
     std::array<madness::Tensor<double>, 2> as_integrals_one_body; // (k,l)
     std::array<madness::Tensor<double>, 3> as_integrals_two_body; // (k,l,m,n)
@@ -104,7 +104,4 @@ class Optimization_open_shell {
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_AS;
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_Core;
 
-    // Stored AS orbital combinations
-    //std::vector<Function<double, NDIM>> orbs_kl;      // |kl> //Wird nicht benutzt
-    std::array<std::vector<Function<double, NDIM>>, 2> coul_orbs_mn; // 1/r|mn> //alpha-alpha and beta-beta 
 };

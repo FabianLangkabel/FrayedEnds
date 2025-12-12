@@ -1,0 +1,68 @@
+GiveInitialOrbitals took 0 seconds
+[*]   1.79993422   0.15136501   0.04870077
+
+GiveRDMFiles took 0 seconds
+Integral timings:
+Preparation AS pairs: 0 seconds
+AS-AS one-electron integrals: 0 seconds
+AS-AS two-electron integrals: 0 seconds
+Core-AS one-electron integrals: 0 seconds
+Core-AS two-electron integrals: 0 seconds
+Full function: 1 seconds
+                   Core - Kinetic energy  1.403654e+01
+        Core - Nuclear attraction energy  -3.479901e+01
+              Core - Two-electron energy  4.373791e+00
+                       Total core energy  -1.638868e+01
+CalculateCoreEnergy took 0 seconds
+      Active Space - One electron energy  -3.494882e+00
+      Active Space - Two-electron energy  2.343533e-01
+              AS-Core correlation energy  2.636055e+00
+                       Total core energy  -1.638868e+01
+                Nuclear repulsion energy  2.381296e+00
+                            Total energy  -1.463186e+01
+CalculateEnergies took 0 seconds
+---------------------------------------------------
+Start iteration step: 1
+z: 0, i: 0, p1: 3.720669e-01, p2: -1.440587e-02, p3: -7.343412e-01, p4: 3.721220e-01
+z: 0, i: 1, p1: 6.158140e-15, p2: 1.714211e-18, p3: 3.458297e-17, p4: -4.028703e-18
+z: 0, i: 2, p1: 8.895993e-17, p2: 3.447057e-17, p3: -2.156671e-16, p4: 1.056491e-16
+z: 1, i: 0, p1: -1.373851e-15, p2: -1.873314e-16, p3: 5.655681e-15, p4: -3.280229e-15
+z: 1, i: 1, p1: -4.073217e-17, p2: 5.287174e-18, p3: 4.925001e-17, p4: -1.969669e-17
+z: 1, i: 2, p1: 9.201885e-03, p2: 2.131688e-03, p3: -1.641998e-02, p4: 7.854800e-03
+CalculateLagrangeMultiplier took 0 seconds
+AS-Core Lagrange Multiplier:
+[0,*]  -0.00455808   0.00000000   0.00000000
+[1,*]   0.00000000  -0.00000000   0.00276839
+
+Error of active space orbital 0: 1.453960e-01
+Error of active space orbital 1: 1.143673e-01
+Error of active space orbital 2: 1.105254e-01
+UpdateOrbitals took 2 seconds
+Highest error: 1.453960e-01
+Update Integrals
+Integral timings:
+Preparation AS pairs: 0 seconds
+AS-AS one-electron integrals: 1 seconds
+AS-AS two-electron integrals: 0 seconds
+Core-AS one-electron integrals: 0 seconds
+Core-AS two-electron integrals: 0 seconds
+Full function: 3 seconds
+      Active Space - One electron energy  -3.340469e+00
+      Active Space - Two-electron energy  2.119181e-01
+              AS-Core correlation energy  2.462761e+00
+                       Total core energy  -1.638868e+01
+                Nuclear repulsion energy  2.381296e+00
+                            Total energy  -1.467318e+01
+CalculateEnergies took 0 seconds
+Integral timings:
+Preparation AS pairs: 0 seconds
+AS-AS one-electron integrals: 1 seconds
+AS-AS two-electron integrals: 0 seconds
+Core-AS one-electron integrals: 0 seconds
+Core-AS two-electron integrals: 0 seconds
+Full function: 3 seconds
+Norm orb 0:9.999983e-01
+Norm orb 1:1.000002e+00
+Norm orb 0:1.000000e+00
+Norm orb 1:1.000000e+00
+Norm orb 2:1.000000e+00
