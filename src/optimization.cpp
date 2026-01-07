@@ -915,21 +915,21 @@ template <std::size_t NDIM> std::vector<SavedFct<NDIM>> Optimization<NDIM>::get_
         orb.type = "frozen_occ";
         all_orbs.push_back(orb);
         j++;
-        std::cout << "Norm orb " << i << ":" << frozen_occ_orbs[i].norm2() << std::endl;
+        std::cout << "Norm orb " << j << ":" << frozen_occ_orbs[i].norm2() << std::endl;
     }
     for (int i = 0; i < as_dim; i++) {
         SavedFct<NDIM> orb(active_orbs[i]);
         orb.type = "active";
         all_orbs.push_back(orb);
         j++;
-        std::cout << "Norm orb " << i << ":" << active_orbs[i].norm2() << std::endl;
+        std::cout << "Norm orb " << j << ":" << active_orbs[i].norm2() << std::endl;
     }
     for (int i = 0; i < froz_virt_dim; i++) {
         SavedFct<NDIM> orb(frozen_virt_orb[i]);
         orb.type = "frozen_virt";
         all_orbs.push_back(orb);
         j++;
-        std::cout << "Norm orb " << i << ":" << frozen_virt_orb[i].norm2() << std::endl;
+        std::cout << "Norm orb " << j << ":" << frozen_virt_orb[i].norm2() << std::endl;
     }
     return all_orbs;
 }

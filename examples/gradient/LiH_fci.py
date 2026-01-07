@@ -8,12 +8,12 @@ import frayedends as fe
 
 world = fe.MadWorld3D(thresh=1e-4)
 
-distance_list = [0.5 + 0.1 * i for i in range(5)]
+distance_list = [1.05 + 0.1 * i for i in range(1)]
 Energy_list = []
 Gradient_list = []
 
-n_orbitals = 3
-n_act_orbitals = 2
+n_orbitals = 9
+n_act_orbitals = 8
 n_act_electrons = 2
 for distance in distance_list:
     print(
@@ -25,11 +25,15 @@ for distance in distance_list:
     [print("Distance:", distance)]
     true_start = time.time()
     geometry = "Li 0.0 0.0 " + str(-distance / 2) + "\nH 0.0 0.0 " + str(distance / 2)
-
+    
+    pno_start = time.time()
     madpno = fe.MadPNO(
-        world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "canon"}
+        world, geometry, units="bohr", n_orbitals=n_orbitals
     )
     orbitals = madpno.get_orbitals()
+    
+    pno_end = time.time()
+    print("Pno time:", pno_end-pno_start)
 
     world.set_function_defaults()
     print(world.get_function_defaults())
@@ -75,6 +79,7 @@ for distance in distance_list:
             h1 = T + V + FC_int
             g2 = G
 
+        fci_start = time.time()
         # FCI calculation
         e, fcivec = fci.direct_spin1.kernel(
             h1, g2.elems, n_act_orbitals, n_act_electrons
@@ -85,6 +90,8 @@ for distance in distance_list:
         rdm2 = np.swapaxes(rdm2, 1, 2)
         #for i in range(len(rdm1)):
         #    print("rdm1[", i, ",", i, "]:", rdm1[i, i])
+        fci_end = time.time()
+        print("fci time:", fci_end-fci_start)
 
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
 
@@ -92,6 +99,7 @@ for distance in distance_list:
             break
         current = e + c
 
+        opti_start = time.time()
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
@@ -101,6 +109,8 @@ for distance in distance_list:
             opt_thresh=0.0001,
             occ_thresh=0.0001,
         )
+        opti_end = time.time()
+        print("orb opt time:", opti_end-opti_start)
         active_orbitals = []
         for i in range(len(orbitals)):
             if orbitals[i].type == "active":

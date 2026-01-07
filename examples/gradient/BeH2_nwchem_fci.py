@@ -30,7 +30,8 @@ for distance in distance_list:
     print("Maxiter orbital optimization:", miter_oopt)
     true_start = time.time()
     geometry = "H 0.0 0.0 " + str(-distance) + "\nBe 0.0 0.0 0.0" + "\nH 0.0 0.0 " + str(distance)
-    
+    molgeom = fe.MolecularGeometry(geometry=geometry, units="bohr")
+
     nwchem_start = time.time()
 
     basisset = '6-31g'
@@ -59,8 +60,6 @@ task scf  '''
     Vnuc = converter.get_Vnuc()
     nuc_repulsion = converter.get_nuclear_repulsion_energy()
 
-    for i in range(len(nw_orbitals)):
-        nw_orbitals[i].info=str(i)
 
     nwchem_end = time.time()
     print("NWChem time:", nwchem_end-nwchem_start)
@@ -70,7 +69,7 @@ task scf  '''
 
     integrals = fe.Integrals3D(world)
     nw_orbitals = integrals.orthonormalize(orbitals=nw_orbitals)
-
+    print(len(nw_orbitals))
     G = integrals.compute_two_body_integrals(nw_orbitals)
     T = integrals.compute_kinetic_integrals(nw_orbitals)
     V = integrals.compute_potential_integrals(nw_orbitals, Vnuc)
@@ -81,7 +80,6 @@ task scf  '''
         two_body_integrals=G,
         nuclear_repulsion=nuc_repulsion,
     )
-    print(mol.active_space)
     c, h1, g2 = mol.get_integrals(ordering="chem")
 
     fci_start = time.time()
@@ -97,26 +95,31 @@ task scf  '''
     fci_end = time.time()
     print("fci time:", fci_end-fci_start)
 
-    occ_n=[]
-    for i in range(len(rdm1)):
-        occ_n.append(rdm1[i, i])
-    print(occ_n)
-    occ_n_sorted=sorted(occ_n, reverse=True)
+    ac_orbitals = []
+    for i in range(n_fr_orbitals,len(nw_orbitals)):
+        ac_orbitals.append(nw_orbitals[i])
 
-    orbitals=[]
-    frozen_orbitals = []
+    nat_orbs,occ_n=integrals.transform_to_natural_orbitals(ac_orbitals, rdm1)
+    world.cube_plot(f"nwchem_raw{0}", nw_orbitals[0], molgeom, zoom=5.0)
+    print("Natural occupation numbers:", occ_n)
+    for i in range(len(nat_orbs)):
+            world.cube_plot(f"nwchem_nat{i+1}", nat_orbs[i], molgeom, zoom=5.0)
+    
+    orbitals = []
     for i in range(n_orbitals):
         if i < n_fr_orbitals:
             orbitals.append(nw_orbitals[i])
-            orbitals[i].type="frozen_occ"
+            orbitals[i].type = "frozen_occ"
+        else:
+            orbitals.append(nat_orbs[i - n_fr_orbitals])
+            orbitals[i].type = "active"
+    frozen_orbitals=[]
+    active_orbitals=[]
+    for i in range(len(orbitals)):
+        if orbitals[i].type == "frozen_occ":
             frozen_orbitals.append(orbitals[i])
         else:
-            index=occ_n.index(occ_n_sorted[i - n_fr_orbitals])
-            orbitals.append(nw_orbitals[index + n_fr_orbitals])
-            orbitals[i].type="active"
-    
-    for i in range(len(orbitals)):
-        print(orbitals[i].info)
+            active_orbitals.append(orbitals[i])
     
     #Start of the main algorithm
     current = e + c
@@ -124,11 +127,6 @@ task scf  '''
         if iteration % 5 == 0:
             for i in range(len(orbitals)):
                 world.line_plot(f"it_{iteration:02d}_orb_{i:01d}_{int(distance*100):03d}.dat", orbitals[i])
-            if iteration == 0:
-                for i in range(len(orbitals)):
-                    world.plane_plot(f"nwchem_{i}_{int(distance*100)}", orbitals[i], plane="xy", zoom=5.0, datapoints=120)
-                    world.plane_plot(f"nwchem_{i}_{int(distance*100)}", orbitals[i], plane="xz", zoom=5.0, datapoints=120)
-                    world.plane_plot(f"nwchem_{i}_{int(distance*100)}", orbitals[i], plane="yz", zoom=5.0, datapoints=120)
             
 
         opti_start = time.time()
@@ -140,6 +138,7 @@ task scf  '''
             maxiter=1,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
+            redirect_filename=f"madopt_it{iteration}.log"
         )
         print("Converged?:", opti.converged)
         opti_end = time.time()
@@ -179,7 +178,11 @@ task scf  '''
         for i in range(np.shape(rdm1)[0]):
             print("rdm1[", i, ",", i, "]:", rdm1[i, i])
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
-
+        if iteration in [5,20,250,400]:
+            nat_orbs1, occ_n = integrals.transform_to_natural_orbitals(active_orbitals, rdm1)
+            print("Natural occupation numbers:", occ_n)
+            for i in range(len(nat_orbs1)):
+                world.cube_plot(f"nat1_orb{(i+1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
         
         current = e + c
         iteration_e.append(current)
@@ -189,12 +192,7 @@ task scf  '''
     Energy_list.append(current)
     
     
-    for i in range(len(orbitals)):
-        world.plane_plot(f"orbital_{i}_{int(distance*100)}", orbitals[i],plane="xy",zoom=5.0,datapoints=120)
-        world.plane_plot(f"orbital_{i}_{int(distance*100)}", orbitals[i],plane="xz",zoom=5.0,datapoints=120)
-        world.plane_plot(f"orbital_{i}_{int(distance*100)}", orbitals[i],plane="yz",zoom=5.0,datapoints=120)
     
-
 
     molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
     part_deriv_V_0 = molecule.compute_nuclear_derivative(world, 0, 2)

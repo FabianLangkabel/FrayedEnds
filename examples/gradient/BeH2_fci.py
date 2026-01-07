@@ -6,7 +6,7 @@ from pyscf import fci
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-4)
+world = fe.MadWorld3D(thresh=1e-6)
 
 distance_list = [2.4 + 0.05 * i for i in range(1)]
 Energy_list = []
@@ -26,10 +26,11 @@ for distance in distance_list:
     print("Distance:", distance)
     true_start = time.time()
     geometry = "H 0.0 0.0 " + str(-distance) + "\nBe 0.0 0.0 0.0" + "\nH 0.0 0.0 " + str(distance)
-    
+    molgeom = fe.MolecularGeometry(geometry=geometry, units="bohr")
+
     pno_start = time.time()
     madpno = fe.MadPNO(
-        world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "canon"}
+        world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "boys"}
     )
     orbitals = madpno.get_orbitals()
     
@@ -52,16 +53,15 @@ for distance in distance_list:
 
     c = nuc_repulsion
     current = 0.0
-    for iteration in range(101):
+    for iteration in range(401):
         if iteration % 5 == 0:
             for i in range(len(orbitals)):
                 world.line_plot(f"it_{iteration:02d}_orb_{i:01d}_{int(distance*100):03d}.dat", orbitals[i])
-            if iteration == 0:
-                for i in range(len(orbitals)):
-                    world.plane_plot(f"pno_{i}_{int(distance*100)}", orbitals[i], plane="xy", zoom=5.0, datapoints=120)
-                    world.plane_plot(f"pno_{i}_{int(distance*100)}", orbitals[i], plane="xz", zoom=5.0, datapoints=120)
-                    world.plane_plot(f"pno_{i}_{int(distance*100)}", orbitals[i], plane="yz", zoom=5.0, datapoints=120)
-            
+        
+        active_orbitals = []
+        for i in range(len(orbitals)):
+            if orbitals[i].type == "active":
+                active_orbitals.append(orbitals[i])
 
         print( 
             "------------------------------------------------------------------------------"
@@ -89,7 +89,12 @@ for distance in distance_list:
             # print(T+V+FC_int)
             h1 = T + V + FC_int
             g2 = G
+            params.frozen_core = False
+            mol = tq.Molecule(parameters=params, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, n_electrons=n_act_electrons)
 
+        H = mol.make_hamiltonian()
+        res = np.linalg.eigvalsh(H.to_matrix())
+        print("Diagonalization energy:", res[0])
         fci_start = time.time()
         # FCI calculation
         e, fcivec = fci.direct_spin1.kernel(
@@ -105,8 +110,17 @@ for distance in distance_list:
         print("fci time:", fci_end-fci_start)
         print(rdm1)
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
-
         
+        if iteration in [0,5,20,250,400]:
+            if iteration == 0:
+                for i in range(len(orbitals)):
+                    world.cube_plot(f"pnorb{i:01d}", orbitals[i], molgeom, zoom=5.0)
+            
+            nat_orbs1, occ_n = integrals.transform_to_natural_orbitals(active_orbitals, rdm1)
+            print("Natural occupation numbers:", occ_n)
+            for i in range(len(nat_orbs1)):
+                world.cube_plot(f"nat1_orb{(i+1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
+
         current = e + c
         iteration_e.append(current)
 
@@ -119,7 +133,8 @@ for distance in distance_list:
             maxiter=1,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
-        )
+            redirect_filename=f"madopt_it{iteration}.log"
+        )   
         opti_end = time.time()
         print("orb opt time:", opti_end-opti_start)
         active_orbitals = []
@@ -131,11 +146,6 @@ for distance in distance_list:
         
     Energy_list.append(current)
     
-    
-    for i in range(len(orbitals)):
-        world.plane_plot(f"orbirtal_{i}_{int(distance*100)}", orbitals[i],plane="xy",zoom=5.0,datapoints=120)
-        world.plane_plot(f"orbirtal_{i}_{int(distance*100)}", orbitals[i],plane="xz",zoom=5.0,datapoints=120)
-        world.plane_plot(f"orbirtal_{i}_{int(distance*100)}", orbitals[i],plane="yz",zoom=5.0,datapoints=120)
     
 
 

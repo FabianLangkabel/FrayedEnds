@@ -24,7 +24,7 @@ for distance in distance_list:
     )
 
     pno_start = time.time()
-    madpno = frayedends.MadPNO(world, geometry, n_orbitals=3, dft={"localize": "canon"})
+    madpno = frayedends.MadPNO(world, geometry, n_orbitals=3)
     pno_orbitals = madpno.get_orbitals()
 
     orbitals = []
