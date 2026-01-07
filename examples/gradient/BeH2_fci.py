@@ -15,6 +15,7 @@ Gradient_list = []
 n_orbitals = 5
 n_act_orbitals = 4
 n_act_electrons = 4
+miter=1
 for distance in distance_list:
     iteration_e=[]
     print(
@@ -24,6 +25,7 @@ for distance in distance_list:
             "------------------------------------------------------------------------------"
         )
     print("Distance:", distance)
+    print("Maxiter orbital optimization:", miter)
     true_start = time.time()
     geometry = "H 0.0 0.0 " + str(-distance) + "\nBe 0.0 0.0 0.0" + "\nH 0.0 0.0 " + str(distance)
     molgeom = fe.MolecularGeometry(geometry=geometry, units="bohr")
@@ -130,7 +132,7 @@ for distance in distance_list:
             orbitals=orbitals,
             rdm1=rdm1,
             rdm2=rdm2,
-            maxiter=1,
+            maxiter=miter,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
             redirect_filename=f"madopt_it{iteration}.log"
@@ -175,5 +177,6 @@ for distance in distance_list:
 print("distance_list =", distance_list)
 print("Energy_list =", Energy_list)
 print("Gradient_list =", Gradient_list)
+print("iteration_energies =", iteration_e)
 
 fe.cleanup(globals())

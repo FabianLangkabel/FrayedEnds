@@ -80,6 +80,7 @@ task scf  '''
         two_body_integrals=G,
         nuclear_repulsion=nuc_repulsion,
     )
+    params0 = mol.parameters
     c, h1, g2 = mol.get_integrals(ordering="chem")
 
     fci_start = time.time()
@@ -161,6 +162,18 @@ task scf  '''
         # print(T+V+FC_int)
         h1 = T + V + FC_int
         g2 = G
+
+        params0.frozen_core = False
+        mol = tq.Molecule(
+            parameters=params0,
+            one_body_integrals=h1,
+            two_body_integrals=g2,
+            nuclear_repulsion=c,
+            n_electrons=4,
+        )
+        H=mol.make_hamiltonian()
+        res = np.linalg.eigvalsh(H.to_matrix())
+        print("Lowest eigenvalue of Hamiltonian:", res[0])
 
         fci_start = time.time()
         # FCI calculation
