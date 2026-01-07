@@ -74,6 +74,18 @@ class Optimization3D:
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
+    def enable_mixed_orthonormalization(self, degeneracy_tol=1e-6):
+        """
+        When enabled, the optimization will use:
+        - Symmetric orthonormalization for degenerate orbitals (same occupation)
+        - Cholesky orthonormalization for non-degenerate orbitals
+
+        Args:
+            degeneracy_tol: Tolerance for determining if two orbital occupations
+                           are degenerate (default: 1e-6)
+        """
+        self.impl.enable_mixed_orthonormalization(True, degeneracy_tol)
+
     @redirect_output("madopt.log")
     def optimize_orbs(
         self,
@@ -142,6 +154,18 @@ class Optimization2D:
         self.impl = OptInterface2D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
+
+    def enable_mixed_orthonormalization(self, degeneracy_tol=1e-6):
+        """
+        When enabled, the optimization will use:
+        - Symmetric orthonormalization for degenerate orbitals (same occupation)
+        - Cholesky orthonormalization for non-degenerate orbitals
+
+        Args:
+            degeneracy_tol: Tolerance for determining if two orbital occupations
+                           are degenerate (default: 1e-6)
+        """
+        self.impl.enable_mixed_orthonormalization(True, degeneracy_tol)
 
     @redirect_output("madopt.log")
     def optimize_orbs(

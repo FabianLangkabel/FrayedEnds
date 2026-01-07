@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import frayedends as fe
 
 n_electrons = 2  # Number of electrons
-n_orbitals = 6  # Number of orbitals (all active in this example)
+n_orbitals = 8  # Number of orbitals (all active in this example)
 geometry="H 0.0 0.0 0.0" #dummy geometry (not actually used for calculations but needed to initialize tq.Molecule())
 econv=1e-8
 
@@ -140,11 +140,17 @@ for iteration in range(6):
     mol = tq.Molecule(geometry, units="bohr", one_body_integrals=T+V, two_body_integrals=G, n_electrons=n_electrons, nuclear_repulsion=0.0) #initialize a molecule object (used to construct the quantum circuit)
     # Creates a circuit with parameters which can be optimized to find better solutions
     # UpCCGSD = "Unitary Pair Coupled Cluster with Generalized Singles and Doubles."
-    U = mol.make_ansatz(name="UpCCGSD") #circuit ansatz
+    U = mol.make_ansatz(name="HCB-UpCCGD") #circuit ansatz
+    u = None
+    tq.show_available_simulators()
+    print("hi")
+    opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, use_hcb=True, silent=True, initial_guess=u)
+    print("bye")
     # Calculates the Hamiltonian with this equation: \hat{H} = \sum_{pq} h_{pq} a_p^\dagger a_q + \frac{1}{2} \sum_{pqrs} g_{pqrs} a_p^\dagger a_q^\dagger a_r a_s + E_{\text{nuc}}
-    H = mol.make_hamiltonian()
+    #H = mol.make_hamiltonian()
     # Creates the Expectation value which is treated like the cost function for the optimization in VQE
     # E is the Energy of the system H in the circuit U
+    H = opt.molecule.make_hardcore_boson_hamiltonian()
     E = tq.ExpectationValue(H=H, U=U)
     # Optimizes U to find the minimum of the cost function E
     result = tq.minimize(E, silent=True) #this optimizes the circuit to find the many body wavefunction
@@ -155,6 +161,12 @@ for iteration in range(6):
     # rdm2: Correlated motion of pairs of electrons - Needed for calculating electron-electron interaction energy
     # rdm2 = $\Gamma_{pqrs} = \langle \Psi | a_p^\dagger a_q^\dagger a_s a_r | \Psi \rangle$, for n_orbitals = 4, 4x4x4x4 tensor
     rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables) #compute the one body and two body reduced density matrices
+    opt.molecule.print_basis_info()
+
+    u = opt.mo_coeff
+    print(u)
+
+    rdm1, rdm2 = fe.transform_rdms(u, rdm1, rdm2)
 
     print("iteration {} energy {:+2.8f}".format(iteration, result.energy))
 
@@ -162,7 +174,9 @@ for iteration in range(6):
         print(f"rdm1[{i},{i}]:",rdm1[i,i])
     
     # Orbital optimization
-    opti = fe.Optimization2D(world, mra_pot, nuc_repulsion=0.0)  #initializes the orbital optimization
+    opti = fe.Optimization2D(world, mra_pot, nuc_repulsion=0.0)  # initializes the orbital optimization
+    opti.enable_mixed_orthonormalization(degeneracy_tol=1e-6)
+
     orbitals = opti.get_orbitals(
         orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )  # Optimizes the orbitals and returns the new ones

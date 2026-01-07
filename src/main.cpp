@@ -165,6 +165,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<2>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<2>::save_effective_hamiltonian)
+        .def("enable_mixed_orthonormalization", &Optimization<2>::enable_mixed_orthonormalization)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
         .def("get_c", &Optimization<2>::get_c)
         .def("get_h_tensor", &Optimization<2>::get_h_tensor)

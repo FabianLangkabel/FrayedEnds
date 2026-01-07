@@ -703,8 +703,11 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
         // Orthonormalize orbitals
-        active_orbs = orthonormalize_symmetric(active_orbs);
-        // orbitals = orthonormalize_cd(orbitals);
+        if (use_mixed_orthonormalization) {
+            active_orbs = orthonormalize_mixed_by_degeneracy(active_orbs);
+        } else {
+            active_orbs = orthonormalize_symmetric(active_orbs);
+        }
         active_orbs = truncate(active_orbs, truncation_tol);
 
         // Check convergence
@@ -1009,6 +1012,95 @@ template <std::size_t NDIM> std::vector<double> Optimization<NDIM>::get_g_tensor
         }
     }
     return effective_two_body_integrals_elements;
+}
+
+template <std::size_t NDIM>
+void Optimization<NDIM>::enable_mixed_orthonormalization(bool enable, double degeneracy_tol) {
+    use_mixed_orthonormalization = enable;
+    degeneracy_tolerance = degeneracy_tol;
+}
+
+template <std::size_t NDIM>
+std::vector<Function<double, NDIM>> Optimization<NDIM>::orthonormalize_mixed_by_degeneracy(
+    std::vector<Function<double, NDIM>>& orbitals) {
+
+    std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
+
+    // Get orbital occupations from diagonal of 1-RDM
+    std::vector<double> occupations;
+    for (int i = 0; i < as_dim; i++) {
+        occupations.push_back(as_one_rdm(i, i));
+        std::cout << "Orbital " << i << " occupation: " << as_one_rdm(i, i) << std::endl;
+    }
+
+    // Identify degenerate groups
+    std::vector<std::pair<int, int>> groups; // (start, end) for each group
+    int i = 0;
+    while (i < as_dim) {
+        int start = i;
+        double current_occ = occupations[i];
+
+        // Find all consecutive orbitals with similar occupation
+        int j = i + 1;
+        while (j < as_dim && std::abs(occupations[j] - current_occ) < degeneracy_tolerance) {
+            j++;
+        }
+
+        groups.push_back(std::make_pair(start, j));
+        i = j;
+    }
+
+    std::cout << "Found " << groups.size() << " degeneracy groups:" << std::endl;
+
+    // Step 1: Apply symmetric orthonormalization WITHIN each degenerate group
+    std::vector<Function<double, NDIM>> result_orbitals;
+
+    for (size_t g = 0; g < groups.size(); g++) {
+        int start = groups[g].first;
+        int end = groups[g].second;
+        int group_size = end - start;
+
+        // Extract orbitals for this group
+        std::vector<Function<double, NDIM>> group_orbitals;
+        for (int k = start; k < end; k++) {
+            group_orbitals.push_back(orbitals[k]);
+        }
+
+        std::vector<Function<double, NDIM>> ortho_group_orbitals;
+
+        if (group_size == 1) {
+            // Non-degenerate: just copy
+            std::cout << "  Group " << g << " (orbital " << start << "): "
+                      << "occupation=" << occupations[start] << ", within-group method=None (single orbital)" << std::endl;
+            ortho_group_orbitals = group_orbitals;
+        } else {
+            // Degenerate: use Symmetric to preserve symmetry within manifold
+            std::cout << "  Group " << g << " (orbitals " << start << "-" << (end-1) << "): "
+                      << "occupations=[";
+            for (int k = start; k < end; k++) {
+                std::cout << occupations[k];
+                if (k < end - 1) std::cout << ", ";
+            }
+            std::cout << "], within-group method=Symmetric" << std::endl;
+
+            auto S = madness::matrix_inner(*(madness_process.world), group_orbitals, group_orbitals, true);
+            ortho_group_orbitals = madness::orthonormalize_symmetric(group_orbitals, S);
+        }
+
+        // Add to result
+        for (auto& orb : ortho_group_orbitals) {
+            result_orbitals.push_back(orb);
+        }
+    }
+
+    // Step 2: Apply Cholesky orthonormalization to ALL orbitals
+    std::cout << "Applying Cholesky orthonormalization between groups for numerical stability..." << std::endl;
+    auto S_all = madness::matrix_inner(*(madness_process.world), result_orbitals, result_orbitals, true);
+    result_orbitals = madness::orthonormalize_cd(result_orbitals, S_all);
+
+    std::cout << "=== Mixed Orthonormalization Complete ===\n" << std::endl;
+
+    return result_orbitals;
 }
 
 template class Optimization<2>;
