@@ -1,8 +1,8 @@
 #pragma once
-#include "madness_process.hpp"
-#include "functionsaver.hpp"
-#include "coulomboperator_nd.hpp"
-#include "madmolecule.hpp"
+#include "../madness_process.hpp"
+#include "../functionsaver.hpp"
+#include "../coulomboperator_nd.hpp"
+#include "../madmolecule.hpp"
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
@@ -20,7 +20,6 @@
 
 using namespace madness;
 namespace nb = nanobind;
-
 using Numpy2D = nb::ndarray<nb::numpy, double, nb::ndim<2>>;
 using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
 
