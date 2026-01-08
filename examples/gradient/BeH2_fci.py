@@ -6,7 +6,7 @@ from pyscf import fci
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-6)
+world = fe.MadWorld3D(thresh=1e-8)
 
 distance_list = [2.4 + 0.05 * i for i in range(1)]
 Energy_list = []
@@ -56,10 +56,6 @@ for distance in distance_list:
     c = nuc_repulsion
     current = 0.0
     for iteration in range(401):
-        if iteration % 5 == 0:
-            for i in range(len(orbitals)):
-                world.line_plot(f"it_{iteration:02d}_orb_{i:01d}_{int(distance*100):03d}.dat", orbitals[i])
-        
         active_orbitals = []
         for i in range(len(orbitals)):
             if orbitals[i].type == "active":
@@ -70,7 +66,7 @@ for distance in distance_list:
         )
         integrals = fe.Integrals3D(world)
         if iteration == 0:
-            G = integrals.compute_two_body_integrals(orbitals)
+            G = integrals.compute_two_body_integrals(orbitals, truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
             T = integrals.compute_kinetic_integrals(orbitals)
             V = integrals.compute_potential_integrals(orbitals, Vnuc)
             mol = tq.Molecule(
@@ -85,7 +81,7 @@ for distance in distance_list:
         else:
             T = integrals.compute_kinetic_integrals(active_orbitals)
             V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
-            G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem")
+            G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem", truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
             FC_int= integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
             # print(FC_int)
             # print(T+V+FC_int)
@@ -120,21 +116,23 @@ for distance in distance_list:
             
             nat_orbs1, occ_n = integrals.transform_to_natural_orbitals(active_orbitals, rdm1)
             print("Natural occupation numbers:", occ_n)
+            world.line_plot(f"it_{iteration:02d}_orb_{(0):01d}_{int(distance*100):03d}.dat", orbitals[0])
             for i in range(len(nat_orbs1)):
                 world.cube_plot(f"nat1_orb{(i+1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
+                world.line_plot(f"it_{iteration:02d}_orb_{(i+1):01d}_{int(distance*100):03d}.dat", nat_orbs1[i])
 
         current = e + c
         iteration_e.append(current)
 
         opti_start = time.time()
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion, BSH_lo=0.00001, BSH_eps=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8, truncation_tol=1e-8)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,
             rdm2=rdm2,
             maxiter=miter,
-            opt_thresh=0.0001,
-            occ_thresh=0.0001,
+            opt_thresh=0.00001,
+            occ_thresh=0.00001,
             redirect_filename=f"madopt_it{iteration}.log"
         )   
         opti_end = time.time()

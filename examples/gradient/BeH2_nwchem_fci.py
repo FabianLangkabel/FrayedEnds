@@ -7,7 +7,7 @@ import subprocess as sp
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-6)
+world = fe.MadWorld3D(thresh=1e-8)
 
 distance_list = [2.4 + 0.05 * i for i in range(1)]
 Energy_list = []
@@ -69,8 +69,8 @@ task scf  '''
 
     integrals = fe.Integrals3D(world)
     nw_orbitals = integrals.orthonormalize(orbitals=nw_orbitals)
-    print(len(nw_orbitals))
-    G = integrals.compute_two_body_integrals(nw_orbitals)
+
+    G = integrals.compute_two_body_integrals(nw_orbitals, truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
     T = integrals.compute_kinetic_integrals(nw_orbitals)
     V = integrals.compute_potential_integrals(nw_orbitals, Vnuc)
     mol = tq.Molecule(
@@ -121,24 +121,45 @@ task scf  '''
             frozen_orbitals.append(orbitals[i])
         else:
             active_orbitals.append(orbitals[i])
+
+    G = integrals.compute_two_body_integrals(orbitals, truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
+    T = integrals.compute_kinetic_integrals(orbitals)
+    V = integrals.compute_potential_integrals(orbitals, Vnuc)
+    mol = tq.Molecule(
+        geometry,
+        units="bohr",
+        one_body_integrals=T + V,
+        two_body_integrals=G,
+        nuclear_repulsion=nuc_repulsion,
+    )
+    params0 = mol.parameters
+    c, h1, g2 = mol.get_integrals(ordering="chem")
+
+    fci_start = time.time()
+    # FCI calculation
+    e, fcivec = fci.direct_spin1.kernel(
+        h1, g2.elems, np.shape(h1)[0], n_act_electrons
+    )  # Computes the energy and the FCI vector
+    rdm1, rdm2 = fci.direct_spin1.make_rdm12(
+        fcivec, np.shape(h1)[0], n_act_electrons
+    )  # Computes the 1- and 2- body reduced density matrices
+    rdm2 = np.swapaxes(rdm2, 1, 2)
+    print("Second FCI energy {:+2.7f}".format(e + c))
+    fci_end = time.time()
     
+
     #Start of the main algorithm
     current = e + c
     for iteration in range(401):
-        if iteration % 5 == 0:
-            for i in range(len(orbitals)):
-                world.line_plot(f"it_{iteration:02d}_orb_{i:01d}_{int(distance*100):03d}.dat", orbitals[i])
-            
-
         opti_start = time.time()
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion, BSH_lo=0.00001, BSH_eps=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8, truncation_tol=1e-8)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,
             rdm2=rdm2,
             maxiter=1,
-            opt_thresh=0.0001,
-            occ_thresh=0.0001,
+            opt_thresh=0.00001,
+            occ_thresh=0.00001,
             redirect_filename=f"madopt_it{iteration}.log"
         )
         print("Converged?:", opti.converged)
@@ -156,7 +177,7 @@ task scf  '''
         integrals = fe.Integrals3D(world)
         T = integrals.compute_kinetic_integrals(active_orbitals)
         V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
-        G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem")
+        G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem", truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
         FC_int= integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
         # print(FC_int)
         # print(T+V+FC_int)
@@ -194,8 +215,10 @@ task scf  '''
         if iteration in [5,20,250,400]:
             nat_orbs1, occ_n = integrals.transform_to_natural_orbitals(active_orbitals, rdm1)
             print("Natural occupation numbers:", occ_n)
+            world.line_plot(f"it_{iteration:02d}_orb_{(0):01d}_{int(distance*100):03d}.dat", orbitals[0])
             for i in range(len(nat_orbs1)):
                 world.cube_plot(f"nat1_orb{(i+1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
+                world.line_plot(f"it_{iteration:02d}_orb_{(i+1):01d}_{int(distance*100):03d}.dat", nat_orbs1[i])
         
         current = e + c
         iteration_e.append(current)
