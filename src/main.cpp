@@ -2,18 +2,18 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "optimization.hpp"
-#include "optimization_open_shell.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
 #include "pyfuncfactory.hpp"
 #include "integrals.hpp"
-#include "integrals_open_shell.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
-#include "nwchem_converter_open_shell.hpp"
 #include "minbas.hpp"
 #include "madness_process.hpp"
 #include "madmolecule.hpp"
+#include "open_shell/nwchem_converter_open_shell.hpp"
+#include "open_shell/optimization_open_shell.hpp"
+#include "open_shell/integrals_open_shell.hpp"
 
 namespace nb = nanobind;
 

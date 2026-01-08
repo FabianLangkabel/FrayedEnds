@@ -53,19 +53,19 @@ nanobind_add_module(
   # Source code goes here
   src/main.cpp
   src/optimization.cpp
-  src/optimization_open_shell.cpp
   src/functionsaver.hpp
   src/pno_interface.hpp
   src/sum_of_gaussians.hpp
   src/integrals.cpp
-  src/integrals_open_shell.cpp
   src/madness_process.cpp
   src/pyfuncfactory.hpp
   src/eigensolver.cpp
   src/nwchem_converter.cpp
-  src/nwchem_converter_open_shell.cpp
   src/madmolecule.cpp
   src/coulomboperator_nd.hpp
+  src/open_shell/integrals_open_shell.cpp
+  src/open_shell/optimization_open_shell.cpp
+  src/open_shell/nwchem_converter_open_shell.cpp
 )
 
 # Install directive for scikit-build-core

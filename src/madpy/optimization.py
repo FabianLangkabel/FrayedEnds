@@ -219,15 +219,14 @@ class Optimization_open_shell_3D:
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
         maxiter=3,
+        orthonormalization_method="symmetric",
         *args,
         **kwargs,
     ):
-        rdm1_list = [rdm1[0].reshape(-1).tolist(), rdm1[1].reshape(-1).tolist()]
-        rdm2_list = [rdm2[0].reshape(-1).tolist(), rdm2[1].reshape(-1).tolist(), rdm2[2].reshape(-1).tolist()]
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
         self.impl.give_initial_orbitals(orbitals[0], orbitals[1], orbitals[2], orbitals[3])
-        self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
-        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
+        self.impl.give_rdm_and_rotate_orbitals(rdm1, rdm2)
+        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter, orthonormalization_method)
         self.impl.rotate_orbitals_back()
         self._orbitals = self.impl.get_orbitals()
         core_orbs = self._orbitals[:2]

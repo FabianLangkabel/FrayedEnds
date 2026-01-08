@@ -1,6 +1,8 @@
 import time
 import os
 os.environ["MAD_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "4"
 
 distance = 1.0
 iteration_energies = []
@@ -104,7 +106,7 @@ for i in range(len(alpha_mos)):
 
 import numpy as np
 
-integrals = mad.Integrals_open_shell_3D(world)
+integrals = mad.Integrals_open_shell_3D(world, active_alpha_orbitals)
 c, h1, g2 = integrals.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy)
 g2[0] = g2[0].transpose(0,2,1,3)
 g2[1] = g2[1].transpose(0,2,1,3)
@@ -113,8 +115,11 @@ t4 = time.time()
 
 from pyblock2._pyscf.ao2mo import integrals as itg
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
-
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SZ, n_threads=4)
+
+integrals2 = mad.Integrals_open_shell_3D(world)
+garb = integrals2.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy)
+
 driver.initialize_system(n_sites=len(active_alpha_orbitals), n_elec=3, spin=1)
 bond_dims = [250] * 4 + [500]
 noises = [1e-4] * 4 + [1e-5] * 4 + [0]
@@ -141,8 +146,9 @@ two_body_en = 0.5 * (np.einsum('ijkl,ikjl->', rdm_2_phys_aa, g2[0])
 rdm_energy = one_body_en + two_body_en + c
 print('Energy from rdms = %20.15f' % rdm_energy)
 
+
 opti = mad.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-new_core_orbs, new_as_orbs, converged = opti.optimize_orbs(orbitals=[core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001, maxiter=1)
+new_core_orbs, new_as_orbs, converged = opti.optimize_orbs(orbitals=[core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001, maxiter=1, orthonormalization_method="cd")
 t6 = time.time()
 
 #print(t2-t1)

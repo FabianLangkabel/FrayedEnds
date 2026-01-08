@@ -8,6 +8,7 @@ From: ubuntu:22.04
     export PATH=/opt/conda/bin:$PATH
     export MADNESS_DIR=/usr/local/madness
     export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib:$LD_LIBRARY_PATH
+	export CMAKE_BUILD_PARALLEL_LEVEL=2
 
 %post
     apt-get update && apt-get install -y --no-install-recommends \
@@ -69,7 +70,7 @@ From: ubuntu:22.04
               -DLAPACK_LIBRARIES=/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_rt.so \
               -DLAPACK_INCLUDE_DIRS=/opt/intel/oneapi/mkl/latest/include/ \
               -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" .. && \
-        cmake --build . --target install -j4
+        cmake --build . --target install -j2
 
     # Python + Pakete
     /opt/conda/bin/conda install -y python=3.11 && \
@@ -79,10 +80,11 @@ From: ubuntu:22.04
         /opt/conda/bin/conda install ipykernel --update-deps --force-reinstall
 
 %files
-    . /workspaces/MRA-OrbitalOptimization
+    . /workspaces/frayed-ends
 
 %post
-    cd /workspaces/MRA-OrbitalOptimization && \
+    cd /workspaces/frayed-ends && \
+		export CMAKE_BUILD_PARALLEL_LEVEL=2 && \
         /opt/conda/bin/pip install -e .
 
 %runscript

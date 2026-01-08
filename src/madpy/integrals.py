@@ -1,4 +1,4 @@
-from tequila.quantumchemistry import NBodyTensor
+#from tequila.quantumchemistry import NBodyTensor
 
 from ._madpy_impl import Integrals3D as IntegralsInterface3D
 from ._madpy_impl import Integrals2D as IntegralsInterface2D
@@ -14,11 +14,12 @@ class Integrals3D:
 
     def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
         g_elems = self.impl.compute_two_body_integrals(orbitals)
-        g = NBodyTensor(elems=g_elems, ordering="phys")
-        if ordering != "phys":
-            return g.reorder(to=ordering)
-        else:
-            return g
+        return g
+        #g = NBodyTensor(elems=g_elems, ordering="phys")
+        #if ordering != "phys":
+        #    return g.reorder(to=ordering)
+        #else:
+        #    return g
 
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
@@ -61,11 +62,12 @@ class Integrals2D:
 
     def compute_two_body_integrals(self, orbitals, ordering="phys", *args, **kwargs):
         g_elems = self.impl.compute_two_body_integrals(orbitals)
-        g = NBodyTensor(elems=g_elems, ordering="phys")
-        if ordering != "phys":
-            return g.reorder(to=ordering)
-        else:
-            return g
+        return g
+        #g = NBodyTensor(elems=g_elems, ordering="phys")
+        #if ordering != "phys":
+        #    return g.reorder(to=ordering)
+        #else:
+        #    return g
 
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
