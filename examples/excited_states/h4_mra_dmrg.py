@@ -4,8 +4,7 @@ import time
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 import numpy as np
 
-iteration_energies = []
-iterations = 6
+iterations = 10
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
@@ -13,6 +12,9 @@ madness_thresh = 0.0001
 basisset = '6-31g'  # 'CC-PVDZ'
 n_elec = 4
 number_roots = 3
+energy_tol = 1e-6
+prev_energies = None
+iter = 0
 
 iteration_results = []
 
@@ -185,6 +187,13 @@ for d in distance:
             f.write(f"{reported_distance:.3f} {iter} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
 
         iteration_results.append({"distance": reported_distance, "iteration": iter, "iteration_time": iter_time, "energies": energies})
+
+        if prev_energies is not None:
+            delta_e = np.max(np.abs(energies - prev_energies))
+            if delta_e < energy_tol:
+                break
+
+        prev_energies = energies
 
     with open("results_nwchem_dmrg_oo.dat", "a") as f:
         f.write(f"{reported_distance:.3f} " + " ".join(f"{x:.15f}" for x in energies) + "\n")

@@ -3,7 +3,6 @@ import time
 import numpy as np
 from pyscf import fci
 
-iteration_energies = []
 iterations = 15
 molecule_name = "h4"
 box_size = 50.0
