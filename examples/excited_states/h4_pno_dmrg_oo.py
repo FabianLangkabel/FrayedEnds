@@ -149,7 +149,7 @@ for d in distance:
         iteration_results.append({"distance": reported_distance, "iteration": iter, "iteration_time": iter_time, "energies": energies})
 
         if prev_energies is not None:
-            delta_e = np.max(np.abs(energies - prev_energies))
+            delta_e = np.max(np.abs(np.array(energies) - np.array(prev_energies)))
             if delta_e < energy_tol:
                 break
 
