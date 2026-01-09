@@ -7,7 +7,7 @@ import subprocess as sp
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-8)
+world = fe.MadWorld3D(thresh=1e-6)
 
 distance_list = [2.4 + 0.05 * i for i in range(1)]
 Energy_list = []
@@ -70,7 +70,7 @@ task scf  '''
     integrals = fe.Integrals3D(world)
     nw_orbitals = integrals.orthonormalize(orbitals=nw_orbitals)
 
-    G = integrals.compute_two_body_integrals(nw_orbitals, truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
+    G = integrals.compute_two_body_integrals(nw_orbitals)
     T = integrals.compute_kinetic_integrals(nw_orbitals)
     V = integrals.compute_potential_integrals(nw_orbitals, Vnuc)
     mol = tq.Molecule(
@@ -122,7 +122,7 @@ task scf  '''
         else:
             active_orbitals.append(orbitals[i])
 
-    G = integrals.compute_two_body_integrals(orbitals, truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
+    G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
     mol = tq.Molecule(
@@ -152,14 +152,14 @@ task scf  '''
     current = e + c
     for iteration in range(401):
         opti_start = time.time()
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion, BSH_lo=0.00001, BSH_eps=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8, truncation_tol=1e-8)
+        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,
             rdm2=rdm2,
             maxiter=1,
-            opt_thresh=0.00001,
-            occ_thresh=0.00001,
+            opt_thresh=0.0001,
+            occ_thresh=0.0001,
             redirect_filename=f"madopt_it{iteration}.log"
         )
         print("Converged?:", opti.converged)
