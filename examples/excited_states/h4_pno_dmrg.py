@@ -3,8 +3,6 @@ import time
 import numpy as np
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 
-iteration_energies = []
-iterations = 6
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
