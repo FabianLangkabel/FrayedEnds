@@ -6,7 +6,7 @@ from pyscf import fci
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-8)
+world = fe.MadWorld3D(thresh=1e-6)
 
 distance_list = [2.4 + 0.05 * i for i in range(1)]
 Energy_list = []
@@ -36,6 +36,11 @@ for distance in distance_list:
     )
     orbitals = madpno.get_orbitals()
     
+    pno_start = time.time()
+    madpno = fe.MadPNO(
+        world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "canon"}
+    )
+    orbitals[0] = madpno.get_orbitals()[0]
     pno_end = time.time()
     print("Pno time:", pno_end-pno_start)
 
@@ -46,6 +51,7 @@ for distance in distance_list:
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals3D(world)
+    orbitals[1:] = integrals.project_out([orbitals[0]], orbitals[1:])
     orbitals = integrals.orthonormalize(orbitals=orbitals)
     
     frozen_orbitals = []
@@ -66,7 +72,7 @@ for distance in distance_list:
         )
         integrals = fe.Integrals3D(world)
         if iteration == 0:
-            G = integrals.compute_two_body_integrals(orbitals, truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
+            G = integrals.compute_two_body_integrals(orbitals)
             T = integrals.compute_kinetic_integrals(orbitals)
             V = integrals.compute_potential_integrals(orbitals, Vnuc)
             mol = tq.Molecule(
@@ -81,7 +87,7 @@ for distance in distance_list:
         else:
             T = integrals.compute_kinetic_integrals(active_orbitals)
             V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
-            G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem", truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
+            G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem")
             FC_int= integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
             # print(FC_int)
             # print(T+V+FC_int)
@@ -125,14 +131,14 @@ for distance in distance_list:
         iteration_e.append(current)
 
         opti_start = time.time()
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion, BSH_lo=0.00001, BSH_eps=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8, truncation_tol=1e-8)
+        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,
             rdm2=rdm2,
             maxiter=miter,
-            opt_thresh=0.00001,
-            occ_thresh=0.00001,
+            opt_thresh=0.0001,
+            occ_thresh=0.0001,
             redirect_filename=f"madopt_it{iteration}.log"
         )   
         opti_end = time.time()
