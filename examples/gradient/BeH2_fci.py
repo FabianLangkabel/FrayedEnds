@@ -8,7 +8,7 @@ import frayedends as fe
 
 world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [2.4 + 0.05 * i for i in range(1)]
+distance_list = [0.05 + 0.05 * i for i in range(50)]
 Energy_list = []
 Gradient_list = []
 
@@ -17,7 +17,6 @@ n_act_orbitals = 4
 n_act_electrons = 4
 miter=1
 for distance in distance_list:
-    iteration_e=[]
     print(
             "------------------------------------------------------------------------------"
         )
@@ -36,11 +35,6 @@ for distance in distance_list:
     )
     orbitals = madpno.get_orbitals()
     
-    pno_start = time.time()
-    madpno = fe.MadPNO(
-        world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "canon"}
-    )
-    orbitals[0] = madpno.get_orbitals()[0]
     pno_end = time.time()
     print("Pno time:", pno_end-pno_start)
 
@@ -51,9 +45,8 @@ for distance in distance_list:
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals3D(world)
-    orbitals[1:] = integrals.project_out([orbitals[0]], orbitals[1:])
     orbitals = integrals.orthonormalize(orbitals=orbitals)
-    
+
     frozen_orbitals = []
     for orb in orbitals:
         if orb.type == "frozen_occ":
@@ -61,7 +54,7 @@ for distance in distance_list:
 
     c = nuc_repulsion
     current = 0.0
-    for iteration in range(401):
+    for iteration in range(31):
         active_orbitals = []
         for i in range(len(orbitals)):
             if orbitals[i].type == "active":
@@ -115,20 +108,10 @@ for distance in distance_list:
         print(rdm1)
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
         
-        if iteration in [0,5,20,250,400]:
-            if iteration == 0:
-                for i in range(len(orbitals)):
-                    world.cube_plot(f"pnorb{i:01d}", orbitals[i], molgeom, zoom=5.0)
-            
-            nat_orbs1, occ_n = integrals.transform_to_natural_orbitals(active_orbitals, rdm1)
-            print("Natural occupation numbers:", occ_n)
-            world.line_plot(f"it_{iteration:02d}_orb_{(0):01d}_{int(distance*100):03d}.dat", orbitals[0])
-            for i in range(len(nat_orbs1)):
-                world.cube_plot(f"nat1_orb{(i+1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
-                world.line_plot(f"it_{iteration:02d}_orb_{(i+1):01d}_{int(distance*100):03d}.dat", nat_orbs1[i])
-
+        if abs(current - (e + c)) < 1e-6:
+            print("FCI energy converged.")
+            break
         current = e + c
-        iteration_e.append(current)
 
         opti_start = time.time()
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
@@ -139,7 +122,6 @@ for distance in distance_list:
             maxiter=miter,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
-            redirect_filename=f"madopt_it{iteration}.log"
         )   
         opti_end = time.time()
         print("orb opt time:", opti_end-opti_start)
@@ -181,6 +163,5 @@ for distance in distance_list:
 print("distance_list =", distance_list)
 print("Energy_list =", Energy_list)
 print("Gradient_list =", Gradient_list)
-print("iteration_energies =", iteration_e)
 
 fe.cleanup(globals())
