@@ -8,12 +8,12 @@ import frayedends as fe
 
 world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [0.05 + 0.05 * i for i in range(50)]
+distance_list = [0.5 + 0.05 * i for i in range(25)]
 Energy_list = []
 Gradient_list = []
 
-n_orbitals = 5
-n_act_orbitals = 4
+n_orbitals = 7
+n_act_orbitals = 6
 n_act_electrons = 4
 miter=1
 for distance in distance_list:
