@@ -8,7 +8,7 @@ import frayedends as fe
 
 world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [0.5 + 0.05 * i for i in range(25)]
+distance_list = [0.05 + 0.05 * i for i in range(25)]
 Energy_list = []
 Gradient_list = []
 
