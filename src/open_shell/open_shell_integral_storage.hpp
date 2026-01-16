@@ -1,4 +1,5 @@
 #include "integrals_open_shell.hpp"
+#include <utility> 
 
 using namespace madness;
 
@@ -44,9 +45,23 @@ class open_shell_integral_storage {
             core_as_integrals_two_body_akln = core_as_integrals_two_body[2];
             core_as_integrals_two_body_abak = core_as_integrals_two_body[3];
             core_as_integrals_two_body_baak = core_as_integrals_two_body[4];
+            old_akal = core_as_integrals_two_body[5];
         }
     }
 
+
+  
+
+  inline int spin_combination_to_idx(const std::array<int, 2>& spin_combination) const noexcept {
+    if (spin_combination[0] == 0 && spin_combination[1] == 0) return 0;
+    if (spin_combination[0] == 1 && spin_combination[1] == 1) return 1;
+    if (spin_combination[0] == 0 && spin_combination[1] == 1) return 2;
+    if (spin_combination[0] == 1 && spin_combination[1] == 0) return 3;
+    return -1; //Error
+  }
+
+  // Integrals relevant for energy calculation
+  
   inline double kl(int k, int l, int spin_combination) const noexcept {
     return as_integrals_one_body[spin_combination](k, l);
   }
@@ -55,29 +70,84 @@ class open_shell_integral_storage {
     return as_integrals_two_body[spin_combination](k, l, m, n);
   }
 
+  inline double phys_akal(int a, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_akal[spin_combination_to_idx(spin_combination)](a, k, l);
+  }
+
+  inline double phys_akla(int a, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_akla[spin_combination_to_idx(spin_combination)](a, k, l);
+  }
+
+  // Mapping: Integrals for AS orbital refinement to stored integrals
+  // phys_as_z... -> Physical notation z is AS orbital
+  // phys_core_z... -> Physical notation z is core orbital
+
   inline double ak(int a, int k, int spin_combination) const noexcept {
     return core_as_integrals_one_body_ak[spin_combination](a, k);
   }
 
-  inline double phys_akln(int a, int k, int l, int n, int spin_combination) const noexcept {
-    return core_as_integrals_two_body_akln[spin_combination](a, k, l, n);
+  inline double phys_as_zlkn(int z, int l, int k, int n, const std::array<int, 2>& spin_combination) const noexcept {
+    return as_integrals_two_body[spin_combination_to_idx(spin_combination)](z, l, k, n);
+  }
+  inline double phys_core_zlkn(int z, int l, int k, int n, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_akln[spin_combination_to_idx(spin_combination)](z, l, k, n);
   }
 
-  inline double phys_akal(int a, int k, int l, int spin_combination) const noexcept {
-    return core_as_integrals_two_body_akal[spin_combination](a, k, l);
+
+  inline double phys_as_zaka(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
+    //switch bra and ket
+    std::array<int, 2> swapped = spin_combination;
+    std::swap(swapped[0], swapped[1]);
+    return core_as_integrals_two_body_akal[spin_combination_to_idx(swapped)](a, z, k);
+  }
+  inline double phys_core_zaka(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_abak[spin_combination_to_idx(spin_combination)](a, z, k);
+  }
+  inline double phys_as_zkaa(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_akla[spin_combination_to_idx(spin_combination)](a, z, k);
+  }
+  inline double phys_core_zkaa(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_baak[spin_combination_to_idx(spin_combination)](a, z, k);
   }
 
-  inline double phys_akla(int a, int k, int l, int spin_combination) const noexcept {
-    return core_as_integrals_two_body_akla[spin_combination](a, k, l);
+  // Mapping: Integrals for core orbital refinement to stored integrals
+  // phys_as_z... -> Physical notation z is AS orbital
+  // phys_core_z... -> Physical notation z is core orbital
+
+  inline double phys_as_zaca(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
+    //Input: <za|ca> = (zc|aa); stored: <ab|ak> = (aa|bk) -> map: Alpha/Beta - Bra/KET Vertauschung lösen!
+    //core_as_integrals_two_body_abak
+    return 0;
+  }
+  inline double phys_core_zaca(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_baca[spin_combination_to_idx(spin_combination)](a, z, c);
+  }
+  inline double phys_as_zaac(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
+    //Input: <za|ac> = (za|ac); stored: <ba|ak> = (ba|ak) -> map: Alpha/Beta - Bra/KET Vertauschung lösen!
+    //core_as_integrals_two_body_baak
+    return 0;
+  }
+  inline double phys_core_zaac(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_baac[spin_combination_to_idx(spin_combination)](a, z, c);
   }
 
-  inline double phys_abak(int a, int b, int k, int spin_combination) const noexcept {
-    return core_as_integrals_two_body_abak[spin_combination](a, b, k);
+
+  inline double phys_as_zkcl(int z, int c, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
+    //Input: <zk|cl> = (zc|kl); stored: <ak|ln> = (al|kn) -> map: z->l, c->a, k->k, l->n
+    return core_as_integrals_two_body_akln[spin_combination_to_idx(spin_combination)](c, k, z, l);
+  }
+  inline double phys_core_zkcl(int z, int c, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
+    return core_as_integrals_two_body_akcl[spin_combination_to_idx(spin_combination)](z, k, c, l);
+  }
+  inline double phys_as_zklc(int z, int c, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
+    //Input: <zk|lc> = (zl|kc); stored: <ak|ln> = (al|kn) -> map: Alpha/Beta - Bra/KET Vertauschung lösen!
+    //core_as_integrals_two_body_akln
+    return 0;
+  }
+  inline double phys_core_zklc(int z, int c, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
+    core_as_integrals_two_body_aklc[spin_combination_to_idx(spin_combination)](z, k, l, c);
   }
 
-  inline double phys_baak(int a, int b, int k, int spin_combination) const noexcept {
-    return core_as_integrals_two_body_baak[spin_combination](a, b, k);
-  }
 
   public:
     //Active space integrals
@@ -86,12 +156,17 @@ class open_shell_integral_storage {
 
     //Core - AS integrals for AS orbital refinement
     std::array<madness::Tensor<double>, 2> core_as_integrals_one_body_ak;   // (a,k)
-
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akln; // (a,k,l,n)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akal; // (a,k,l)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akla; // (a,k,l)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_abak; // (a,b,k)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baak; // (a,b,k)
 
-    //Core - AS integrals for core refinement
+    std::vector<madness::Tensor<double>> old_akal; // (a,k,l)
+
+    // Additional core - AS integrals for core orbital refinement
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_baca; // (a,b,c)
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_baac; // (a,b,c)
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akcl; // (a,k,c,l)
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_aklc; // (a,k,l,c)
 };
