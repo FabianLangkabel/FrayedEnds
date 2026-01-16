@@ -151,17 +151,21 @@ void Optimization_open_shell<NDIM>::calculate_energies() {
 
     // AS-Core interaction
     double as_core_energy = 0.0;
-    for (int spin = 0; spin < 2; ++spin) {
+    for (const std::array<int,2>& spin_combination : std::array<std::array<int,2>, 4>{{ {0, 0}, {1, 1}, {0, 1}, {1, 0}}}) 
+    {
         as_core_energy += open_shell_utils::contract<3>(
-            { core_dims[0] + core_dims[1], as_dims[spin], as_dims[spin] },
-            [&](const auto& i) { return as_one_rdm[spin](i[1], i[2]); },
-            [&](const auto& i) { return Integral_storage.phys_akal(i[0], i[1], i[2], spin); }
+            { core_dims[spin_combination[0]], as_dims[spin_combination[1]], as_dims[spin_combination[1]] },
+            [&](const auto& i) { return as_one_rdm[spin_combination[1]](i[1], i[2]); },
+            [&](const auto& i) { return Integral_storage.phys_akal(i[0], i[1], i[2], spin_combination); }
         );
+    }
 
+    for (const std::array<int,2>& spin_combination : std::array<std::array<int,2>, 2>{{ {0, 0}, {1, 1}}})
+    {
         as_core_energy -= open_shell_utils::contract<3>(
-            { core_dims[spin], as_dims[spin], as_dims[spin] },
-            [&](const auto& i) { return as_one_rdm[spin](i[1], i[2]); },
-            [&](const auto& i) { return Integral_storage.phys_akla( i[0], i[1], i[2], spin); }
+            { core_dims[spin_combination[0]], as_dims[spin_combination[1]], as_dims[spin_combination[1]] },
+            [&](const auto& i) { return as_one_rdm[spin_combination[1]](i[1], i[2]); },
+            [&](const auto& i) { return Integral_storage.phys_akla(i[0], i[1], i[2], spin_combination); }
         );
     }
 
@@ -224,7 +228,7 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_as_a
         // I[0]=k, I[1]=l, I[2]=n
         { as_dims[spin], as_dims[spin], as_dims[spin] },
         [&](const auto& I) { return as_two_rdm[spin](I[0], I[1], i, I[2]); },
-        [&](const auto& I) { return Integral_storage.phys_klmn(z, I[1], I[0], I[2], spin); }
+        [&](const auto& I) { return Integral_storage.phys_as_zlkn(z, I[1], I[0], I[2], {spin, spin}); }
     );
 
     //mixed terms
@@ -236,26 +240,26 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_as_a
             else { return as_two_rdm[2](I[1], I[0], I[2], i);}
         },
         [&](const auto& I) {
-            if (spin == 0) { return Integral_storage.phys_klmn(z, I[1], I[0], I[2], 2);} 
-            else { return Integral_storage.phys_klmn(I[1], z, I[2], I[0], 2);}
+            if (spin == 0) { return Integral_storage.phys_as_zlkn(z, I[1], I[0], I[2], {0, 1});} 
+            else { return Integral_storage.phys_as_zlkn(I[1], z, I[2], I[0], {0, 1});}
         }
     );
 
-    // Core - AS interaction
     if((core_dims[0] + core_dims[1]) > 0)
     {
-        element += open_shell_utils::contract<2>(
-            // I[0]=a (spins mixed), I[1]=k/l
-            { core_dims[0] + core_dims[1], as_dims[spin] },
-            [&](const auto& I) { return as_one_rdm[spin](I[1], i);},
-            [&](const auto& I) { return Integral_storage.phys_akal(I[0], z, I[1], spin);}
-        );
+        for (const std::array<int,2>& spin_combination : std::array<std::array<int,2>, 2>{{ {spin, 0}, {spin, 1}}}) 
+        {
+            element += open_shell_utils::contract<2>(
+                { as_dims[spin_combination[0]], core_dims[spin_combination[1]] },
+                [&](const auto& I) { return as_one_rdm[spin_combination[0]](I[0], i); },
+                [&](const auto& I) { return Integral_storage.phys_as_zaka(z, I[1], I[0], spin_combination); } //zaka(z, a, k)
+            );
+        }
 
         element -= open_shell_utils::contract<2>(
-            // I[0]=a (spins mixed), I[1]=k/l
-            { core_dims[spin], as_dims[spin] },
-            [&](const auto& I) { return as_one_rdm[spin](I[1], i);},
-            [&](const auto& I) { return Integral_storage.phys_akla( I[0], I[1], z, spin);}
+            { as_dims[spin], core_dims[spin] },
+            [&](const auto& I) { return as_one_rdm[spin](I[0], i); },
+            [&](const auto& I) { return Integral_storage.phys_as_zkaa(z, I[1], I[0], {spin, spin}); }
         );
     }
     return element;
@@ -272,7 +276,7 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_as_c
         { as_dims[spin], as_dims[spin], as_dims[spin] },
         // I[0]=k, I[1]=l, I[2]=n
         [&](const auto& I) { return as_two_rdm[spin](I[0], I[1], i, I[2]); },
-        [&](const auto& I) { return Integral_storage.phys_akln(z, I[1], I[0], I[2], spin); }
+        [&](const auto& I) { return Integral_storage.phys_core_zlkn(z, I[1], I[0], I[2], {spin, spin}); }
     );
 
     //mixed terms
@@ -284,17 +288,17 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_as_c
             else { return as_two_rdm[2](I[1], I[0], I[2], i); }
         },
         [&](const auto& I) {
-            if (spin == 0) { return Integral_storage.phys_akln(z, I[1], I[0], I[2], 2);} 
-            else { return Integral_storage.phys_akln(z, I[1], I[0], I[2], 3);}
+            if (spin == 0) { return Integral_storage.phys_core_zlkn(z, I[1], I[0], I[2], {0, 1});} 
+            else { return Integral_storage.phys_core_zlkn(z, I[1], I[0], I[2], {1, 0});}
         }
     );
 
-    //abak part
+    //zaka part
     element += open_shell_utils::contract<2>(
         { as_dims[spin], core_dims[spin] },
         // I[0]=k, I[1]=a
         [&](const auto& I) { return as_one_rdm[spin](I[0], i);},
-        [&](const auto& I) { return Integral_storage.phys_abak(I[1], z, I[0], spin);}
+        [&](const auto& I) { return Integral_storage.phys_core_zaka(z, I[1], I[0], {spin, spin});}
     );
 
     //mixed terms
@@ -303,8 +307,8 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_as_c
         // I[0]=k, I[1]=a
         [&](const auto& I) { return as_one_rdm[spin](I[0], i); },
         [&](const auto& I) {
-            if (spin == 0) { return Integral_storage.phys_abak(I[1], z, I[0], 3);} 
-            else { return Integral_storage.phys_abak(I[1], z, I[0], 2);}
+            if (spin == 0) { return Integral_storage.phys_core_zaka(z, I[1], I[0], {1, 0});} 
+            else { return Integral_storage.phys_core_zaka(z, I[1], I[0], {0, 1});}
         }
     );
 
@@ -313,7 +317,7 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_as_c
         { as_dims[spin], core_dims[spin] },
         // I[0]=k, I[1]=a
         [&](const auto& I) { return as_one_rdm[spin](I[0], i);},
-        [&](const auto& I) { return Integral_storage.phys_baak(I[1], z, I[0], spin);}
+        [&](const auto& I) { return Integral_storage.phys_core_zkaa(z, I[1], I[0], {spin, spin});}
     );
 
     return element;
@@ -647,15 +651,21 @@ nb::tuple Optimization_open_shell<NDIM>::get_effective_hamiltonian() {
 
     if(core_dims[0] > 0 || core_dims[1] > 0)
     {
-        for (int spin = 0; spin < 2; spin++) {
-            for (int a = 0; a < (core_dims[0] + core_dims[1]); a++) {
-                for (int k = 0; k < as_dims[spin]; k++) {
-                    for (int l = 0; l < as_dims[spin]; l++) {
-                        effective_one_e_integrals[spin](k,l) += core_as_integrals_two_body[0][spin](a, k, l);
+        int spincombination[4][2] = {{0, 0}, {1, 1}, {0, 1}, {1, 0}}; // in chemical notation (aa|aa), (bb|bb), (aa|bb), (bb|aa)
+        for(int c = 0; c < 4; c++)
+        {
+            int bra_spin = spincombination[c][0];
+            int ket_spin = spincombination[c][1];
+
+            for (int a = 0; a < core_dims[bra_spin]; a++) {
+                for (int k = 0; k < as_dims[ket_spin]; k++) {
+                    for (int l = 0; l < as_dims[ket_spin]; l++) {
+                        effective_one_e_integrals[ket_spin](k,l) += core_as_integrals_two_body[0][c](a, k, l);
                     }
                 }
             }
         }
+
         for (int spin = 0; spin < 2; spin++) {
             for (int a = 0; a < core_dims[spin]; a++) {
                 for (int k = 0; k < as_dims[spin]; k++) {
