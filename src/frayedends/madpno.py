@@ -57,7 +57,7 @@ class MadPNO:
             units = units.lower()
             if units in ["angstrom", "ang", "a", "å"]:
                 units = "angstrom"
-            elif units in ["bohr", "atomic units", "au", "a.u."]:
+            elif units in ["bohr", "atomic", "atomic units", "au", "a.u."]:
                 units = "bohr"
             else:
                 if self.silent == False:

@@ -109,8 +109,8 @@ for distance in distance_list:
     
     
     molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
-    part_deriv_V_0 = molecule.compute_nuclear_derivative(world, 0, 2)
-    part_deriv_V_2 = molecule.compute_nuclear_derivative(world, 2, 2)
+    part_deriv_V_0 = molecule.molecular_potential_derivative(world, 0, 2)
+    part_deriv_V_2 = molecule.molecular_potential_derivative(world, 2, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V_0)
     Deriv_tens2 = integrals.compute_potential_integrals(orbitals, part_deriv_V_2)
     part_deriv_c = molecule.nuclear_repulsion_derivative(0, 2)

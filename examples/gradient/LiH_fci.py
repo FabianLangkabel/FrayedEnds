@@ -120,7 +120,7 @@ for distance in distance_list:
     Energy_list.append(current)
 
     molecule = fe.MolecularGeometry(geometry= geometry, units="bohr")
-    part_deriv_V = molecule.compute_nuclear_derivative(world, 1, 2)
+    part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
     part_deriv_c = molecule.nuclear_repulsion_derivative(1, 2)
     grad = 2*Deriv_tens[0,0]  #Li core orbital contribution

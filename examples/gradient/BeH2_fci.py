@@ -8,12 +8,12 @@ import frayedends as fe
 
 world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [0.05 + 0.05 * i for i in range(25)]
+distance_list = [1.5 + 1.5 * i for i in range(2)]
 Energy_list = []
 Gradient_list = []
 
-n_orbitals = 7
-n_act_orbitals = 6
+n_orbitals = 5
+n_act_orbitals = 4
 n_act_electrons = 4
 miter=1
 for distance in distance_list:
@@ -28,7 +28,7 @@ for distance in distance_list:
     true_start = time.time()
     geometry = "H 0.0 0.0 " + str(-distance) + "\nBe 0.0 0.0 0.0" + "\nH 0.0 0.0 " + str(distance)
     molgeom = fe.MolecularGeometry(geometry=geometry, units="bohr")
-
+    
     pno_start = time.time()
     madpno = fe.MadPNO(
         world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "boys"}
@@ -54,7 +54,7 @@ for distance in distance_list:
 
     c = nuc_repulsion
     current = 0.0
-    for iteration in range(31):
+    for iteration in range(5):
         active_orbitals = []
         for i in range(len(orbitals)):
             if orbitals[i].type == "active":
@@ -68,9 +68,7 @@ for distance in distance_list:
             G = integrals.compute_two_body_integrals(orbitals)
             T = integrals.compute_kinetic_integrals(orbitals)
             V = integrals.compute_potential_integrals(orbitals, Vnuc)
-            mol = tq.Molecule(
-                geometry,
-                units="bohr",
+            mol = molgeom.to_tq_mol(
                 one_body_integrals=T + V,
                 two_body_integrals=G,
                 nuclear_repulsion=c,
@@ -134,28 +132,29 @@ for distance in distance_list:
         
     Energy_list.append(current)
     
-    
+    for i in range(len(orbitals)):
+        world.cube_plot(f"d_{distance}_orbital_{i}", orbitals[i], molgeom, zoom=5.0, datapoints=81)
+        world.line_plot(f"d_{distance}_orbital_{i}.dat", orbitals[i])
 
-
-    molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
-    part_deriv_V_0 = molecule.compute_nuclear_derivative(world, 0, 2)
-    part_deriv_V_2 = molecule.compute_nuclear_derivative(world, 2, 2)
+    part_deriv_V_0 = molgeom.molecular_potential_derivative(world, 0, 2)
+    part_deriv_V_2 = molgeom.molecular_potential_derivative(world, 2, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V_0)
     Deriv_tens2 = integrals.compute_potential_integrals(orbitals, part_deriv_V_2)
-    part_deriv_c = molecule.nuclear_repulsion_derivative(0, 2)
+    part_deriv_c = molgeom.nuclear_repulsion_derivative(0, 2)
     grad = 2*Deriv_tens[0,0]  #Be core orbital contribution
     for i in range(len(active_orbitals)):
         for j in range(len(active_orbitals)):
             grad += rdm1[i, j] * Deriv_tens[i+1, j+1]
     print("gradient0: ", grad + part_deriv_c)
 
-    part_deriv_c2 = molecule.nuclear_repulsion_derivative(2, 2)
+    part_deriv_c2 = molgeom.nuclear_repulsion_derivative(2, 2)
     grad2 = 2*Deriv_tens2[0,0]  #Be core orbital contribution
     for i in range(len(active_orbitals)):
         for j in range(len(active_orbitals)):
             grad2 += rdm1[i, j] * Deriv_tens2[i+1, j+1]
     print("gradient2: ", grad2 + part_deriv_c2)
     Gradient_list.append(grad2 + part_deriv_c2 - grad - part_deriv_c)
+    print(molgeom.compute_energy_gradient(world, orbitals, rdm1, nocc=2))
 
     true_end = time.time()
     print("Total time: ", true_end - true_start)

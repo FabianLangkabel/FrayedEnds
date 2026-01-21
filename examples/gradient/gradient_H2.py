@@ -67,7 +67,7 @@ for distance in distance_list:
             world.line_plot(f"orb{i}.dat", orbitals[i])
     Energy_list.append(e + c)
     # gradient calculation
-    part_deriv_V = molecule.compute_nuclear_derivative(world, 1, 2)
+    part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
     part_deriv_c = molecule.nuclear_repulsion_derivative(1, 2)
 
