@@ -25,7 +25,7 @@ classifiers = [
     "License :: ???",
 ]
 dependencies = [
-    "numpy", "pyscf", "qulacs", "tequila-basic", "block2", "nanobind",
+    "numpy", "pyscf", "qulacs", "tequila-basic", "block2", "nanobind", "geometric",
     "black>=24.4.2",
     "isort>=5.10.0",
     "clang-format>=17.0.6"

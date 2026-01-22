@@ -87,11 +87,11 @@ def energy_and_gradient(world: fe.MadWorld3D, molgeom: fe.MolecularGeometry, n_o
 
 def f(pyscf_mol):
     molgeom = fe.MolecularGeometry.from_pyscf_mol(pyscf_mol, units="bohr")
-    e, g = energy_and_gradient(world, molgeom, n_orbitals=6)
+    e, g = energy_and_gradient(world, molgeom, n_orbitals=10)
     return e, g
 
 geom_opt_start = time()
-pyscf_mol = gto.M(atom="H 0.0 0.0 -0.5\nH 0.0 0.0 0.5", unit="bohr") #initial guess molecule
+pyscf_mol = gto.M(atom="H 0.0 0.0 -2.5\nO 0.0 0.0 0.0\nH 0.0 0.0 2.5", unit="bohr") #initial guess molecule
 print(pyscf_mol.atom_coords())
 
 fake_method = as_pyscf_method(pyscf_mol, f) # wrapping energy and gradient function to be compatible with geomeTRIC

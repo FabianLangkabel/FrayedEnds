@@ -41,6 +41,26 @@ class MadPNO:
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")
 
+        if maxrank is None:
+            # safe option, with this we always compute enough pnos
+            maxrank = n_orbitals
+            # more effective
+            try:
+                from tequila.quantumchemistry import ParametersQC
+
+                params = ParametersQC(geometry=geometry, units=units)
+                n_tot_e = params.total_n_electrons
+                if frozen_core:
+                    n_act_e = params.total_n_electrons - params.get_number_of_core_electrons()
+                else:
+                    n_act_e = params.total_n_electrons
+                n_hf_orbs = n_tot_e // 2
+                n_act_pairs = n_act_e // 2
+                maxrank = int(numpy.ceil((n_orbitals - n_hf_orbs) / n_act_pairs))
+
+            except Exception:
+                maxrank = n_orbitals
+        
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
@@ -65,20 +85,6 @@ class MadPNO:
                         "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
                     )
                 units = "angstrom"
-
-        if maxrank is None:
-            # safe option, with this we always compute enough pnos
-            maxrank = n_orbitals
-            # more effective
-            try:
-                from tequila.quantumchemistry import ParametersQC
-
-                ne = ParametersQC(geometry=geometry, units=units).n_electrons
-                np = ne // 2
-                maxrank = int(numpy.ceil(n_orbitals / np))
-
-            except Exception:
-                maxrank = n_orbitals
 
         pno_input_string = self.parameter_string(
             madworld,
