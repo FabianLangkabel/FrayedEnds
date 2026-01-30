@@ -23,10 +23,14 @@ def redirect_output(filename="madness.out"):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # Allow per-call override using kwarg `redirect_filename`
+            target = kwargs.pop("redirect_filename", filename)
             # Redirect stdout to a file
-            red = RedirectOutput(filename)
-            result = func(*args, **kwargs)
-            del red
+            red = RedirectOutput(target)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                del red
             return result
 
         return wrapper

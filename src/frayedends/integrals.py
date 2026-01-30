@@ -74,12 +74,12 @@ class Integrals3D:
 
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
-
+    
     def transform_to_natural_orbitals(self, orbitals, rdm1):
-        values, vectors = np.linalg.eigh(rdm1)  # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
-        val = values[::-1]  # reverse the order of eigenvalues
-        vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
-        return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
+        values, vectors = np.linalg.eigh(rdm1) # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
+        val = values[::-1] # reverse the order of eigenvalues
+        vec = vectors[:, ::-1] # reverse the order of eigenvectors accordingly
+        return self.transform(orbitals, vec), val # transform the orbitals to the natural orbitals
 
     def compute_nuclear_derivative(
         self,
@@ -157,10 +157,10 @@ class Integrals2D:
         return self.impl.transform(orbitals, matrix)
 
     def transform_to_natural_orbitals(self, orbitals, rdm1):
-        values, vectors = np.linalg.eigh(rdm1)  # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
-        val = values[::-1]  # reverse the order of eigenvalues
-        vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
-        return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
+        values, vectors = np.linalg.eigh(rdm1) # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
+        val = values[::-1] # reverse the order of eigenvalues
+        vec = vectors[:, ::-1] # reverse the order of eigenvectors accordingly
+        return self.transform(orbitals, vec), val # transform the orbitals to the natural orbitals
 
     def compute_nuclear_derivative(
         self,
