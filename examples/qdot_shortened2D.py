@@ -8,17 +8,16 @@ import frayedends as fe
 
 true_start = time()
 n_electrons = 2  # Number of electrons
-n_orbitals = 2  # Number of orbitals (all active in this example)
+n_orbitals = 6  # Number of orbitals (all active in this example)
 
 
 def potential(x: float, y: float) -> float:  # Qdot potential
-    a = -5.0
-    r = np.array([x, y])
-    return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
+    r = np.array([x, y, 1e-10])
+    return - 2 / np.linalg.norm(r)
 
 
 world = fe.MadWorld2D(
-    L=200
+    L=100, thresh=1e-4
 )  # This is required for any MADNESS calculation as it initializes the required environment
 
 factory = fe.MRAFunctionFactory2D(
@@ -34,12 +33,12 @@ energy, orbitals, rdm1, rdm2 = fe.optimize_basis_2D(
     n_orbitals=n_orbitals,
     orbitals="eigen",
     many_body_method="fci",
-    maxiter=6,
+    maxiter=10,
     econv=1.0e-8,
 )
 
+print(np.linalg.eig(rdm1))
 true_end = time()
 print("Total time: ", true_end - true_start)
 
-del factory
-del world
+fe.cleanup(globals())

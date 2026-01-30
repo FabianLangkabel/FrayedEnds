@@ -88,7 +88,10 @@ for distance in distance_list:
             mol = tq.Molecule(parameters=params, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, n_electrons=n_act_electrons)
 
         H = mol.make_hamiltonian()
+        start=time.time()
         res = np.linalg.eigvalsh(H.to_matrix())
+        end =time.time()
+        print("Diagonalization time:", end-start)
         print("Diagonalization energy:", res[0])
         fci_start = time.time()
         # FCI calculation
