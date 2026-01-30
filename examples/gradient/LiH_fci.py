@@ -12,9 +12,9 @@ distance_list = [1.05 + 0.1 * i for i in range(1)]
 Energy_list = []
 Gradient_list = []
 
-n_orbitals = 9
-n_act_orbitals = 8
-n_act_electrons = 2
+n_orbitals = 5
+n_act_orbitals = 5
+n_act_electrons = 4
 for distance in distance_list:
     print(
             "------------------------------------------------------------------------------"
@@ -31,6 +31,8 @@ for distance in distance_list:
         world, geometry, units="bohr", n_orbitals=n_orbitals
     )
     orbitals = madpno.get_orbitals()
+    for orb in orbitals:
+        orb.type = "active" # in this example we do not freeze any orbitals, so we set all orbitals to active
     
     pno_end = time.time()
     print("Pno time:", pno_end-pno_start)
@@ -43,11 +45,6 @@ for distance in distance_list:
 
     integrals = fe.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
-    
-    frozen_orbitals = []
-    for orb in orbitals:
-        if orb.type == "frozen_occ":
-            frozen_orbitals.append(orb)
 
     c = nuc_repulsion
     current = 0.0
@@ -56,28 +53,11 @@ for distance in distance_list:
             "------------------------------------------------------------------------------"
         )
         integrals = fe.Integrals3D(world)
-        if iteration == 0:
-            G = integrals.compute_two_body_integrals(orbitals)
-            T = integrals.compute_kinetic_integrals(orbitals)
-            V = integrals.compute_potential_integrals(orbitals, Vnuc)
-            mol = tq.Molecule(
-                geometry,
-                units="bohr",
-                one_body_integrals=T + V,
-                two_body_integrals=G,
-                nuclear_repulsion=c,
-            )
-            params = mol.parameters
-            c, h1, g2 = mol.get_integrals(ordering="chem")
-        else:
-            T = integrals.compute_kinetic_integrals(active_orbitals)
-            V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
-            G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem")
-            FC_int= integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
-            # print(FC_int)
-            # print(T+V+FC_int)
-            h1 = T + V + FC_int
-            g2 = G
+        G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
+        T = integrals.compute_kinetic_integrals(orbitals)
+        V = integrals.compute_potential_integrals(orbitals, Vnuc)
+        h1 = T + V
+        g2 = G
 
         fci_start = time.time()
         # FCI calculation
@@ -111,10 +91,6 @@ for distance in distance_list:
         )
         opti_end = time.time()
         print("orb opt time:", opti_end-opti_start)
-        active_orbitals = []
-        for i in range(len(orbitals)):
-            if orbitals[i].type == "active":
-                active_orbitals.append(orbitals[i])
         c = opti.get_c()
     
     Energy_list.append(current)
@@ -123,10 +99,10 @@ for distance in distance_list:
     part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
     part_deriv_c = molecule.nuclear_repulsion_derivative(1, 2)
-    grad = 2*Deriv_tens[0,0]  #Li core orbital contribution
-    for i in range(len(active_orbitals)):
-        for j in range(len(active_orbitals)):
-            grad += rdm1[i, j] * Deriv_tens[i+1, j+1]
+    grad = 0.0
+    for i in range(len(orbitals)):
+        for j in range(len(orbitals)):
+            grad += rdm1[i, j] * Deriv_tens[i, j]
     print("gradient: ", grad + part_deriv_c)
     Gradient_list.append(grad + part_deriv_c)
 
