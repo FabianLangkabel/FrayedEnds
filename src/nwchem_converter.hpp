@@ -12,25 +12,32 @@
 #include <madness/external/nlohmann_json/json.hpp>
 #include <madness/chem/molecular_functors.h>
 #include <madness/chem/NWChem.h>
+#include <madness/chem/correlationfactor.h>
+#include <madness/chem/potentialmanager.h>
 #include "npy.hpp"
 #include "functionsaver.hpp"
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 
 using namespace madness;
 using namespace madchem;
 
-class NWChem_Converter : public MadnessProcess{
-public:
-    NWChem_Converter(double L, long k, double thresh);
+class NWChem_Converter {
+  public:
+    NWChem_Converter(MadnessProcess<3>& mp);
     ~NWChem_Converter();
 
     void read_nwchem_file(std::string nwchem_file);
 
-    std::vector<SavedFct> GetNormalizedAOs();
-    std::vector<SavedFct> GetMOs();
+    std::vector<SavedFct<3>> get_normalized_aos();
+    std::vector<SavedFct<3>> get_mos();
+    SavedFct<3> get_vnuc() { return SavedFct<3>(Vnuc); }
+    double get_nuclear_repulsion_energy() { return nuclear_repulsion_energy; }
 
-private:
+  private:
+    MadnessProcess<3>& madness_process;
     std::vector<std::vector<double>> atoms;
     std::vector<real_function_3d> aos;
     std::vector<real_function_3d> mos;
+    real_function_3d Vnuc;
+    double nuclear_repulsion_energy;
 };

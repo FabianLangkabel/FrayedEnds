@@ -2,27 +2,27 @@
 
 using namespace madness;
 
+NWChem_Converter::NWChem_Converter(MadnessProcess<3>& mp) : madness_process(mp) {
+    std::cout.precision(6);
+}
 
-NWChem_Converter::NWChem_Converter(double L, long k, double thresh): MadnessProcess(L,k,thresh) {std::cout.precision(6);}
-
-NWChem_Converter::~NWChem_Converter()
-{
+NWChem_Converter::~NWChem_Converter() {
     aos.clear();
     mos.clear();
 }
 
-void NWChem_Converter::read_nwchem_file(std::string nwchem_file)
-{
+void NWChem_Converter::read_nwchem_file(std::string nwchem_file) {
     std::ostream bad(nullptr);
-    //slymer::NWChem_Interface nwchem(nwchem_file, bad);
+    // slymer::NWChem_Interface nwchem(nwchem_file, bad);
     slymer::NWChem_Interface nwchem(nwchem_file, std::cout);
 
-    nwchem.read(slymer::Properties::Atoms | slymer::Properties::Basis | slymer::Properties::Energies | slymer::Properties::MOs | slymer::Properties::Occupancies);
+    nwchem.read(slymer::Properties::Atoms | slymer::Properties::Basis | slymer::Properties::Energies |
+                slymer::Properties::MOs | slymer::Properties::Occupancies);
 
     // Cast the 'basis_set' into a gaussian basis
     // and iterate over it
     int i = 0;
-    for (auto basis: slymer::cast_basis<slymer::GaussianFunction>(nwchem.basis_set)) {
+    for (auto basis : slymer::cast_basis<slymer::GaussianFunction>(nwchem.basis_set)) {
         // Get the center of gaussian as its special point
         std::vector<coord_3d> centers;
         coord_3d r;
@@ -32,43 +32,45 @@ void NWChem_Converter::read_nwchem_file(std::string nwchem_file)
         centers.push_back(r);
 
         // Now make the function
-        aos.push_back(factoryT(*world).functor(functorT(new slymer::Gaussian_Functor(basis.get(), centers))));
+        aos.push_back(
+            factoryT(*(madness_process.world)).functor(functorT(new slymer::Gaussian_Functor(basis.get(), centers))));
     }
 
     auto molecule = madness::Molecule();
-    for (auto atom: nwchem.atoms) {
-        molecule.add_atom(atom.position[0], atom.position[1], atom.position[2], (double)symbol_to_atomic_number(atom.symbol), symbol_to_atomic_number(atom.symbol));
+    for (auto atom : nwchem.atoms) {
+        molecule.add_atom(atom.position[0], atom.position[1], atom.position[2],
+                          (double)symbol_to_atomic_number(atom.symbol), symbol_to_atomic_number(atom.symbol));
     }
 
-    //Vnuc = new Nuclear<double,3>(*world, molecule);
-    //nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
+    // Vnuc = create_nuclear_correlation_factor(*(madness_process.world), molecule).U2();
+    // Vnuc = new Nuclear<double,3>(*(madness_process.world), molecule);
+    PotentialManager pm = PotentialManager(molecule, "");
+    pm.make_nuclear_potential(*(madness_process.world));
+    Vnuc = pm.vnuclear();
+
+    nuclear_repulsion_energy = molecule.nuclear_repulsion_energy();
 
     // Transform ao's now
-    normalize(*world, aos);
-    mos = transform(*world, aos, nwchem.MOs);
-    truncate(*world, mos);
+    normalize(*(madness_process.world), aos);
+    mos = transform(*(madness_process.world), aos, nwchem.MOs);
+    truncate(*(madness_process.world), mos);
 }
 
-std::vector<SavedFct> NWChem_Converter::GetNormalizedAOs()
-{
-    std::vector<SavedFct> all_orbs;
-    for(int i = 0; i < aos.size(); i++)
-    {
-        SavedFct orb(aos[i]);
-        orb.type="ao";
+std::vector<SavedFct<3>> NWChem_Converter::get_normalized_aos() {
+    std::vector<SavedFct<3>> all_orbs;
+    for (int i = 0; i < aos.size(); i++) {
+        SavedFct<3> orb(aos[i]);
+        orb.type = "ao";
         all_orbs.push_back(orb);
     }
     return all_orbs;
 }
 
-
-std::vector<SavedFct> NWChem_Converter::GetMOs()
-{
-    std::vector<SavedFct> all_orbs;
-    for(int i = 0; i < mos.size(); i++)
-    {
-        SavedFct orb(mos[i]);
-        orb.type="mo";
+std::vector<SavedFct<3>> NWChem_Converter::get_mos() {
+    std::vector<SavedFct<3>> all_orbs;
+    for (int i = 0; i < mos.size(); i++) {
+        SavedFct<3> orb(mos[i]);
+        orb.type = "mo";
         all_orbs.push_back(orb);
     }
     return all_orbs;

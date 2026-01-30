@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 
 # Set up the project and ensure there is a working C++ compiler
-project(madpy LANGUAGES CXX)
+project(frayedends LANGUAGES CXX)
 
 # Warn if the user invokes CMake directly
 if (NOT SKBUILD)
@@ -38,12 +38,12 @@ find_package(nanobind CONFIG REQUIRED)
 
 # We also need madness installed (not part of this build yet)
 find_package(MADNESS REQUIRED COMPONENTS MADchem)
-message(STATUS "MadPy using MADNESS installation at: ${MADNESS_DIR}")
+message(STATUS "FrayedEnds using MADNESS installation at: ${MADNESS_DIR}")
 
 # We are now ready to compile the actual extension module
 nanobind_add_module(
   # Name of the extension
-  _madpy_impl
+  _frayedends_impl
 
   # Target the stable ABI for Python 3.12+, which reduces
   # the number of binary wheels that must be built. This
@@ -57,13 +57,15 @@ nanobind_add_module(
   src/pno_interface.hpp
   src/sum_of_gaussians.hpp
   src/integrals.cpp
-  src/MadnessProcess.hpp
-  src/PyFuncFactory.hpp
+  src/madness_process.cpp
+  src/pyfuncfactory.hpp
   src/eigensolver.cpp
   src/nwchem_converter.cpp
+  src/moleculargeometry.cpp
+  src/coulomboperator_nd.hpp
 )
 
 # Install directive for scikit-build-core
-target_link_libraries(_madpy_impl PRIVATE MADchem)
-install(TARGETS _madpy_impl LIBRARY DESTINATION madpy)
+target_link_libraries(_frayedends_impl PRIVATE MADchem)
+install(TARGETS _frayedends_impl LIBRARY DESTINATION frayedends)
 

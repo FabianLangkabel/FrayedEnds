@@ -1,0 +1,74 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: test basic functionality
+
+on:
+  push:
+    branches: [main, devel]
+  pull_request:
+    branches: [main, devel]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+        os: [ubuntu-24.04] #macos-latest macos not ready
+        include:
+          - os: ubuntu-24.04
+            cxx: /usr/bin/g++-13
+          #- os: macos-latest
+          #  cxx: clang++
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up Homebrew
+        if: ${{ matrix.os == 'macos-latest' }}
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+        
+      - name: Install prerequisite MacOS packages
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          brew install ninja boost eigen
+
+      - name: Install prerequisites Ubuntu packages
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build g++-13 liblapack-dev libboost-dev libboost-serialization-dev libeigen3-dev
+
+      - name: Install basic python dependencies
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Test basic installation
+        run: |
+          git clone https://github.com/m-a-d-n-e-s-s/madness madness_source
+          mkdir madness_build
+          export MADNESS_DIR=$(realpath madness)
+          echo "Madness Dir:"
+          echo $MADNESS_DIR
+          echo "test"
+          echo $(realpath madness)
+          cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
+          make -C madness_build -j4
+          sudo cmake --build madness_build/ --target install -j4
+
+          MADNESS_DIR=$MADNESS_DIR pip install -e .
+          pip install pytest
+
+      - name: run tests
+        run: |
+          cd tests
+          pytest test_basics.py
+          pytest test_methods.py
+          pytest test_methods_fc.py
+          pytest test_pyscf.py

@@ -1,14 +1,17 @@
-from madpy.minbas import AtomicBasisProjector
-from madpy import Plotter
+import frayedends as fe
+from frayedends.minbas import AtomicBasisProjector
 
 geom = "Li 0.0 0.0 -10\nH 0.0 0.0 10"
-bp = AtomicBasisProjector(geom)
+
+world = fe.MadWorld3D()
+
+bp = AtomicBasisProjector(world, geom)
 
 orbitals = bp.orbitals
-del bp
 
-plt=Plotter()
 data = []
 for i in range(len(orbitals)):
-    plt.line_plot(f"atomic{i}.dat",orbitals[i])
-del plt
+    world.line_plot(f"atomic{i}.dat", orbitals[i])
+
+del bp
+del world

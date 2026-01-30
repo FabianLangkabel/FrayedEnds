@@ -13,7 +13,7 @@ args =[
 
 
 [project]
-name = "madpy"
+name = "frayedends"
 version = "0.0.1"
 description = "Python interface for Orbital Refinement"
 readme = "README.md"
@@ -25,7 +25,10 @@ classifiers = [
     "License :: ???",
 ]
 dependencies = [
-    "numpy", "pyscf", "qulacs", "tequila-basic", "block2", "nanobind"
+    "numpy", "pyscf", "qulacs", "tequila-basic", "block2", "nanobind",
+    "black>=24.4.2",
+    "isort>=5.10.0",
+    "clang-format>=17.0.6"
 ]
 
 [project.urls]

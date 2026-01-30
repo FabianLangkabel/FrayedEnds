@@ -1,6 +1,7 @@
 #pragma once
-#include "MadnessProcess.hpp"
+#include "madness_process.hpp"
 #include "functionsaver.hpp"
+#include "coulomboperator_nd.hpp"
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
@@ -17,46 +18,62 @@
 using namespace madness;
 namespace nb = nanobind;
 
-class Integrals: public MadnessProcess{
-public:
-    Integrals(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine, int n_threads);
-    ~Integrals(){};
+template <std::size_t NDIM> class Integrals {
+  public:
+    Integrals(MadnessProcess<NDIM>& mp);
+    ~Integrals() {};
 
     madness::Tensor<double> potential_integrals;
     madness::Tensor<double> overlap_integrals;
     madness::Tensor<double> kinetic_integrals;
     madness::Tensor<double> two_body_integrals;
+    madness::Tensor<double> frozen_core_interaction;
 
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_overlap_integrals(std::vector<SavedFct> all_orbs, std::vector<SavedFct> other);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_potential_integrals(std::vector<SavedFct> all_orbs, SavedFct potential);
-    nb::ndarray<nb::numpy, double, nb::ndim<2> > compute_kinetic_integrals(std::vector<SavedFct> all_orbs);
-    nb::ndarray<nb::numpy, double, nb::ndim<4> > compute_two_body_integrals(std::vector<SavedFct> all_orbs);
+    nb::ndarray<nb::numpy, double, nb::ndim<2>> compute_overlap_integrals(std::vector<SavedFct<NDIM>> all_orbs,
+                                                                          std::vector<SavedFct<NDIM>> other);
+    nb::ndarray<nb::numpy, double, nb::ndim<2>> compute_potential_integrals(std::vector<SavedFct<NDIM>> all_orbs,
+                                                                            SavedFct<NDIM> potential);
+    nb::ndarray<nb::numpy, double, nb::ndim<2>> compute_kinetic_integrals(std::vector<SavedFct<NDIM>> all_orbs);
+    nb::ndarray<nb::numpy, double, nb::ndim<4>> compute_two_body_integrals(std::vector<SavedFct<NDIM>> all_orbs,
+                                                                           double truncation_tol = 1e-6,
+                                                                           double coulomb_lo = 0.001,
+                                                                           double coulomb_eps = 1e-6, int nocc = 2);
+    nb::ndarray<nb::numpy, double, nb::ndim<2>>
+    compute_frozen_core_interaction(std::vector<SavedFct<NDIM>> fr_c_orbs, std::vector<SavedFct<NDIM>> a_orbs,
+                                    double truncation_tol = 1e-6, double coulomb_lo = 0.001, double coulomb_eps = 1e-6,
+                                    int nocc = 2);
 
-    std::vector<SavedFct> orthonormalize(std::vector<SavedFct> all_orbs, const std::string method, const double rr_thresh);
+    std::vector<SavedFct<NDIM>> orthonormalize(std::vector<SavedFct<NDIM>> all_orbs, const std::string method,
+                                               const double rr_thresh);
+    std::vector<SavedFct<NDIM>> normalize(std::vector<SavedFct<NDIM>> all_orbs);
 
-    std::vector<SavedFct> project_out(std::vector<SavedFct> kernel, std::vector<SavedFct> target);
-    std::vector<SavedFct> project_on(std::vector<SavedFct> kernel, std::vector<SavedFct> target);
+    std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
+    std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
 
-    std::vector<SavedFct> transform(std::vector<SavedFct> orbitals, nb::ndarray<nb::numpy, double, nb::ndim<2> > matrix){
-            std::vector<real_function_3d> x;
-            for(SavedFct orb : orbitals) x.push_back(loadfct(orb));
+    std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals,
+                                          nb::ndarray<nb::numpy, double, nb::ndim<2>> matrix) {
+        std::vector<Function<double, NDIM>> x;
+        for (SavedFct<NDIM> orb : orbitals)
+            x.push_back(madness_process.loadfct(orb));
 
-            // @todo there are more efficient ways (flatten and rewire the pointer of the first entry)
-            madness::Tensor<double> U(matrix.shape(0), matrix.shape(1));
-            for(auto k=0;k<matrix.shape(0);++k){
-                for(auto l=0;l<matrix.shape(1);++l){
-                    U(k,l) = matrix(k,l);
-                }
+        // @todo there are more efficient ways (flatten and rewire the pointer of the first entry)
+        madness::Tensor<double> U(matrix.shape(0), matrix.shape(1));
+        for (auto k = 0; k < matrix.shape(0); ++k) {
+            for (auto l = 0; l < matrix.shape(1); ++l) {
+                U(k, l) = matrix(k, l);
             }
+        }
 
-            auto y = madness::transform(*world, x, U);
+        auto y = madness::transform(*(madness_process.world), x, U);
 
-            std::vector<SavedFct> result;
-            for(size_t k=0; k<orbitals.size(); k++) result.push_back(SavedFct(y[k], orbitals[k].type, orbitals[k].info + " transformed "));
-            return result;
+        std::vector<SavedFct<NDIM>> result;
+        for (size_t k = 0; k < orbitals.size(); k++)
+            result.push_back(SavedFct<NDIM>(y[k], orbitals[k].type, orbitals[k].info + " transformed "));
+        return result;
     }
 
+    void hello() { std::cout << "hello from the integrals class\n"; }
 
-
-    void hello(){std::cout << "hello from the integrals class\n";}
+  private:
+    MadnessProcess<NDIM>& madness_process;
 };
