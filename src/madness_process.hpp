@@ -60,10 +60,6 @@ template <std::size_t NDIM> class MadnessProcess {
 
     void update_function_defaults();
 
-    std::tuple<double, long, double, int, int, bool, int> get_function_defaults();
-
-    void update_function_defaults();
-
     void plot(std::string filename, SavedFct<NDIM> f, std::string axis, int datapoints);
 
     void plane_plot(std::string filename, SavedFct<NDIM> f, std::string plane, double zoom, int datapoints,
