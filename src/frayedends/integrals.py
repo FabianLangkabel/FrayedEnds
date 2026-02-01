@@ -1,3 +1,4 @@
+import numpy as np
 from tequila.quantumchemistry import NBodyTensor
 
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
@@ -152,3 +153,9 @@ class Integrals2D:
         molecule,
     ):
         pass
+
+    def transform_to_natural_orbitals(self, orbitals, rdm1):
+        values, vectors = np.linalg.eigh(rdm1)  # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
+        val = values[::-1]  # reverse the order of eigenvalues
+        vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
+        return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
