@@ -81,12 +81,6 @@ class Integrals3D:
         vec = vectors[:, ::-1] # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val # transform the orbitals to the natural orbitals
 
-    def compute_nuclear_derivative(
-        self,
-        molecule,
-    ):
-        pass
-
 
 class Integrals2D:
 
@@ -161,9 +155,3 @@ class Integrals2D:
         val = values[::-1] # reverse the order of eigenvalues
         vec = vectors[:, ::-1] # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val # transform the orbitals to the natural orbitals
-
-    def compute_nuclear_derivative(
-        self,
-        molecule,
-    ):
-        pass

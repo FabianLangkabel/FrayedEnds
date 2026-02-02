@@ -29,7 +29,7 @@ def energy_and_gradient(world: fe.MadWorld3D, molgeom: fe.MolecularGeometry, n_o
     madpno = fe.MadPNO(world, geom_str[0], units=geom_str[1], n_orbitals=n_orbitals)
     orbitals = madpno.get_orbitals() # initial guess orbitals as MRA functions, orb.type determines whether the orbital is 'active' or 'frozen_occ' (in this case all active)
     for orb in orbitals:
-        orb.type = "active" # in this example we do not freeze any orbitals, so we set all orbitals to active
+        orb.type = "active" # set all orbitals to active, since frozen_core orbs are not refined at this point
     pno_end = time()
     print("pno time:", pno_end-pno_start)
 
@@ -91,11 +91,11 @@ def energy_and_gradient(world: fe.MadWorld3D, molgeom: fe.MolecularGeometry, n_o
 
 def f(pyscf_mol):
     molgeom = fe.MolecularGeometry.from_pyscf_mol(pyscf_mol, units="bohr")
-    e, g = energy_and_gradient(world, molgeom, n_orbitals=9)
+    e, g = energy_and_gradient(world, molgeom, n_orbitals=2)
     return e, g
 
 geom_opt_start = time()
-pyscf_mol = gto.M(atom="H 0.0 0.0 -2.5\nBe 0.0 0.0 0.0\nH 0.0 0.0 2.5", unit="bohr") #initial guess molecule
+pyscf_mol = gto.M(atom="H 0.0 0.0 -2.5\nH 0.0 0.0 2.5", unit="bohr") #initial guess molecule
 print(pyscf_mol.atom_coords())
 
 fake_method = as_pyscf_method(pyscf_mol, f) # wrapping energy and gradient function to be compatible with geomeTRIC
