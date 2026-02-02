@@ -64,6 +64,14 @@ class Optimization3D:
     _nuclear_repulsion = None
     impl = None
     converged = None  # indicates if the last call converged
+    opt_parameters = {
+        "nocc": 2, #occupation number of orbitals (at this point only closed shell is supported, so nocc=2)
+        "truncation_tol": 1e-6, #truncation tolerance for MRA representation of orbitals
+        "coulomb_lo": 0.001, #lower cutoff for representation of Coulomb kernel
+        "coulomb_eps": 1e-6,
+        "BSH_lo": 0.001, #lower cutoff for representation of BSH kernel
+        "BSH_eps": 1e-6,
+    }
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -73,6 +81,18 @@ class Optimization3D:
         self.impl = OptInterface3D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
+        for k, v in kwargs.items():
+            if k in self.opt_parameters:
+                self.opt_parameters[k] = v
+            else:
+                raise ValueError(f"Unknown parameter: {k}")
+        
+        self.impl.nocc = self.opt_parameters["nocc"]
+        self.impl.truncation_tol = self.opt_parameters["truncation_tol"]
+        self.impl.coulomb_lo = self.opt_parameters["coulomb_lo"]
+        self.impl.coulomb_eps = self.opt_parameters["coulomb_eps"]
+        self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
+        self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
 
     @redirect_output("madopt.log")
     def optimize_orbs(
@@ -122,6 +142,8 @@ class Optimization3D:
         self._c = self.impl.get_c()
         return self._c
 
+    def get_opt_parameters(self):
+        return {"nocc": self.impl.nocc, "truncation_tol": self.impl.truncation_tol, "coulomb_lo": self.impl.coulomb_lo, "coulomb_eps": self.impl.coulomb_eps, "BSH_lo": self.impl.BSH_lo, "BSH_eps": self.impl.BSH_eps}
 
 class Optimization2D:
 
@@ -133,6 +155,14 @@ class Optimization2D:
     _nuclear_repulsion = None
     impl = None
     converged = None  # indicates if the last call converged
+    opt_parameters = {
+        "nocc": 2,
+        "truncation_tol": 1e-6,
+        "coulomb_lo": 0.001,
+        "coulomb_eps": 1e-6,
+        "BSH_lo": 0.001,
+        "BSH_eps": 1e-6,
+    }
 
     @property
     def orbitals(self, *args, **kwargs):
@@ -142,6 +172,18 @@ class Optimization2D:
         self.impl = OptInterface2D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
+        for k, v in kwargs.items():
+            if k in self.opt_parameters:
+                self.opt_parameters[k] = v
+            else:
+                raise ValueError(f"Unknown parameter: {k}")
+        
+        self.impl.nocc = self.opt_parameters["nocc"]
+        self.impl.truncation_tol = self.opt_parameters["truncation_tol"]
+        self.impl.coulomb_lo = self.opt_parameters["coulomb_lo"]
+        self.impl.coulomb_eps = self.opt_parameters["coulomb_eps"]
+        self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
+        self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
 
     @redirect_output("madopt.log")
     def optimize_orbs(
@@ -190,3 +232,6 @@ class Optimization2D:
     ):  # this is the sum of the energy of the frozen core electrons and the nuclear repulsion
         self._c = self.impl.get_c()
         return self._c
+
+    def get_opt_parameters(self):
+        return {"nocc": self.impl.nocc, "truncation_tol": self.impl.truncation_tol, "coulomb_lo": self.impl.coulomb_lo, "coulomb_eps": self.impl.coulomb_eps, "BSH_lo": self.impl.BSH_lo, "BSH_eps": self.impl.BSH_eps}

@@ -6,15 +6,18 @@ from pyscf import fci
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-4)
+world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [1.05 + 0.1 * i for i in range(1)]
+distance_list = [1.0 + 0.01 * i for i in range(250,300)]
 Energy_list = []
 Gradient_list = []
+no_convergence = []
+not_symmetric_grad = []
 
 n_orbitals = 5
 n_act_orbitals = 5
-n_act_electrons = 4
+n_act_electrons = 6
+miter_oopt=1
 for distance in distance_list:
     print(
             "------------------------------------------------------------------------------"
@@ -22,18 +25,19 @@ for distance in distance_list:
     print(
             "------------------------------------------------------------------------------"
         )
-    [print("Distance:", distance)]
+    print("Distance:", distance)
+    print("Maxiter orb opt:", miter_oopt)
     true_start = time.time()
-    geometry = "Li 0.0 0.0 " + str(-distance / 2) + "\nH 0.0 0.0 " + str(distance / 2)
+    geometry = "H 0.0 0.0 " + str(-distance) + "\nBe 0.0 0.0 0.0" + "\nH 0.0 0.0 " + str(distance)
     
     pno_start = time.time()
     madpno = fe.MadPNO(
         world, geometry, units="bohr", n_orbitals=n_orbitals
     )
     orbitals = madpno.get_orbitals()
-    for orb in orbitals:
-        orb.type = "active" # in this example we do not freeze any orbitals, so we set all orbitals to active
-    
+    for i in range(len(orbitals)):
+        if orbitals[i].type == "frozen_occ":
+            orbitals[i].type = "active"
     pno_end = time.time()
     print("Pno time:", pno_end-pno_start)
 
@@ -45,19 +49,21 @@ for distance in distance_list:
 
     integrals = fe.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
+    
 
     c = nuc_repulsion
     current = 0.0
-    for iteration in range(10):
-        print(
+    for iteration in range(31):   
+        print( 
             "------------------------------------------------------------------------------"
         )
         integrals = fe.Integrals3D(world)
-        G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
+        G = integrals.compute_two_body_integrals(orbitals,ordering="chem")
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
         h1 = T + V
         g2 = G
+        
 
         fci_start = time.time()
         # FCI calculation
@@ -72,11 +78,15 @@ for distance in distance_list:
         #    print("rdm1[", i, ",", i, "]:", rdm1[i, i])
         fci_end = time.time()
         print("fci time:", fci_end-fci_start)
-
+        print(rdm1)
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
 
-        if abs(e+c - current) < 1e-5:
+        if abs(current - (e + c)) < 1e-6:
+            print("FCI energy converged.")
             break
+        elif iteration == 30:
+            print("FCI energy did not converge.")
+            no_convergence.append(distance)
         current = e + c
 
         opti_start = time.time()
@@ -85,32 +95,48 @@ for distance in distance_list:
             orbitals=orbitals,
             rdm1=rdm1,
             rdm2=rdm2,
-            maxiter=1,
+            maxiter=miter_oopt,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
         )
+        print("Converged?:", opti.converged)
         opti_end = time.time()
         print("orb opt time:", opti_end-opti_start)
         c = opti.get_c()
-    
-    Energy_list.append(current)
 
-    molecule = fe.MolecularGeometry(geometry= geometry, units="bohr")
-    part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)
-    Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
-    part_deriv_c = molecule.nuclear_repulsion_derivative(1, 2)
+        
+    Energy_list.append(current)
+    
+    
+    molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
+    part_deriv_V_0 = molecule.molecular_potential_derivative(world, 0, 2)
+    part_deriv_V_2 = molecule.molecular_potential_derivative(world, 2, 2)
+    Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V_0)
+    Deriv_tens2 = integrals.compute_potential_integrals(orbitals, part_deriv_V_2)
+    part_deriv_c = molecule.nuclear_repulsion_derivative(0, 2)
     grad = 0.0
     for i in range(len(orbitals)):
         for j in range(len(orbitals)):
             grad += rdm1[i, j] * Deriv_tens[i, j]
-    print("gradient: ", grad + part_deriv_c)
-    Gradient_list.append(grad + part_deriv_c)
+    print("gradient0: ", grad + part_deriv_c)
 
+    part_deriv_c2 = molecule.nuclear_repulsion_derivative(2, 2)
+
+    grad2 = 0.0
+    for i in range(len(orbitals)):
+        for j in range(len(orbitals)):
+            grad2 += rdm1[i, j] * Deriv_tens2[i, j]
+    print("gradient2: ", grad2 + part_deriv_c2)
+    Gradient_list.append(grad2 + part_deriv_c2 - grad - part_deriv_c)
+    if abs(grad2 + part_deriv_c2 + grad + part_deriv_c) > 1e-6:
+        not_symmetric_grad.append(distance)
     true_end = time.time()
     print("Total time: ", true_end - true_start)
 
 print("distance_list =", distance_list)
 print("Energy_list =", Energy_list)
 print("Gradient_list =", Gradient_list)
+print("No convergence at distances:", no_convergence)
+print("Not symmetric gradient at distances:", not_symmetric_grad)
 
 fe.cleanup(globals())

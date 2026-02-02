@@ -67,8 +67,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_nuclear_repulsion", &MolecularGeometry::get_nuclear_repulsion)
         .def("get_nuclear_charge", &MolecularGeometry::get_nuclear_charge)
         .def("get_core_n_electrons", &MolecularGeometry::get_core_n_electrons)
-        .def("compute_nuclear_derivative", &MolecularGeometry::compute_nuclear_derivative)
-        .def("compute_second_nuclear_derivative", &MolecularGeometry::compute_second_nuclear_derivative)
+        .def("molecular_potential_derivative", &MolecularGeometry::molecular_potential_derivative)
+        .def("molecular_potential_second_derivative", &MolecularGeometry::molecular_potential_second_derivative)
         .def("nuclear_repulsion_derivative", &MolecularGeometry::nuclear_repulsion_derivative)
         .def("nuclear_repulsion_second_derivative", &MolecularGeometry::nuclear_repulsion_second_derivative)
         .def("get_vnuc", &MolecularGeometry::get_vnuc);
