@@ -24,7 +24,7 @@ std::string MolecularGeometry::to_json() {
     return mol.to_json().dump();
 }
 
-SavedFct<3> MolecularGeometry::compute_nuclear_derivative(MadnessProcess<3>& mp, const int atom, const int axis) {
+SavedFct<3> MolecularGeometry::molecular_potential_derivative(MadnessProcess<3>& mp, const int atom, const int axis) {
     double scale = 1e-10 / madness::constants::atomic_unit_of_length;
     madchem::MolecularDerivativeFunctor func(mol, atom, axis);
     real_function_3d op = real_factory_3d(*(mp.world)).functor(func).truncate_on_project().truncate_mode(0);
@@ -34,7 +34,7 @@ SavedFct<3> MolecularGeometry::compute_nuclear_derivative(MadnessProcess<3>& mp,
     return SavedFct<3>(op);
 }
 
-SavedFct<3> MolecularGeometry::compute_second_nuclear_derivative(MadnessProcess<3>& mp, const int atom, const int axis1,
+SavedFct<3> MolecularGeometry::molecular_potential_second_derivative(MadnessProcess<3>& mp, const int atom, const int axis1,
                                                                  const int axis2) {
     double scale = 1e-10 / madness::constants::atomic_unit_of_length;
     madchem::MolecularSecondDerivativeFunctor func(mol, atom, axis1, axis2);
