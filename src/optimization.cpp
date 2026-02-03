@@ -703,14 +703,21 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
         // Orthonormalize orbitals
-        if (use_mixed_orthonormalization == 0) {
+        if (orthonormalization_method == "symmetric") {
             std::cout << "\n=== Symmetric Orthonormalization ===" << std::endl;
             active_orbs = orthonormalize_symmetric(active_orbs);
             std::cout << "=== Symmetric Orthonormalization Complete ===" << std::endl;
-        } else if (use_mixed_orthonormalization == 1) {
+        } else if (orthonormalization_method == "mixed") {
+            std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
             active_orbs = orthonormalize_mixed_by_degeneracy(active_orbs);
+            std::cout << "=== Mixed Orthonormalization Complete ===" << std::endl;
+        } else if (orthonormalization_method == "cholesky") {
+            std::cout << "\n=== Cholesky Orthonormalization ===" << std::endl;
+            active_orbs = orthonormalize_cd(active_orbs);
+            std::cout << "=== Cholesky Orthonormalization Complete ===" << std::endl;
         } else {
-            active_orbs = orthonormalize_cd(active_orbs)
+            std::string error_msg = "Unknown orthonormalization method: " + orthonormalization_method;
+            MADNESS_EXCEPTION(error_msg.c_str(), 1);
         }
 
         active_orbs = truncate(active_orbs, truncation_tol);
@@ -1020,12 +1027,9 @@ template <std::size_t NDIM> std::vector<double> Optimization<NDIM>::get_g_tensor
 }
 
 template <std::size_t NDIM>
-void Optimization<NDIM>::enable_mixed_orthonormalization(bool enable, double degeneracy_tol) {
-    use_mixed_orthonormalization = enable;
+void Optimization<NDIM>::set_orthonormalization_method(const std::string& method, double degeneracy_tol) {
+    orthonormalization_method = method;
     degeneracy_tolerance = degeneracy_tol;
-    std::cout << "*** enable_mixed_orthonormalization() called: enable=" << enable
-              << ", degeneracy_tol=" << degeneracy_tol << " ***" << std::endl;
-    std::cout << "*** use_mixed_orthonormalization is now: " << use_mixed_orthonormalization << " ***" << std::endl;
 }
 
 template <std::size_t NDIM>

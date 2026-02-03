@@ -74,17 +74,19 @@ class Optimization3D:
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
-    def enable_mixed_orthonormalization(self, degeneracy_tol=1e-6):
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
-        When enabled, the optimization will use:
-        - Symmetric orthonormalization for degenerate orbitals (same occupation)
-        - Cholesky orthonormalization for non-degenerate orbitals
+        Set the orthonormalization method for orbital optimization.
 
         Args:
+            method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
+                   - "symmetric": Standard symmetric orthonormalization (default)
+                   - "cholesky": Cholesky decomposition orthonormalization
+                   - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
             degeneracy_tol: Tolerance for determining if two orbital occupations
-                           are degenerate (default: 1e-6)
+                           are degenerate (only used for "mixed" method, default: 1e-6)
         """
-        self.impl.enable_mixed_orthonormalization(True, degeneracy_tol)
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
     def optimize_orbs(
@@ -155,17 +157,19 @@ class Optimization2D:
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
 
-    def enable_mixed_orthonormalization(self, degeneracy_tol=1e-6):
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
-        When enabled, the optimization will use:
-        - Symmetric orthonormalization for degenerate orbitals (same occupation)
-        - Cholesky orthonormalization for non-degenerate orbitals
+        Set the orthonormalization method for orbital optimization.
 
         Args:
+            method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
+                   - "symmetric": Standard symmetric orthonormalization (default)
+                   - "cholesky": Cholesky decomposition orthonormalization
+                   - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
             degeneracy_tol: Tolerance for determining if two orbital occupations
-                           are degenerate (default: 1e-6)
+                           are degenerate (only used for "mixed" method, default: 1e-6)
         """
-        self.impl.enable_mixed_orthonormalization(True, degeneracy_tol)
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
     def optimize_orbs(

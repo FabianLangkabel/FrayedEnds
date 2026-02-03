@@ -202,7 +202,6 @@ def plot_orbitals_before_after(orbitals_before, orbitals_after, world, iteration
 
 
 def plot_energy_comparison(energies_dict, output_dir, title="Energy Convergence",
-                           subtitle="Comparison of Orthonormalization Methods",
                            vline_at=None, vline_label=None):
     plt.figure(figsize=(12, 7))
 
@@ -218,10 +217,8 @@ def plot_energy_comparison(energies_dict, output_dir, title="Energy Convergence"
                    label=vline_label or 'Event', alpha=0.7)
 
     plt.xlabel('Iteration', fontsize=12)
-    plt.ylabel('Energy (Hartree)', fontsize=12)
+    plt.ylabel('Energy', fontsize=12)
 
-    full_title = f'{title}\n{subtitle}' if subtitle else title
-    plt.title(full_title, fontsize=13)
 
     plt.legend(fontsize=11, loc='best')
     plt.grid(True, alpha=0.3)
@@ -232,26 +229,65 @@ def plot_energy_comparison(energies_dict, output_dir, title="Energy Convergence"
     plt.close()
 
 
-def print_summary(energies_dict, output_dir):
-    print("\n" + "="*80)
-    print("SUMMARY OF RESULTS")
-    print("="*80)
 
-    n_iters = len(next(iter(energies_dict.values())))
-    print(f"Final energies after {n_iters} iterations:")
+def log_iteration(iteration, energy, output_dir, method_name):
+    """Log a single iteration to both current run log and history log"""
+    from datetime import datetime
 
-    for method_name, energies in energies_dict.items():
-        print(f"  {method_name.capitalize():12s}: {energies[-1]:+2.8f} Hartree")
+    # File 1: Current run only (cleared at start of each method)
+    log_file_current = os.path.join(output_dir, 'energy_comparison.log')
 
-    if len(energies_dict) > 1:
-        print(f"\nEnergy differences:")
-        methods = list(energies_dict.keys())
-        for i in range(len(methods)):
-            for j in range(i+1, len(methods)):
-                method1, method2 = methods[i], methods[j]
-                diff = abs(energies_dict[method1][-1] - energies_dict[method2][-1])
-                print(f"  |{method1.capitalize()} - {method2.capitalize()}|:  {diff:.2e} Hartree")
+    # File 2: History with timestamps (append forever)
+    log_file_history = os.path.join(output_dir, 'energy_comparison_history.log')
 
-    print(f"\nComparison plot saved to: {os.path.join(output_dir, 'energy_comparison.png')}")
-    print("="*80 + "\n")
+    # For current run log: clear file when starting iteration 0
+    if iteration == 0:
+        with open(log_file_current, 'w') as f:
+            f.write("="*80 + "\n")
+            f.write("Energy Convergence Log - Current Run\n")
+            f.write("="*80 + "\n\n")
+
+    # Append to current run log
+    with open(log_file_current, 'a') as f:
+        f.write(f"Iteration {iteration:<6} | {method_name.capitalize():<12} | Energy: {energy:+20.10f}\n")
+
+    # For history log: create header if file doesn't exist
+    if not os.path.exists(log_file_history):
+        with open(log_file_history, 'w') as f:
+            f.write("="*80 + "\n")
+            f.write("Energy Convergence Log - Complete History\n")
+            f.write("="*80 + "\n\n")
+
+    # Append to history log with timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(log_file_history, 'a') as f:
+        f.write(f"[{timestamp}] Iteration {iteration:<6} | {method_name.capitalize():<12} | Energy: {energy:+20.10f}\n")
+
+
+def save_energy_data(energies_dict, output_dir, title="Energy Convergence"):
+    """Save detailed energy comparison data to a log file"""
+    log_file = os.path.join(output_dir, 'energy_comparison.log')
+
+    with open(log_file, 'w') as f:
+        f.write("="*80 + "\n")
+        f.write(f"{title}\n")
+        f.write("="*80 + "\n\n")
+
+        # Write iteration-by-iteration data
+        # Determine number of iterations
+        n_iters = len(next(iter(energies_dict.values())))
+
+        # Header
+        f.write(f"{'Iteration':<18}")
+        for method_name in energies_dict.keys():
+            f.write(f"{method_name.capitalize():<20}")
+        f.write("\n")
+        f.write("-"*80 + "\n")
+
+        # Data rows
+        for i in range(n_iters):
+            f.write(f"{i+1:<12}")
+            for energies in energies_dict.values():
+                f.write(f"{energies[i]:+20.10f}")
+            f.write("\n")
 

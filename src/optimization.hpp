@@ -53,7 +53,7 @@ template <std::size_t NDIM> class Optimization {
     void save_effective_hamiltonian(std::string OutputPath);
 
     // Orthonormalization control
-    void enable_mixed_orthonormalization(bool enable, double degeneracy_tol = 1e-6);
+    void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-6);
     std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
         std::vector<Function<double, NDIM>>& orbitals);
 
@@ -116,7 +116,7 @@ template <std::size_t NDIM> class Optimization {
     std::vector<Function<double, NDIM>> orbs_kl;      // |kl>
     std::vector<Function<double, NDIM>> coul_orbs_mn; // 1/r|mn>
 
-    // Mixed orthonormalization settings
-    bool use_mixed_orthonormalization = false;
+    // Orthonormalization settings
+    std::string orthonormalization_method = "symmetric";
     double degeneracy_tolerance = 1e-6;
 };
