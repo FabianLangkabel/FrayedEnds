@@ -50,13 +50,20 @@ class Integrals_open_shell {
       std::array<std::vector<Function<double, NDIM>>, 2> core_orbitals, std::array<std::vector<Function<double, NDIM>>, 2> active_orbitals, Function<double, NDIM> V
     );
 
-    std::vector<std::vector<madness::Tensor<double>>> compute_core_as_integrals_two_body(
+    std::vector<std::vector<madness::Tensor<double>>> compute_core_as_2e_integrals_energy(
       std::array<std::vector<Function<double, NDIM>>, 2> &core_orbitals, 
       std::array<std::vector<Function<double, NDIM>>, 2> &active_orbitals, 
       std::array<std::vector<Function<double, NDIM>>, 2> &orbs_kl, 
       std::array<std::vector<Function<double, NDIM>>, 2> &coul_orbs_mn, 
-      std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa, 
-      bool calc_akal, bool calc_akla, bool calc_akln, bool calc_abak, bool calc_baak
+      std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa
+    );
+
+    std::vector<std::vector<madness::Tensor<double>>> compute_core_as_2e_integrals_as_refinement(
+      std::array<std::vector<Function<double, NDIM>>, 2> &core_orbitals, 
+      std::array<std::vector<Function<double, NDIM>>, 2> &active_orbitals, 
+      std::array<std::vector<Function<double, NDIM>>, 2> &orbs_kl, 
+      std::array<std::vector<Function<double, NDIM>>, 2> &coul_orbs_mn, 
+      std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa
     );
 
     std::vector<std::vector<madness::Tensor<double>>> compute_core_as_2e_integrals_core_refinement(

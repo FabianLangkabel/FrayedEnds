@@ -38,14 +38,36 @@ class open_shell_integral_storage {
         // Calculate Core-AS interaction integrals
         if((core_orbitals[0].size() + core_orbitals[1].size()) > 0)
         {
-            core_as_integrals_one_body_ak = Integrator.compute_core_as_integrals_one_body(core_orbitals, active_orbitals, V);
-            std::vector<std::vector<madness::Tensor<double>>> core_as_integrals_two_body = Integrator.compute_core_as_integrals_two_body(core_orbitals, active_orbitals, orbs_kl, coul_orbs_mn, orbs_aa, true, true, true, true, true);
-            core_as_integrals_two_body_akal = core_as_integrals_two_body[0];
-            core_as_integrals_two_body_akla = core_as_integrals_two_body[1];
-            core_as_integrals_two_body_akln = core_as_integrals_two_body[2];
-            core_as_integrals_two_body_abak = core_as_integrals_two_body[3];
-            core_as_integrals_two_body_baak = core_as_integrals_two_body[4];
-            old_akal = core_as_integrals_two_body[5];
+            if(caclulate_core_as_for_eff_ham)
+            {
+              core_as_integrals_one_body_ak = Integrator.compute_core_as_integrals_one_body(core_orbitals, active_orbitals, V);
+              std::vector<std::vector<madness::Tensor<double>>> core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_energy(core_orbitals, active_orbitals, orbs_kl, coul_orbs_mn, orbs_aa);
+              core_as_integrals_two_body_akal = core_as_integrals_two_body[0];
+              core_as_integrals_two_body_akla = core_as_integrals_two_body[1];
+            }
+
+            if(caclulate_core_as_for_as_refinement)
+            {
+              std::vector<std::vector<madness::Tensor<double>>> core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_as_refinement(core_orbitals, active_orbitals, orbs_kl, coul_orbs_mn, orbs_aa);
+              core_as_integrals_two_body_akln = core_as_integrals_two_body[0];
+              core_as_integrals_two_body_abak = core_as_integrals_two_body[1];
+              core_as_integrals_two_body_baak = core_as_integrals_two_body[2];
+            }
+
+            if(caclulate_core_as_for_core_refinement)
+            {
+              core_core_integrals_one_body_ab = Integrator.compute_potential_integrals(core_orbitals, V);
+              {
+                  std::array<madness::Tensor<double>, 2> kin_Integrals = Integrator.compute_kinetic_integrals(core_orbitals);
+                  core_core_integrals_one_body_ab[0] += kin_Integrals[0];
+                  core_core_integrals_one_body_ab[1] += kin_Integrals[1];
+              }
+              std::vector<std::vector<madness::Tensor<double>>> core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_core_refinement(core_orbitals, active_orbitals, orbs_kl, coul_orbs_mn, orbs_aa);
+              core_as_integrals_two_body_baca = core_as_integrals_two_body[0];
+              core_as_integrals_two_body_baac = core_as_integrals_two_body[1];
+              core_as_integrals_two_body_akcl = core_as_integrals_two_body[2];
+              core_as_integrals_two_body_aklc = core_as_integrals_two_body[3];
+            }
         }
     }
 
@@ -87,6 +109,11 @@ class open_shell_integral_storage {
   }
 
   inline double phys_as_zlkn(int z, int l, int k, int n, const std::array<int, 2>& spin_combination) const noexcept {
+    if(spin_combination[0] == 1 && spin_combination[1] == 0) {
+      std::array<int, 2> swapped = spin_combination;
+      std::swap(swapped[0], swapped[1]);
+      return as_integrals_two_body[spin_combination_to_idx(swapped)](l, z, n, k);
+    }
     return as_integrals_two_body[spin_combination_to_idx(spin_combination)](z, l, k, n);
   }
   inline double phys_core_zlkn(int z, int l, int k, int n, const std::array<int, 2>& spin_combination) const noexcept {
@@ -101,9 +128,12 @@ class open_shell_integral_storage {
     return core_as_integrals_two_body_akal[spin_combination_to_idx(swapped)](a, z, k);
   }
   inline double phys_core_zaka(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
-    return core_as_integrals_two_body_abak[spin_combination_to_idx(spin_combination)](a, z, k);
+    std::array<int, 2> swapped = spin_combination;
+    std::swap(swapped[0], swapped[1]);
+    return core_as_integrals_two_body_abak[spin_combination_to_idx(swapped)](a, z, k);
   }
   inline double phys_as_zkaa(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
+    //bra/ket switch not necessary, since mixed terms = 0
     return core_as_integrals_two_body_akla[spin_combination_to_idx(spin_combination)](a, z, k);
   }
   inline double phys_core_zkaa(int z, int a, int k, const std::array<int, 2>& spin_combination) const noexcept {
@@ -114,18 +144,22 @@ class open_shell_integral_storage {
   // phys_as_z... -> Physical notation z is AS orbital
   // phys_core_z... -> Physical notation z is core orbital
 
+  inline double ab(int a, int b, int spin_combination) const noexcept {
+    return core_core_integrals_one_body_ab[spin_combination](a, b);
+  }
+
   inline double phys_as_zaca(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
-    //Input: <za|ca> = (zc|aa); stored: <ab|ak> = (aa|bk) -> map: Alpha/Beta - Bra/KET Vertauschung lösen!
-    //core_as_integrals_two_body_abak
-    return 0;
+    //Input: <za|ca> = (zc|aa); stored: <ab|ak> = (aa|bk) z->k, c->b, a->a + bra/ket switch
+    std::array<int, 2> swapped = spin_combination;
+    std::swap(swapped[0], swapped[1]);
+    return core_as_integrals_two_body_abak[spin_combination_to_idx(swapped)](a, c, z);
   }
   inline double phys_core_zaca(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
     return core_as_integrals_two_body_baca[spin_combination_to_idx(spin_combination)](a, z, c);
   }
   inline double phys_as_zaac(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
-    //Input: <za|ac> = (za|ac); stored: <ba|ak> = (ba|ak) -> map: Alpha/Beta - Bra/KET Vertauschung lösen!
-    //core_as_integrals_two_body_baak
-    return 0;
+    //Input: <za|ac> = (za|ac); stored: <ba|ak> = (ba|ak) z->k, c->b, a->a + bra/ket switch not necessary, since mixed terms = 0
+    return core_as_integrals_two_body_baak[spin_combination_to_idx(spin_combination)](a, c, z);
   }
   inline double phys_core_zaac(int z, int a, int c, const std::array<int, 2>& spin_combination) const noexcept {
     return core_as_integrals_two_body_baac[spin_combination_to_idx(spin_combination)](a, z, c);
@@ -140,12 +174,13 @@ class open_shell_integral_storage {
     return core_as_integrals_two_body_akcl[spin_combination_to_idx(spin_combination)](z, k, c, l);
   }
   inline double phys_as_zklc(int z, int c, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
-    //Input: <zk|lc> = (zl|kc); stored: <ak|ln> = (al|kn) -> map: Alpha/Beta - Bra/KET Vertauschung lösen!
-    //core_as_integrals_two_body_akln
-    return 0;
+    //Input: <zk|lc> = (zl|kc); stored: <ak|ln> = (al|kn) c->a, k->l, z->k, l->n + bra/ket switch
+    std::array<int, 2> swapped = spin_combination;
+    std::swap(swapped[0], swapped[1]);
+    return core_as_integrals_two_body_akln[spin_combination_to_idx(swapped)](c, z, k, l);
   }
   inline double phys_core_zklc(int z, int c, int k, int l, const std::array<int, 2>& spin_combination) const noexcept {
-    core_as_integrals_two_body_aklc[spin_combination_to_idx(spin_combination)](z, k, l, c);
+    return core_as_integrals_two_body_aklc[spin_combination_to_idx(spin_combination)](z, k, l, c);
   }
 
 
@@ -162,9 +197,8 @@ class open_shell_integral_storage {
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_abak; // (a,b,k)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baak; // (a,b,k)
 
-    std::vector<madness::Tensor<double>> old_akal; // (a,k,l)
-
     // Additional core - AS integrals for core orbital refinement
+     std::array<madness::Tensor<double>, 2> core_core_integrals_one_body_ab; // (a,b)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baca; // (a,b,c)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baac; // (a,b,c)
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akcl; // (a,k,c,l)

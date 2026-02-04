@@ -43,10 +43,13 @@ class Optimization_open_shell {
     void calculate_all_integrals();
     void calculate_energies();
     void calculate_lagrange_multiplier();
-    double calculate_lagrange_multiplier_element_as_as(int z, int i, int spin);
-    double calculate_lagrange_multiplier_element_as_core(int z, int i, int spin);
+    double calculate_lagrange_multiplier_element_as_as(int z, int i, int spin); // AS refinement
+    double calculate_lagrange_multiplier_element_as_core(int z, int i, int spin); // AS refinement
+    double calculate_lagrange_multiplier_element_core_core(int z, int c, int spin); // Core refinement
+    double calculate_lagrange_multiplier_element_core_as(int z, int c, int spin); // Core refinement
     bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, std::string orthonormalization_method);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
+    std::array<std::vector<Function<double, NDIM>>, 2> get_all_core_orbital_updates();
     void rotate_orbitals_back();
 
 
@@ -83,17 +86,6 @@ class Optimization_open_shell {
     std::array<std::vector<Function<double, NDIM>>, 2> orbs_kl;      // |kl> //alpha-alpha and beta-beta 
     std::array<std::vector<Function<double, NDIM>>, 2> coul_orbs_mn; // 1/r|mn> //alpha-alpha and beta-beta 
     std::array<std::vector<Function<double, NDIM>>, 2> orbs_aa;
-
-    // Integrals
-    std::array<madness::Tensor<double>, 2> as_integrals_one_body; // (k,l)
-    std::array<madness::Tensor<double>, 3> as_integrals_two_body; // (k,l,m,n)
-
-    std::array<madness::Tensor<double>, 2> core_as_integrals_one_body_ak;   // (a,k)
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akln; // (a,k,l,n)
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akal; // (a,k,l)
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_akla; // (a,k,l)
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_abak; // (a,b,k)
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_baak; // (a,b,k)
     
 
     // Energies
@@ -101,7 +93,11 @@ class Optimization_open_shell {
 
     // Refinement
     double highest_error;
+    //AS Refinement
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_AS;
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_Core;
+    //Core Refinement
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_Core_Core;
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_Core_AS;
 
 };
