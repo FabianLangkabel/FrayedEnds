@@ -6,10 +6,10 @@ import tequila as tq
 from numpy import floating
 
 import frayedends as fe
-from ortho_test_utils import plot_orbitals_before_after, plot_energy_comparison, log_iteration
+from ortho_test_utils import plot_orbitals_before_after, plot_energy_comparison, log_iteration, plot_potential
 
-n_electrons = 4
-n_orbitals = 4
+n_electrons = 2
+n_orbitals = 6
 econv = 1e-8
 
 def potential_three_peaks(x: float, y: float) -> float:
@@ -17,7 +17,6 @@ def potential_three_peaks(x: float, y: float) -> float:
     a = -5
     b = -3
     c = -2
-
 
     # Peak 1 at (1, 0)
     r1 = np.linalg.norm(np.array([x, y]) - np.array([4.0, 0.0]))
@@ -44,7 +43,7 @@ def potential_helium(x: float, y: float) -> floating[Any]:
     return -2.0 / np.sqrt(r_norm**2 + epsilon)
 
 
-def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", max_iterations=6):
+def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", max_iterations=10):
     print(f"\n{'='*80}")
     print(f"Running with {ortho_method.upper()} orthonormalization")
     print(f"{'='*80}\n")
@@ -84,10 +83,10 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
             n_electrons=n_electrons,
             nuclear_repulsion=0.0
         )
-        H2=mol.make_hamiltonian()
-        res = np.linalg.eigvalsh(H2.to_matrix())
-        print(res[0])
 
+        # H2=mol.make_hamiltonian()
+        # res = np.linalg.eigvalsh(H2.to_matrix())
+        # print(res[0])
         # result.energy should be similar to res[0]
         # or loop till difference to loop before is small enough
         #while(True):
@@ -129,7 +128,9 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
             integrals.transform_to_natural_orbitals(orbitals, rdm1)[0],
             world,
             iteration,
-            output_dir, method_name=ortho_method
+            output_dir,
+            method_name=ortho_method,
+            enable_zoom=True
         )
         print("occ_num:", integrals.transform_to_natural_orbitals(orbitals_before, rdm1)[1])
         if np.isclose(result.energy, current, atol=econv, rtol=0.0):
@@ -149,9 +150,17 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
 
 
 if __name__ == "__main__":
+    # Plot the potentials for visualization
+    results_dir = os.path.join(os.path.dirname(__file__), 'results')
+    os.makedirs(results_dir, exist_ok=True)
+
+    print("\n" + "="*80)
+    print("PLOTTING POTENTIALS")
+    print("="*80 + "\n")
+
     test1 = True
-    test2 = False
-    test3 = False
+    test2 = True
+    test3 = True
 
     # Test 1: Three Gaussian Peaks
     if test1:
@@ -161,6 +170,11 @@ if __name__ == "__main__":
 
         output_dir_three = os.path.join(os.path.dirname(__file__), 'results', 'three_gaussian_peaks')
         os.makedirs(output_dir_three, exist_ok=True)
+
+        plot_potential(potential_three_peaks,
+                       os.path.join(output_dir_three, 'potential_three_peaks.png'),
+                       n_points=201, x_range=(-6, 6), y_range=(-6, 6),
+                       title='Three Gaussian Peaks Potential')
 
         geometry = "H 0.0 0.0 0.0\nH 1.0 0.0 0.0\nH 0.0 1.0 0.0"
 
@@ -188,6 +202,11 @@ if __name__ == "__main__":
         output_dir_single = os.path.join(os.path.dirname(__file__), 'results', 'single_gaussian_peak')
         os.makedirs(output_dir_single, exist_ok=True)
 
+        plot_potential(potential_single_peak,
+                       os.path.join(output_dir_single, 'potential_single_peak.png'),
+                       n_points=201, x_range=(-6, 6), y_range=(-6, 6),
+                       title='Single Gaussian Peak Potential')
+
         geometry = "H 0.0 0.0 0.0"
         energies_symmetric_single, world4 = run_calculation(potential_single_peak, geometry, output_dir_single, ortho_method="symmetric")
         del world4
@@ -212,6 +231,11 @@ if __name__ == "__main__":
 
         output_dir_helium = os.path.join(os.path.dirname(__file__), 'results', 'helium_potential')
         os.makedirs(output_dir_helium, exist_ok=True)
+
+        plot_potential(potential_helium,
+                       os.path.join(output_dir_helium, 'potential_helium.png'),
+                       n_points=201, x_range=(-0.01, 0.01), y_range=(-0.01, 0.01),
+                       title='Helium-like Potential')
 
         geometry = "He 0.0 0.0 0.0"
         energies_symmetric_helium, world7 = run_calculation(potential_helium, geometry, output_dir_helium, ortho_method="symmetric")

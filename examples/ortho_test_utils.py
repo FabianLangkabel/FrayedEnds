@@ -3,8 +3,42 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
+def plot_potential(potential_func, output_path, n_points=201, x_range=(-5, 5), y_range=(-5, 5),
+                   title="Potential", colormap='inferno', dpi=150):
+    """
+    Plot a 2D potential function.
+    """
+    # Create grid
+    x = np.linspace(x_range[0], x_range[1], n_points)
+    y = np.linspace(y_range[0], y_range[1], n_points)
+    X, Y = np.meshgrid(x, y)
+
+    # Evaluate potential on grid
+    Z = np.zeros_like(X)
+    for i in range(n_points):
+        for j in range(n_points):
+            Z[i, j] = potential_func(X[i, j], Y[i, j])
+
+    # Create plot
+    plt.figure(figsize=(10, 8), dpi=dpi)
+    plt.pcolormesh(X, Y, Z, shading='auto', cmap=colormap)
+    plt.colorbar(label='Potential')
+    plt.xlabel('x', fontsize=12)
+    plt.ylabel('y', fontsize=12)
+    plt.title(title, fontsize=14)
+    plt.axis('equal')
+    plt.tight_layout()
+
+    # Save plot
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    plt.savefig(output_path, dpi=dpi, bbox_inches='tight')
+    plt.close()
+
+    print(f"Potential plot saved to: {output_path}")
+
+
 def plot_orbitals_2d(orbitals, world, iteration, output_dir, method_name="mixed",
-                     n_points=101, zoom_threshold=0.01):
+                     n_points=101, zoom_threshold=0.01, enable_zoom=True):
     plot_dir = os.path.join(output_dir, method_name)
     os.makedirs(plot_dir, exist_ok=True)
 
@@ -36,15 +70,16 @@ def plot_orbitals_2d(orbitals, world, iteration, output_dir, method_name="mixed"
         threshold = z_max * zoom_threshold
         significant_mask = np.abs(Z) > threshold
 
-        if np.any(significant_mask):
+        if enable_zoom and np.any(significant_mask):
             y_indices, x_indices = np.where(significant_mask)
             x_min_idx, x_max_idx = x_indices.min(), x_indices.max()
             y_min_idx, y_max_idx = y_indices.min(), y_indices.max()
 
             x_range = x_max_idx - x_min_idx
             y_range = y_max_idx - y_min_idx
-            x_pad = max(int(x_range * 0.1), 5)
-            y_pad = max(int(y_range * 0.1), 5)
+
+            x_pad = max(int(x_range * 0.2), 10)
+            y_pad = max(int(y_range * 0.2), 10)
 
             x_min_idx = max(0, x_min_idx - x_pad)
             x_max_idx = min(len(x_unique) - 1, x_max_idx + x_pad)
@@ -72,7 +107,7 @@ def plot_orbitals_2d(orbitals, world, iteration, output_dir, method_name="mixed"
 
 def plot_orbitals_before_after(orbitals_before, orbitals_after, world, iteration,
                                 output_dir, method_name="mixed", n_points=101,
-                                phase="normal", zoom_threshold=0.01):
+                                phase="normal", zoom_threshold=0.01, enable_zoom=True):
     plot_dir = os.path.join(output_dir, method_name)
     os.makedirs(plot_dir, exist_ok=True)
 
@@ -84,114 +119,83 @@ def plot_orbitals_before_after(orbitals_before, orbitals_after, world, iteration
     if n_orbs_max == 1:
         axes = axes.reshape(2, 1)
 
-    temp_files_before = []
-    for i, orb in enumerate(orbitals_before):
-        temp_file = f'_temp_before_{i}_iter_{iteration}_{phase}_{method_name}.dat'
-        temp_files_before.append(temp_file)
-        world.plane_plot(temp_file, orb, datapoints=n_points)
+    def process_orbitals(orbitals, row_idx, prefix, label_suffix):
+        """Helper function to process and plot a set of orbitals"""
+        temp_files = []
+        for i, orb in enumerate(orbitals):
+            temp_file = f'_temp_{prefix}_{i}_iter_{iteration}_{phase}_{method_name}.dat'
+            temp_files.append(temp_file)
+            world.plane_plot(temp_file, orb, datapoints=n_points)
 
-    temp_files_after = []
-    for i, orb in enumerate(orbitals_after):
-        temp_file = f'_temp_after_{i}_iter_{iteration}_{phase}_{method_name}.dat'
-        temp_files_after.append(temp_file)
-        world.plane_plot(temp_file, orb, datapoints=n_points)
+        for i, temp_file in enumerate(temp_files):
+            actual_file = f'plane_x1x2_{temp_file}'
+            data = np.loadtxt(actual_file)
 
-    for i, temp_file in enumerate(temp_files_before):
-        actual_file = f'plane_x1x2_{temp_file}'
-        data = np.loadtxt(actual_file)
+            x = data[:, 0]
+            y = data[:, 1]
+            z = data[:, 2]
 
-        x = data[:, 0]
-        y = data[:, 1]
-        z = data[:, 2]
+            x_unique = np.unique(x)
+            y_unique = np.unique(y)
+            Z = z.reshape(len(y_unique), len(x_unique))
+            X, Y = np.meshgrid(x_unique, y_unique)
 
-        x_unique = np.unique(x)
-        y_unique = np.unique(y)
-        Z = z.reshape(len(y_unique), len(x_unique))
-        X, Y = np.meshgrid(x_unique, y_unique)
+            z_max = np.max(np.abs(Z))
+            threshold = z_max * zoom_threshold
+            significant_mask = np.abs(Z) > threshold
 
-        z_max = np.max(np.abs(Z))
-        threshold = z_max * zoom_threshold
-        significant_mask = np.abs(Z) > threshold
+            if enable_zoom and np.any(significant_mask):
+                y_indices, x_indices = np.where(significant_mask)
+                x_min_idx, x_max_idx = x_indices.min(), x_indices.max()
+                y_min_idx, y_max_idx = y_indices.min(), y_indices.max()
 
-        if np.any(significant_mask):
-            y_indices, x_indices = np.where(significant_mask)
-            x_min_idx, x_max_idx = x_indices.min(), x_indices.max()
-            y_min_idx, y_max_idx = y_indices.min(), y_indices.max()
+                x_range = x_max_idx - x_min_idx
+                y_range = y_max_idx - y_min_idx
 
-            x_range = x_max_idx - x_min_idx
-            y_range = y_max_idx - y_min_idx
-            x_pad = max(int(x_range * 0.1), 5)
-            y_pad = max(int(y_range * 0.1), 5)
+                x_pad = max(int(x_range * 0.2), 10)
+                y_pad = max(int(y_range * 0.2), 10)
 
-            x_min_idx = max(0, x_min_idx - x_pad)
-            x_max_idx = min(len(x_unique) - 1, x_max_idx + x_pad)
-            y_min_idx = max(0, y_min_idx - y_pad)
-            y_max_idx = min(len(y_unique) - 1, y_max_idx + y_pad)
+                x_min_idx = max(0, x_min_idx - x_pad)
+                x_max_idx = min(len(x_unique) - 1, x_max_idx + x_pad)
+                y_min_idx = max(0, y_min_idx - y_pad)
+                y_max_idx = min(len(y_unique) - 1, y_max_idx + y_pad)
 
-            axes[0, i].set_xlim(x_unique[x_min_idx], x_unique[x_max_idx])
-            axes[0, i].set_ylim(y_unique[y_min_idx], y_unique[y_max_idx])
+                axes[row_idx, i].set_xlim(x_unique[x_min_idx], x_unique[x_max_idx])
+                axes[row_idx, i].set_ylim(y_unique[y_min_idx], y_unique[y_max_idx])
 
-        vmax = np.max(np.abs(Z))
-        im = axes[0, i].contourf(X, Y, Z, levels=20, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
-        axes[0, i].set_title(f'Orbital {i} (Before)\nmax: {z_max:.2e}')
-        axes[0, i].set_xlabel('x')
-        axes[0, i].set_ylabel('y')
-        axes[0, i].set_aspect('equal')
-        plt.colorbar(im, ax=axes[0, i], format='%.1e')
+            vmax = np.max(np.abs(Z))
+            im = axes[row_idx, i].contourf(X, Y, Z, levels=20, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
 
-        os.remove(actual_file)
+            # Determine title based on context
+            if label_suffix == "Before":
+                title = f'Orbital {i} ({label_suffix})\nmax: {z_max:.2e}'
+            elif i < n_orbs_before:
+                title = f'Orbital {i} ({label_suffix})\nmax: {z_max:.2e}'
+            else:
+                title = f'Orbital {i} (NEW)\nmax: {z_max:.2e}'
+                axes[row_idx, i].set_title(title, color='red')
+                axes[row_idx, i].set_xlabel('x')
+                axes[row_idx, i].set_ylabel('y')
+                axes[row_idx, i].set_aspect('equal')
+                plt.colorbar(im, ax=axes[row_idx, i], format='%.1e')
+                os.remove(actual_file)
+                continue
 
+            axes[row_idx, i].set_title(title)
+            axes[row_idx, i].set_xlabel('x')
+            axes[row_idx, i].set_ylabel('y')
+            axes[row_idx, i].set_aspect('equal')
+            plt.colorbar(im, ax=axes[row_idx, i], format='%.1e')
+
+            os.remove(actual_file)
+
+    # Process before orbitals
+    process_orbitals(orbitals_before, 0, "before", "Before")
     for i in range(n_orbs_before, n_orbs_max):
         axes[0, i].axis('off')
 
-    for i, temp_file in enumerate(temp_files_after):
-        actual_file = f'plane_x1x2_{temp_file}'
-        data = np.loadtxt(actual_file)
-
-        x = data[:, 0]
-        y = data[:, 1]
-        z = data[:, 2]
-
-        x_unique = np.unique(x)
-        y_unique = np.unique(y)
-        Z = z.reshape(len(y_unique), len(x_unique))
-        X, Y = np.meshgrid(x_unique, y_unique)
-
-        z_max = np.max(np.abs(Z))
-        threshold = z_max * zoom_threshold
-        significant_mask = np.abs(Z) > threshold
-
-        if np.any(significant_mask):
-            y_indices, x_indices = np.where(significant_mask)
-            x_min_idx, x_max_idx = x_indices.min(), x_indices.max()
-            y_min_idx, y_max_idx = y_indices.min(), y_indices.max()
-
-            x_range = x_max_idx - x_min_idx
-            y_range = y_max_idx - y_min_idx
-            x_pad = max(int(x_range * 0.1), 5)
-            y_pad = max(int(y_range * 0.1), 5)
-
-            x_min_idx = max(0, x_min_idx - x_pad)
-            x_max_idx = min(len(x_unique) - 1, x_max_idx + x_pad)
-            y_min_idx = max(0, y_min_idx - y_pad)
-            y_max_idx = min(len(y_unique) - 1, y_max_idx + y_pad)
-
-            axes[1, i].set_xlim(x_unique[x_min_idx], x_unique[x_max_idx])
-            axes[1, i].set_ylim(y_unique[y_min_idx], y_unique[y_max_idx])
-
-        vmax = np.max(np.abs(Z))
-        im = axes[1, i].contourf(X, Y, Z, levels=20, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
-        if i < n_orbs_before:
-            axes[1, i].set_title(f'Orbital {i} (After)\nmax: {z_max:.2e}')
-        else:
-            axes[1, i].set_title(f'Orbital {i} (NEW)\nmax: {z_max:.2e}', color='red')
-        axes[1, i].set_xlabel('x')
-        axes[1, i].set_ylabel('y')
-        axes[1, i].set_aspect('equal')
-        plt.colorbar(im, ax=axes[1, i], format='%.1e')
-
-        os.remove(actual_file)
-
+    # Process after orbitals
+    process_orbitals(orbitals_after, 1, "after", "After")
     for i in range(n_orbs_after, n_orbs_max):
         axes[1, i].axis('off')
 
