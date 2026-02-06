@@ -418,10 +418,11 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         // Update LagrangeMultiplier
         calculate_lagrange_multiplier();
 
-        //Core Orbital Refinement
-        
-        auto start_orb_update_time = std::chrono::high_resolution_clock::now();
-        highest_error = 0;
+        //************************************
+        // Core Orbital Refinement
+        //************************************
+        auto start_core_orb_update_time = std::chrono::high_resolution_clock::now();
+        highest_core_error = 0;
 
         std::array<std::vector<Function<double, NDIM>>, 2> AllCoreOrbitalUpdates = get_all_core_orbital_updates();
         for (int spin = 0; spin < 2; spin++)
@@ -430,31 +431,16 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
                 frozen_occ_orbs[spin][c] = frozen_occ_orbs[spin][c] - AllCoreOrbitalUpdates[spin][c];
             }
         }
+        auto end_core_orb_update_time = std::chrono::high_resolution_clock::now();
+        auto core_duration = std::chrono::duration_cast<std::chrono::seconds>(end_core_orb_update_time - start_core_orb_update_time);
+        std::cout << "Get core orbital updates took " << core_duration.count() << " seconds" << std::endl;
 
-        auto end_orb_update_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
-        std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
 
-        // Orthonormalize orbitals
-        for(int spin = 0; spin < 2; spin++)
-        {
-            if(orthonormalization_method == "cd") {frozen_occ_orbs[spin] = orthonormalize_cd(frozen_occ_orbs[spin]);}
-            else if (orthonormalization_method == "symmetric") {frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);}
-            else
-            {
-                std::cout << "Orthonormalization method: yyy not found. Symmetric orthonormalization is used." << std::endl;
-                frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);
-            }
-            frozen_occ_orbs[spin] = truncate(frozen_occ_orbs[spin], truncation_tol);
-        }
-
-        // Check convergence
-        std::cout << "Highest error: " << highest_error << std::endl;
-
-        /*
+        //************************************
         // AS Orbital Refinement
-        auto start_orb_update_time = std::chrono::high_resolution_clock::now();
-        highest_error = 0;
+        //************************************
+        auto start_as_orb_update_time = std::chrono::high_resolution_clock::now();
+        highest_as_error = 0;
 
         std::array<std::vector<int>, 2> as_orbital_indicies_for_update;
         for (int spin = 0; spin < 2; spin++)
@@ -480,11 +466,39 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
             }
         }
 
-        auto end_orb_update_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
-        std::cout << "UpdateOrbitals took " << duration.count() << " seconds" << std::endl;
+        auto end_as_orb_update_time = std::chrono::high_resolution_clock::now();
+        auto as_duration = std::chrono::duration_cast<std::chrono::seconds>(end_as_orb_update_time - start_as_orb_update_time);
+        std::cout << "Get as orbital updates took " << as_duration.count() << " seconds" << std::endl;
 
-        // Orthonormalize orbitals
+
+        //************************************
+        // Orthonormalization
+        //************************************
+
+        // Orthonormalize core orbitals
+        for(int spin = 0; spin < 2; spin++)
+        {
+            if(orthonormalization_method == "cd") {frozen_occ_orbs[spin] = orthonormalize_cd(frozen_occ_orbs[spin]);}
+            else if (orthonormalization_method == "symmetric") {frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);}
+            else
+            {
+                std::cout << "Orthonormalization method: yyy not found. Symmetric orthonormalization is used." << std::endl;
+                frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);
+            }
+            frozen_occ_orbs[spin] = truncate(frozen_occ_orbs[spin], truncation_tol);
+        }
+
+        // Project core orbitals out of active space orbitals
+        for(int spin = 0; spin < 2; spin++)
+        {
+            auto Q = QProjector(*(madness_process.world), frozen_occ_orbs[spin]);
+            for (int i = 0; i < as_dims[spin]; i++)
+            {
+                active_orbs[spin][i] = Q(active_orbs[spin][i]);
+            }
+        }
+
+        // Orthonormalize as orbitals
         for(int spin = 0; spin < 2; spin++)
         {
             if(orthonormalization_method == "cd") {active_orbs[spin] = orthonormalize_cd(active_orbs[spin]);}
@@ -498,15 +512,22 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         }
 
         // Check convergence
-        std::cout << "Highest error: " << highest_error << std::endl;
+        std::cout << "Highest core orbital error: " << highest_core_error << std::endl;
+        std::cout << "Highest as orbital error: " << highest_as_error << std::endl;
+
+        // Check convergence
+        double highest_error = std::max(highest_core_error, highest_as_error);
+        std::cout << "Highest total error: " << highest_error << std::endl;
         if (highest_error < optimization_thresh) {
             converged = true;
         }
-        */
 
-        std::cout << "Update Integrals" << std::endl;
         // Update integrals for new orbitals
+        std::cout << "Update Integrals" << std::endl;
         calculate_all_integrals();
+        if((core_dims[0] + core_dims[1]) > 0){
+            core_total_energy = Integrator->compute_core_energy(frozen_occ_orbs, Vnuc, 0);}
+        else { core_total_energy = 0;}
 
         // Calculate new energy
         calculate_energies();
@@ -646,8 +667,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
             Function<double, NDIM> r = active_orbs[spin][i] + 2.0 * bsh_op(AllOrbitalUpdates[spin][idx]); // the residual
             double err = r.norm2();
             std::cout << "Error of spin " << spin << " active space orbital " << i << ": " << err << std::endl;
-            if (err > highest_error) {
-                highest_error = err;
+            if (err > highest_as_error) {
+                highest_as_error = err;
             }
             AllOrbitalUpdates[spin][idx] = r;
         }
@@ -780,8 +801,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
             Function<double, NDIM> r = frozen_occ_orbs[spin][c] + 2.0 * bsh_op(AllOrbitalUpdates[spin][c]); // the residual
             double err = r.norm2();
             std::cout << "Error of spin " << spin << " core orbital " << c << ": " << err << std::endl;
-            if (err > highest_error) {
-                highest_error = err;
+            if (err > highest_core_error) {
+                highest_core_error = err;
             }
             AllOrbitalUpdates[spin][c] = r;
         }

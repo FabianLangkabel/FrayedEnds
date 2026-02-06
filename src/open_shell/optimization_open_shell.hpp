@@ -92,7 +92,8 @@ class Optimization_open_shell {
     double core_total_energy;
 
     // Refinement
-    double highest_error;
+    double highest_core_error;
+    double highest_as_error;
     //AS Refinement
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_AS;
     std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_Core;
