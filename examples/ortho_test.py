@@ -6,17 +6,20 @@ import tequila as tq
 from numpy import floating
 
 import frayedends as fe
-from ortho_test_utils import plot_orbitals_before_after, plot_energy_comparison, log_iteration, plot_potential
+from ortho_test_utils import *
 
-n_electrons = 2
+n_electrons = 4
 n_orbitals = 6
 econv = 1e-8
 
 def potential_three_peaks(x: float, y: float) -> float:
     """Three Gaussian peaks potential"""
-    a = -5
-    b = -3
-    c = -2
+    a = -(3.0 + 1.0 * n_electrons)
+    b = -(2.0 + 0.8 * n_electrons)
+    c = -(1.0 + 0.5 * n_electrons)
+
+    width_scale = 1.0 / np.sqrt(max(1, n_electrons * 0.5))
+    alpha = 0.5 * width_scale
 
     # Peak 1 at (1, 0)
     r1 = np.linalg.norm(np.array([x, y]) - np.array([4.0, 0.0]))
@@ -25,22 +28,31 @@ def potential_three_peaks(x: float, y: float) -> float:
     # Peak 3 at (0, 0)
     r3 = np.linalg.norm(np.array([x, y]))  # Center
 
-    return (a * np.exp(-0.5 * r1 ** 2) +
-            b * np.exp(-0.5 * r2 ** 2) +
-            c * np.exp(-0.5 * r3 ** 2))
+    return (a * np.exp(-alpha * r1 ** 2) +
+            b * np.exp(-alpha * r2 ** 2) +
+            c * np.exp(-alpha * r3 ** 2))
 
 def potential_single_peak(x: float, y: float) -> float:
     """Single Gaussian peak potential"""
-    c = -3.0
+    c = -1.5 * n_electrons
+    width = 0.5
+
+    if n_electrons > 2:
+        width_scale = 0.15
+    else:
+        width_scale = 0.5
+
     r = np.array([x, y])
-    return c * np.exp(-0.5 * np.linalg.norm(r) ** 2)
+
+    # Using the standard width (0.5)
+    return c * np.exp(-(width * width_scale) * np.linalg.norm(r) ** 2)
 
 def potential_helium(x: float, y: float) -> floating[Any]:
     """Helium-like potential: -1/(r^2 + epsilon) (attractive)"""
     r_vec = np.array([x, y])
     r_norm = np.linalg.norm(r_vec)
     epsilon = 0.0000001
-    return -2.0 / np.sqrt(r_norm**2 + epsilon)
+    return -n_electrons / np.sqrt(r_norm**2 + epsilon)
 
 
 def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", max_iterations=10):
@@ -101,7 +113,7 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
 
 
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables, use_hcb=True)
-        rdm1, rdm2 = fe.transform_rdms(u, rdm1, rdm2)
+        rdm1, rdm2 = fe.transform_rdms(u.transpose(), rdm1, rdm2)
 
         print(f"Energy: {result.energy:+2.8f}")
         if iteration > 0:
@@ -132,11 +144,11 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
             method_name=ortho_method,
             enable_zoom=True
         )
-        print("occ_num:", integrals.transform_to_natural_orbitals(orbitals_before, rdm1)[1])
         if np.isclose(result.energy, current, atol=econv, rtol=0.0):
             print(f"\nConverged after {iteration+1} iterations!")
             break
         current = result.energy
+        check_potential_depth_warning('madopt.log')
 
     del orbitals
     del orbitals_before
@@ -158,7 +170,7 @@ if __name__ == "__main__":
     print("PLOTTING POTENTIALS")
     print("="*80 + "\n")
 
-    test1 = True
+    test1 = False
     test2 = True
     test3 = True
 
