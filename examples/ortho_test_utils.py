@@ -295,3 +295,42 @@ def save_energy_data(energies_dict, output_dir, title="Energy Convergence"):
                 f.write(f"{energies[i]:+20.10f}")
             f.write("\n")
 
+
+def check_potential_depth_warning(madopt_log_path='madopt.log'):
+    """
+    Check the madopt.log file for warnings about positive Lagrange multipliers.
+    """
+    warning_lines = []
+
+    if not os.path.exists(madopt_log_path):
+        print(f"Warning: madopt.log file not found at {madopt_log_path}")
+        return False, []
+
+    try:
+        with open(madopt_log_path, 'r') as f:
+            for line in f:
+                # Check for the specific warning about positive Lagrange multipliers
+                if "Warning" in line and "positive" in line and "lagrange" in line.lower() and "multiplier" in line.lower():
+                    warning_lines.append(line.strip())
+                # Also check for alternative warning formats
+                elif "positive lagrange" in line.lower() or "setting to" in line.lower():
+                    if "lagrange" in line.lower() or "multiplier" in line.lower():
+                        warning_lines.append(line.strip())
+    except Exception as e:
+        print(f"Error reading madopt.log: {e}")
+        return False, []
+
+    has_warning = len(warning_lines) > 0
+
+    if has_warning:
+        print("\n" + "="*80)
+        print("⚠️  POTENTIAL DEPTH WARNING DETECTED ⚠️")
+        print("="*80)
+        print("\nWarning messages found:")
+        for warning in warning_lines:
+            print(f"  - {warning}")
+        print("="*80 + "\n")
+
+    return has_warning, warning_lines
+
+
