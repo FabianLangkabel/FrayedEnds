@@ -76,8 +76,6 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
     energies = []
     current = 0.0
 
-    u = None
-
     for iteration in range(max_iterations):
         print(f"\n--- Iteration {iteration} ---")
 
@@ -96,24 +94,13 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
             nuclear_repulsion=0.0
         )
 
-        # H2=mol.make_hamiltonian()
-        # res = np.linalg.eigvalsh(H2.to_matrix())
-        # print(res[0])
-        # result.energy should be similar to res[0]
-        # or loop till difference to loop before is small enough
-        #while(True):
         U = mol.make_ansatz(name="HCB-UpCCGD")
-        opt = tq.quantumchemistry.optimize_orbitals(
-            molecule=mol, circuit=U, use_hcb=True, silent=True, initial_guess=u
-        )
-        H = opt.molecule.make_hardcore_boson_hamiltonian()
+
+        H = mol.make_hardcore_boson_hamiltonian()
         E = tq.ExpectationValue(H=H, U=U)
         result = tq.minimize(E, silent=True)
-        u = opt.mo_coeff
-
 
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables, use_hcb=True)
-        rdm1, rdm2 = fe.transform_rdms(u.transpose(), rdm1, rdm2)
 
         print(f"Energy: {result.energy:+2.8f}")
         if iteration > 0:
