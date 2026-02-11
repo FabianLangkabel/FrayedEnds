@@ -649,19 +649,12 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_as_as(int z, in
 
 template <std::size_t NDIM>
 double Optimization<NDIM>::calculate_lagrange_multiplier_element_as_core(int z, int i) {
-    double el_p1 = 0;
-    double el_p2 = 0;
-    double el_p3 = 0;
-    double el_p4 = 0;
-    
     double element = as_one_rdm(i, i) * core_as_integrals_one_body_ak(z, i);
-    el_p1 = as_one_rdm(i, i) * core_as_integrals_one_body_ak(z, i);
 
     for (int l = 0; l < as_dim; l++) {
         for (int n = 0; n < as_dim; n++) {
             for (int k = 0; k < as_dim; k++) {
                 element += as_two_rdm(k, l, i, n) * core_as_integrals_two_body_akln(z, k, l, n);
-                el_p2 += as_two_rdm(k, l, i, n) * core_as_integrals_two_body_akln(z, k, l, n);
             }
         }
     }
@@ -670,11 +663,8 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_as_core(int z, 
         for (int a = 0; a < core_dim; a++) {
             element += 0.5 * nocc * 2 * as_one_rdm(k, i) * core_as_integrals_two_body_abak(a, z, k);
             element -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_baak(a, z, k);
-            el_p3 += 0.5 * nocc * 2 * as_one_rdm(k, i) * core_as_integrals_two_body_abak(a, z, k);
-            el_p4 -= 0.5 * nocc * as_one_rdm(k, i) * core_as_integrals_two_body_baak(a, z, k);
         }
     }
-    std::cout << "z: " << z << ", i: " << i << ", p1: " << el_p1 << ", p2: " << el_p2 << ", p3: " << el_p3 << ", p4: " << el_p4 << std::endl;
     return element;
 }
 
@@ -853,6 +843,11 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
         int i = orbital_indicies_for_update[idx];
         double en = LagrangeMultiplier_AS_AS(i, i) * rdm_ii_inv[idx];
+        if (en > 0) {
+            std::cout << "Warning: Positive Lagrange multiplier for orbital " << i << ": " << en << std::endl;
+            en = -1e-3; // Set to small negative value to avoid issues
+            std::cout << "Setting it to " << en << "." << std::endl;
+        }
         SeparatedConvolution<double, NDIM> bsh_op =
             BSHOperator<NDIM>(*(madness_process.world), sqrt(-2 * en), BSH_lo, BSH_eps);
         Function<double, NDIM> r = active_orbs[i] + 2.0 * bsh_op(AllOrbitalUpdates[idx]); // the residual
@@ -866,7 +861,6 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     auto t7 = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
 
-    /*
     std::cout << "Refinement timings:" << std::endl;
     std::cout << "rdm_ii_inv calculation: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
               << " seconds" << std::endl;
@@ -882,7 +876,6 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
               << std::endl;
     std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
               << " seconds" << std::endl;
-    */
 
     return AllOrbitalUpdates;
 }
