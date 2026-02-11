@@ -30,6 +30,14 @@ class Optimization_open_shell {
     Optimization_open_shell(MadnessProcess<NDIM>& mp);
     ~Optimization_open_shell();
 
+    open_shell_utils::NumericalParameters num_params;
+    void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
+        num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
+        if (Integrator) {
+            Integrator->override_numerical_parameters(num_params);
+        }
+    }
+
     // input
     void give_initial_orbitals(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals);
     void give_rdm_and_rotate_orbitals(std::vector<Numpy2D>& one_rdms, std::vector<Numpy4D>& two_rdms);
@@ -47,17 +55,13 @@ class Optimization_open_shell {
     double calculate_lagrange_multiplier_element_as_core(int z, int i, int spin); // AS refinement
     double calculate_lagrange_multiplier_element_core_core(int z, int c, int spin); // Core refinement
     double calculate_lagrange_multiplier_element_core_as(int z, int c, int spin); // Core refinement
-    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, std::string orthonormalization_method);
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, std::string orthonormalization_method, bool refine_core);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_core_orbital_updates();
     void rotate_orbitals_back();
 
-
-    double truncation_tol = 1e-6;
-    double coulomb_lo = 0.001;
-    double coulomb_eps = 1e-6;
-    double BSH_lo = 0.001;
-    double BSH_eps = 1e-6;
+    bool has_core_orbitals;
+    bool refine_core;
 
   private:
     MadnessProcess<NDIM>& madness_process;

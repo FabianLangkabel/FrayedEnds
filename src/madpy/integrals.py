@@ -108,6 +108,9 @@ class Integrals_open_shell_3D:
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface_open_shell_3D(madworld._impl)
 
+    def override_numerical_parameters(self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6,*args, **kwargs):
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
+
     def compute_two_body_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
         G = self.impl.compute_two_body_integrals(alpha_orbitals, beta_orbitals)
         return G[0], G[1], G[2]

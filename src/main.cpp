@@ -116,7 +116,9 @@ NB_MODULE(_madpy_impl, m) {
         .def("compute_potential_integrals", &Integrals_open_shell<3>::nb_compute_potential_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"), nb::arg("potential"))
         .def("compute_kinetic_integrals", &Integrals_open_shell<3>::nb_compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_two_body_integrals", &Integrals_open_shell<3>::nb_compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
-        .def("compute_effective_hamiltonian", &Integrals_open_shell<3>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"));
+        .def("compute_effective_hamiltonian", &Integrals_open_shell<3>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
+        .def("override_numerical_parameters", static_cast<void (Integrals_open_shell<3>::*)(double, double, double, double, double)>(&Integrals_open_shell<3>::override_numerical_parameters), nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
+        
 
     nb::class_<Optimization<3>>(m, "Optimization3D")
         .def(nb::init<MadnessProcess<3>&>())
@@ -191,11 +193,7 @@ NB_MODULE(_madpy_impl, m) {
         .def("rotate_orbitals_back", &Optimization_open_shell<3>::rotate_orbitals_back)
         .def("get_effective_hamiltonian", &Optimization_open_shell<3>::get_effective_hamiltonian)
         .def("get_orbitals", &Optimization_open_shell<3>::get_orbitals)
-        .def_rw("truncation_tol", &Optimization_open_shell<3>::truncation_tol)
-        .def_rw("coulomb_lo", &Optimization_open_shell<3>::coulomb_lo)
-        .def_rw("coulomb_eps", &Optimization_open_shell<3>::coulomb_eps)
-        .def_rw("BSH_lo", &Optimization_open_shell<3>::BSH_lo)
-        .def_rw("BSH_eps", &Optimization_open_shell<3>::BSH_eps);
+        .def("override_numerical_parameters", &Optimization_open_shell<3>::override_numerical_parameters, nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
 
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<MadnessProcess<3>&, const std::string&>())

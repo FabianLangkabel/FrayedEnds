@@ -14,6 +14,14 @@ using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
 
 namespace open_shell_utils {
 
+    struct NumericalParameters {
+        double truncation_tol = 1e-6;
+        double coulomb_lo = 0.001;
+        double coulomb_eps = 1e-6;
+        double BSH_lo = 0.001;
+        double BSH_eps = 1e-6;
+    };
+
     inline madness::Tensor<double> to_madness(const Numpy2D& arr) 
     {
         const auto n0 = arr.shape(0);
