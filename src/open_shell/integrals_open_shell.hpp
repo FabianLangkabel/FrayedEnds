@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <memory>
 #include <nanobind/nanobind.h>
+#include "utility_open_shell.hpp"
 
 using namespace madness;
 namespace nb = nanobind;
@@ -28,6 +29,15 @@ class Integrals_open_shell {
   public:
     Integrals_open_shell(MadnessProcess<NDIM>& mp);
     ~Integrals_open_shell() {};
+
+    //Numerical parameters
+    open_shell_utils::NumericalParameters num_params;
+    void override_numerical_parameters(open_shell_utils::NumericalParameters params) {
+        num_params = params;
+    }
+    void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
+        num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
+    }
 
     // Utility Functions
     std::array<std::vector<Function<double, NDIM>>, 2> read_orbitals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
