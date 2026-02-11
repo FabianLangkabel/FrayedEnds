@@ -1,5 +1,5 @@
-from ._madpy_impl import NWChem_Converter as converter
-from ._madpy_impl import NWChem_Converter_open_shell as converter_open_shell
+from ._frayedends_impl import NWChem_Converter as converter
+from ._frayedends_impl import NWChem_Converter_open_shell as converter_open_shell
 from .madworld import redirect_output
 
 
@@ -18,7 +18,7 @@ class NWChem_Converter:
         return self.get_normalized_aos(*args, **kwargs)
 
     def __init__(self, madworld, *args, **kwargs):
-        self.impl = converter(madworld._impl)
+        self.impl = converter(madworld.impl)
 
     @redirect_output("read_nwchem_file.log")
     def read_nwchem_file(self, file, *args, **kwargs):
@@ -58,7 +58,7 @@ class NWChem_Converter_open_shell:
         return self.get_normalized_aos(*args, **kwargs)
 
     def __init__(self, madworld, *args, **kwargs):
-        self.impl = converter_open_shell(madworld._impl)
+        self.impl = converter_open_shell(madworld.impl)
 
     @redirect_output("read_nwchem_file.log")
     def read_nwchem_file(self, file, *args, **kwargs):

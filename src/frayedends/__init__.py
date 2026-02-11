@@ -1,7 +1,8 @@
-from ._madpy_impl import CoulombPotentialFromChargeDensity, SavedFct2D, SavedFct3D
+from ._frayedends_impl import (CoulombPotentialFromChargeDensity, SavedFct2D,
+                               SavedFct3D)
 from .eigensolver import Eigensolver3D, Eigensolver2D
 from .integrals import Integrals2D, Integrals3D, Integrals_open_shell_3D
-from .madmolecule import MadMolecule
+from .moleculargeometry import MolecularGeometry
 from .madpno import MadPNO
 from .madworld import MadWorld2D, MadWorld3D, get_function_info
 from .minbas import AtomicBasisProjector

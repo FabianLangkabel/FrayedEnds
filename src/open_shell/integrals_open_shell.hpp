@@ -2,7 +2,7 @@
 #include "../madness_process.hpp"
 #include "../functionsaver.hpp"
 #include "../coulomboperator_nd.hpp"
-#include "../madmolecule.hpp"
+#include "../moleculargeometry.hpp"
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
