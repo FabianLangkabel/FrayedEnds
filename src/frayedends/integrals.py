@@ -1,17 +1,11 @@
 import numpy as np
 from tequila.quantumchemistry import NBodyTensor
-
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
-
-
 class Integrals3D:
-
     impl = None
-
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface3D(madworld.impl)
-
     def compute_two_body_integrals(
         self,
         orbitals,
@@ -29,7 +23,6 @@ class Integrals3D:
             return g.reorder(to=ordering)
         else:
             return g
-
     def compute_frozen_core_interaction(
         self,
         frozen_core_orbs,
@@ -42,51 +35,46 @@ class Integrals3D:
         return self.impl.compute_frozen_core_interaction(
             frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
-
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
-
     def compute_potential_integrals(self, orbitals, V, *args, **kwargs):
         return self.impl.compute_potential_integrals(orbitals, V)
-
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
-
     def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs
+        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
+        if method == "mixed":
+            if rdm1 is None:
+                raise ValueError("rdm1 must be provided for mixed orthonormalization method")
+            # Ensure rdm1 is a numpy array
+            rdm1_array = np.asarray(rdm1, dtype=np.float64)
+        else:
+            # For other methods, create empty array as placeholder
+            rdm1_array = np.array([], dtype=np.float64).reshape(0, 0)
         return self.normalize(
-            self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs)
+            self.impl.orthonormalize(orbitals, method, rr_thresh, rdm1_array, degeneracy_tol)
         )
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
-
     def project_on(self, kernel, target, *args, **kwargs):
         return self.impl.project_on(kernel, target)
-
     def normalize(self, orbitals, *args, **kwargs):
         return self.impl.normalize(orbitals, *args, **kwargs)
-
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
-
     def compute_nuclear_derivative(
         self,
         molecule,
     ):
         pass
-
-
 class Integrals2D:
-
     impl = None
-
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface2D(madworld.impl)
-
     def compute_two_body_integrals(
         self,
         orbitals,
@@ -104,7 +92,6 @@ class Integrals2D:
             return g.reorder(to=ordering)
         else:
             return g
-
     def compute_frozen_core_interaction(
         self,
         frozen_core_orbs,
@@ -117,43 +104,44 @@ class Integrals2D:
         return self.impl.compute_frozen_core_interaction(
             frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
-
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
-
     def compute_potential_integrals(self, orbitals, V, *args, **kwargs):
         return self.impl.compute_potential_integrals(orbitals, V)
-
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
-
     def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs
+        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
+        if method == "mixed":
+            if rdm1 is None:
+                raise ValueError("rdm1 must be provided for mixed orthonormalization method")
+            # Ensure rdm1 is a numpy array
+            rdm1_array = np.asarray(rdm1, dtype=np.float64)
+        else:
+            # For other methods, create empty array as placeholder
+            if rdm1 is not None:
+                rdm1_array = np.asarray(rdm1, dtype=np.float64)
+            else:
+                rdm1_array = np.array([], dtype=np.float64).reshape(0, 0)
         return self.normalize(
-            self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs)
+            self.impl.orthonormalize(orbitals, method, rr_thresh, rdm1_array, degeneracy_tol)
         )
-
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
-
     def project_on(self, kernel, target, *args, **kwargs):
         return self.impl.project_on(kernel, target)
-
     def normalize(self, orbitals, *args, **kwargs):
         return self.impl.normalize(orbitals, *args, **kwargs)
-
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
-
     def compute_nuclear_derivative(
         self,
         molecule,
     ):
         pass
-
     def transform_to_natural_orbitals(self, orbitals, rdm1):
         values, vectors = np.linalg.eigh(rdm1)  # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
         val = values[::-1]  # reverse the order of eigenvalues
