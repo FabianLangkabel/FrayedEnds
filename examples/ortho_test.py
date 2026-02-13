@@ -41,7 +41,6 @@ def potential_single_peak(x: float, y: float) -> float:
 
     r = np.array([x, y])
 
-    # Using the standard width (0.5)
     return c * np.exp(-(width * width_scale) * np.linalg.norm(r) ** 2)
 
 def potential_coulomb(x: float, y: float) -> floating[Any]:
@@ -50,6 +49,37 @@ def potential_coulomb(x: float, y: float) -> floating[Any]:
     r_norm = np.linalg.norm(r_vec)
     epsilon = 0.0000001
     return -n_electrons / np.sqrt(r_norm**2 + epsilon)
+
+def potential_three_peaks_4e(x: float, y: float, *args) -> float:
+    a = -7.0
+    b = -5.2
+    c = -3.0
+
+    alpha = 0.35355
+
+    r1 = np.linalg.norm(np.array([x, y]) - np.array([4.0, 0.0]))
+    r2 = np.linalg.norm(np.array([x, y]) - np.array([0.0, 4.0]))
+    r3 = np.linalg.norm(np.array([x, y]))
+
+    return (a * np.exp(-alpha * r1 ** 2) +
+            b * np.exp(-alpha * r2 ** 2) +
+            c * np.exp(-alpha * r3 ** 2))
+
+
+def potential_single_peak_4e(x: float, y: float, *args) -> float:
+    c = -6.0
+
+    alpha = 0.075
+    r_norm = np.linalg.norm(np.array([x, y]))
+
+    return c * np.exp(-alpha * r_norm ** 2)
+
+
+def potential_coulomb_4e(x: float, y: float, *args) -> float:
+    r_norm = np.linalg.norm(np.array([x, y]))
+    epsilon = 1e-7
+
+    return -4.0 / np.sqrt(r_norm ** 2 + epsilon)
 
 
 def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", max_iterations=10, early_stop=False):

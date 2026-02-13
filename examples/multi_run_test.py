@@ -288,19 +288,19 @@ if __name__ == "__main__":
     test_configs = [
         {
             'name': 'Single Gaussian Peak',
-            'potential_func': potential_single_peak,
+            'potential_func': potential_single_peak_4e,
             'geometry': "H 0.0 0.0 0.0",
             'ortho_methods': ['symmetric', 'cholesky', 'mixed']
         },
         {
             'name': 'Three Gaussian Peaks',
-            'potential_func': potential_three_peaks,
+            'potential_func': potential_three_peaks_4e,
             'geometry': "H 0.0 0.0 0.0\nH 1.0 0.0 0.0\nH 0.0 1.0 0.0",
             'ortho_methods': ['symmetric', 'cholesky', 'mixed']
         },
         {
             'name': 'Coulomb Potential',
-            'potential_func': potential_coulomb,
+            'potential_func': potential_coulomb_4e,
             'geometry': "He 0.0 0.0 0.0",
             'ortho_methods': ['symmetric', 'cholesky', 'mixed']
         }
