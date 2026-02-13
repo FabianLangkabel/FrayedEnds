@@ -21,12 +21,9 @@ def potential_three_peaks(x: float, y: float) -> float:
     width_scale = 1.0 / np.sqrt(max(1, n_electrons * 0.5))
     alpha = 0.5 * width_scale
 
-    # Peak 1 at (1, 0)
     r1 = np.linalg.norm(np.array([x, y]) - np.array([4.0, 0.0]))
-    # Peak 2 at (0, 1)
     r2 = np.linalg.norm(np.array([x, y]) - np.array([0.0, 4.0]))
-    # Peak 3 at (0, 0)
-    r3 = np.linalg.norm(np.array([x, y]))  # Center
+    r3 = np.linalg.norm(np.array([x, y]))
 
     return (a * np.exp(-alpha * r1 ** 2) +
             b * np.exp(-alpha * r2 ** 2) +
@@ -47,15 +44,15 @@ def potential_single_peak(x: float, y: float) -> float:
     # Using the standard width (0.5)
     return c * np.exp(-(width * width_scale) * np.linalg.norm(r) ** 2)
 
-def potential_helium(x: float, y: float) -> floating[Any]:
-    """Helium-like potential: -1/(r^2 + epsilon) (attractive)"""
+def potential_coulomb(x: float, y: float) -> floating[Any]:
+    """Helium-like potential: -1/(r^2 + epsilon)"""
     r_vec = np.array([x, y])
     r_norm = np.linalg.norm(r_vec)
     epsilon = 0.0000001
     return -n_electrons / np.sqrt(r_norm**2 + epsilon)
 
 
-def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", max_iterations=10):
+def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", max_iterations=10, early_stop=False):
     print(f"\n{'='*80}")
     print(f"Running with {ortho_method.upper()} orthonormalization")
     print(f"{'='*80}\n")
@@ -131,7 +128,7 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
             method_name=ortho_method,
             enable_zoom=True
         )
-        if np.isclose(result.energy, current, atol=econv, rtol=0.0):
+        if early_stop and np.isclose(result.energy, current, atol=econv, rtol=0.0):
             print(f"\nConverged after {iteration+1} iterations!")
             break
         current = result.energy
@@ -231,19 +228,19 @@ if __name__ == "__main__":
         output_dir_helium = os.path.join(os.path.dirname(__file__), 'results', 'helium_potential')
         os.makedirs(output_dir_helium, exist_ok=True)
 
-        plot_potential(potential_helium,
+        plot_potential(potential_coulomb,
                        os.path.join(output_dir_helium, 'potential_helium.png'),
                        n_points=201, x_range=(-0.01, 0.01), y_range=(-0.01, 0.01),
                        title='Helium-like Potential')
 
         geometry = "He 0.0 0.0 0.0"
-        energies_symmetric_helium, world7 = run_calculation(potential_helium, geometry, output_dir_helium, ortho_method="symmetric")
+        energies_symmetric_helium, world7 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="symmetric")
         del world7
 
-        energies_cholesky_helium, world8 = run_calculation(potential_helium, geometry, output_dir_helium, ortho_method="cholesky")
+        energies_cholesky_helium, world8 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="cholesky")
         del world8
 
-        energies_mixed_helium, world9 = run_calculation(potential_helium, geometry, output_dir_helium, ortho_method="mixed")
+        energies_mixed_helium, world9 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="mixed")
         del world9
 
         plot_energy_comparison(
