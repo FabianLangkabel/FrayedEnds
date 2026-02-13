@@ -47,16 +47,31 @@ class Integrals3D:
         self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
         if method == "mixed":
-            if rdm1 is None:
-                raise ValueError("rdm1 must be provided for mixed orthonormalization method")
-            # Ensure rdm1 is a numpy array
-            rdm1_array = np.asarray(rdm1, dtype=np.float64)
+            # Get occupations either from rdm1 or from orbitals
+            if rdm1 is not None:
+                # Extract diagonal of rdm1 as occupations
+                rdm1_array = np.asarray(rdm1, dtype=np.float64)
+                if rdm1_array.ndim == 2:
+                    occupations = np.diag(rdm1_array)
+                elif rdm1_array.ndim == 1:
+                    occupations = rdm1_array
+                else:
+                    raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
+            else:
+                # Try to get occupations from orbitals
+                occupations = np.array([orb.occupation for orb in orbitals], dtype=np.float64)
+                if np.all(occupations == 0.0):
+                    raise ValueError("For mixed orthonormalization, either provide rdm1 or set orbital.occupation values")
+
+            return self.normalize(
+                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+            )
         else:
-            # For other methods, create empty array as placeholder
-            rdm1_array = np.array([], dtype=np.float64).reshape(0, 0)
-        return self.normalize(
-            self.impl.orthonormalize(orbitals, method, rr_thresh, rdm1_array, degeneracy_tol)
-        )
+            # For other methods, pass empty array
+            occupations_empty = np.array([], dtype=np.float64)
+            return self.normalize(
+                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
+            )
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
@@ -116,19 +131,32 @@ class Integrals2D:
         self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
         if method == "mixed":
-            if rdm1 is None:
-                raise ValueError("rdm1 must be provided for mixed orthonormalization method")
-            # Ensure rdm1 is a numpy array
-            rdm1_array = np.asarray(rdm1, dtype=np.float64)
-        else:
-            # For other methods, create empty array as placeholder
+            # Get occupations either from rdm1 or from orbitals
             if rdm1 is not None:
+                # Extract diagonal of rdm1 as occupations
                 rdm1_array = np.asarray(rdm1, dtype=np.float64)
+                if rdm1_array.ndim == 2:
+                    occupations = np.diag(rdm1_array)
+                elif rdm1_array.ndim == 1:
+                    occupations = rdm1_array
+                else:
+                    raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
             else:
-                rdm1_array = np.array([], dtype=np.float64).reshape(0, 0)
-        return self.normalize(
-            self.impl.orthonormalize(orbitals, method, rr_thresh, rdm1_array, degeneracy_tol)
-        )
+                # Try to get occupations from orbitals
+                occupations = np.array([orb.occupation for orb in orbitals], dtype=np.float64)
+                if np.all(occupations == 0.0):
+                    raise ValueError("For mixed orthonormalization, either provide rdm1 or set orbital.occupation values")
+
+            return self.normalize(
+                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+            )
+        else:
+            # For other methods, pass empty array
+            occupations_empty = np.array([], dtype=np.float64)
+            return self.normalize(
+                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
+            )
+
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
     def project_on(self, kernel, target, *args, **kwargs):

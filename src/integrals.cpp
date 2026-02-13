@@ -209,7 +209,7 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::normalize(std::vector<SavedFct<NDIM
 template <std::size_t NDIM>
 std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct<NDIM>> all_orbs,
                                                             const std::string method, double rr_thresh,
-                                                            nb::ndarray<nb::numpy, double, nb::ndim<2>> rdm1,
+                                                            nb::ndarray<nb::numpy, double, nb::ndim<1>> occupations_arr,
                                                             double degeneracy_tol) {
     std::vector<Function<double, NDIM>> basis;
     for (SavedFct<NDIM> orb : all_orbs)
@@ -218,21 +218,23 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct
     auto out_basis = basis;
 
     if (method == "mixed") {
-        // Check if rdm1 is provided
-        if (rdm1.ndim() == 0 || rdm1.size() == 0) {
-            MADNESS_EXCEPTION("mixed orthonormalization requires rdm1 parameter", 1);
-        }
+        std::vector<double> occupations;
 
-        // Convert rdm1 numpy array to MADNESS Tensor
-        int n_orb = rdm1.shape(0);
-        madness::Tensor<double> one_rdm(n_orb, n_orb);
-        for (int i = 0; i < n_orb; i++) {
-            for (int j = 0; j < n_orb; j++) {
-                one_rdm(i, j) = rdm1(i, j);
+        if (occupations_arr.ndim() > 0 && occupations_arr.size() > 0) {
+            for (size_t i = 0; i < occupations_arr.size(); i++) {
+                occupations.push_back(occupations_arr(i));
+            }
+        } else {
+            for (const auto& orb : all_orbs) {
+                occupations.push_back(orb.occupation);
             }
         }
 
-        out_basis = orthonormalize_mixed_by_degeneracy(basis, one_rdm, degeneracy_tol);
+        if (occupations.size() != all_orbs.size()) {
+            MADNESS_EXCEPTION("mixed orthonormalization: number of occupations must match number of orbitals", 1);
+        }
+
+        out_basis = orthonormalize_mixed_by_degeneracy(basis, occupations, degeneracy_tol);
     } else {
         auto S = madness::matrix_inner(*(madness_process.world), basis, basis, true);
 
@@ -256,6 +258,8 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct
         result[k].info = all_orbs[k].info;
     for (size_t k = 0; k < result.size(); k++)
         result[k].type = all_orbs[k].type;
+    for (size_t k = 0; k < result.size(); k++)
+        result[k].occupation = all_orbs[k].occupation;
 
     return result;
 }
@@ -301,18 +305,15 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_on(std::vector<SavedFct<NDI
 template <std::size_t NDIM>
 std::vector<Function<double, NDIM>> Integrals<NDIM>::orthonormalize_mixed_by_degeneracy(
     std::vector<Function<double, NDIM>>& orbitals,
-    const madness::Tensor<double>& one_rdm,
+    const std::vector<double>& occupations,
     double degeneracy_tol) {
 
     std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
 
-    int n_orb = one_rdm.dim(0);
+    int n_orb = occupations.size();
 
-    // Get orbital occupations from diagonal of 1-RDM
-    std::vector<double> occupations;
     for (int i = 0; i < n_orb; i++) {
-        occupations.push_back(one_rdm(i, i));
-        std::cout << "Orbital " << i << " occupation: " << one_rdm(i, i) << std::endl;
+        std::cout << "Orbital " << i << " occupation: " << occupations[i] << std::endl;
     }
 
     // Identify degenerate groups
