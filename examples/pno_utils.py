@@ -22,6 +22,7 @@ def log_iteration(method, iteration, energy, config=None, log_file="pno_energies
         if is_first_method and iteration == 0:
             if not is_new_file:
                 f.write("\n\n")
+                print(f"✓ Starting new run in existing log: {log_path}")
 
             f.write("=" * 100 + "\n")
             f.write(f"NEW RUN - Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")

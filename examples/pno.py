@@ -57,21 +57,27 @@ def run_calculation(ortho_method, config, is_first_method=False):
         S = integrals.compute_overlap_integrals(orbitals) # overlap
 
         # FCA verwenden
-        e, fcivec = fci.direct_spin1.kernel(T + V, G.elems, n_orbitals, n_electrons)  # Computes the energy and the FCI vector
-        print(f"Energy: {e:+2.8f}")
+        vqe_start = time()
+        mol = tq.Molecule(geometry=geom, units="angstrom", one_body_integrals=T + V, two_body_integrals=G,
+                          nuclear_repulsion=c)
+        edges = madpno.get_spa_edges()
+        # print(f"Edges for SPA ansatz: {edges}")
 
+        U = mol.make_ansatz(name="SPA", edges=edges)
+        H = mol.make_hamiltonian()
+        E = tq.ExpectationValue(U, H)
+        result = tq.minimize(E, silent=True)
+        vqe_end = time()
+        print(f"VQE time: {vqe_end - vqe_start:.2f} seconds")
+
+        e = result.energy
+        print("SPA energy: {:+2.10f}".format(e))
+
+        # Log energy
         pno_utils.log_iteration(ortho_method, iteration, e,
                                config=config if iteration == 0 else None,
                                is_first_method=is_first_method)
         energies.append(e)
-
-        rdm1, rdm2 = fci.direct_spin1.make_rdm12(
-            fcivec, n_orbitals, n_electrons
-        )  # Computes the 1- and 2- body reduced density matrices
-        rdm2 = np.swapaxes(rdm2, 1, 2)  # swapping axes to match convention used in orbital refinement code
-
-        if iteration < n_iterations - 1:
-            orbitals = integrals.orthonormalize(orbitals=orbitals, method=ortho_method, rdm1=rdm1)
 
     del integrals
     del madpno
@@ -96,6 +102,9 @@ if __name__ == '__main__':
     }
     # Collect energies for all methods
     all_energies = {}
+    world3, energies_mixed = run_calculation("mixed", config)
+    all_energies["mixed"] = energies_mixed
+    del world3
 
     world1, energies_symmetric = run_calculation("symmetric", config, is_first_method=True)
     all_energies["symmetric"] = energies_symmetric
@@ -105,9 +114,6 @@ if __name__ == '__main__':
     all_energies["cholesky"] = energies_cholesky
     del world2
 
-    world3, energies_mixed = run_calculation("mixed", config)
-    all_energies["mixed"] = energies_mixed
-    del world3
 
     print("\n" + "=" * 80)
     print("Creating energy convergence plot...")
