@@ -44,34 +44,37 @@ class Integrals3D:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
     def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
-    ):
-        if method == "mixed":
-            # Get occupations either from rdm1 or from orbitals
-            if rdm1 is not None:
-                # Extract diagonal of rdm1 as occupations
-                rdm1_array = np.asarray(rdm1, dtype=np.float64)
-                if rdm1_array.ndim == 2:
-                    occupations = np.diag(rdm1_array)
-                elif rdm1_array.ndim == 1:
-                    occupations = rdm1_array
-                else:
-                    raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
-            else:
-                # Try to get occupations from orbitals
-                occupations = np.array([orb.occupation for orb in orbitals], dtype=np.float64)
-                if np.all(occupations == 0.0):
-                    raise ValueError("For mixed orthonormalization, either provide rdm1 or set orbital.occupation values")
+                self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
+            ):
+                if method == "mixed":
+                    # Get occupations either from rdm1 or from orbitals
+                    if rdm1 is not None:
+                        # Extract diagonal of rdm1 as occupations
+                        rdm1_array = np.asarray(rdm1, dtype=np.float64)
+                        if rdm1_array.ndim == 2:
+                            occupations = np.diag(rdm1_array)
+                        elif rdm1_array.ndim == 1:
+                            occupations = rdm1_array.copy()
+                        else:
+                            raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
+                    else:
+                        # Try to get occupations from orbitals
+                        occupations = np.array([orb.occupation for orb in orbitals], dtype=np.float64)
+                        if np.all(occupations == 0.0):
+                            raise ValueError("For mixed orthonormalization, either provide rdm1 or set orbital.occupation values")
 
-            return self.normalize(
-                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
-            )
-        else:
-            # For other methods, pass empty array
-            occupations_empty = np.array([], dtype=np.float64)
-            return self.normalize(
-                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
-            )
+                    # CRITICAL: Ensure it's a contiguous C-style array (required for C++ binding)
+                    occupations = np.ascontiguousarray(occupations, dtype=np.float64)
+
+                    return self.normalize(
+                        self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+                    )
+                else:
+                    # For other methods, pass empty array
+                    occupations_empty = np.array([], dtype=np.float64)
+                    return self.normalize(
+                        self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
+                    )
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
