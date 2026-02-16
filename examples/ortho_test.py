@@ -4,12 +4,15 @@ from typing import Any
 import numpy as np
 import tequila as tq
 from numpy import floating
+from pyscf import fci
 
+import frayedends
 import frayedends as fe
 from ortho_test_utils import *
 
-n_electrons = 4
+n_electrons = 2
 n_orbitals = 6
+max_iterations = 10
 econv = 1e-8
 
 def potential_three_peaks(x: float, y: float) -> float:
@@ -96,75 +99,74 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
     mra_pot = factory.get_function()
 
     eigen = fe.Eigensolver2D(world, mra_pot)
-    orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=12)
+    all_orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=12)
 
     world.plane_plot( "potential.dat", mra_pot, datapoints=501, zoom=10)
+    integrals = fe.Integrals2D(world)
 
     energies = []
     current = 0.0
+    current_orbitals = []
 
-    for iteration in range(max_iterations):
-        print(f"\n--- Iteration {iteration} ---")
+    for o in range(n_orbitals):
+        current_orbitals.append(all_orbitals[o])
+        print(f"Orbital {o} added!")
+        if ortho_method == "symmetric":
+            current_orbitals = integrals.orthonormalize(orbitals=current_orbitals)
+        else:
+            current_orbitals = integrals.orthonormalize(orbitals=current_orbitals)
 
-        integrals = fe.Integrals2D(world)
-        S = integrals.compute_overlap_integrals(orbitals)
-        G = integrals.compute_two_body_integrals(orbitals, ordering="phys")
-        T = integrals.compute_kinetic_integrals(orbitals)
-        V = integrals.compute_potential_integrals(orbitals, mra_pot)
-        # VQE
-        mol = tq.Molecule(
-            geometry=geometry,
-            units="bohr",
-            one_body_integrals=T+V,
-            two_body_integrals=G,
-            n_electrons=n_electrons,
-            nuclear_repulsion=0.0
-        )
+        current_orbitals = integrals.orthonormalize(orbitals=current_orbitals)
+        for iteration in range(max_iterations):
+            print(f"\n--- Iteration {iteration} ---")
 
-        U = mol.make_ansatz(name="HCB-UpCCGD")
+            integrals = fe.Integrals2D(world)
+            S = integrals.compute_overlap_integrals(current_orbitals)
+            G = integrals.compute_two_body_integrals(current_orbitals, ordering="chem")
+            T = integrals.compute_kinetic_integrals(current_orbitals)
+            V = integrals.compute_potential_integrals(current_orbitals, mra_pot)
+            # FCI
+            e, fcivec = fci.direct_spin1.kernel(T+V, G.elems, o+1, n_electrons)  # Computes the energy and the FCI vector
+            rdm1, rdm2 = fci.direct_spin1.make_rdm12(
+                fcivec, o+1, n_electrons
+            )  # Computes the 1- and 2- body reduced density matrices
+            rdm2 = np.swapaxes(rdm2, 1, 2)  # swapping axes to match convention used in orbital refinement code
 
-        H = mol.make_hardcore_boson_hamiltonian()
-        E = tq.ExpectationValue(H=H, U=U)
-        result = tq.minimize(E, silent=True)
+            print(f"Energy: {e:+2.8f}")
+            energies.append(e)
+            # Log this iteration
+            log_iteration(iteration, e, output_dir, ortho_method)
 
-        rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables, use_hcb=True)
+            print("Orbital occupations:")
+            for i in range(len(rdm1)):
+                print(f"  Orbital {i}: {rdm1[i,i]:.6e}")
 
-        print(f"Energy: {result.energy:+2.8f}")
-        if iteration > 0:
-            energies.append(result.energy)
-        # Log this iteration
-        log_iteration(iteration, result.energy, output_dir, ortho_method)
+            orbitals_before = [orb for orb in current_orbitals]
 
-        print("Orbital occupations:")
-        for i in range(len(rdm1)):
-            print(f"  Orbital {i}: {rdm1[i,i]:.6e}")
+            opti = fe.Optimization2D(world, mra_pot, nuc_repulsion=0.0)
 
-        orbitals_before = [orb for orb in orbitals]
+            opti.set_orthonormalization_method(ortho_method)
+            current_orbitals = opti.get_orbitals(
+                orbitals=current_orbitals, rdm1=rdm1, rdm2=rdm2,
+                opt_thresh=0.001, occ_thresh=0.001
+            )
 
-        opti = fe.Optimization2D(world, mra_pot, nuc_repulsion=0.0)
+            plot_orbitals_before_after(
+                integrals.transform_to_natural_orbitals(orbitals_before, rdm1)[0],
+                integrals.transform_to_natural_orbitals(current_orbitals, rdm1)[0],
+                world,
+                iteration,
+                output_dir,
+                method_name=ortho_method,
+                enable_zoom=True
+            )
+            if early_stop and np.isclose(e, current, atol=econv, rtol=0.0):
+                print(f"\nConverged after {iteration+1} iterations!")
+                break
+            current = e
+            check_potential_depth_warning('madopt.log')
 
-        opti.set_orthonormalization_method(ortho_method)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2,
-            opt_thresh=0.001, occ_thresh=0.001
-        )
-
-        plot_orbitals_before_after(
-            integrals.transform_to_natural_orbitals(orbitals_before, rdm1)[0],
-            integrals.transform_to_natural_orbitals(orbitals, rdm1)[0],
-            world,
-            iteration,
-            output_dir,
-            method_name=ortho_method,
-            enable_zoom=True
-        )
-        if early_stop and np.isclose(result.energy, current, atol=econv, rtol=0.0):
-            print(f"\nConverged after {iteration+1} iterations!")
-            break
-        current = result.energy
-        check_potential_depth_warning('madopt.log')
-
-    del orbitals
+    del all_orbitals
     del orbitals_before
     del opti
     del integrals
@@ -186,7 +188,7 @@ if __name__ == "__main__":
 
     test1 = False
     test2 = True
-    test3 = True
+    test3 = False
 
     # Test 1: Three Gaussian Peaks
     if test1:
@@ -204,6 +206,7 @@ if __name__ == "__main__":
 
         geometry = "H 0.0 0.0 0.0\nH 1.0 0.0 0.0\nH 0.0 1.0 0.0"
 
+        # Run calculations
         energies_symmetric_three, world1 = run_calculation(potential_three_peaks, geometry, output_dir_three, ortho_method="symmetric")
         del world1
 
@@ -213,11 +216,31 @@ if __name__ == "__main__":
         energies_mixed_three, world3 = run_calculation(potential_three_peaks, geometry, output_dir_three, ortho_method="mixed")
         del world3
 
-        plot_energy_comparison(
-            {'symmetric': energies_symmetric_three, 'cholesky': energies_cholesky_three, 'mixed': energies_mixed_three},
+        # Save all energies to combined JSON file
+        save_energies_to_combined_json(
+            {
+                'symmetric': energies_symmetric_three,
+                'cholesky': energies_cholesky_three,
+                'mixed': energies_mixed_three
+            },
             output_dir_three,
-            title='Energy Convergence: Three Gaussian Peaks Potential'
+            n_orbitals,
+            max_iterations
         )
+
+        # Create plots from combined JSON file
+        json_file = os.path.join(output_dir_three, 'energies_all_methods.json')
+        plot_energy_comparison_from_json(
+            json_file,
+            output_dir_three,
+            title='Energy Convergence: Three Gaussian Peaks Potential',
+            skip_first_iteration=True
+        )
+
+        # Generate comparison report
+        create_comparison_report(json_file, output_dir_three)
+        print_quick_comparison(json_file)
+
 
     # Test 2: Single Gaussian Peak
     if test2:
@@ -234,6 +257,8 @@ if __name__ == "__main__":
                        title='Single Gaussian Peak Potential')
 
         geometry = "H 0.0 0.0 0.0"
+
+        # Run calculations
         energies_symmetric_single, world4 = run_calculation(potential_single_peak, geometry, output_dir_single, ortho_method="symmetric")
         del world4
 
@@ -243,11 +268,27 @@ if __name__ == "__main__":
         energies_mixed_single, world6 = run_calculation(potential_single_peak, geometry, output_dir_single, ortho_method="mixed")
         del world6
 
-        plot_energy_comparison(
-            {'symmetric': energies_symmetric_single, 'cholesky': energies_cholesky_single, 'mixed': energies_mixed_single},
+        # Save all energies to combined JSON file
+        save_energies_to_combined_json(
+            {
+                'symmetric': energies_symmetric_single,
+                'cholesky': energies_cholesky_single,
+                'mixed': energies_mixed_single
+            },
             output_dir_single,
-            title='Energy Convergence: Single Gaussian Peak Potential'
+            n_orbitals,
+            max_iterations
         )
+
+        # Create plots from combined JSON file
+        json_file = os.path.join(output_dir_single, 'energies_all_methods.json')
+        plot_energy_comparison_from_json(
+            json_file,
+            output_dir_single,
+            title='Energy Convergence: Single Gaussian Peak Potential',
+            skip_first_iteration=True
+        )
+
 
     # Test 3: Helium Potential
     if test3:
@@ -264,6 +305,8 @@ if __name__ == "__main__":
                        title='Helium-like Potential')
 
         geometry = "He 0.0 0.0 0.0"
+
+        # Run calculations
         energies_symmetric_helium, world7 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="symmetric")
         del world7
 
@@ -273,11 +316,27 @@ if __name__ == "__main__":
         energies_mixed_helium, world9 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="mixed")
         del world9
 
-        plot_energy_comparison(
-            {'symmetric': energies_symmetric_helium, 'cholesky': energies_cholesky_helium, 'mixed': energies_mixed_helium},
+        # Save all energies to combined JSON file
+        save_energies_to_combined_json(
+            {
+                'symmetric': energies_symmetric_helium,
+                'cholesky': energies_cholesky_helium,
+                'mixed': energies_mixed_helium
+            },
             output_dir_helium,
-            title='Energy Convergence: Helium Potential'
+            n_orbitals,
+            max_iterations
         )
+
+        # Create plots from combined JSON file
+        json_file = os.path.join(output_dir_helium, 'energies_all_methods.json')
+        plot_energy_comparison_from_json(
+            json_file,
+            output_dir_helium,
+            title='Energy Convergence: Helium Potential',
+            skip_first_iteration=True
+        )
+
 
     print("\n" + "="*80)
     print("ALL TESTS COMPLETED")
