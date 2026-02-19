@@ -1,125 +1,141 @@
 from time import time
 
+
 import numpy as np
 import tequila as tq
 from pyscf import fci
-
-import frayedends
 import pno_utils
+import frayedends
 
-def run_calculation(ortho_method, config, is_first_method=False):
+n_orbitals = 4
+max_iterations = 10
+
+def run_calculation(ortho_method, config):
     true_start = time()
     print(f"\n{'='*80}")
     print(f"Method: {ortho_method.upper()}")
     print(f"{'='*80}\n")
 
-    geom = config["geometry"].replace("\\n", "\n")  # Convert escaped newlines
-    n_orbitals = config["n_orbitals"]
+    geom = config["geometry"].replace("\\n", "\n")
+    n_orbitals_config = config["n_orbitals"]
     units = config["units"]
-    n_iterations = config["n_iterations"]
 
-    # Calculate n_electrons from geometry (always matches the geometry)
     n_electrons = tq.quantumchemistry.ParametersQC(geometry=geom, units=units).total_n_electrons
 
     world = frayedends.MadWorld3D()
 
-    madpno = frayedends.MadPNO(world, geom, units=units, n_orbitals=n_orbitals)
-    orbitals = madpno.get_orbitals()
-    print(frayedends.get_function_info(orbitals))
+    madpno = frayedends.MadPNO(world, geom, units=units, n_orbitals=n_orbitals_config)
+    all_orbitals = madpno.get_orbitals()
+    print(frayedends.get_function_info(all_orbitals))
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = frayedends.Integrals3D(world)
 
-    if ortho_method == "mixed":
-        info = frayedends.get_function_info(orbitals)
-        for i, orb in enumerate(orbitals):
-            orb.occupation = info[i]['occ']
-
-    # overlaps berechnen, überschneidung der orbitale
-    orbitals = integrals.orthonormalize(orbitals=orbitals, method=ortho_method) # symmetric, cholesky mixed vergleichen
-
-    for i in range(len(orbitals)):
-        world.line_plot(f"pnoorb{i}_{ortho_method}.dat", orbitals[i])
-
-    c = nuc_repulsion
-    rdm1 = None
     energies = []
+    current = 0.0
+    current_orbitals = []
 
-    for iteration in range(n_iterations):
-        print(f"\n--- Iteration {iteration} ---")
+    min_orbitals_needed = (n_electrons + 1) // 2
 
-        integrals = frayedends.Integrals3D(world)
-        G = integrals.compute_two_body_integrals(orbitals, ordering='chem')
-        T = integrals.compute_kinetic_integrals(orbitals)
-        V = integrals.compute_potential_integrals(orbitals, Vnuc)
-        S = integrals.compute_overlap_integrals(orbitals) # overlap
+    # For mixed method, set initial occupation numbers once from all_orbitals
+    if ortho_method == "mixed":
+        initial_info = frayedends.get_function_info(all_orbitals)
+        for i, orb in enumerate(all_orbitals):
+            orb.occupation = initial_info[i]['occ']
 
-        # FCA verwenden
-        vqe_start = time()
-        mol = tq.Molecule(geometry=geom, units="angstrom", one_body_integrals=T + V, two_body_integrals=G,
-                          nuclear_repulsion=c)
-        edges = madpno.get_spa_edges()
-        # print(f"Edges for SPA ansatz: {edges}")
+    for o in range(n_orbitals_config):
+        current_orbitals.append(all_orbitals[o])
+        print(f"\n{'='*60}")
+        print(f"Orbital {o + 1} added! Total orbitals: {o + 1}")
+        print(f"{'='*60}")
 
-        U = mol.make_ansatz(name="SPA", edges=edges)
-        H = mol.make_hamiltonian()
-        E = tq.ExpectationValue(U, H)
-        result = tq.minimize(E, silent=True)
-        vqe_end = time()
-        print(f"VQE time: {vqe_end - vqe_start:.2f} seconds")
 
-        e = result.energy
-        print("SPA energy: {:+2.10f}".format(e))
+        current_orbitals = integrals.orthonormalize(orbitals=current_orbitals, method=ortho_method)
 
-        # Log energy
-        pno_utils.log_iteration(ortho_method, iteration, e,
-                               config=config if iteration == 0 else None,
-                               is_first_method=is_first_method)
-        energies.append(e)
+        if (o + 1) < min_orbitals_needed:
+            print(f"Skipping refinement: need at least {min_orbitals_needed} orbitals for {n_electrons} electrons")
+            continue
+
+        for iteration in range(max_iterations):
+            print(f"\n--- Iteration {iteration} ---")
+
+            integrals = frayedends.Integrals3D(world)
+            S = integrals.compute_overlap_integrals(current_orbitals)
+            G = integrals.compute_two_body_integrals(current_orbitals, ordering='chem')
+            T = integrals.compute_kinetic_integrals(current_orbitals)
+            V = integrals.compute_potential_integrals(current_orbitals, Vnuc)
+
+            # FCI
+            e, fcivec = fci.direct_spin1.kernel(T + V, G.elems, o + 1, n_electrons)
+            print(f"Energy: {e:+2.8f}")
+            energies.append(e)
+
+            rdm1, rdm2 = fci.direct_spin1.make_rdm12(fcivec, o + 1, n_electrons)
+            rdm2 = np.swapaxes(rdm2, 1, 2)
+
+            print("Orbital occupations:")
+            for i in range(len(rdm1)):
+                print(f"  Orbital {i}: {rdm1[i,i]:.6e}")
+
+            opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion=nuc_repulsion)
+            opti.set_orthonormalization_method(ortho_method)
+            current_orbitals = opti.get_orbitals(
+                orbitals=current_orbitals, rdm1=rdm1, rdm2=rdm2,
+                opt_thresh=0.001, occ_thresh=0.001
+            )
+
+            if iteration > 0 and np.isclose(e, current, atol=1e-8, rtol=0.0):
+                print(f"\nConverged after {iteration + 1} iterations!")
+                break
+            current = e
 
     del integrals
     del madpno
     del Vnuc
+    del all_orbitals
 
     true_end = time()
     print(f"\nTotal time for {ortho_method}: {true_end - true_start:.2f}s")
 
     return world, energies
 
+
 if __name__ == '__main__':
     print("\n" + "=" * 80)
-    print("PNO Test")
+    print("PNO Test - Incremental Orbital Refinement")
     print("=" * 80 + "\n")
 
     # Configuration
     config = {
         "geometry": "H 0.0 0.0 -0.8\\nH 0.0 0.0 0.8\\nH 0.0 0.0 -1.4\\nH 0.0 0.0 1.4",
-        "n_orbitals": 4,
-        "n_iterations": 6,
+        "n_orbitals": 6,
         "units": "angstrom"
     }
-    # Collect energies for all methods
-    all_energies = {}
-    world3, energies_mixed = run_calculation("mixed", config)
-    all_energies["mixed"] = energies_mixed
-    del world3
 
-    world1, energies_symmetric = run_calculation("symmetric", config, is_first_method=True)
-    all_energies["symmetric"] = energies_symmetric
+
+    world1, energies_symmetric = run_calculation("symmetric", config)
     del world1
 
     world2, energies_cholesky = run_calculation("cholesky", config)
-    all_energies["cholesky"] = energies_cholesky
     del world2
 
+    world3, energies_mixed = run_calculation("mixed", config)
+    del world3
 
-    print("\n" + "=" * 80)
-    print("Creating energy convergence plot...")
-    print("=" * 80 + "\n")
-    pno_utils.plot_energy_convergence(all_energies)
+
+    all_energies = {
+        "symmetric": energies_symmetric,
+        "cholesky": energies_cholesky,
+        "mixed": energies_mixed
+    }
+
+    pno_utils.save_pno_results_to_json(all_energies, config)
+    pno_utils.plot_pno_results_from_json()
+    pno_utils.plot_energy_differences_between_methods()
 
     print("\n" + "=" * 80)
     print("ALL TESTS COMPLETED")
     print("=" * 80)
+
