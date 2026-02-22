@@ -5,9 +5,10 @@ from datetime import datetime
 import numpy as np
 import tequila as tq
 from matplotlib import pyplot as plt
+from sympy.codegen.ast import none
 
 
-def save_pno_results_to_json(energies_dict, config, output_dir="results/pno"):
+def save_pno_results_to_json(energies_dict, config, output_dir="results/pno", filename="pno_results.json"):
     output_path = os.path.join(os.path.dirname(__file__), output_dir)
     os.makedirs(output_path, exist_ok=True)
 
@@ -46,7 +47,7 @@ def save_pno_results_to_json(energies_dict, config, output_dir="results/pno"):
             for method, energy in sorted_methods[1:]:
                 data["summary"]["energy_differences"][f"{method}_vs_best"] = energy - best_energy
 
-    json_file = os.path.join(output_path, 'pno_results.json')
+    json_file = os.path.join(output_path, filename)
     with open(json_file, 'w') as f:
         json.dump(data, f, indent=2)
 
@@ -97,7 +98,14 @@ def plot_pno_results_from_json(json_file="results/pno/pno_results.json"):
     print(f"✓ Plots saved to: {plots_dir}")
 
 
-def plot_energy_differences_between_methods(json_file="results/pno/pno_results.json", threshold=1e-4):
+def filter_by_threshold(iterations, differences, threshold):
+    mask = np.abs(differences) <= threshold
+    filtered_iterations = iterations[mask]
+    filtered_differences = differences[mask]
+    removed_count = np.sum(~mask)
+    return filtered_iterations, filtered_differences, removed_count
+
+def plot_energy_differences_between_methods(json_file="results/pno/pno_results.json", threshold=None):
     json_path = os.path.join(os.path.dirname(__file__), json_file)
 
     with open(json_path, 'r') as f:
@@ -121,32 +129,32 @@ def plot_energy_differences_between_methods(json_file="results/pno/pno_results.j
     diff_mixed_symmetric = methods_energies['mixed'] - methods_energies['symmetric']
     diff_cholesky_mixed = methods_energies['cholesky'] - methods_energies['mixed']
 
-    iter_1, diff_1, removed_1 = filter_by_threshold(iterations, diff_cholesky_symmetric, threshold)
-    iter_2, diff_2, removed_2 = filter_by_threshold(iterations, diff_mixed_symmetric, threshold)
-    iter_3, diff_3, removed_3 = filter_by_threshold(iterations, diff_cholesky_mixed, threshold)
+    if threshold is not None:
+        iter_1, diff_1, removed_1 = filter_by_threshold(iterations, diff_cholesky_symmetric, threshold)
+        iter_2, diff_2, removed_2 = filter_by_threshold(iterations, diff_mixed_symmetric, threshold)
+        iter_3, diff_3, removed_3 = filter_by_threshold(iterations, diff_cholesky_mixed, threshold)
 
-    # Print filtering info
-    print(f"\n{'='*80}")
-    print(f"THRESHOLD FILTERING (showing only |ΔE| ≤ {threshold:.0e} a.u.)")
-    print(f"{'='*80}")
-    print(f"Cholesky - Symmetric: {removed_1} large outliers removed, {len(iter_1)} points shown")
-    print(f"Mixed - Symmetric:    {removed_2} large outliers removed, {len(iter_2)} points shown")
-    print(f"Cholesky - Mixed:     {removed_3} large outliers removed, {len(iter_3)} points shown")
-    print(f"{'='*80}\n")
+    else:
+        iter_1, diff_1, removed_1 = iterations, diff_cholesky_symmetric, 0
+        iter_2, diff_2, removed_2 = iterations, diff_mixed_symmetric, 0
+        iter_3, diff_3, removed_3 = iterations, diff_cholesky_mixed, 0
 
     fig, axes = plt.subplots(3, 1, figsize=(12, 12))
 
     # Plot 1: Cholesky - Symmetric
     if len(iter_1) > 0:
+        label_1 = f'Cholesky - Symmetric (|ΔE| ≤ {threshold:.0e})' if threshold else 'Cholesky - Symmetric'
         axes[0].plot(iter_1, diff_1,
                     marker='o', color='green', linewidth=2, markersize=6,
-                    label=f'Cholesky - Symmetric (|ΔE| ≤ {threshold:.0e})')
+                    label=label_1)
     axes[0].axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-    axes[0].axhline(y=threshold, color='red', linestyle=':', linewidth=1, alpha=0.3, label=f'Threshold: ±{threshold:.0e}')
-    axes[0].axhline(y=-threshold, color='red', linestyle=':', linewidth=1, alpha=0.3)
+    if threshold is not None:
+        axes[0].axhline(y=threshold, color='red', linestyle=':', linewidth=1, alpha=0.3, label=f'Threshold: ±{threshold:.0e}')
+        axes[0].axhline(y=-threshold, color='red', linestyle=':', linewidth=1, alpha=0.3)
     axes[0].set_xlabel('Iteration', fontsize=12)
     axes[0].set_ylabel('Energy Difference (a.u.)', fontsize=12)
-    axes[0].set_title('Cholesky - Symmetric (small differences only)', fontsize=14, fontweight='bold')
+    title_1 = 'Cholesky - Symmetric (filtered)' if threshold else 'Cholesky - Symmetric'
+    axes[0].set_title(title_1, fontsize=14, fontweight='bold')
     axes[0].legend(fontsize=11, loc='best')
     axes[0].grid(True, alpha=0.3)
     if len(diff_1) > 0:
@@ -158,15 +166,18 @@ def plot_energy_differences_between_methods(json_file="results/pno/pno_results.j
 
     # Plot 2: Mixed - Symmetric
     if len(iter_2) > 0:
+        label_2 = f'Mixed - Symmetric (|ΔE| ≤ {threshold:.0e})' if threshold else 'Mixed - Symmetric'
         axes[1].plot(iter_2, diff_2,
                     marker='s', color='red', linewidth=2, markersize=6,
-                    label=f'Mixed - Symmetric (|ΔE| ≤ {threshold:.0e})')
+                    label=label_2)
     axes[1].axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-    axes[1].axhline(y=threshold, color='red', linestyle=':', linewidth=1, alpha=0.3, label=f'Threshold: ±{threshold:.0e}')
-    axes[1].axhline(y=-threshold, color='red', linestyle=':', linewidth=1, alpha=0.3)
+    if threshold is not None:
+        axes[1].axhline(y=threshold, color='red', linestyle=':', linewidth=1, alpha=0.3, label=f'Threshold: ±{threshold:.0e}')
+        axes[1].axhline(y=-threshold, color='red', linestyle=':', linewidth=1, alpha=0.3)
     axes[1].set_xlabel('Iteration', fontsize=12)
     axes[1].set_ylabel('Energy Difference (a.u.)', fontsize=12)
-    axes[1].set_title('Mixed - Symmetric (small differences only)', fontsize=14, fontweight='bold')
+    title_2 = 'Mixed - Symmetric (filtered)' if threshold else 'Mixed - Symmetric'
+    axes[1].set_title(title_2, fontsize=14, fontweight='bold')
     axes[1].legend(fontsize=11, loc='best')
     axes[1].grid(True, alpha=0.3)
     if len(diff_2) > 0:
@@ -178,15 +189,18 @@ def plot_energy_differences_between_methods(json_file="results/pno/pno_results.j
 
     # Plot 3: Cholesky - Mixed
     if len(iter_3) > 0:
+        label_3 = f'Cholesky - Mixed (|ΔE| ≤ {threshold:.0e})' if threshold else 'Cholesky - Mixed'
         axes[2].plot(iter_3, diff_3,
                     marker='^', color='purple', linewidth=2, markersize=6,
-                    label=f'Cholesky - Mixed (|ΔE| ≤ {threshold:.0e})')
+                    label=label_3)
     axes[2].axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-    axes[2].axhline(y=threshold, color='red', linestyle=':', linewidth=1, alpha=0.3, label=f'Threshold: ±{threshold:.0e}')
-    axes[2].axhline(y=-threshold, color='red', linestyle=':', linewidth=1, alpha=0.3)
+    if threshold is not None:
+        axes[2].axhline(y=threshold, color='red', linestyle=':', linewidth=1, alpha=0.3, label=f'Threshold: ±{threshold:.0e}')
+        axes[2].axhline(y=-threshold, color='red', linestyle=':', linewidth=1, alpha=0.3)
     axes[2].set_xlabel('Iteration', fontsize=12)
     axes[2].set_ylabel('Energy Difference (a.u.)', fontsize=12)
-    axes[2].set_title('Cholesky - Mixed (small differences only)', fontsize=14, fontweight='bold')
+    title_3 = 'Cholesky - Mixed (filtered)' if threshold else 'Cholesky - Mixed'
+    axes[2].set_title(title_3, fontsize=14, fontweight='bold')
     axes[2].legend(fontsize=11, loc='best')
     axes[2].grid(True, alpha=0.3)
     if len(diff_3) > 0:
@@ -199,18 +213,12 @@ def plot_energy_differences_between_methods(json_file="results/pno/pno_results.j
     plt.tight_layout()
 
     plot_file = os.path.join(plots_dir, 'pno_energy_differences_between_methods.png')
+    if threshold is not None:
+        plot_file = os.path.join(plots_dir, 'pno_energy_differences_between_methods_threshold.png')
     plt.savefig(plot_file, dpi=150, bbox_inches='tight')
     plt.close()
 
     print(f"✓ Energy differences plot saved to: {plot_file}")
-
-def filter_by_threshold(iterations, differences, threshold):
-    mask = np.abs(differences) <= threshold
-    filtered_iterations = iterations[mask]
-    filtered_differences = differences[mask]
-    removed_count = np.sum(~mask)
-    return filtered_iterations, filtered_differences, removed_count
-
     return plot_file
 
 

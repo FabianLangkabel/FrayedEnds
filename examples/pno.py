@@ -1,9 +1,8 @@
 from time import time
-
+import gc
 
 import numpy as np
 import tequila as tq
-from pyscf import fci
 import pno_utils
 import frayedends
 
@@ -67,12 +66,28 @@ def run_calculation(ortho_method, config):
             T = integrals.compute_kinetic_integrals(current_orbitals)
             V = integrals.compute_potential_integrals(current_orbitals, Vnuc)
 
-            # FCI
-            e, fcivec = fci.direct_spin1.kernel(T + V, G.elems, o + 1, n_electrons)
+            # VQE with SPA ansatz
+            vqe_start = time()
+            mol = tq.Molecule(geometry=geom, units="angstrom",
+                            one_body_integrals=T + V,
+                            two_body_integrals=G,
+                            nuclear_repulsion=nuc_repulsion)
+
+            edges = madpno.get_spa_edges()
+            U = mol.make_ansatz(name="SPA", edges=edges)
+            H = mol.make_hamiltonian()
+            E_vqe = tq.ExpectationValue(U, H)
+            result = tq.minimize(E_vqe, silent=True)
+            vqe_end = time()
+
+            print(f"VQE time: {vqe_end - vqe_start:.2f} seconds")
+
+            e = result.energy
             print(f"Energy: {e:+2.8f}")
             energies.append(e)
 
-            rdm1, rdm2 = fci.direct_spin1.make_rdm12(fcivec, o + 1, n_electrons)
+            # Compute RDMs from VQE result
+            rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables)
             rdm2 = np.swapaxes(rdm2, 1, 2)
 
             print("Orbital occupations:")
@@ -95,6 +110,8 @@ def run_calculation(ortho_method, config):
     del madpno
     del Vnuc
     del all_orbitals
+    del current_orbitals
+    gc.collect()
 
     true_end = time()
     print(f"\nTotal time for {ortho_method}: {true_end - true_start:.2f}s")
@@ -109,9 +126,9 @@ if __name__ == '__main__':
 
     # Configuration
     config = {
-        "geometry": "H 0.0 0.0 -0.8\\nH 0.0 0.0 0.8\\nH 0.0 0.0 -1.4\\nH 0.0 0.0 1.4",
+        "geometry": "H 0.0 0.0 -1.2\\nH 0.0 0.0 -0.4\\nH 0.0 0.0 0.4\\nH 0.0 0.0 1.2",
         "n_orbitals": 6,
-        "units": "angstrom"
+        "units": "angstrom",
     }
 
 
