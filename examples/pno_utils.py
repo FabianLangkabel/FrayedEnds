@@ -222,6 +222,136 @@ def plot_energy_differences_between_methods(json_file="results/pno/pno_results.j
     return plot_file
 
 
+def plot_all_experiments(json_dir="results/pno/jsons"):
+    json_path = os.path.join(os.path.dirname(__file__), json_dir)
+
+    if not os.path.exists(json_path):
+        print(f"Error: Directory not found at {json_path}")
+        return
+
+    json_files = [f for f in os.listdir(json_path) if f.endswith('.json')]
+
+    if not json_files:
+        print(f"Error: No JSON files found in {json_path}")
+        return
+
+    plots_dir = os.path.join(json_path, 'plots')
+    os.makedirs(plots_dir, exist_ok=True)
+
+    colors = {'symmetric': 'blue', 'cholesky': 'green', 'mixed': 'red'}
+    markers = {'symmetric': 's', 'cholesky': '^', 'mixed': 'o'}
+
+    for json_file in json_files:
+        exp_name = json_file.replace('pno_results_', '').replace('.json', '')
+
+        with open(os.path.join(json_path, json_file), 'r') as f:
+            data = json.load(f)
+
+        methods_data = {}
+        for method_name, method_data in data['methods'].items():
+            methods_data[method_name] = method_data['energies']
+
+        plt.figure(figsize=(12, 8))
+        for method_name, energies in methods_data.items():
+            color = colors.get(method_name, 'black')
+            marker = markers.get(method_name, 'x')
+            plt.plot(range(len(energies)), energies,
+                     marker=marker, color=color, linewidth=2, markersize=6,
+                     label=method_name.capitalize())
+
+        plt.xlabel('Iteration', fontsize=14)
+        plt.ylabel('Energy (a.u.)', fontsize=14)
+        plt.title(f'PNO Energy Convergence - {exp_name}', fontsize=16, fontweight='bold')
+        plt.legend(fontsize=12, loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+
+        plot_file = os.path.join(plots_dir, f'convergence_{exp_name}.png')
+        plt.savefig(plot_file, dpi=150, bbox_inches='tight')
+        plt.close()
+
+        print(f"✓ Convergence plot saved: {plot_file}")
+
+    fig, axes = plt.subplots(len(json_files), 1, figsize=(14, 5 * len(json_files)))
+    if len(json_files) == 1:
+        axes = [axes]
+
+    for idx, json_file in enumerate(json_files):
+        exp_name = json_file.replace('pno_results_', '').replace('.json', '')
+
+        with open(os.path.join(json_path, json_file), 'r') as f:
+            data = json.load(f)
+
+        methods_energies = {}
+        for method_name, method_data in data['methods'].items():
+            methods_energies[method_name] = np.array(method_data['energies'])
+
+        required_methods = ['symmetric', 'cholesky', 'mixed']
+        min_length = min(len(methods_energies[m]) for m in required_methods if m in methods_energies)
+        for method in required_methods:
+            if method in methods_energies:
+                methods_energies[method] = methods_energies[method][:min_length]
+
+        iterations = np.arange(min_length)
+        diff_cholesky_symmetric = methods_energies['cholesky'] - methods_energies['symmetric']
+        diff_mixed_symmetric = methods_energies['mixed'] - methods_energies['symmetric']
+
+        axes[idx].plot(iterations, diff_cholesky_symmetric,
+                      marker='o', color='green', linewidth=2, markersize=4,
+                      label='Cholesky - Symmetric')
+        axes[idx].plot(iterations, diff_mixed_symmetric,
+                      marker='s', color='red', linewidth=2, markersize=4,
+                      label='Mixed - Symmetric')
+        axes[idx].axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+        axes[idx].set_xlabel('Iteration', fontsize=12)
+        axes[idx].set_ylabel('Energy Difference (a.u.)', fontsize=12)
+        axes[idx].set_title(f'{exp_name}', fontsize=14, fontweight='bold')
+        axes[idx].legend(fontsize=10, loc='best')
+        axes[idx].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    plot_file = os.path.join(plots_dir, 'all_experiments_differences.png')
+    plt.savefig(plot_file, dpi=150, bbox_inches='tight')
+    plt.close()
+
+    print(f"✓ All experiments differences plot saved: {plot_file}")
+
+    fig, axes = plt.subplots(len(json_files), 1, figsize=(14, 5 * len(json_files)))
+    if len(json_files) == 1:
+        axes = [axes]
+
+    for idx, json_file in enumerate(json_files):
+        exp_name = json_file.replace('pno_results_', '').replace('.json', '')
+
+        with open(os.path.join(json_path, json_file), 'r') as f:
+            data = json.load(f)
+
+        methods_data = {}
+        for method_name, method_data in data['methods'].items():
+            methods_data[method_name] = method_data['energies']
+
+        for method_name, energies in methods_data.items():
+            color = colors.get(method_name, 'black')
+            marker = markers.get(method_name, 'x')
+            axes[idx].plot(range(len(energies)), energies,
+                         marker=marker, color=color, linewidth=2, markersize=4,
+                         label=method_name.capitalize())
+
+        axes[idx].set_xlabel('Iteration', fontsize=12)
+        axes[idx].set_ylabel('Energy (a.u.)', fontsize=12)
+        axes[idx].set_title(f'{exp_name}', fontsize=14, fontweight='bold')
+        axes[idx].legend(fontsize=10, loc='best')
+        axes[idx].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    plot_file = os.path.join(plots_dir, 'all_experiments_convergence.png')
+    plt.savefig(plot_file, dpi=150, bbox_inches='tight')
+    plt.close()
+
+    print(f"✓ All experiments convergence plot saved: {plot_file}")
+
+
 if __name__ == '__main__':
-    plot_pno_results_from_json()
-    plot_energy_differences_between_methods()
+    plot_all_experiments()
