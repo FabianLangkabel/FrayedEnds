@@ -3,11 +3,13 @@ H4 linear molecule FCI calculation with Orbital Refinement
 NWChem molecular orbitals used as initial guesses
 """
 
-import frayedends as fe
-import time
 import subprocess as sp
+import time
+
 import numpy as np
 from pyscf import fci
+
+import frayedends as fe
 
 # Parameter Configuration
 molecule_name = "h4"
@@ -16,8 +18,8 @@ iterations = 10  # Number of iterations
 box_size = 50.0  # Size of the simulation box
 wavelet_order = 7  # Order of wavelet basis functions
 madness_thresh = 0.0001  # Threshold for numerical precision of function representation
-econv = 1.e-6  # Energy convergence threshold
-basisset = '6-31g'  # Initial basis set for calculation
+econv = 1.0e-6  # Energy convergence threshold
+basisset = "6-31g"  # Initial basis set for calculation
 
 iteration_results = []
 
@@ -34,7 +36,8 @@ true_start = time.perf_counter()
 
 # Create NWChem Input file
 # Defines a linear H4 molecule geometry with 1.0 Angstrom spacing between adjacent atoms
-nwchem_input = '''
+nwchem_input = (
+    """
 title "molecule"
 memory stack 1500 mb heap 100 mb global 1400 mb
 charge 0  
@@ -45,18 +48,26 @@ geometry units angstrom noautosym nocenter
     H 0.0 0.0 1.5
 end
 basis  
-  * library ''' + basisset + '''
+  * library """
+    + basisset
+    + """
 end
 scf  
  maxiter 200
 end   
 task scf  
-'''
+"""
+)
 
 # Run NWchem calculations
 with open("nwchem", "w") as f:
     f.write(nwchem_input)
-programm = sp.call("/opt/anaconda3/envs/frayedends/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
+programm = sp.call(
+    "/opt/anaconda3/envs/frayedends/bin/nwchem nwchem",
+    stdout=open("nwchem.out", "w"),
+    stderr=open("nwchem_err.log", "w"),
+    shell=True,
+)
 
 # Setting up the numerical environment for the MRA calculations
 world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
@@ -71,7 +82,7 @@ nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 n_orbitals = len(orbs)
 
 for i in range(n_orbitals):
-    orbs[i].type="active"
+    orbs[i].type = "active"
 
 for i in range(n_orbitals):
     world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot guess orbitals
@@ -81,19 +92,17 @@ for iteration in range(iterations):
     iter_start = time.perf_counter()
 
     integrals = fe.Integrals3D(world)  # Setup for integrals
-    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems # g-tensor (electron-electron interaction)
+    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
     T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
     V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
 
     # Full Configuration Interaction (FCI) calculation
-    e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals,
-                                        n_electrons)  # Compute the energy and the FCI vector
+    e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals, n_electrons)  # Compute the energy and the FCI vector
     # Calculate reduced density matrices needed for orbital refinement
-    rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, n_orbitals,
-                                             n_electrons)  # Compute the 1- and 2- body rdms
-    rdm2 = np.swapaxes(rdm2, 1, 2) # Change to physics notation
+    rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, n_orbitals, n_electrons)  # Compute the 1- and 2- body rdms
+    rdm2 = np.swapaxes(rdm2, 1, 2)  # Change to physics notation
 
-    e_tot = e + nuclear_repulsion_energy # Computes total energy
+    e_tot = e + nuclear_repulsion_energy  # Computes total energy
 
     print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 

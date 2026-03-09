@@ -1,12 +1,11 @@
-from tequila.quantumchemistry import NBodyTensor
 import numpy as np
+from tequila.quantumchemistry import NBodyTensor
 
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
 
 
 class Integrals3D:
-
     impl = None
 
     def __init__(self, madworld, *args, **kwargs):
@@ -22,9 +21,7 @@ class Integrals3D:
         coulomb_eps=1e-6,
         nocc=2,
     ):
-        g_elems = self.impl.compute_two_body_integrals(
-            orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc
-        )
+        g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
             return g.reorder(to=ordering)
@@ -56,12 +53,8 @@ class Integrals3D:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
 
-    def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs
-    ):
-        return self.normalize(
-            self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs)
-        )
+    def orthonormalize(self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs):
+        return self.normalize(self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs))
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
@@ -81,15 +74,8 @@ class Integrals3D:
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
 
-    def compute_nuclear_derivative(
-        self,
-        molecule,
-    ):
-        pass
-
 
 class Integrals2D:
-
     impl = None
 
     def __init__(self, madworld, *args, **kwargs):
@@ -104,9 +90,7 @@ class Integrals2D:
         coulomb_eps=1e-6,
         nocc=2,
     ):
-        g_elems = self.impl.compute_two_body_integrals(
-            orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc
-        )
+        g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
             return g.reorder(to=ordering)
@@ -137,12 +121,8 @@ class Integrals2D:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
 
-    def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs
-    ):
-        return self.normalize(
-            self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs)
-        )
+    def orthonormalize(self, orbitals, method="symmetric", rr_thresh=0.0, *args, **kwargs):
+        return self.normalize(self.impl.orthonormalize(orbitals, method, rr_thresh, *args, **kwargs))
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
@@ -161,9 +141,3 @@ class Integrals2D:
         val = values[::-1]  # reverse the order of eigenvalues
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
-
-    def compute_nuclear_derivative(
-        self,
-        molecule,
-    ):
-        pass

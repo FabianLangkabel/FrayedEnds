@@ -1,5 +1,4 @@
-from ._frayedends_impl import (CoulombPotentialFromChargeDensity, SavedFct2D,
-                               SavedFct3D)
+from ._frayedends_impl import CoulombPotentialFromChargeDensity, SavedFct2D, SavedFct3D
 from .eigensolver import Eigensolver2D, Eigensolver3D
 from .integrals import Integrals2D, Integrals3D
 from .madpno import MadPNO

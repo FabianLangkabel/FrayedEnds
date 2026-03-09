@@ -8,7 +8,6 @@ from .madworld import get_function_info, redirect_output
 
 
 class MadPNO:
-
     _orbitals = None
     _h = None  # one-body tensor
     _g = None  # two-body tensor
@@ -41,31 +40,6 @@ class MadPNO:
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")
 
-        # check if geometry is given as a file
-        # if not write the file
-        if not os.path.exists(geometry):
-            self.create_molecule_file(geometry=geometry)
-            geometry = "molecule"
-
-        if units is None:
-            if self.silent == False:
-                print(
-                    "Warning: No units passed with geometry, assuming units are angstrom."
-                )
-            units = "angstrom"
-        else:
-            units = units.lower()
-            if units in ["angstrom", "ang", "a", "å"]:
-                units = "angstrom"
-            elif units in ["bohr", "atomic units", "au", "a.u."]:
-                units = "bohr"
-            else:
-                if self.silent == False:
-                    print(
-                        "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
-                    )
-                units = "angstrom"
-
         if maxrank is None:
             # safe option, with this we always compute enough pnos
             maxrank = n_orbitals
@@ -73,12 +47,41 @@ class MadPNO:
             try:
                 from tequila.quantumchemistry import ParametersQC
 
-                ne = ParametersQC(geometry=geometry, units=units).n_electrons
-                np = ne // 2
-                maxrank = int(numpy.ceil(n_orbitals / np))
+                params = ParametersQC(geometry=geometry, units=units)
+                n_tot_e = params.total_n_electrons
+                if frozen_core:
+                    n_act_e = params.total_n_electrons - params.get_number_of_core_electrons()
+                else:
+                    n_act_e = params.total_n_electrons
+                n_hf_orbs = n_tot_e // 2
+                n_act_pairs = n_act_e // 2
+                maxrank = int(numpy.ceil((n_orbitals - n_hf_orbs) / n_act_pairs))
 
             except Exception:
                 maxrank = n_orbitals
+
+        # check if geometry is given as a file
+        # if not write the file
+        if not os.path.exists(geometry):
+            self.create_molecule_file(geometry=geometry)
+            geometry = "molecule"
+
+        if units is None:
+            if not self.silent:
+                print("Warning: No units passed with geometry, assuming units are angstrom.")
+            units = "angstrom"
+        else:
+            units = units.lower()
+            if units in ["angstrom", "ang", "a", "å"]:
+                units = "angstrom"
+            elif units in ["bohr", "atomic", "atomic units", "au", "a.u."]:
+                units = "bohr"
+            else:
+                if not self.silent:
+                    print(
+                        "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
+                    )
+                units = "angstrom"
 
         pno_input_string = self.parameter_string(
             madworld,
@@ -93,9 +96,7 @@ class MadPNO:
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
-            self._orbitals = self.compute_orbitals(
-                n_orbitals=n_orbitals, *args, **kwargs
-            )
+            self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
@@ -123,11 +124,7 @@ class MadPNO:
             orbitals = self.get_orbitals()
             info = get_function_info(orbitals)
             # indices of hf orbitals that are frozen and
-            occf = [
-                k
-                for k, x in enumerate(info)
-                if numpy.isclose(float(x["occ"]), 2.0) and "frozen" in x["type"]
-            ]
+            occf = [k for k, x in enumerate(info) if numpy.isclose(float(x["occ"]), 2.0) and "frozen" in x["type"]]
             # compute offset
             nof = len(occf)
             if nof == 0:
@@ -251,9 +248,7 @@ class MadPNO:
         molecule_file_str = "molecule\n"
         molecule_file_str += geometry
         molecule_file_str += "\nend"
-        molecule_file_str = os.linesep.join(
-            [s for s in molecule_file_str.splitlines() if s]
-        )
+        molecule_file_str = os.linesep.join([s for s in molecule_file_str.splitlines() if s])
         f = open(filename, "w")
         f.write(molecule_file_str)
         f.close()

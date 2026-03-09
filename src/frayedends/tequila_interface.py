@@ -90,9 +90,7 @@ class TequilaInterface:
             oo_options = {"silent": True}
             if "oo_options" in kwargs:
                 oo_options = {**oo_options, **kwargs["oo_options"]}
-            opt = tq.quantumchemistry.optimize_orbitals(
-                molecule=self.mol, circuit=U, use_hcb=use_hcb, **oo_options
-            )
+            opt = tq.quantumchemistry.optimize_orbitals(molecule=self.mol, circuit=U, use_hcb=use_hcb, **oo_options)
             if "hcb" in method:
                 H = opt.molecule.make_hardcore_boson_hamiltonian()
             else:
@@ -103,15 +101,11 @@ class TequilaInterface:
         optimizer_arguments_default = {"silent": True, "initial_values": "near_zero"}
         optimizer_arguments = {**optimizer_arguments_default, **optimizer_arguments}
         result = tq.minimize(E, **optimizer_arguments)
-        rdm1, rdm2 = self.mol.compute_rdms(
-            U=U, use_hcb=use_hcb, variables=result.variables
-        )
+        rdm1, rdm2 = self.mol.compute_rdms(U=U, use_hcb=use_hcb, variables=result.variables)
         energy = result.energy
 
         if trafo is not None:
-            raise Exception(
-                "orbital optimization not yet supported: need to re-transform the rdms"
-            )
+            raise Exception("orbital optimization not yet supported: need to re-transform the rdms")
 
         return rdm1, rdm2, energy
 
