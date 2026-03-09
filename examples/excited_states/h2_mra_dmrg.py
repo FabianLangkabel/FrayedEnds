@@ -15,12 +15,12 @@ import frayedends as fe
 molecule_name = "h2"
 distance = 1.0  # Distance between the two hydrogen atoms in Angstrom
 n_elec = 2  # Number of electrons
-number_roots = 3 # Number of states (groundstate, 1. excited state, 2. excited state)
+number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
 iterations = 6  # Number of iterations
-box_size = 50.0 # Size of the simulation box
-wavelet_order = 7 # Order of wavelet basis functions
-madness_thresh = 0.0001 # Threshold for numerical precision of function representation
-basisset = "6-31g" # Initial basis set for calculation
+box_size = 50.0  # Size of the simulation box
+wavelet_order = 7  # Order of wavelet basis functions
+madness_thresh = 0.0001  # Threshold for numerical precision of function representation
+basisset = "6-31g"  # Initial basis set for calculation
 
 iteration_results = []
 
@@ -93,10 +93,10 @@ for i in range(n_orbitals):
 
 # Calculate initial integrals
 integrals = fe.Integrals3D(world)
-G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems # g-tensor (electron-electron interaction)
-T = integrals.compute_kinetic_integrals(orbs) # Kinetic energy
-V = integrals.compute_potential_integrals(orbs, Vnuc) # Potential energy
-S = integrals.compute_overlap_integrals(orbs) # Overlap
+G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
+T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
+V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
+S = integrals.compute_overlap_integrals(orbs)  # Overlap
 
 # Performe State Average (SA) DMRG calculation and extract rdms
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
@@ -108,8 +108,10 @@ print("State-averaged MPS energies = [%s]" % " ".join("%20.15f" % x for x in ene
 
 # Extract rdms
 kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
-sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0) # Compute the state average 1-body rdm
-sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2) # Compute the state average 2-body rdm
+sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
+sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+    0, 3, 1, 2
+)  # Compute the state average 2-body rdm
 print(
     "Energy from SA-pdms = %20.15f"
     % (np.einsum("ij,ij->", sa_1pdm, T + V) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy)
@@ -130,10 +132,10 @@ for iter in range(iterations):
         world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals
 
     # DMRG calculation with the refined orbitals
-    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems # g-tensor (electron-electron interaction)
+    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
     T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
-    V = integrals.compute_potential_integrals(orbs, Vnuc)   # Potential energy
-    S = integrals.compute_overlap_integrals(orbs) # Overlap
+    V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
+    S = integrals.compute_overlap_integrals(orbs)  # Overlap
 
     driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
     driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
@@ -144,8 +146,10 @@ for iter in range(iterations):
     np.savetxt("energies_it_" + str(iter) + ".txt", energies)
 
     kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
-    sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0) # Compute the state average 1-body rdm
-    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2) # Compute the state average 2-body rdm
+    sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
+    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+        0, 3, 1, 2
+    )  # Compute the state average 2-body rdm
     print(
         "Energy from SA-pdms = %20.15f"
         % (np.einsum("ij,ij->", sa_1pdm, T + V) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy)
