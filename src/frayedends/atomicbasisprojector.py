@@ -1,6 +1,6 @@
 import os
 
-from ._frayedends_impl import MinBasProjector
+from ._frayedends_impl import AtomBasProjector
 from .madworld import redirect_output
 
 
@@ -55,7 +55,7 @@ class AtomicBasisProjector:
         )
         print(input_string)
 
-        self.impl = MinBasProjector(madworld.impl, input_string)
+        self.impl = AtomBasProjector(madworld.impl, input_string, aobasis)
 
         self.impl.run()
         orbitals = self.impl.get_atomic_basis()
@@ -71,8 +71,11 @@ class AtomicBasisProjector:
     def get_nuclear_potential(self):
         return self.impl.get_nuclear_potential()
 
+    def get_orbitals(self):
+        return self.orbitals
+    
     def parameter_string(
-        self, madworld, molecule_file, units, aobasis="sto-3g", **kwargs
+        self, madworld, molecule_file, units, aobasis, **kwargs
     ) -> str:
         data = {}
 
@@ -84,7 +87,7 @@ class AtomicBasisProjector:
             "dconv": 5.0e-4,
             "localize": "boys",
             "ncf": "( none , 1.0 )",
-            "aobasis": "sto-3g",
+            "aobasis": aobasis,
         }
 
         if units == "bohr":

@@ -5,7 +5,7 @@ from .eigensolver import Eigensolver2D, Eigensolver3D
 from .integrals import Integrals2D, Integrals3D
 from .madpno import MadPNO
 from .madworld import MadWorld2D, MadWorld3D
-from .minbas import AtomicBasisProjector
+from .atomicbasisprojector import AtomicBasisProjector
 from .moleculargeometry import MolecularGeometry
 from .optimization import Optimization2D, Optimization3D
 from .pyscf_interface import HAS_PYSCF

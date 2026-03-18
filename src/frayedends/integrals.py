@@ -73,7 +73,7 @@ class Integrals3D:
         return self.impl.normalize(orbitals, *args, **kwargs)
 
     def transform(self, orbitals, matrix, *args, **kwargs):
-        return self.impl.transform(orbitals, matrix)
+        return self.impl.transform(orbitals, matrix) #transforms orbitals according to: new[i] = sum[j] old[j]*matrix[j,i]
     
     def transform_to_natural_orbitals(self, orbitals, rdm1):
         values, vectors = np.linalg.eigh(rdm1) # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)

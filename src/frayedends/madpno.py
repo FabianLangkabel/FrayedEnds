@@ -280,6 +280,5 @@ class MadPNO:
             for file in glob.glob(pattern):
                 try:
                     os.remove(file)
-                    print(f"Deleted: {file}")
                 except OSError as e:
                     print(f"Error deleting {file}: {e}")

@@ -21,20 +21,19 @@
 using namespace madness;
 namespace nb = nanobind;
 
-class MinBasProjector {
+class AtomBasProjector {
   public:
-    MinBasProjector(MadnessProcess<3>& mp, std::string argv) : madness_process(mp) {
+    AtomBasProjector(MadnessProcess<3>& mp, std::string argv, std::string basisname) : madness_process(mp), basisname(basisname) {
         auto [argc, charArray] = stringToCharPointerArray(argv);
         parser = commandlineparser(argc, charArray);
         freeCharPointerArray(charArray, argc);
     }
-    ~MinBasProjector() { atomicbasis.clear(); }
+    ~AtomBasProjector() { atomicbasis.clear(); }
 
     void run() {
         SCF calc(*(madness_process.world), parser);
-        calc.reset_aobasis("sto-3g");
+        calc.reset_aobasis(basisname);
         atomicbasis = calc.project_ao_basis(*(madness_process.world), calc.aobasis);
-        basisname = "sto-3g";
         nuclear_repulsion = calc.molecule.nuclear_repulsion_energy();
         calc.make_nuclear_potential(*(madness_process.world));
         Vnuc = calc.potentialmanager->vnuclear();

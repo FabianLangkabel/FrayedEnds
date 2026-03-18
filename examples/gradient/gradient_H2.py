@@ -6,12 +6,12 @@ from pyscf import fci
 
 import frayedends as fe
 
-world = fe.MadWorld3D()
+world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [1.417 + 0.02 * i for i in range(1)]
+distance_list = [0.76+ 0.01 * i for i in range(1)]
 Energy_list = []
 Gradient_list = []
-n_orbitals = 6
+n_orbitals = 2
 n_electrons = 2  # Number of electrons
 
 for distance in distance_list:
@@ -21,7 +21,7 @@ for distance in distance_list:
     molecule = fe.MolecularGeometry(units="bohr")
     molecule.add_atom(0.0, 0.0, 0.0, "H")
     molecule.add_atom(0.0, 0.0, distance, "H")
-    madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals)
+    madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals, maxrank=1)
     orbitals = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
@@ -30,6 +30,8 @@ for distance in distance_list:
     integrals = fe.Integrals3D(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
 
+    for i in range(len(orbitals)):
+        world.cube_plot(f"pno{i}_d{distance}", orbitals[i], molecule, zoom=5.0, datapoints=81)
     c = nuc_repulsion
     current = 0.0
     print("Distance: ", distance)
@@ -63,8 +65,9 @@ for distance in distance_list:
             opti.get_c()
         )  # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 
-        for i in range(len(orbitals)):
-            world.line_plot(f"orb{i}.dat", orbitals[i])
+    for i in range(len(orbitals)):
+        world.cube_plot(f"orb{i}_d{distance}", orbitals[i], molecule, zoom=5.0, datapoints=81)
+    
     Energy_list.append(e + c)
     # gradient calculation
     part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)

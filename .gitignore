@@ -4,3 +4,5 @@
 /.idea
 *.pyc
 .DS_Store
+*.log
+*.dat
