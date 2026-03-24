@@ -3,30 +3,17 @@ from pno import run_calculation
 import pno_utils
 
 EXPERIMENTS = {
-    "H2_chain_short": {
-        "geometry": "H 0.0 0.0 -0.4\nH 0.0 0.0 0.4\nH 0.0 0.0 -0.8\nH 0.0 0.0 0.8",
-        "n_orbitals": 6,
-        "units": "angstrom"
-    },
-    "H2_chain_medium": {
+    "H2_chain_medium_lowest_degeneracy_tol": {
         "geometry": "H 0.0 0.0 -0.8\nH 0.0 0.0 0.8\nH 0.0 0.0 -2.0\nH 0.0 0.0 2.0",
         "n_orbitals": 6,
-        "units": "angstrom"
+        "units": "angstrom",
+        "degeneracy_tol": 1,
     },
-    "H2_chain_long": {
-        "geometry": "H 0.0 0.0 -0.8\nH 0.0 0.0 0.8\nH 0.0 0.0 -3.8\nH 0.0 0.0 3.8",
-        "n_orbitals": 6,
-        "units": "angstrom"
-    },
-    "H4_linear": {
-        "geometry": "H 0.0 0.0 0.0\nH 0.0 0.0 1.0\nH 0.0 0.0 2.0\nH 0.0 0.0 3.0",
-        "n_orbitals": 6,
-        "units": "angstrom"
-    },
-    "H4_square": {
+    "H4_square_loweest__degeneracy_tol": {
         "geometry": "H 0.0 0.0 0.0\nH 1.5 0.0 0.0\nH 1.5 1.5 0.0\nH 0.0 1.5 0.0",
         "n_orbitals": 6,
-        "units": "angstrom"
+        "units": "angstrom",
+        "degeneracy_tol": 1e-2,
     },
 }
 

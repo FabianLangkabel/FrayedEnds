@@ -75,17 +75,6 @@ class Optimization3D:
         self._nuclear_repulsion = nuc_repulsion
 
     def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
-        """
-        Set the orthonormalization method for orbital optimization.
-
-        Args:
-            method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
-                   - "symmetric": Standard symmetric orthonormalization (default)
-                   - "cholesky": Cholesky decomposition orthonormalization
-                   - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
-            degeneracy_tol: Tolerance for determining if two orbital occupations
-                           are degenerate (only used for "mixed" method, default: 1e-6)
-        """
         self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
@@ -135,7 +124,6 @@ class Optimization3D:
     ):  # this is the sum of the energy of the frozen core electrons and the nuclear repulsion
         self._c = self.impl.get_c()
         return self._c
-
 
 class Optimization2D:
 

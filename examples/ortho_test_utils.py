@@ -1,6 +1,185 @@
 import os
 import numpy as np
 from matplotlib import pyplot as plt
+import json
+from datetime import datetime
+
+
+def save_energies_to_combined_json(energies_dict, output_dir, n_orbitals, max_iterations):
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Structure data
+    data = {
+        "timestamp": datetime.now().isoformat(),
+        "n_orbitals": n_orbitals,
+        "max_iterations": max_iterations,
+        "methods": {}
+    }
+
+    # Add data for each method
+    for method_name, energies in energies_dict.items():
+        method_data = {
+            "total_iterations": len(energies),
+            "orbitals": []
+        }
+
+        # Group energies by orbital
+        for orb_num in range(n_orbitals):
+            start_idx = orb_num * max_iterations
+            end_idx = start_idx + max_iterations
+
+            if end_idx <= len(energies):
+                orbital_energies = energies[start_idx:end_idx]
+                method_data["orbitals"].append({
+                    "orbital_number": orb_num + 1,
+                    "iterations": [
+                        {
+                            "iteration": i,
+                            "energy": float(e)
+                        }
+                        for i, e in enumerate(orbital_energies)
+                    ]
+                })
+
+        data["methods"][method_name] = method_data
+
+    # Save to single JSON file
+    json_file = os.path.join(output_dir, 'energies_all_methods.json')
+    with open(json_file, 'w') as f:
+        json.dump(data, f, indent=2)
+
+    print(f"✓ Saved all energies to: {json_file}")
+    return json_file
+
+
+def load_energies_from_combined_json(json_file):
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+
+    # Extract energies for each method
+    methods_data = {}
+
+    for method_name, method_data in data["methods"].items():
+        # Flatten energies back into a single list
+        energies = []
+        for orbital_data in method_data["orbitals"]:
+            for iteration_data in orbital_data["iterations"]:
+                energies.append(iteration_data["energy"])
+
+        methods_data[method_name] = energies
+
+    return {
+        "methods_energies": methods_data,
+        "n_orbitals": data["n_orbitals"],
+        "max_iterations": data["max_iterations"]
+    }
+
+
+def plot_energy_comparison_from_json(json_file, output_dir, title="Energy Convergence",
+                                     skip_first_iteration=True):
+    # Load all data from single JSON file
+    data = load_energies_from_combined_json(json_file)
+    methods_data = data["methods_energies"]
+    n_orbitals = data["n_orbitals"]
+    max_iterations = data["max_iterations"]
+
+    # Create plots subdirectory
+    plots_dir = os.path.join(output_dir, 'plots')
+    os.makedirs(plots_dir, exist_ok=True)
+
+    # Debug: Print energy counts
+    print(f"\n{'='*80}")
+    print("Energy data summary:")
+    for method_name, energies in methods_data.items():
+        expected_count = n_orbitals * max_iterations
+        print(f"  {method_name}: {len(energies)} energies (expected: {expected_count})")
+    print(f"{'='*80}\n")
+
+    markers = {'mixed': 'o', 'symmetric': 's', 'cholesky': '^'}
+    colors = {'mixed': 'red', 'symmetric': 'blue', 'cholesky': 'green'}
+
+    # Create a plot for each orbital number
+    for orb_num in range(n_orbitals):
+        plt.figure(figsize=(12, 7))
+
+        for method_name, energies in methods_data.items():
+            # Extract energies for this orbital
+            start_idx = orb_num * max_iterations
+            end_idx = start_idx + max_iterations
+
+            if end_idx <= len(energies):
+                orbital_energies = energies[start_idx:end_idx]
+
+                # Skip first iteration if requested
+                if skip_first_iteration and len(orbital_energies) > 1:
+                    orbital_energies = orbital_energies[1:]
+                    iteration_offset = 0
+                else:
+                    iteration_offset = 0
+
+                marker = markers.get(method_name.lower(), 'o')
+                color = colors.get(method_name.lower(), 'black')
+
+                # Plot with adjusted iteration numbers
+                iterations = list(range(iteration_offset, iteration_offset + len(orbital_energies)))
+                plt.plot(iterations, orbital_energies,
+                        marker=marker, linestyle='-', color=color,
+                        label=method_name.capitalize(), linewidth=2, markersize=8)
+            else:
+                print(f"⚠ Warning: Not enough data for {method_name}, orbital {orb_num + 1}")
+                print(f"  Expected index range [{start_idx}:{end_idx}], but only have {len(energies)} energies")
+
+        plt.xlabel('Iteration', fontsize=14)
+        plt.ylabel('Energy (a.u.)', fontsize=14)
+
+        if skip_first_iteration:
+            plt.title(f'{title} - {orb_num + 1} Orbital(s) (excluding 1st iteration)',
+                     fontsize=16, fontweight='bold')
+        else:
+            plt.title(f'{title} - {orb_num + 1} Orbital(s)', fontsize=16, fontweight='bold')
+
+        plt.legend(fontsize=12, loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+
+        # Save individual plot
+        plot_filename = f'energy_convergence_{orb_num + 1}_orbitals.png'
+        plt.savefig(os.path.join(plots_dir, plot_filename),
+                    dpi=150, bbox_inches='tight')
+        plt.close()
+
+        print(f"✓ Saved plot for {orb_num + 1} orbital(s): {plot_filename}")
+
+    # Also create an overview plot showing all orbitals together
+    plt.figure(figsize=(14, 8))
+
+    for method_name, energies in methods_data.items():
+        marker = markers.get(method_name.lower(), 'o')
+        color = colors.get(method_name.lower(), 'black')
+        plt.plot(energies, marker=marker, linestyle='-', color=color,
+                label=method_name.capitalize(), linewidth=2, markersize=6, alpha=0.7)
+
+    # Add vertical lines to mark orbital additions
+    for orb_num in range(1, n_orbitals):
+        plt.axvline(x=orb_num * max_iterations, color='gray', linestyle=':',
+                   linewidth=1, alpha=0.5)
+        plt.text(orb_num * max_iterations, plt.ylim()[0],
+                f' +Orb {orb_num + 1}', rotation=90,
+                verticalalignment='bottom', fontsize=9, alpha=0.7)
+
+    plt.xlabel('Total Iteration', fontsize=14)
+    plt.ylabel('Energy (a.u.)', fontsize=14)
+    plt.title(f'{title} - All Orbitals', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=12, loc='best')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(plots_dir, 'energy_convergence_all.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+
+    print(f"✓ Saved overview plot: energy_convergence_all.png")
+    print(f"✓ All plots saved to: {plots_dir}")
 
 
 def plot_potential(potential_func, output_path, n_points=201, x_range=(-5, 5), y_range=(-5, 5),
@@ -205,33 +384,6 @@ def plot_orbitals_before_after(orbitals_before, orbitals_after, world, iteration
     plt.close()
 
 
-def plot_energy_comparison(energies_dict, output_dir, title="Energy Convergence",
-                           vline_at=None, vline_label=None):
-    plt.figure(figsize=(12, 7))
-
-    markers = {'mixed': 'o', 'symmetric': 's', 'cholesky': '^'}
-
-    for method_name, energies in energies_dict.items():
-        marker = markers.get(method_name.lower(), 'o')
-        plt.plot(energies, marker=marker, linestyle='-',
-                label=method_name.capitalize(), linewidth=2, markersize=8)
-
-    if vline_at is not None:
-        plt.axvline(x=vline_at, color='red', linestyle='--', linewidth=2,
-                   label=vline_label or 'Event', alpha=0.7)
-
-    plt.xlabel('Iteration', fontsize=12)
-    plt.ylabel('Energy', fontsize=12)
-
-
-    plt.legend(fontsize=11, loc='best')
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-
-    plt.savefig(os.path.join(output_dir, 'energy_comparison.png'),
-                dpi=150, bbox_inches='tight')
-    plt.close()
-
 
 
 def log_iteration(iteration, energy, output_dir, method_name):
@@ -324,7 +476,7 @@ def check_potential_depth_warning(madopt_log_path='madopt.log'):
 
     if has_warning:
         print("\n" + "="*80)
-        print("⚠️  POTENTIAL DEPTH WARNING DETECTED ⚠️")
+        print("POTENTIAL DEPTH WARNING DETECTED")
         print("="*80)
         print("\nWarning messages found:")
         for warning in warning_lines:
@@ -333,4 +485,47 @@ def check_potential_depth_warning(madopt_log_path='madopt.log'):
 
     return has_warning, warning_lines
 
+
+def recreate_plots_from_json():
+    json_file = os.path.join(
+        os.path.dirname(__file__),
+        'results',
+        'single_gaussian_peak',
+        'energies_all_methods.json'
+    )
+
+    # Output directory (same as JSON file location)
+    output_dir = os.path.dirname(json_file)
+
+    # Check if JSON file exists
+    if not os.path.exists(json_file):
+        print(f"Error: JSON file not found at: {json_file}")
+
+    print(f"\n{'='*80}")
+    print("RECREATING PLOTS FROM JSON")
+    print(f"{'='*80}\n")
+
+    dir_name = os.path.basename(output_dir)
+    title_map = {
+        'single_gaussian_peak': 'Energy Convergence: Single Gaussian Peak Potential',
+        'three_gaussian_peaks': 'Energy Convergence: Three Gaussian Peaks Potential',
+        'helium_potential': 'Energy Convergence: Helium Potential'
+    }
+    title = title_map.get(dir_name, 'Energy Convergence')
+
+    # Create plots
+    plot_energy_comparison_from_json(
+        json_file,
+        output_dir,
+        title=title,
+        skip_first_iteration=True
+    )
+
+    print(f"\n{'='*80}")
+    print("PLOTS SUCCESSFULLY RECREATED")
+    print(f"{'='*80}\n")
+
+
+if __name__ == "__main__":
+    recreate_plots_from_json()
 

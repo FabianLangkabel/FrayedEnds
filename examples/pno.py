@@ -11,13 +11,12 @@ max_iterations = 10
 
 def run_calculation(ortho_method, config):
     true_start = time()
-    print(f"\n{'='*80}")
-    print(f"Method: {ortho_method.upper()}")
-    print(f"{'='*80}\n")
+    print(f"\nMethod: {ortho_method.upper()}")
 
     geom = config["geometry"].replace("\\n", "\n")
     n_orbitals_config = config["n_orbitals"]
     units = config["units"]
+    degeneracy_tol = config.get("degeneracy_tol", 1e-6)
 
     n_electrons = tq.quantumchemistry.ParametersQC(geometry=geom, units=units).total_n_electrons
 
@@ -25,7 +24,6 @@ def run_calculation(ortho_method, config):
 
     madpno = frayedends.MadPNO(world, geom, units=units, n_orbitals=n_orbitals_config)
     all_orbitals = madpno.get_orbitals()
-    print(frayedends.get_function_info(all_orbitals))
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
@@ -33,12 +31,10 @@ def run_calculation(ortho_method, config):
     integrals = frayedends.Integrals3D(world)
 
     energies = []
-    current = 0.0
     current_orbitals = []
 
     min_orbitals_needed = (n_electrons + 1) // 2
 
-    # For mixed method, set initial occupation numbers once from all_orbitals
     if ortho_method == "mixed":
         initial_info = frayedends.get_function_info(all_orbitals)
         for i, orb in enumerate(all_orbitals):
@@ -46,27 +42,20 @@ def run_calculation(ortho_method, config):
 
     for o in range(n_orbitals_config):
         current_orbitals.append(all_orbitals[o])
-        print(f"\n{'='*60}")
-        print(f"Orbital {o + 1} added! Total orbitals: {o + 1}")
-        print(f"{'='*60}")
+        print(f"Orbital {o + 1}/{n_orbitals_config}")
 
-
-        current_orbitals = integrals.orthonormalize(orbitals=current_orbitals, method=ortho_method)
+        current_orbitals = integrals.orthonormalize(orbitals=current_orbitals, method=ortho_method, degeneracy_tol=degeneracy_tol)
 
         if (o + 1) < min_orbitals_needed:
-            print(f"Skipping refinement: need at least {min_orbitals_needed} orbitals for {n_electrons} electrons")
             continue
 
         for iteration in range(max_iterations):
-            print(f"\n--- Iteration {iteration} ---")
-
             integrals = frayedends.Integrals3D(world)
             S = integrals.compute_overlap_integrals(current_orbitals)
             G = integrals.compute_two_body_integrals(current_orbitals, ordering='chem')
             T = integrals.compute_kinetic_integrals(current_orbitals)
             V = integrals.compute_potential_integrals(current_orbitals, Vnuc)
 
-            # VQE with SPA ansatz
             vqe_start = time()
             mol = tq.Molecule(geometry=geom, units="angstrom",
                             one_body_integrals=T + V,
@@ -74,25 +63,19 @@ def run_calculation(ortho_method, config):
                             nuclear_repulsion=nuc_repulsion)
 
             edges = madpno.get_spa_edges()
+
             U = mol.make_ansatz(name="SPA", edges=edges)
             H = mol.make_hamiltonian()
             E_vqe = tq.ExpectationValue(U, H)
             result = tq.minimize(E_vqe, silent=True)
             vqe_end = time()
 
-            print(f"VQE time: {vqe_end - vqe_start:.2f} seconds")
+            print(f"  Iteration {iteration}: E = {result.energy:+2.8f} (VQE: {vqe_end - vqe_start:.2f}s)")
 
             e = result.energy
-            print(f"Energy: {e:+2.8f}")
             energies.append(e)
 
-            # Compute RDMs from VQE result
             rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables)
-            rdm2 = np.swapaxes(rdm2, 1, 2)
-
-            print("Orbital occupations:")
-            for i in range(len(rdm1)):
-                print(f"  Orbital {i}: {rdm1[i,i]:.6e}")
 
             opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion=nuc_repulsion)
             opti.set_orthonormalization_method(ortho_method)
@@ -101,10 +84,6 @@ def run_calculation(ortho_method, config):
                 opt_thresh=0.001, occ_thresh=0.001
             )
 
-            if iteration > 0 and np.isclose(e, current, atol=1e-8, rtol=0.0):
-                print(f"\nConverged after {iteration + 1} iterations!")
-                break
-            current = e
 
     del integrals
     del madpno
@@ -114,7 +93,7 @@ def run_calculation(ortho_method, config):
     gc.collect()
 
     true_end = time()
-    print(f"\nTotal time for {ortho_method}: {true_end - true_start:.2f}s")
+    print(f"Total time: {true_end - true_start:.2f}s")
 
     return world, energies
 
@@ -129,6 +108,7 @@ if __name__ == '__main__':
         "geometry": "H 0.0 0.0 -1.2\\nH 0.0 0.0 -0.4\\nH 0.0 0.0 0.4\\nH 0.0 0.0 1.2",
         "n_orbitals": 6,
         "units": "angstrom",
+        "degeneracy_tol": 1e-6,
     }
 
 

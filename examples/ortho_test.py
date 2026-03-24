@@ -186,8 +186,8 @@ if __name__ == "__main__":
     print("PLOTTING POTENTIALS")
     print("="*80 + "\n")
 
-    test1 = False
-    test2 = True
+    test1 = True
+    test2 = False
     test3 = False
 
     # Test 1: Three Gaussian Peaks
@@ -236,11 +236,6 @@ if __name__ == "__main__":
             title='Energy Convergence: Three Gaussian Peaks Potential',
             skip_first_iteration=True
         )
-
-        # Generate comparison report
-        create_comparison_report(json_file, output_dir_three)
-        print_quick_comparison(json_file)
-
 
     # Test 2: Single Gaussian Peak
     if test2:

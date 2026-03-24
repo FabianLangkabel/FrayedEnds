@@ -286,18 +286,7 @@ if __name__ == "__main__":
     MAX_ITERATIONS_PER_RUN = 10
     BASE_RESULTS_DIR = os.path.join(os.path.dirname(__file__), 'results')
     test_configs = [
-        {
-            'name': 'Single Gaussian Peak',
-            'potential_func': potential_single_peak_4e,
-            'geometry': "H 0.0 0.0 0.0",
-            'ortho_methods': ['symmetric', 'cholesky', 'mixed']
-        },
-        {
-            'name': 'Three Gaussian Peaks',
-            'potential_func': potential_three_peaks_4e,
-            'geometry': "H 0.0 0.0 0.0\nH 1.0 0.0 0.0\nH 0.0 1.0 0.0",
-            'ortho_methods': ['symmetric', 'cholesky', 'mixed']
-        },
+
         {
             'name': 'Coulomb Potential',
             'potential_func': potential_coulomb_4e,
