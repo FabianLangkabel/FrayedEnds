@@ -11,6 +11,8 @@ world = fe.MadWorld3D()
 bp = AtomicBasisProjector(world, geom, units="bohr", aobasis="sto-3g")
 basis = bp.get_orbitals()
 
+mol=tq.Molecule(geom, units="bohr", basis_set="sto-3g")
+
 for i in range(len(basis)):
     world.cube_plot(f"atomic{i}", basis[i], fe.MolecularGeometry.from_tq_mol(mol), zoom=5)
 

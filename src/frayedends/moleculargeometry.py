@@ -103,7 +103,7 @@ class MolecularGeometry:
     def compute_energy_gradient(self, madworld, orbitals, rdm1, nocc=2):
         # function to compute the energy gradient w.r.t. nuclear coordinates
         # this function assumes that the Hellmann-Feynmann theorem holds, 
-        # i. e. that the partial derivate of the energy functional w.r.t. the orbitals or many-body wave function is zero
+        # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
         n_atoms = len(self.to_json()["symbols"])
         fr_core_orbs=[]
         act_orbs=[]
