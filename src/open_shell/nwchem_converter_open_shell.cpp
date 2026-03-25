@@ -38,7 +38,10 @@ void NWChem_Converter_open_shell::read_nwchem_file(std::string nwchem_file) {
     }
 
     auto molecule = madness::Molecule();
+    std::cout << "Read atom positions from " << nwchem_file << ":" << std::endl;
     for (auto atom : nwchem.atoms) {
+        std::cout << atom.symbol << " " << atom.position[0] << " " << atom.position[1] << " " << atom.position[2]
+                  << std::endl;
         molecule.add_atom(atom.position[0], atom.position[1], atom.position[2],
                           (double)symbol_to_atomic_number(atom.symbol), symbol_to_atomic_number(atom.symbol));
     }
@@ -57,6 +60,16 @@ void NWChem_Converter_open_shell::read_nwchem_file(std::string nwchem_file) {
     beta_mos = transform(*(madness_process.world), aos, nwchem.beta_MOs);
     truncate(*(madness_process.world), alpha_mos);
     truncate(*(madness_process.world), beta_mos);
+
+    std::cout << "Alpha MO norms:" << std::endl;
+    for (int i = 0; i < alpha_mos.size(); i++) {
+        std::cout << "alpha_mo[" << i << "] = " << alpha_mos[i].norm2() << std::endl;
+    }
+
+    std::cout << "Beta MO norms:" << std::endl;
+    for (int i = 0; i < beta_mos.size(); i++) {
+        std::cout << "beta_mo[" << i << "] = " << beta_mos[i].norm2() << std::endl;
+    }
 }
 
 std::vector<SavedFct<3>> NWChem_Converter_open_shell::get_normalized_aos() {

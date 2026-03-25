@@ -74,7 +74,7 @@ ENV MADNESS_DIR=/usr/local/madness
 COPY . /workspaces/MRA-OrbitalOptimization
 WORKDIR /workspaces/MRA-OrbitalOptimization
 
-RUN pip install -e .
+RUN CMAKE_BUILD_PARALLEL_LEVEL=2 pip install -e .
 
 RUN groupadd --gid 900 conda && \
     useradd -m -s /bin/bash -u 1000 -g conda ${USERNAME} && \
