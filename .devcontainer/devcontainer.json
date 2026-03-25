@@ -4,15 +4,15 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "settings": {
-    "terminal.integrated.defaultProfile.linux": "bash",
-    "python.defaultInterpreterPath": "/opt/conda/bin/python"
-  },
   "postCreateCommand": "",
   "remoteUser": "vscode",
   "features": {},
   "customizations": {
     "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/opt/conda/bin/python"
+      },
       "extensions": [
         "ms-python.python",
         "ms-toolsai.jupyter",
