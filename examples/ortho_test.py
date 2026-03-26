@@ -8,7 +8,6 @@ from pyscf import fci
 
 import frayedends
 import frayedends as fe
-from ortho_test_utils import *
 
 n_electrons = 2
 n_orbitals = 6
@@ -134,8 +133,6 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
 
             print(f"Energy: {e:+2.8f}")
             energies.append(e)
-            # Log this iteration
-            log_iteration(iteration, e, output_dir, ortho_method)
 
             print("Orbital occupations:")
             for i in range(len(rdm1)):
@@ -151,20 +148,10 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
                 opt_thresh=0.001, occ_thresh=0.001
             )
 
-            plot_orbitals_before_after(
-                integrals.transform_to_natural_orbitals(orbitals_before, rdm1)[0],
-                integrals.transform_to_natural_orbitals(current_orbitals, rdm1)[0],
-                world,
-                iteration,
-                output_dir,
-                method_name=ortho_method,
-                enable_zoom=True
-            )
             if early_stop and np.isclose(e, current, atol=econv, rtol=0.0):
                 print(f"\nConverged after {iteration+1} iterations!")
                 break
             current = e
-            check_potential_depth_warning('madopt.log')
 
     del all_orbitals
     del orbitals_before
@@ -175,166 +162,3 @@ def run_calculation(potential_func, geometry, output_dir, ortho_method="mixed", 
     del factory
 
     return energies, world
-
-
-if __name__ == "__main__":
-    # Plot the potentials for visualization
-    results_dir = os.path.join(os.path.dirname(__file__), 'results')
-    os.makedirs(results_dir, exist_ok=True)
-
-    print("\n" + "="*80)
-    print("PLOTTING POTENTIALS")
-    print("="*80 + "\n")
-
-    test1 = True
-    test2 = False
-    test3 = False
-
-    # Test 1: Three Gaussian Peaks
-    if test1:
-        print("\n" + "="*80)
-        print("TEST 1: THREE GAUSSIAN PEAKS POTENTIAL")
-        print("="*80)
-
-        output_dir_three = os.path.join(os.path.dirname(__file__), 'results', 'three_gaussian_peaks')
-        os.makedirs(output_dir_three, exist_ok=True)
-
-        plot_potential(potential_three_peaks,
-                       os.path.join(output_dir_three, 'potential_three_peaks.png'),
-                       n_points=201, x_range=(-6, 6), y_range=(-6, 6),
-                       title='Three Gaussian Peaks Potential')
-
-        geometry = "H 0.0 0.0 0.0\nH 1.0 0.0 0.0\nH 0.0 1.0 0.0"
-
-        # Run calculations
-        energies_symmetric_three, world1 = run_calculation(potential_three_peaks, geometry, output_dir_three, ortho_method="symmetric")
-        del world1
-
-        energies_cholesky_three, world2 = run_calculation(potential_three_peaks, geometry, output_dir_three, ortho_method="cholesky")
-        del world2
-
-        energies_mixed_three, world3 = run_calculation(potential_three_peaks, geometry, output_dir_three, ortho_method="mixed")
-        del world3
-
-        # Save all energies to combined JSON file
-        save_energies_to_combined_json(
-            {
-                'symmetric': energies_symmetric_three,
-                'cholesky': energies_cholesky_three,
-                'mixed': energies_mixed_three
-            },
-            output_dir_three,
-            n_orbitals,
-            max_iterations
-        )
-
-        # Create plots from combined JSON file
-        json_file = os.path.join(output_dir_three, 'energies_all_methods.json')
-        plot_energy_comparison_from_json(
-            json_file,
-            output_dir_three,
-            title='Energy Convergence: Three Gaussian Peaks Potential',
-            skip_first_iteration=True
-        )
-
-    # Test 2: Single Gaussian Peak
-    if test2:
-        print("\n" + "="*80)
-        print("TEST 2: SINGLE GAUSSIAN PEAK POTENTIAL")
-        print("="*80)
-
-        output_dir_single = os.path.join(os.path.dirname(__file__), 'results', 'single_gaussian_peak')
-        os.makedirs(output_dir_single, exist_ok=True)
-
-        plot_potential(potential_single_peak,
-                       os.path.join(output_dir_single, 'potential_single_peak.png'),
-                       n_points=201, x_range=(-6, 6), y_range=(-6, 6),
-                       title='Single Gaussian Peak Potential')
-
-        geometry = "H 0.0 0.0 0.0"
-
-        # Run calculations
-        energies_symmetric_single, world4 = run_calculation(potential_single_peak, geometry, output_dir_single, ortho_method="symmetric")
-        del world4
-
-        energies_cholesky_single, world5 = run_calculation(potential_single_peak, geometry, output_dir_single, ortho_method="cholesky")
-        del world5
-
-        energies_mixed_single, world6 = run_calculation(potential_single_peak, geometry, output_dir_single, ortho_method="mixed")
-        del world6
-
-        # Save all energies to combined JSON file
-        save_energies_to_combined_json(
-            {
-                'symmetric': energies_symmetric_single,
-                'cholesky': energies_cholesky_single,
-                'mixed': energies_mixed_single
-            },
-            output_dir_single,
-            n_orbitals,
-            max_iterations
-        )
-
-        # Create plots from combined JSON file
-        json_file = os.path.join(output_dir_single, 'energies_all_methods.json')
-        plot_energy_comparison_from_json(
-            json_file,
-            output_dir_single,
-            title='Energy Convergence: Single Gaussian Peak Potential',
-            skip_first_iteration=True
-        )
-
-
-    # Test 3: Helium Potential
-    if test3:
-        print("\n" + "="*80)
-        print("TEST 3: HELIUM POTENTIAL")
-        print("="*80)
-
-        output_dir_helium = os.path.join(os.path.dirname(__file__), 'results', 'helium_potential')
-        os.makedirs(output_dir_helium, exist_ok=True)
-
-        plot_potential(potential_coulomb,
-                       os.path.join(output_dir_helium, 'potential_helium.png'),
-                       n_points=201, x_range=(-0.01, 0.01), y_range=(-0.01, 0.01),
-                       title='Helium-like Potential')
-
-        geometry = "He 0.0 0.0 0.0"
-
-        # Run calculations
-        energies_symmetric_helium, world7 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="symmetric")
-        del world7
-
-        energies_cholesky_helium, world8 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="cholesky")
-        del world8
-
-        energies_mixed_helium, world9 = run_calculation(potential_coulomb, geometry, output_dir_helium, ortho_method="mixed")
-        del world9
-
-        # Save all energies to combined JSON file
-        save_energies_to_combined_json(
-            {
-                'symmetric': energies_symmetric_helium,
-                'cholesky': energies_cholesky_helium,
-                'mixed': energies_mixed_helium
-            },
-            output_dir_helium,
-            n_orbitals,
-            max_iterations
-        )
-
-        # Create plots from combined JSON file
-        json_file = os.path.join(output_dir_helium, 'energies_all_methods.json')
-        plot_energy_comparison_from_json(
-            json_file,
-            output_dir_helium,
-            title='Energy Convergence: Helium Potential',
-            skip_first_iteration=True
-        )
-
-
-    print("\n" + "="*80)
-    print("ALL TESTS COMPLETED")
-    print("="*80)
-
-
