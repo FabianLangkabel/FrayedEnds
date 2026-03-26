@@ -3,7 +3,6 @@ import gc
 
 import numpy as np
 import tequila as tq
-import pno_utils
 import frayedends
 
 n_orbitals = 4
@@ -96,43 +95,3 @@ def run_calculation(ortho_method, config):
     print(f"Total time: {true_end - true_start:.2f}s")
 
     return world, energies
-
-
-if __name__ == '__main__':
-    print("\n" + "=" * 80)
-    print("PNO Test - Incremental Orbital Refinement")
-    print("=" * 80 + "\n")
-
-    # Configuration
-    config = {
-        "geometry": "H 0.0 0.0 -1.2\\nH 0.0 0.0 -0.4\\nH 0.0 0.0 0.4\\nH 0.0 0.0 1.2",
-        "n_orbitals": 6,
-        "units": "angstrom",
-        "degeneracy_tol": 1e-6,
-    }
-
-
-    world1, energies_symmetric = run_calculation("symmetric", config)
-    del world1
-
-    world2, energies_cholesky = run_calculation("cholesky", config)
-    del world2
-
-    world3, energies_mixed = run_calculation("mixed", config)
-    del world3
-
-
-    all_energies = {
-        "symmetric": energies_symmetric,
-        "cholesky": energies_cholesky,
-        "mixed": energies_mixed
-    }
-
-    pno_utils.save_pno_results_to_json(all_energies, config)
-    pno_utils.plot_pno_results_from_json()
-    pno_utils.plot_energy_differences_between_methods()
-
-    print("\n" + "=" * 80)
-    print("ALL TESTS COMPLETED")
-    print("=" * 80)
-
