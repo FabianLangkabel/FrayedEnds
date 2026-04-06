@@ -4,15 +4,29 @@ on:
   push:
     branches:
       - main
+      - devel
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          if [ "${GITHUB_REF}" == "refs/heads/devel"]; then
+            echo "SITE_URL=https://frayed-ends.github.io/FrayedEnds/dev" >> $GITHUB_ENV
+            echo "IS_DEV=true" >> $GITHUB_ENV
+          else
+            echo "SITE_URL=https://frayed-ends.github.io/FrayedEnds" >> $GITHUB_ENV
+            echo "IS_DEV=false" >> $GITHUB_ENV
+          fi  
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -41,8 +55,27 @@ jobs:
       - name: Add .nojekyll file
         run: touch docs/_site/.nojekyll
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: docs/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/devel')
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: docs/_site
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_site
+          destination_dir: ${{ github.ref == 'refs/heads/devel' && 'dev' || '' }}
