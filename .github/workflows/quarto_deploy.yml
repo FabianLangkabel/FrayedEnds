@@ -38,9 +38,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r docs/requirements.txt
 
-      - name: Install FrayedEnds
-        run: pip install -e .
-
       - name: Setup Quarto
         uses: quarto-dev/quarto-actions/setup@v2
         with:
