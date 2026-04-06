@@ -26,7 +26,6 @@ This [website](index.html) contains some hands-on examples using FrayedEnds.
 The main sections of this website are:
 
 - a wide collection of [tutorials](tutorials.html) for getting to know FrayedEnds's basic functionalities and general usage
-- a collection of more specific tutorials regarding [research](research.html)
 
 
 # Contribute
