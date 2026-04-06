@@ -11,8 +11,6 @@ website:
   navbar:
     logo: frayedends_light.png
     right:
-      - text: "Research"
-        file: research.qmd
       - text: "Tutorials"
         file: tutorials.qmd
 
