@@ -23,7 +23,18 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
-        .def("get_function_defaults", &MadnessProcess<3>::get_function_defaults)
+        .def("get_function_defaults", [](MadnessProcess<3>& self) {
+            auto t = self.get_function_defaults();
+            nb::dict d;
+            d["cell_width"] = std::get<0>(t);
+            d["k"] = std::get<1>(t);
+            d["thresh"] = std::get<2>(t);
+            d["initial_level"] = std::get<3>(t);
+            d["truncate_mode"] = std::get<4>(t);
+            d["refine"] = std::get<5>(t);
+            d["n_threads"] = std::get<6>(t);
+            return d;
+        })
         .def("update_function_defaults", &MadnessProcess<3>::update_function_defaults)
         .def("change_nthreads", &MadnessProcess<3>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<3>::loadfct)
@@ -43,7 +54,18 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
-        .def("get_function_defaults", &MadnessProcess<2>::get_function_defaults)
+        .def("get_function_defaults", [](MadnessProcess<2>& self) {
+            auto t = self.get_function_defaults();
+            nb::dict d;
+            d["cell_width"] = std::get<0>(t);
+            d["k"] = std::get<1>(t);
+            d["thresh"] = std::get<2>(t);
+            d["initial_level"] = std::get<3>(t);
+            d["truncate_mode"] = std::get<4>(t);
+            d["refine"] = std::get<5>(t);
+            d["n_threads"] = std::get<6>(t);
+            return d;
+        })
         .def("update_function_defaults", &MadnessProcess<2>::update_function_defaults)
         .def("change_nthreads", &MadnessProcess<2>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<2>::loadfct)
