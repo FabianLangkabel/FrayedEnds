@@ -1,4 +1,4 @@
-#from tequila.quantumchemistry import NBodyTensor
+from tequila.quantumchemistry import NBodyTensor
 import numpy as np
 
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
@@ -26,12 +26,11 @@ class Integrals3D:
         g_elems = self.impl.compute_two_body_integrals(
             orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
-        return g_elems
-        #g = NBodyTensor(elems=g_elems, ordering="phys")
-        #if ordering != "phys":
-        #    return g.reorder(to=ordering)
-        #else:
-        #    return g
+        g = NBodyTensor(elems=g_elems, ordering="phys")
+        if ordering != "phys":
+            return g.reorder(to=ordering)
+        else:
+            return g
 
     # computes coulomb interaction between frozen core orbitals and active space orbitals
     def compute_frozen_core_interaction(
@@ -103,12 +102,11 @@ class Integrals2D:
         g_elems = self.impl.compute_two_body_integrals(
             orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
-        return g_elems
-        #g = NBodyTensor(elems=g_elems, ordering="phys")
-        #if ordering != "phys":
-        #    return g.reorder(to=ordering)
-        #else:
-        #    return g
+        g = NBodyTensor(elems=g_elems, ordering="phys")
+        if ordering != "phys":
+            return g.reorder(to=ordering)
+        else:
+            return g
 
     def compute_frozen_core_interaction(
         self,

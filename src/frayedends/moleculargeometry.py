@@ -1,7 +1,7 @@
 import re
 import json
 
-#from tequila import Molecule
+from tequila import Molecule
 from pyscf.gto import M
 from scipy.constants import physical_constants
 
@@ -162,8 +162,8 @@ class MolecularGeometry:
         return MolecularGeometry(geometry, units=units)
     
     # conversion from molecular geometry to tequila molecule
-    #def to_tq_mol(self, *args, **kwargs):
-    #    return Molecule(self.get_geometry_string()[0], units = self.impl.units, *args, **kwargs)
+    def to_tq_mol(self, *args, **kwargs):
+        return Molecule(self.get_geometry_string()[0], units = self.impl.units, *args, **kwargs)
 
     # conversion from pyscf Mole to molecular geometry
     def from_pyscf_mol(pyscf_mol, units="angstrom"):

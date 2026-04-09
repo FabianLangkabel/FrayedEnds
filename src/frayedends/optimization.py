@@ -3,7 +3,6 @@ import numpy as np
 from ._frayedends_impl import Optimization3D as OptInterface3D
 from ._frayedends_impl import Optimization2D as OptInterface2D
 from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
-#from ._madpy_impl import Optimization2D as OptInterface2D
 from .madworld import redirect_output
 
 
