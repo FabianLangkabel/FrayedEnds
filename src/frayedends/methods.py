@@ -44,6 +44,7 @@ def optimize_basis_3D(
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
 
+    molgeom = None
     if Vnuc == None and geometry == None:
         raise Exception("Please provide either a potential or a molecular geometry.")
     elif Vnuc != None:
@@ -55,12 +56,12 @@ def optimize_basis_3D(
         if n_orbitals == None:
             n_orbitals = n_electrons  # as of right now there is no frozen core implemented for calculations with a custom potential
     else:
-        mol = MolecularGeometry(geometry)
-        c = mol.get_nuclear_repulsion()
-        Vnuc = mol.get_vnuc(world)
+        molgeom = MolecularGeometry(geometry)
+        c = molgeom.get_nuclear_repulsion()
+        Vnuc = molgeom.get_vnuc(world)
         if n_orbitals is None:
-            n_orbitals = mol.n_core_electrons // 2 + (
-                mol.n_electrons - mol.n_core_electrons
+            n_orbitals = molgeom.n_core_electrons // 2 + (
+                molgeom.n_electrons - molgeom.n_core_electrons
             )
 
     if orbitals is None or "pno" in orbitals:
@@ -80,12 +81,10 @@ def optimize_basis_3D(
             )
         minbas = AtomicBasisProjector(world, geometry, aobasis="sto-3g")
         orbitals = minbas.orbitals
-        for x in orbitals:
-            x.type = "active"
         # test if we have frozen core: if yes, we need the HF orbitals as core orbitals
-        if mol.n_core_electrons > 0:
+        if molgeom.n_core_electrons > 0:
             hf = minbas.solve_scf()
-            core = [hf[k] for k in range(mol.n_core_electrons // 2)]
+            core = [hf[k] for k in range(molgeom.n_core_electrons // 2)]
             integrals = Integrals3D(world)
             orbitals = integrals.orthonormalize(orbitals, method="symmetric")
             orbitals = integrals.project_out(kernel=core, target=orbitals)
@@ -94,10 +93,6 @@ def optimize_basis_3D(
             orbitals = integrals.orthonormalize(
                 orbitals, method="rr_cholesky", rr_thresh=1.0e-5
             )
-            for x in core:
-                x.type = "frozen_occ"
-            for x in orbitals:
-                x.type = "active"
             orbitals = core + orbitals
             # just to be save
             orbitals = integrals.normalize(orbitals)
@@ -176,6 +171,11 @@ def optimize_basis_3D(
             dconv = 10 * econv
         if occ_thresh is None:
             occ_thresh = econv
+        
+        if molgeom is not None and molgeom.n_core_electrons > 0:
+            frozen_core_orbs = orbitals[: molgeom.n_core_electrons // 2]
+            active_orbs = orbitals[molgeom.n_core_electrons // 2 :]
+        
         opti = Optimization3D(world, Vnuc, c)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,

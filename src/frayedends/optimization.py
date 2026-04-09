@@ -56,7 +56,8 @@ def transform_rdms(TransformationMatrix, rdm1, rdm2):
 
 class Optimization3D:
 
-    _orbitals = None
+    _fr_core_orbitals = None
+    _active_orbitals = None
     _h = None  # one-body tensor
     _g = None  # two-body tensor
     _c = 0.0  # constant term
@@ -97,9 +98,10 @@ class Optimization3D:
     @redirect_output("madopt.log")
     def optimize_orbs(
         self,
-        orbitals,
         rdm1,
         rdm2,
+        active_orbs,
+        frozen_core_orbs=[],
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
         maxiter=3,
@@ -109,7 +111,7 @@ class Optimization3D:
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
-        self.impl.give_initial_orbitals(orbitals)
+        self.impl.give_initial_orbitals(frozen_core_orbs, active_orbs)
         self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
         self.impl.calculate_all_integrals()
         self.impl.calculate_core_energy()
@@ -118,17 +120,17 @@ class Optimization3D:
         converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
         self.impl.rotate_orbitals_back()
 
-        self._orbitals = self.impl.get_orbitals()
-        return self._orbitals, converged
+        self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
+        return self._fr_core_orbitals, self._active_orbitals, converged
 
     def get_orbitals(self, *args, **kwargs):
-        if self._orbitals is None:
-            self._orbitals, self.converged = self.optimize_orbs(*args, **kwargs)
-            assert self._orbitals is not None
-        return self._orbitals
+        if self._active_orbitals is None:
+            self._fr_core_orbitals, self._active_orbitals, self.converged = self.optimize_orbs(*args, **kwargs)
+            assert self._active_orbitals is not None
+        return self._fr_core_orbitals, self._active_orbitals
 
     def get_integrals(self, *args, **kwargs):
-        if self._orbitals is None:
+        if self._active_orbitals is None:
             self.optimize_orbs(*args, **kwargs)
         self.impl.calculate_all_integrals()
         self._c = self.impl.get_c()
@@ -147,7 +149,8 @@ class Optimization3D:
 
 class Optimization2D:
 
-    _orbitals = None
+    _fr_core_orbitals = None
+    _active_orbitals = None
     _h = None  # one-body tensor
     _g = None  # two-body tensor
     _c = 0.0  # constant term
@@ -188,9 +191,10 @@ class Optimization2D:
     @redirect_output("madopt.log")
     def optimize_orbs(
         self,
-        orbitals,
         rdm1,
         rdm2,
+        active_orbs,
+        frozen_core_orbs=[],
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
         maxiter=3,
@@ -200,7 +204,7 @@ class Optimization2D:
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
-        self.impl.give_initial_orbitals(orbitals)
+        self.impl.give_initial_orbitals(frozen_core_orbs, active_orbs)
         self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
         self.impl.calculate_all_integrals()
         self.impl.calculate_core_energy()
@@ -209,17 +213,17 @@ class Optimization2D:
         converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
         self.impl.rotate_orbitals_back()
 
-        self._orbitals = self.impl.get_orbitals()
-        return self._orbitals, converged
+        self._fr_core_orbitals, self._active_orbitals = self.impl.get_frozen_core_orbitals()
+        return self._fr_core_orbitals, self._active_orbitals, converged
 
     def get_orbitals(self, *args, **kwargs):
-        if self._orbitals is None:
-            self._orbitals, self.converged = self.optimize_orbs(*args, **kwargs)
-            assert self._orbitals is not None
-        return self._orbitals
+        if self._active_orbitals is None:
+            self._fr_core_orbitals, self._active_orbitals, self.converged = self.optimize_orbs(*args, **kwargs)
+            assert self._active_orbitals is not None
+        return self._fr_core_orbitals, self._active_orbitals
 
     def get_integrals(self, *args, **kwargs):
-        if self._orbitals is None:
+        if self._active_orbitals is None:
             self.optimize_orbs(*args, **kwargs)
         self.impl.calculate_all_integrals()
         self._c = self.impl.get_c()

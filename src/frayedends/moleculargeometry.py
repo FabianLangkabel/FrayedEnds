@@ -82,15 +82,30 @@ class MolecularGeometry:
                 geom_str += f"{atomic_symbols[i]} {coords_in_bohr[i][0]} {coords_in_bohr[i][1]} {coords_in_bohr[i][2]}\n"
             return (geom_str, "bohr")
 
-    def molecular_potential_derivative(self, madworld, atom, axis):
+    def molecular_potential_derivative(self, madworld, atom: int, axis: int):
+        #calculates \delta V_nuc / \delta R_{atom, axis} and returns it as a SavedFct3D
         return self.impl.molecular_potential_derivative(madworld.impl, atom, axis)
 
     def molecular_potential_second_derivative(
         self, madworld, atom: int, axis1: int, axis2: int
     ):
+        #calculates \delta^2 V_nuc / \delta R_{atom, axis1} \delta R_{atom, axis2} and returns it as a SavedFct3D
         return self.impl.molecular_potential_second_derivative(
             madworld.impl, atom, axis1, axis2
         )
+
+    def mol_pot_nuc_rep_deriv_Z(self, madworld, atom):
+        #calculates \delta V_nuc / \delta Z_{atom}, returns it as a SavedFct3D 
+        #and \delta nuclear_repulsion / \delta Z_{atom} and returns it as a float
+        atoms = self.to_json()["symbols"]
+        coords = self.to_json()["geometry"]
+        mol=MolecularGeometry(units="bohr")
+        for i in range(len(atoms)):
+            if i!=atom:
+                mol.add_atom(coords[i][0], coords[i][1], coords[i][2], atoms[i])
+            else:
+                mol.add_atom(coords[i][0], coords[i][1], coords[i][2], "H")
+        return (mol.impl.get_vnuc(madworld.impl), mol.get_nuclear_repulsion())
 
     def nuclear_repulsion_derivative(self, atom: int, axis: int):
         return self.impl.nuclear_repulsion_derivative(atom, axis)
@@ -100,22 +115,15 @@ class MolecularGeometry:
     ):
         return self.impl.nuclear_repulsion_second_derivative(atom1, atom2, axis1, axis2)
 
-    def compute_energy_gradient(self, madworld, orbitals, rdm1, nocc=2):
+    def compute_dR_dE(self, madworld, rdm1, act_orbs, fr_core_orbs=[], nocc=2):
         # function to compute the energy gradient w.r.t. nuclear coordinates
         # this function assumes that the Hellmann-Feynmann theorem holds, 
         # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
         n_atoms = len(self.to_json()["symbols"])
-        fr_core_orbs=[]
-        act_orbs=[]
-        for orb in orbitals:
-            if orb.type=="frozen_occ":
-                fr_core_orbs.append(orb)
-            else:
-                act_orbs.append(orb)
         
         if len(act_orbs)!=rdm1.shape[0]:
-            raise ValueError("Number of active orbitals does not match 1-RDM size. Specify which orbitals are active and frozen by setting 'type' attribute to 'active' or 'frozen_occ'")
-
+            raise ValueError("Number of active orbitals does not match 1-RDM size.")
+        
         integrals = Integrals3D(madworld)
         gradV = []
         
@@ -137,6 +145,35 @@ class MolecularGeometry:
                 gradV_atom.append(val)
                 
             gradV.append(gradV_atom)
+        
+        return gradV
+    
+    def compute_dZ_dE(self, madworld, rdm1, act_orbs, fr_core_orbs=[], nocc=2):
+        # function to compute the energy gradient w.r.t. nuclear charges
+        # this function assumes that the Hellmann-Feynmann theorem holds, 
+        # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
+        n_atoms = len(self.to_json()["symbols"])
+        
+        if len(act_orbs)!=rdm1.shape[0]:
+            raise ValueError("Number of active orbitals does not match 1-RDM size.")
+        
+        integrals = Integrals3D(madworld)
+        gradV = []
+        
+        for atom in range(n_atoms):
+            (derivV, deriv_nuc_rep) = self.mol_pot_nuc_rep_deriv_Z(madworld, atom)
+            val = 0.0
+            for i in range(len(fr_core_orbs)):
+                fc_orb_derivV_fc_orb = integrals.compute_potential_integrals([fr_core_orbs[i]], derivV)
+                val += nocc*fc_orb_derivV_fc_orb[0,0]
+            
+            a_orbs_derivV_a_orbs = integrals.compute_potential_integrals(act_orbs, derivV)
+            for i in range(len(act_orbs)):
+                for j in range(len(act_orbs)):
+                    val += rdm1[i, j] * a_orbs_derivV_a_orbs[i, j]
+            
+            val += deriv_nuc_rep
+            gradV.append(val)
         
         return gradV
         

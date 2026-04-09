@@ -84,7 +84,7 @@ def energy_and_gradient(world: fe.MadWorld3D, molgeom: fe.MolecularGeometry, n_o
         # with the refined orbitals obtained the algorithm loops back to recompute integrals -> fci -> orbital refinement until convergence
         
     # as soon as our energy is converged we can compute the energy gradient w.r.t. nuclear coordinates
-    grad = molgeom.compute_energy_gradient(world, orbitals, rdm1)
+    grad = molgeom.compute_dR_dE(world, orbitals, rdm1)
     true_end = time()
     print("total time:", true_end-true_start)
     return current_energy, np.array(grad)

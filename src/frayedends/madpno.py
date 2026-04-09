@@ -5,7 +5,7 @@ import numpy
 
 from ._frayedends_impl import PNOInterface
 from .madworld import get_function_info, redirect_output
-
+from .moleculargeometry import MolecularGeometry
 
 class MadPNO:
 
@@ -37,29 +37,21 @@ class MadPNO:
         **kwargs,
     ):
         self.silent = silent
-        # todo: replace geometry with instalce of molecule class (expose to python)
+        # todo: replace geometry with instance of molecule class (expose to python)
         if not no_compute and n_orbitals is None:
             raise Exception("madpno: n_orbitals needs to be set")
 
         if maxrank is None:
-            # safe option, with this we always compute enough pnos
-            maxrank = n_orbitals
-            # more effective
-            try:
-                from tequila.quantumchemistry import ParametersQC
-
-                params = ParametersQC(geometry=geometry, units=units)
-                n_tot_e = params.total_n_electrons
-                if frozen_core:
-                    n_act_e = params.total_n_electrons - params.get_number_of_core_electrons()
-                else:
-                    n_act_e = params.total_n_electrons
-                n_hf_orbs = n_tot_e // 2
-                n_act_pairs = n_act_e // 2
-                maxrank = int(numpy.ceil((n_orbitals - n_hf_orbs) / n_act_pairs))
-
-            except Exception:
-                maxrank = n_orbitals
+            molgeom = MolecularGeometry(geometry, units=units)
+            n_tot_e = molgeom.n_electrons
+            if frozen_core:
+                n_act_e = n_tot_e - molgeom.n_core_electrons
+            else:
+                n_act_e = n_tot_e
+            n_hf_orbs = n_tot_e / 2
+            n_act_pairs = n_act_e / 2 
+            maxrank = int(numpy.ceil((n_orbitals - n_hf_orbs) / n_act_pairs))
+            print(n_tot_e, n_act_e, n_hf_orbs, maxrank)
         
         # check if geometry is given as a file
         # if not write the file
@@ -125,6 +117,7 @@ class MadPNO:
     def get_spa_edges(self, frozen_core=True):
         pno_groupings = self.get_pno_groupings(diagonal=True)
         edges = [tuple(sorted(x)) for x in pno_groupings.values()]
+        nfreeze = self.impl.get_frozen_core_dim()
         if frozen_core:
             orbitals = self.get_orbitals()
             info = get_function_info(orbitals)
@@ -132,7 +125,7 @@ class MadPNO:
             occf = [
                 k
                 for k, x in enumerate(info)
-                if numpy.isclose(float(x["occ"]), 2.0) and "frozen" in x["type"]
+                if numpy.isclose(float(x["occ"]), 2.0) and k < nfreeze
             ]
             # compute offset
             nof = len(occf)
@@ -168,12 +161,10 @@ class MadPNO:
         return self.impl.get_sto3g()
 
     @redirect_output("madpno.log")
-    def compute_orbitals(self, n_orbitals, frozen_virt_dim=0, *args, **kwargs):
+    def compute_orbitals(self, n_orbitals, *args, **kwargs):
         self.impl.run(n_orbitals)
-        frozen_occ_dim = self.impl.get_frozen_core_dim()
-        active_dim = n_orbitals - frozen_occ_dim - frozen_virt_dim
         # package the orbitals
-        orbitals = self.impl.get_pnos(frozen_occ_dim, active_dim, frozen_virt_dim)
+        orbitals = self.impl.get_pnos()
         self.cleanup(*args, **kwargs)
         self._orbitals = orbitals
         return orbitals

@@ -157,7 +157,7 @@ for distance in distance_list:
             grad2 += rdm1[i, j] * Deriv_tens2[i+1, j+1]
     print("gradient2: ", grad2 + part_deriv_c2)
     Gradient_list.append(grad2 + part_deriv_c2 - grad - part_deriv_c)
-    print(molgeom.compute_energy_gradient(world, orbitals, rdm1, nocc=2))
+    print(molgeom.compute_dR_dE(world, orbitals, rdm1, nocc=2))
 
     true_end = time.time()
     print("Total time: ", true_end - true_start)

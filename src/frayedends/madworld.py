@@ -45,7 +45,7 @@ def get_function_info(orbitals):
         for kv in x.info.strip().split(" "):
             kv = kv.split("=")
             info[kv[0]] = eval(kv[1])
-        result.append({"type": x.type, **info})
+        result.append({**info})
     return result
 
 
@@ -125,7 +125,7 @@ class MadWorld3D:
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
             if name is None:
-                x = "function_" + functions[i].type + " " + functions[i].info
+                x = "function_" + functions[i].info
                 self.line_plot(f"{x}{i}.dat", functions[i])
             else:
                 self.line_plot(f"{name}{i}.dat", functions[i])
@@ -243,7 +243,7 @@ class MadWorld2D:
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
             if name is None:
-                x = "function_" + functions[i].type + " " + functions[i].info
+                x = "function_" + functions[i].info
                 self.line_plot(f"{x}{i}.dat", functions[i])
             else:
                 self.line_plot(f"{name}{i}.dat", functions[i])

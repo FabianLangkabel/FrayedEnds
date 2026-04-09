@@ -60,7 +60,7 @@ std::vector<SavedFct<3>> NWChem_Converter::get_normalized_aos() {
     std::vector<SavedFct<3>> all_orbs;
     for (int i = 0; i < aos.size(); i++) {
         SavedFct<3> orb(aos[i]);
-        orb.type = "ao";
+        orb.info = "ao";
         all_orbs.push_back(orb);
     }
     return all_orbs;
@@ -70,7 +70,7 @@ std::vector<SavedFct<3>> NWChem_Converter::get_mos() {
     std::vector<SavedFct<3>> all_orbs;
     for (int i = 0; i < mos.size(); i++) {
         SavedFct<3> orb(mos[i]);
-        orb.type = "mo";
+        orb.info = "mo";
         all_orbs.push_back(orb);
     }
     return all_orbs;

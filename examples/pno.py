@@ -5,14 +5,24 @@ import tequila as tq
 import frayedends
 
 true_start = time()
-geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
-
+name = "LiH"
+print(name)
+geom = "Li 0.0 0.0 0.0\nH 0.0 0.0 1.25"  # geometry in Angstrom
+molgeom = frayedends.MolecularGeometry(geom, units="angstrom")
 world = frayedends.MadWorld3D()
 
 # initialize the PNO interface
-madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=2)
+madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=7)
 orbitals = madpno.get_orbitals()
-print(frayedends.get_function_info(orbitals))
+
+print("info:", frayedends.get_function_info(orbitals))
+print("pno_groupings:", madpno.get_pno_groupings())
+integrals = frayedends.Integrals3D(world)
+orbitals = integrals.orthonormalize(orbitals=orbitals)
+for i in range(len(orbitals)):
+    world.cube_plot(f"new{name}orb{i}", orbitals[i], molgeom, zoom=5.0, datapoints=81)
+print(madpno.get_spa_edges(frozen_core=False))
+print(madpno.get_spa_edges(frozen_core=True))
 
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
@@ -20,11 +30,12 @@ Vnuc = madpno.get_nuclear_potential()
 integrals = frayedends.Integrals3D(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
+"""
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
 c = nuc_repulsion
-for iteration in range(30):
+for iteration in range(10):
 
     integrals = frayedends.Integrals3D(world)
     G = integrals.compute_two_body_integrals(orbitals)
@@ -61,5 +72,5 @@ for iteration in range(30):
 
 true_end = time()
 print("Total time: ", true_end - true_start)
-
+"""
 frayedends.cleanup(globals())

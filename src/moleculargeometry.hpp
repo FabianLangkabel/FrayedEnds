@@ -33,7 +33,6 @@ class MolecularGeometry {
         int total = 0;
         for (auto atom : mol.get_atoms()) {
             auto n = atom.get_atomic_number();
-            std::cout << "atom " << atom.get_atomic_number() << "\n";
             int atom_core = 0;
             if (n > 2)
                 atom_core = 2;
