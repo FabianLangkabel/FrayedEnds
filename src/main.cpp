@@ -35,6 +35,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("initial_level", &MadnessProcess<3>::initial_level)
         .def_rw("truncate_mode", &MadnessProcess<3>::truncate_mode)
         .def_rw("refine", &MadnessProcess<3>::refine)
+        .def("evaluate", &MadnessProcess<3>::evaluate)
         .def_rw("n_threads", &MadnessProcess<3>::n_threads);
 
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
@@ -54,6 +55,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("initial_level", &MadnessProcess<2>::initial_level)
         .def_rw("truncate_mode", &MadnessProcess<2>::truncate_mode)
         .def_rw("refine", &MadnessProcess<2>::refine)
+        .def("evaluate", &MadnessProcess<2>::evaluate)
         .def_rw("n_threads", &MadnessProcess<2>::n_threads);
 
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
@@ -104,7 +106,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
-        .def("evaluate", &Integrals<3>::evaluate)
         .def("normalize", &Integrals<3>::normalize)
         .def("orthonormalize", &Integrals<3>::orthonormalize);
 
