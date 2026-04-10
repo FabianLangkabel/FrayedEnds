@@ -72,6 +72,28 @@ template <std::size_t NDIM> class Integrals {
         return result;
     }
 
+    std::vector<std::vector<double>> evaluate(std::vector<SavedFct<NDIM>> orbitals, std::vector<double> points) {
+
+        std::vector<Function<double, NDIM>> orbs;
+        for (SavedFct<NDIM> orb : orbitals)
+            orbs.push_back(madness_process.loadfct(orb));
+
+        std::vector<std::vector<double>> ys;
+        for (auto orb:orbs){
+            std::vector<double> y;
+            auto k=0;
+            while(k<points.size()){
+                madness::Vector<double, NDIM> x;
+                for (auto i=0;i<x.size();++i) x[i]=points[k+i];
+                k += x.size();
+                double value=orb.eval(x);
+                y.push_back(value);
+            }
+            ys.push_back(y);
+        }
+        return ys;
+    }
+
     void hello() { std::cout << "hello from the integrals class\n"; }
 
   private:
