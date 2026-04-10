@@ -2,8 +2,10 @@ import numpy as np
 from tequila.quantumchemistry import NBodyTensor
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
+
 class Integrals3D:
     impl = None
+
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface3D(madworld.impl)
 
@@ -37,14 +39,18 @@ class Integrals3D:
         return self.impl.compute_frozen_core_interaction(
             frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
+    
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
+    
     def compute_potential_integrals(self, orbitals, V, *args, **kwargs):
         return self.impl.compute_potential_integrals(orbitals, V)
+    
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
+    
     def orthonormalize(
                 self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
             ):
@@ -80,10 +86,13 @@ class Integrals3D:
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
+    
     def project_on(self, kernel, target, *args, **kwargs):
         return self.impl.project_on(kernel, target)
+    
     def normalize(self, orbitals, *args, **kwargs):
         return self.impl.normalize(orbitals, *args, **kwargs)
+    
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
 
@@ -96,8 +105,10 @@ class Integrals3D:
 
 class Integrals2D:
     impl = None
+    
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface2D(madworld.impl)
+    
     def compute_two_body_integrals(
         self,
         orbitals,
@@ -113,6 +124,7 @@ class Integrals2D:
             return g.reorder(to=ordering)
         else:
             return g
+    
     def compute_frozen_core_interaction(
         self,
         frozen_core_orbs,
@@ -125,14 +137,18 @@ class Integrals2D:
         return self.impl.compute_frozen_core_interaction(
             frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
+    
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
         return self.impl.compute_kinetic_integrals(orbitals)
+    
     def compute_potential_integrals(self, orbitals, V, *args, **kwargs):
         return self.impl.compute_potential_integrals(orbitals, V)
+    
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
+    
     def orthonormalize(
         self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
@@ -165,10 +181,13 @@ class Integrals2D:
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
+    
     def project_on(self, kernel, target, *args, **kwargs):
         return self.impl.project_on(kernel, target)
+    
     def normalize(self, orbitals, *args, **kwargs):
         return self.impl.normalize(orbitals, *args, **kwargs)
+    
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(orbitals, matrix)
 
