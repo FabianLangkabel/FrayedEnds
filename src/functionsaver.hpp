@@ -44,12 +44,13 @@ template <std::size_t NDIM> class SavedFct {
     std::string saved_str = ""; // should this be private?
     std::string info = "";
     std::string type = "";
+    double occupation = 0.0; // Occupation number for mixed orthonormalization
 
-    SavedFct(Function<double, NDIM> f) : type("unknown"), info("None") { saved_str = get_data_string(f); }
+    SavedFct(Function<double, NDIM> f) : type("unknown"), info("None"), occupation(0.0) { saved_str = get_data_string(f); }
 
-    SavedFct(Function<double, NDIM> f, const std::string type) : type(type) { saved_str = get_data_string(f); }
+    SavedFct(Function<double, NDIM> f, const std::string type) : type(type), occupation(0.0) { saved_str = get_data_string(f); }
 
-    SavedFct(Function<double, NDIM> f, const std::string type, const std::string info) : type(type), info(info) {
+    SavedFct(Function<double, NDIM> f, const std::string type, const std::string info) : type(type), info(info), occupation(0.0) {
         saved_str = get_data_string(f);
     }
 
@@ -81,6 +82,8 @@ template <std::size_t NDIM> class SavedFct {
         len = type.size();
         out.write(reinterpret_cast<const char*>(&len), sizeof(len));
         out.write(type.data(), len);
+
+        out.write(reinterpret_cast<const char*>(&occupation), sizeof(occupation));
     }
 
     void load_from_file(const std::string& filepath) {
@@ -108,6 +111,13 @@ template <std::size_t NDIM> class SavedFct {
         in.read(buffer, len);
         type.assign(buffer, len);
         delete[] buffer;
+
+        // backward compatibility
+        if (in.peek() != EOF) {
+            in.read(reinterpret_cast<char*>(&occupation), sizeof(occupation));
+        } else {
+            occupation = 0.0;
+        }
     }
 };
 

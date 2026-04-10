@@ -91,6 +91,9 @@ class Optimization3D:
         self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
         self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
 
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
+
     @redirect_output("madopt.log")
     def optimize_orbs(
         self,
@@ -188,6 +191,20 @@ class Optimization2D:
         self.impl.coulomb_eps = self.opt_parameters["coulomb_eps"]
         self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
         self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
+
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
+        """
+        Set the orthonormalization method for orbital optimization.
+
+        Args:
+            method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
+                   - "symmetric": Standard symmetric orthonormalization (default)
+                   - "cholesky": Cholesky decomposition orthonormalization
+                   - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
+            degeneracy_tol: Tolerance for determining if two orbital occupations
+                           are degenerate (only used for "mixed" method, default: 1e-6)
+        """
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
     def optimize_orbs(

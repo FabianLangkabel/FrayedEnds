@@ -78,16 +78,26 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<3>::info)
         .def_rw("type", &SavedFct<3>::type)
+<<<<<<< ortho-test
+        .def_rw("occupation", &SavedFct<3>::occupation)
+        .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"));
+=======
         .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"))
         .def("load_from_file", &SavedFct<3>::load_from_file, nb::arg("filepath"));
+>>>>>>> devel
 
     nb::class_<SavedFct<2>>(m, "SavedFct2D")
         .def(nb::init<const Function<double, 2>&>())
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<2>::info)
         .def_rw("type", &SavedFct<2>::type)
+<<<<<<< ortho-test
+        .def_rw("occupation", &SavedFct<2>::occupation)
+        .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"));
+=======
         .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"))
         .def("load_from_file", &SavedFct<2>::load_from_file, nb::arg("filepath"));
+>>>>>>> devel
 
     nb::class_<Integrals<3>>(m, "Integrals3D")
         .def(nb::init<MadnessProcess<3>&>())
@@ -141,6 +151,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<3>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<3>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<3>::save_effective_hamiltonian)
+        .def("set_orthonormalization_method", &Optimization<3>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<3>::get_orbitals)
         .def("get_c", &Optimization<3>::get_c)
         .def("get_h_tensor", &Optimization<3>::get_h_tensor)
@@ -172,6 +183,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<2>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<2>::save_effective_hamiltonian)
+        .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
         .def("get_c", &Optimization<2>::get_c)
         .def("get_h_tensor", &Optimization<2>::get_h_tensor)

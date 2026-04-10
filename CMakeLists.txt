@@ -33,9 +33,11 @@ find_package(Python 3.11
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule)
 
+set(CMAKE_PREFIX_PATH "/Users/julian/PycharmProjects/FrayedEnds/.venv/lib/python3.11/site-packages/nanobind/cmake")
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
 
+set(CMAKE_PREFIX_PATH "~/lib/cmake/madness")
 # We also need madness installed (not part of this build yet)
 find_package(MADNESS REQUIRED COMPONENTS MADchem)
 message(STATUS "FrayedEnds using MADNESS installation at: ${MADNESS_DIR}")

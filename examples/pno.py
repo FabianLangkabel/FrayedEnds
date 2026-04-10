@@ -1,27 +1,28 @@
 from time import time
+import gc
 
+import numpy as np
 import tequila as tq
-
 import frayedends
 
 true_start = time()
 geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
 
-world = frayedends.MadWorld3D()
+def run_calculation(ortho_method, config):
+    true_start = time()
+    print(f"\nMethod: {ortho_method.upper()}")
 
 # initialize the PNO interface
 madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=2)
 orbitals = madpno.get_orbitals()
 print(frayedends.get_function_info(orbitals))
 
-nuc_repulsion = madpno.get_nuclear_repulsion()
-Vnuc = madpno.get_nuclear_potential()
+    n_electrons = tq.quantumchemistry.ParametersQC(geometry=geom, units=units).total_n_electrons
 
-integrals = frayedends.Integrals3D(world)
-orbitals = integrals.orthonormalize(orbitals=orbitals)
+    world = frayedends.MadWorld3D()
 
-for i in range(len(orbitals)):
-    world.line_plot(f"pnoorb{i}.dat", orbitals[i])
+    madpno = frayedends.MadPNO(world, geom, units=units, n_orbitals=n_orbitals_config)
+    all_orbitals = madpno.get_orbitals()
 
 c = nuc_repulsion
 for iteration in range(30):
