@@ -102,6 +102,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
+        .def("evaluate", &Integrals<3>::evaluate)
         .def("normalize", &Integrals<3>::normalize)
         .def("orthonormalize", &Integrals<3>::orthonormalize);
 
