@@ -13,18 +13,14 @@ class Eigensolver3D:
         self._potential = potential
 
     @redirect_output("mad_eigensolver.log")
-    def solve(
-        self, frozen_occ_dim, active_dim, frozen_virt_dim, n_states=10, max_iterations=5
-    ):
+    def solve(self, frozen_occ_dim, active_dim, frozen_virt_dim, n_states=10, max_iterations=5):
         if frozen_occ_dim + active_dim + frozen_virt_dim > n_states:
             raise ValueError(
                 "The sum of frozen occupied, active, and frozen virtual dimensions must be less than or equal to the number of states created by the eigensolver."
             )
 
         self.impl.solve(self._potential, n_states, max_iterations)
-        self._orbitals = self.impl.get_orbitals(
-            frozen_occ_dim, active_dim, frozen_virt_dim
-        )
+        self._orbitals = self.impl.get_orbitals(frozen_occ_dim, active_dim, frozen_virt_dim)
         return self._orbitals
 
     def get_orbitals(self, *args, **kwargs):
@@ -44,18 +40,14 @@ class Eigensolver2D:
         self._potential = potential
 
     @redirect_output("mad_eigensolver.log")
-    def solve(
-        self, frozen_occ_dim, active_dim, frozen_virt_dim, n_states=10, max_iterations=5
-    ):
+    def solve(self, frozen_occ_dim, active_dim, frozen_virt_dim, n_states=10, max_iterations=5):
         if frozen_occ_dim + active_dim + frozen_virt_dim > n_states:
             raise ValueError(
                 "The sum of frozen occupied, active, and frozen virtual dimensions must be less than or equal to the number of states created by the eigensolver."
             )
 
         self.impl.solve(self._potential, n_states, max_iterations)
-        self._orbitals = self.impl.get_orbitals(
-            frozen_occ_dim, active_dim, frozen_virt_dim
-        )
+        self._orbitals = self.impl.get_orbitals(frozen_occ_dim, active_dim, frozen_virt_dim)
         return self._orbitals
 
     def get_orbitals(self, *args, **kwargs):

@@ -18,8 +18,8 @@ class MolecularGeometry {
 
     std::string to_json();
 
-    SavedFct<3> compute_nuclear_derivative(MadnessProcess<3>& mp, const int atom, const int axis);
-    SavedFct<3> compute_second_nuclear_derivative(MadnessProcess<3>& mp, const int atom, const int axis1,
+    SavedFct<3> molecular_potential_derivative(MadnessProcess<3>& mp, const int atom, const int axis);
+    SavedFct<3> molecular_potential_second_derivative(MadnessProcess<3>& mp, const int atom, const int axis1,
                                                   const int axis2);
     double nuclear_repulsion_derivative(const int atom, const int axis);
     double nuclear_repulsion_second_derivative(const int atom1, const int atom2, const int axis1, const int axis2);
@@ -30,22 +30,24 @@ class MolecularGeometry {
     double get_nuclear_charge() const { return mol.total_nuclear_charge(); }
 
     int get_core_n_electrons() const {
-        int result = 0;
+        int total = 0;
         for (auto atom : mol.get_atoms()) {
             auto n = atom.get_atomic_number();
             std::cout << "atom " << atom.get_atomic_number() << "\n";
+            int atom_core = 0;
             if (n > 2)
-                result = 2;
+                atom_core = 2;
             if (n > 10)
-                result = 10;
+                atom_core = 10;
             if (n > 18)
-                result = 18;
+                atom_core = 18;
             if (n > 36)
-                result = 36;
+                atom_core = 36;
             if (n > 54)
-                result = 54;
+                atom_core = 54;
+            total += atom_core;
         }
-        return result;
+        return total;
     }
 
     madness::Molecule mol;

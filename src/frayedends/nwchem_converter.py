@@ -3,7 +3,6 @@ from .madworld import redirect_output
 
 
 class NWChem_Converter:
-
     _mos = None
     _normalized_aos = None
     impl = None

@@ -40,7 +40,6 @@ c = nuc_repulsion
 
 u = None
 for iteration in range(6):
-
     integrals = frayedends.Integrals3D(world)
     G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
@@ -51,9 +50,7 @@ for iteration in range(6):
     for i in range(len(orbitals)):
         world.line_plot(f"orb{i}.dat", orbitals[i])
 
-    mol = tq.Molecule(
-        geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
-    )
+    mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
     U = mol.make_ansatz(name="UpCCGSD")
 
     # opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, initial_guess=u)
@@ -71,9 +68,7 @@ for iteration in range(6):
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
     opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
-    orbitals = opti.get_orbitals(
-        orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
-    )
+    orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
     print(orbitals)
 
     for i in range(len(orbitals)):

@@ -96,33 +96,35 @@ std::pair<Tensor<double>, Tensor<double>> gauss_fit_coulomb(double lo, double hi
 template <std::size_t NDIM>
 SeparatedConvolution<double, NDIM>*
 CoulombOperatorNDPtr(World& world, double lo, double eps,
-                     const array_of_bools<NDIM>& lattice_summed = FunctionDefaults<NDIM>::get_bc().is_periodic(),
+                     const std::array<LatticeRange, NDIM>& lattice_ranges = FunctionDefaults<NDIM>::get_bc().lattice_range(),
                      int k = FunctionDefaults<NDIM>::get_k()) {
     const Tensor<double>& cell_width = FunctionDefaults<NDIM>::get_cell_width();
     double hi = cell_width.normf(); // Diagonal width of cell
     // Extend kernel range for lattice summation
     // N.B. if have periodic boundaries, extend range just in case will be using periodic domain
-    const auto lattice_summed_any = lattice_summed.any();
-    if (lattice_summed.any() || FunctionDefaults<NDIM>::get_bc().is_periodic_any()) {
+    bool lattice_summed_any = std::any_of(
+              lattice_ranges.begin(), lattice_ranges.end(), [](const LatticeRange& b){ return static_cast<bool>(b); });
+    if (lattice_summed_any || FunctionDefaults<NDIM>::get_bc().is_periodic_any()) {
         hi *= 100;
     }
     auto [coeffs, expnts] = gauss_fit_coulomb<NDIM>(lo, hi, eps);
-    return new SeparatedConvolution<double, NDIM>(world, coeffs, expnts, lo, eps, lattice_summed, k);
+    return new SeparatedConvolution<double, NDIM>(world, coeffs, expnts, lo, eps, lattice_ranges, k);
 }
 
 template <std::size_t NDIM>
 SeparatedConvolution<double, NDIM>
 CoulombOperatorND(World& world, double lo, double eps,
-                  const array_of_bools<NDIM>& lattice_summed = FunctionDefaults<NDIM>::get_bc().is_periodic(),
+                  const std::array<LatticeRange, NDIM>& lattice_ranges = FunctionDefaults<NDIM>::get_bc().lattice_range(),
                   int k = FunctionDefaults<NDIM>::get_k()) {
     const Tensor<double>& cell_width = FunctionDefaults<NDIM>::get_cell_width();
     double hi = cell_width.normf(); // Diagonal width of cell
     // Extend kernel range for lattice summation
     // N.B. if have periodic boundaries, extend range just in case will be using periodic domain
-    const auto lattice_summed_any = lattice_summed.any();
-    if (lattice_summed.any() || FunctionDefaults<NDIM>::get_bc().is_periodic_any()) {
+    bool lattice_summed_any = std::any_of(
+              lattice_ranges.begin(), lattice_ranges.end(), [](const LatticeRange& b){ return static_cast<bool>(b); });
+    if (lattice_summed_any || FunctionDefaults<NDIM>::get_bc().is_periodic_any()) {
         hi *= 100;
     }
     auto [coeffs, expnts] = gauss_fit_coulomb<NDIM>(lo, hi, eps);
-    return SeparatedConvolution<double, NDIM>(world, coeffs, expnts, lo, eps, lattice_summed, k);
+    return SeparatedConvolution<double, NDIM>(world, coeffs, expnts, lo, eps, lattice_ranges, k);
 }

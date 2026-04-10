@@ -5,7 +5,6 @@ from .madworld import redirect_output
 
 
 class AtomicBasisProjector:
-
     impl = None
     silent = False
 
@@ -27,19 +26,17 @@ class AtomicBasisProjector:
             geometry = "molecule"
 
         if units is None:
-            if self.silent == False:
-                print(
-                    "Warning: No units passed with geometry, assuming units are angstrom."
-                )
+            if not self.silent:
+                print("Warning: No units passed with geometry, assuming units are angstrom.")
             units = "angstrom"
         else:
             units = units.lower()
             if units in ["angstrom", "ang", "a", "å"]:
                 units = "angstrom"
-            elif units in ["bohr", "atomic units", "au", "a.u."]:
+            elif units in ["bohr", "atomic", "atomic units", "au", "a.u."]:
                 units = "bohr"
             else:
-                if self.silent == False:
+                if not self.silent:
                     print(
                         "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
                     )
@@ -71,15 +68,13 @@ class AtomicBasisProjector:
     def get_nuclear_potential(self):
         return self.impl.get_nuclear_potential()
 
-    def parameter_string(
-        self, madworld, molecule_file, units, aobasis="sto-3g", **kwargs
-    ) -> str:
+    def parameter_string(self, madworld, molecule_file, units, aobasis="sto-3g", **kwargs) -> str:
         data = {}
 
         data["dft"] = {
             "xc": "hf",
-            "L": madworld.L,
-            "k": madworld.k,
+            "L": madworld.get_function_defaults()["cell_width"] / 2,
+            "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-4,
             "dconv": 5.0e-4,
             "localize": "boys",
@@ -110,9 +105,7 @@ class AtomicBasisProjector:
         molecule_file_str = "molecule\n"
         molecule_file_str += geometry
         molecule_file_str += "\nend"
-        molecule_file_str = os.linesep.join(
-            [s for s in molecule_file_str.splitlines() if s]
-        )
+        molecule_file_str = os.linesep.join([s for s in molecule_file_str.splitlines() if s])
         f = open(filename, "w")
         f.write(molecule_file_str)
         f.close()

@@ -58,9 +58,7 @@ def test_spa(data):
         G = integrals.compute_two_body_integrals(orbitals)
         del integrals
 
-        mol = tq.Molecule(
-            geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
-        )
+        mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
         U = mol.make_ansatz(name="SPA", edges=edges)
         H = mol.make_hamiltonian()
         E = tq.ExpectationValue(H=H, U=U)
@@ -70,9 +68,7 @@ def test_spa(data):
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
         opti = frayedends.Optimization3D(world, Vnuc, c)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
-        )
+        orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
         del opti
 
     assert numpy.isclose(energy, test_energy, atol=1.0e-3)

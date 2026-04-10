@@ -5,17 +5,17 @@ import numpy as np
 import tequila as tq
 import frayedends
 
-n_orbitals = 4
-max_iterations = 10
+true_start = time()
+geom = "H 0.0 0.0 -1.25\nH 0.0 0.0 1.25"  # geometry in Angstrom
 
 def run_calculation(ortho_method, config):
     true_start = time()
     print(f"\nMethod: {ortho_method.upper()}")
 
-    geom = config["geometry"].replace("\\n", "\n")
-    n_orbitals_config = config["n_orbitals"]
-    units = config["units"]
-    degeneracy_tol = config.get("degeneracy_tol", 1e-6)
+# initialize the PNO interface
+madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=2)
+orbitals = madpno.get_orbitals()
+print(frayedends.get_function_info(orbitals))
 
     n_electrons = tq.quantumchemistry.ParametersQC(geometry=geom, units=units).total_n_electrons
 
@@ -24,74 +24,38 @@ def run_calculation(ortho_method, config):
     madpno = frayedends.MadPNO(world, geom, units=units, n_orbitals=n_orbitals_config)
     all_orbitals = madpno.get_orbitals()
 
-    nuc_repulsion = madpno.get_nuclear_repulsion()
-    Vnuc = madpno.get_nuclear_potential()
-
+c = nuc_repulsion
+for iteration in range(30):
     integrals = frayedends.Integrals3D(world)
+    G = integrals.compute_two_body_integrals(orbitals)
+    T = integrals.compute_kinetic_integrals(orbitals)
+    V = integrals.compute_potential_integrals(orbitals, Vnuc)
+    S = integrals.compute_overlap_integrals(orbitals)
 
-    energies = []
-    current_orbitals = []
+    mol = tq.Molecule(
+        geom,
+        units="angstrom",
+        one_body_integrals=T + V,
+        two_body_integrals=G,
+        nuclear_repulsion=c,
+    )
 
-    min_orbitals_needed = (n_electrons + 1) // 2
+    U = mol.make_ansatz(name="UpCCGD")
+    H = mol.make_hamiltonian()
+    E = tq.ExpectationValue(H=H, U=U)
+    result = tq.minimize(E, silent=True)
+    rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
-    if ortho_method == "mixed":
-        initial_info = frayedends.get_function_info(all_orbitals)
-        for i, orb in enumerate(all_orbitals):
-            orb.occupation = initial_info[i]['occ']
+    print("iteration {} energy {:+2.10f}".format(iteration, result.energy))
 
-    for o in range(n_orbitals_config):
-        current_orbitals.append(all_orbitals[o])
-        print(f"Orbital {o + 1}/{n_orbitals_config}")
+    opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
+    orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+    c = opti.get_c()  # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 
-        current_orbitals = integrals.orthonormalize(orbitals=current_orbitals, method=ortho_method, degeneracy_tol=degeneracy_tol)
+    for i in range(len(orbitals)):
+        world.line_plot(f"orb{i}.dat", orbitals[i])
 
-        if (o + 1) < min_orbitals_needed:
-            continue
+true_end = time()
+print("Total time: ", true_end - true_start)
 
-        for iteration in range(max_iterations):
-            integrals = frayedends.Integrals3D(world)
-            S = integrals.compute_overlap_integrals(current_orbitals)
-            G = integrals.compute_two_body_integrals(current_orbitals, ordering='chem')
-            T = integrals.compute_kinetic_integrals(current_orbitals)
-            V = integrals.compute_potential_integrals(current_orbitals, Vnuc)
-
-            vqe_start = time()
-            mol = tq.Molecule(geometry=geom, units="angstrom",
-                            one_body_integrals=T + V,
-                            two_body_integrals=G,
-                            nuclear_repulsion=nuc_repulsion)
-
-            edges = madpno.get_spa_edges()
-
-            U = mol.make_ansatz(name="SPA", edges=edges)
-            H = mol.make_hamiltonian()
-            E_vqe = tq.ExpectationValue(U, H)
-            result = tq.minimize(E_vqe, silent=True)
-            vqe_end = time()
-
-            print(f"  Iteration {iteration}: E = {result.energy:+2.8f} (VQE: {vqe_end - vqe_start:.2f}s)")
-
-            e = result.energy
-            energies.append(e)
-
-            rdm1, rdm2 = mol.compute_rdms(U=U, variables=result.variables)
-
-            opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion=nuc_repulsion)
-            opti.set_orthonormalization_method(ortho_method)
-            current_orbitals = opti.get_orbitals(
-                orbitals=current_orbitals, rdm1=rdm1, rdm2=rdm2,
-                opt_thresh=0.001, occ_thresh=0.001
-            )
-
-
-    del integrals
-    del madpno
-    del Vnuc
-    del all_orbitals
-    del current_orbitals
-    gc.collect()
-
-    true_end = time()
-    print(f"Total time: {true_end - true_start:.2f}s")
-
-    return world, energies
+frayedends.cleanup(globals())

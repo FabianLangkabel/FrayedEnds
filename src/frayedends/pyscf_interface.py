@@ -37,7 +37,6 @@ SUPPORTED_RDM_METHODS = [
 
 
 class PySCFInterface:
-
     tqmol = None
 
     def __init__(
@@ -52,17 +51,9 @@ class PySCFInterface:
     ):
 
         if not HAS_PYSCF:
-            raise ImportError(
-                "{}\nPySCFINterface: pyscf not installed; pip install pyscf".format(
-                    str(HAS_PYSCF)
-                )
-            )
+            raise ImportError("{}\nPySCFINterface: pyscf not installed; pip install pyscf".format(str(HAS_PYSCF)))
         if not HAS_TEQUILA:
-            raise ImportError(
-                "{}\nTequila not installed; pip install tequila".format(
-                    str(HAS_TEQUILA)
-                )
-            )
+            raise ImportError("{}\nTequila not installed; pip install tequila".format(str(HAS_TEQUILA)))
         if not TQ_PYSCF_INTERFACE_WORKING:
             raise Exception("tq-pyscf interface broken :-(")
 
@@ -71,17 +62,13 @@ class PySCFInterface:
             if "ordering" in kwargs:
                 ordering = kwargs["ordering"]
                 kwargs.pop("ordering")
-            two_body_integrals = tq.quantumchemistry.NBodyTensor(
-                two_body_integrals, ordering=ordering
-            )
+            two_body_integrals = tq.quantumchemistry.NBodyTensor(two_body_integrals, ordering=ordering)
 
         two_body_integrals.reorder(to="chem")
 
-        if n_electrons == None and geometry == None:
-            raise Exception(
-                "Please provide either a number of electrons or a geometry."
-            )
-        elif geometry != None:
+        if n_electrons is None and geometry is None:
+            raise Exception("Please provide either a number of electrons or a geometry.")
+        elif geometry is not None:
             mol = tq.Molecule(
                 geometry=geometry,
                 one_body_integrals=one_body_integrals,
@@ -90,32 +77,24 @@ class PySCFInterface:
                 *args,
                 **kwargs,
             )
-            self.tqmol = tq.quantumchemistry.QuantumChemistryPySCF.from_tequila(
-                molecule=mol
-            )
+            self.tqmol = tq.quantumchemistry.QuantumChemistryPySCF.from_tequila(molecule=mol)
             self.n_electrons = self.tqmol.n_electrons
             self.n_orbitals = self.tqmol.n_orbitals
-            self.constant_term, self.one_body_integrals, self.two_body_integrals = (
-                self.tqmol.get_integrals(ordering="chem")
+            self.constant_term, self.one_body_integrals, self.two_body_integrals = self.tqmol.get_integrals(
+                ordering="chem"
             )
         else:
-            self.n_electrons = (
-                n_electrons  # needs to be adapted to allow for frozen core calculations
-            )
+            self.n_electrons = n_electrons  # needs to be adapted to allow for frozen core calculations
             self.n_orbitals = one_body_integrals.shape[0]
             self.one_body_integrals = one_body_integrals
             self.two_body_integrals = two_body_integrals
             self.constant_term = constant_term
 
     def compute_energy(self, method: str, *args, **kwargs):
-        if "fci" not in method and self.tqmol == None:
-            raise Exception(
-                "For cisd, mp2 or ccsd you need to provide a molecular geometry."
-            )
+        if "fci" not in method and self.tqmol is None:
+            raise Exception("For cisd, mp2 or ccsd you need to provide a molecular geometry.")
         if method in SUPPORTED_RDM_METHODS:
-            return self.compute_rdms(
-                method=method, return_energy=True, *args, **kwargs
-            )[0]
+            return self.compute_rdms(method=method, return_energy=True, *args, **kwargs)[0]
         return self.tqmol.compute_energy(method=method, *args, **kwargs)
 
     def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
@@ -150,9 +129,7 @@ class PySCFInterface:
                 if len(fcivec) == self.n_orbitals:
                     fcivec = fcivec[0]
             else:
-                energy, fcivec = solver.kernel(
-                    h1, h2.elems, self.n_orbitals, self.n_electrons
-                )
+                energy, fcivec = solver.kernel(h1, h2.elems, self.n_orbitals, self.n_electrons)
 
             energy = energy + c
             rdm1, rdm2 = solver.make_rdm12(fcivec, self.n_orbitals, self.n_electrons)
@@ -188,9 +165,7 @@ class PySCFInterface:
             rdm2 = mp2.make_rdm2()
             rdm2 = numpy.swapaxes(rdm2, 1, 2)
         else:
-            raise Exception(
-                f"compute_rdms: method={method} not supported (yet)\nsupported are{SUPPORTED_RDM_METHODS}"
-            )
+            raise Exception(f"compute_rdms: method={method} not supported (yet)\nsupported are{SUPPORTED_RDM_METHODS}")
 
         if return_energy:
             return rdm1, rdm2, energy

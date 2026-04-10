@@ -1,0 +1,35 @@
+---
+title: "FrayedEnds"
+subtitle: "Quantum Computing and Quantum Chemistry"
+page-layout: full
+title-block-banner: true
+
+about:
+  template: marquee
+  links:
+    - icon: github
+      text: github
+      href: https://github.com/FabianLangkabel/FrayedEnds
+---
+
+<br/>
+<center>
+![](frayed_ends.png){width=400}
+</center>
+<br/>
+
+FrayedEnds is a framework that discretizes continuous quantum systems and transforms their continuous Hamiltonians into an optimal second quantized form through adaptive orbital optimization.
+Fast and accurate calculations are performed using a Multi-Resolution-Analysis representation (implemented with [MADNESS](https://github.com/m-a-d-n-e-s-s/madness)).
+
+This [website](index.html) contains some hands-on examples using FrayedEnds.
+
+The main sections of this website are:
+
+- a wide collection of [tutorials](tutorials.html) for getting to know FrayedEnds's basic functionalities and general usage
+
+
+# Contribute
+
+FrayedEnds is free and open source. You're welcome to contribute if you have ideas to improve the library.
+The standard way to contribute is via pull-requests.
+For larger projects it might be useful to let us know in advance what you are planning.

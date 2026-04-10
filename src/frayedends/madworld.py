@@ -1,8 +1,8 @@
-from functools import wraps
 import inspect
+from functools import wraps
 
-from ._frayedends_impl import (MadnessProcess2D, MadnessProcess3D,
-                               RedirectOutput)
+from ._frayedends_impl import MadnessProcess2D, MadnessProcess3D, RedirectOutput
+
 
 def cleanup(globals):
     for name, obj in list(globals.items()):
@@ -17,14 +17,19 @@ def cleanup(globals):
             if not isinstance(obj, MadWorld3D) and not isinstance(obj, MadWorld2D):
                 del globals[name]
 
+
 def redirect_output(filename="madness.out"):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # Allow per-call override using kwarg `redirect_filename`
+            target = kwargs.pop("redirect_filename", filename)
             # Redirect stdout to a file
-            red = RedirectOutput(filename)
-            result = func(*args, **kwargs)
-            del red
+            red = RedirectOutput(target)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                del red
             return result
 
         return wrapper
@@ -76,22 +81,36 @@ class MadWorld3D:
             self.madness_parameters["n_threads"],
         )
 
-    def __getattr__(self, name):
-        if name in self.madness_parameters:
-            return getattr(self.impl, name)
-        raise AttributeError(f"'MadWorld' object has no attribute '{name}'")
-
-    def __setattr__(self, name, value):
-        if (
-            hasattr(self, "impl")
-            and hasattr(self, "madness_parameters")
-            and name in self.madness_parameters
-        ):
-            raise AttributeError(f"Cannot modify read-only attribute '{name}'")
-        super().__setattr__(name, value)
-
     def get_params(self):
         return dict(self.madness_parameters)
+
+    def get_function_defaults(self):
+        res = self.impl.get_function_defaults()
+        return {
+            "cell_width": res[0],
+            "k": res[1],
+            "thresh": res[2],
+            "initial_level": res[3],
+            "truncate_mode": res[4],
+            "refine": res[5],
+            "n_threads": res[6],
+        }
+
+    def set_function_defaults(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.madness_parameters.keys():
+                self.madness_parameters[k] = v
+
+        self.impl.L = self.madness_parameters["L"]
+        self.impl.k = self.madness_parameters["k"]
+        self.impl.thresh = self.madness_parameters["thresh"]
+        self.impl.initial_level = self.madness_parameters["initial_level"]
+        self.impl.truncate_mode = self.madness_parameters["truncate_mode"]
+        self.impl.refine = self.madness_parameters["refine"]
+        if "n_threads" in kwargs.keys():
+            self.change_nthreads(self.madness_parameters["n_threads"])
+
+        self.impl.update_function_defaults()
 
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
@@ -120,13 +139,9 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.plane_plot(
-                filename, mra_function.data, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
         else:
-            self.impl.plane_plot(
-                filename, mra_function, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
 
     def cube_plot(
         self,
@@ -138,13 +153,9 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.cube_plot(
-                filename, mra_function.data, molecule.impl, zoom, datapoints, origin
-            )
+            self.impl.cube_plot(filename, mra_function.data, molecule.impl, zoom, datapoints, origin)
         else:
-            self.impl.cube_plot(
-                filename, mra_function, molecule.impl, zoom, datapoints, origin
-            )
+            self.impl.cube_plot(filename, mra_function, molecule.impl, zoom, datapoints, origin)
 
 
 class MadWorld2D:
@@ -180,22 +191,36 @@ class MadWorld2D:
             self.madness_parameters["n_threads"],
         )
 
-    def __getattr__(self, name):
-        if name in self.madness_parameters:
-            return getattr(self.impl, name)
-        raise AttributeError(f"'MadWorld' object has no attribute '{name}'")
-
-    def __setattr__(self, name, value):
-        if (
-            hasattr(self, "impl")
-            and hasattr(self, "madness_parameters")
-            and name in self.madness_parameters
-        ):
-            raise AttributeError(f"Cannot modify read-only attribute '{name}'")
-        super().__setattr__(name, value)
-
     def get_params(self):
         return dict(self.madness_parameters)
+
+    def get_function_defaults(self):
+        res = self.impl.get_function_defaults()
+        return {
+            "cell_width": res[0],
+            "k": res[1],
+            "thresh": res[2],
+            "initial_level": res[3],
+            "truncate_mode": res[4],
+            "refine": res[5],
+            "n_threads": res[6],
+        }
+
+    def set_function_defaults(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.madness_parameters.keys():
+                self.madness_parameters[k] = v
+
+        self.impl.L = self.madness_parameters["L"]
+        self.impl.k = self.madness_parameters["k"]
+        self.impl.thresh = self.madness_parameters["thresh"]
+        self.impl.initial_level = self.madness_parameters["initial_level"]
+        self.impl.truncate_mode = self.madness_parameters["truncate_mode"]
+        self.impl.refine = self.madness_parameters["refine"]
+        if "n_threads" in kwargs.keys():
+            self.change_nthreads(self.madness_parameters["n_threads"])
+
+        self.impl.update_function_defaults()
 
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
@@ -224,10 +249,6 @@ class MadWorld2D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.plane_plot(
-                filename, mra_function.data, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
         else:
-            self.impl.plane_plot(
-                filename, mra_function, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
