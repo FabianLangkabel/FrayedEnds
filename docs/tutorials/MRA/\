@@ -1,0 +1,27 @@
+import numpy
+import scipy
+
+class box:
+
+    def __init__(self, f, k=1):
+        self.k = k
+        coeffs = []
+        for order in range(k):
+            c = 0.0
+            x, w = scipy.special.roots_legedre(n=order)
+            for i in range(len(x)):
+                fx = f(x)
+                c += fx*w
+           coeffs.append(x)
+        self.coeffs = coeffs
+
+    def __call__(self, *args, **kwargs):
+        pass
+    
+    def evaluate(self,x):
+        for i in range(k):
+            y += self.coeffs[i]*legendre(x)
+        return y
+
+box(f)
+y = box.evaluate(f)
