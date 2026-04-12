@@ -1,5 +1,7 @@
 import numpy as np
+
 from tequila.quantumchemistry import NBodyTensor
+
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
 
