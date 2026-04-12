@@ -50,6 +50,7 @@ wheel.py-api = "cp312"
 
 [tool.ruff]
 line-length = 120
+extend-exclude = ["test*"]
 
 [tool.ruff.lint]
 select = [
