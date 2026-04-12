@@ -67,4 +67,7 @@ template <std::size_t NDIM> class MadnessProcess {
 
     void cube_plot(std::string filename, SavedFct<3> f, MolecularGeometry molecule, double zoom, int datapoints,
                    std::vector<double> origin); // only defined for NDIM=3
+
+    std::vector<std::vector<double>> evaluate(std::vector<SavedFct<NDIM>> orbitals, std::vector<double> flat_points);
+
 };

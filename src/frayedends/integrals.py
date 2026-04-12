@@ -102,7 +102,6 @@ class Integrals3D:
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
 
-
 class Integrals2D:
     impl = None
     

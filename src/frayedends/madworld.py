@@ -157,6 +157,12 @@ class MadWorld3D:
         else:
             self.impl.cube_plot(filename, mra_function, molecule.impl, zoom, datapoints, origin)
 
+    def evaluate(self, orbitals, points, units=None):
+        if units is None:
+            print("evaluate: no units given, default is Bohr!!!")
+        if hasattr(units, "lower") and units.lower() == "angstrom":
+            points = [x*1.8897259886 for x in points]
+        return self.impl.evaluate(orbitals, points)
 
 class MadWorld2D:
     impl = None
@@ -252,3 +258,10 @@ class MadWorld2D:
             self.impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
         else:
             self.impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
+
+    def evaluate(self, orbitals, points, units=None):
+        if units is None:
+            print("evaluate: no units given, default is Bohr!!!")
+        if hasattr(units, "lower") and units.lower() == "angstrom":
+            points = [x*1.8897259886 for x in points]
+        return self.impl.evaluate(orbitals, points)
