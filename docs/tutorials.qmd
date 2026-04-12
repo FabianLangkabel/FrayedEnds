@@ -4,7 +4,7 @@ subtitle: "Quantum Computing and Quantum Chemistry"
 image: "frayed_ends.png"
 listing:
     contents: tutorials
-    sort: "date asc"
+    sort: "date dsc"
     type: default
     categories: true
     sort-ui: false
