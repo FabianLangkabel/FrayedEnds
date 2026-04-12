@@ -161,8 +161,9 @@ class MadWorld3D:
         if units is None:
             print("evaluate: no units given, default is Bohr!!!")
         if hasattr(units, "lower") and units.lower() == "angstrom":
-            points = [x*1.8897259886 for x in points]
+            points = [x * 1.8897259886 for x in points]
         return self.impl.evaluate(orbitals, points)
+
 
 class MadWorld2D:
     impl = None
@@ -263,5 +264,5 @@ class MadWorld2D:
         if units is None:
             print("evaluate: no units given, default is Bohr!!!")
         if hasattr(units, "lower") and units.lower() == "angstrom":
-            points = [x*1.8897259886 for x in points]
+            points = [x * 1.8897259886 for x in points]
         return self.impl.evaluate(orbitals, points)
