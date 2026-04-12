@@ -49,7 +49,6 @@ class PySCFInterface:
         *args,
         **kwargs,
     ):
-
         if not HAS_PYSCF:
             raise ImportError("{}\nPySCFINterface: pyscf not installed; pip install pyscf".format(str(HAS_PYSCF)))
         if not HAS_TEQUILA:

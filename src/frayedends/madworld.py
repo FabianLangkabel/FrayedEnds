@@ -62,7 +62,6 @@ class MadWorld3D:
     }
 
     def __init__(self, **kwargs):
-
         self.madness_parameters = dict(self.madness_parameters)
 
         for k, v in kwargs.items():
@@ -179,7 +178,6 @@ class MadWorld2D:
     }
 
     def __init__(self, **kwargs):
-
         self.madness_parameters = dict(self.madness_parameters)
 
         for k, v in kwargs.items():
