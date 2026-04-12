@@ -74,6 +74,11 @@ ignore = [
     "E743",
 ]
 
+# no input format checking in ipynb
+# clashes with quarto commands
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["I"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

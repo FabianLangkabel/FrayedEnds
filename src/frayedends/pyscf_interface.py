@@ -49,7 +49,6 @@ class PySCFInterface:
         *args,
         **kwargs,
     ):
-
         if not HAS_PYSCF:
             raise ImportError("{}\nPySCFINterface: pyscf not installed; pip install pyscf".format(str(HAS_PYSCF)))
         if not HAS_TEQUILA:
@@ -93,8 +92,6 @@ class PySCFInterface:
     def compute_energy(self, method: str, *args, **kwargs):
         if "fci" not in method and self.tqmol is None:
             raise Exception("For cisd, mp2 or ccsd you need to provide a molecular geometry.")
-        if method in SUPPORTED_RDM_METHODS:
-            return self.compute_rdms(method=method, return_energy=True, *args, **kwargs)[0]
         return self.tqmol.compute_energy(method=method, *args, **kwargs)
 
     def compute_rdms(self, method="fci", return_energy=False, *args, **kwargs):
