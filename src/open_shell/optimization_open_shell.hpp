@@ -1,0 +1,108 @@
+#pragma once
+
+#include <iostream>
+#include <madness/mra/mra.h>
+#include <madness/mra/vmra.h>
+#include <madness/mra/operator.h>
+#include <madness/chem/oep.h>
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <algorithm>
+#include <utility>
+#include <madness/external/nlohmann_json/json.hpp>
+#include "../npy.hpp"
+#include "../functionsaver.hpp"
+#include "../madness_process.hpp"
+#include "../coulomboperator_nd.hpp"
+#include "integrals_open_shell.hpp"
+#include "utility_open_shell.hpp"
+#include "open_shell_integral_storage.hpp"
+
+using namespace madness;
+namespace nb = nanobind;
+using Numpy2D = nb::ndarray<nb::numpy, double, nb::ndim<2>>;
+using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
+
+template <std::size_t NDIM>
+class Optimization_open_shell {
+  public:
+    Optimization_open_shell(MadnessProcess<NDIM>& mp);
+    ~Optimization_open_shell();
+
+    open_shell_utils::NumericalParameters num_params;
+    void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
+        num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
+        if (Integrator) {
+            Integrator->override_numerical_parameters(num_params);
+        }
+    }
+
+    // input
+    void give_initial_orbitals(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals);
+    void give_rdm_and_rotate_orbitals(std::vector<Numpy2D>& one_rdms, std::vector<Numpy4D>& two_rdms);
+
+
+    // output
+    nb::tuple get_effective_hamiltonian();
+    std::vector<std::vector<SavedFct<NDIM>>> get_orbitals();
+
+    void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
+    void calculate_all_integrals();
+    void calculate_energies();
+    void calculate_lagrange_multiplier();
+    double calculate_lagrange_multiplier_element_as_as(int z, int i, int spin); // AS refinement
+    double calculate_lagrange_multiplier_element_as_core(int z, int i, int spin); // AS refinement
+    double calculate_lagrange_multiplier_element_core_core(int z, int c, int spin); // Core refinement
+    double calculate_lagrange_multiplier_element_core_as(int z, int c, int spin); // Core refinement
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, std::string orthonormalization_method, bool refine_core);
+    std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
+    std::array<std::vector<Function<double, NDIM>>, 2> get_all_core_orbital_updates();
+    void rotate_orbitals_back();
+
+    bool has_core_orbitals;
+    bool refine_core;
+
+  private:
+    MadnessProcess<NDIM>& madness_process;
+
+    //Integrator
+    Integrals_open_shell<NDIM>* Integrator;
+    open_shell_integral_storage<NDIM> Integral_storage;
+
+    // Madness + Molecule
+    std::vector<std::vector<double>> atoms;
+    double nuclear_repulsion_energy = 0.0;
+    Function<double, NDIM> Vnuc;
+
+    // Orbitals
+    std::array<std::vector<Function<double, NDIM>>, 2> frozen_occ_orbs;
+    std::array<std::vector<Function<double, NDIM>>, 2> active_orbs;
+    std::array<int, 2> core_dims;
+    std::array<int, 2> as_dims;
+
+    // RDMs
+    std::array<madness::Tensor<double>, 2> as_one_rdm;
+    std::array<madness::Tensor<double>, 3> as_two_rdm; //aaaa, bbbb, aabb
+    std::array<madness::Tensor<double>, 2> ActiveSpaceRotationMatrices;
+
+    // Stored relevant orbital combinations
+    std::array<std::vector<Function<double, NDIM>>, 2> orbs_kl;      // |kl> //alpha-alpha and beta-beta 
+    std::array<std::vector<Function<double, NDIM>>, 2> coul_orbs_mn; // 1/r|mn> //alpha-alpha and beta-beta 
+    std::array<std::vector<Function<double, NDIM>>, 2> orbs_aa;
+    
+
+    // Energies
+    double core_total_energy;
+
+    // Refinement
+    double highest_core_error;
+    double highest_as_error;
+    //AS Refinement
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_AS;
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_AS_Core;
+    //Core Refinement
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_Core_Core;
+    std::array<madness::Tensor<double>, 2> LagrangeMultiplier_Core_AS;
+
+};

@@ -8,6 +8,7 @@ From: ubuntu:22.04
     export PATH=/opt/conda/bin:$PATH
     export MADNESS_DIR=/usr/local/madness
     export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib:$LD_LIBRARY_PATH
+	export CMAKE_BUILD_PARALLEL_LEVEL=2
 
 %post
     apt-get update && apt-get install -y --no-install-recommends \
@@ -69,20 +70,27 @@ From: ubuntu:22.04
               -DLAPACK_LIBRARIES=/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_rt.so \
               -DLAPACK_INCLUDE_DIRS=/opt/intel/oneapi/mkl/latest/include/ \
               -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" .. && \
-        cmake --build . --target install -j4
+        cmake --build . --target install -j2
 
     # Python + Pakete
-    /opt/conda/bin/conda install -y python=3.11 && \
-        /opt/conda/bin/pip install pyscf tequila-basic qulacs block2 nanobind && \
-        /opt/conda/bin/conda install -c conda-forge nwchem openmpi && \
+    /opt/conda/bin/conda install -y python=3.11 numpy scipy cython && \
+        /opt/conda/bin/conda install -c conda-forge nwchem openmpi pyscf && \
+        /opt/conda/bin/pip install --no-build-isolation tequila-basic qulacs block2 nanobind && \
         /opt/conda/bin/conda install -c kottmann madtequila && \
         /opt/conda/bin/conda install ipykernel --update-deps --force-reinstall
 
 %files
-    . /workspaces/MRA-OrbitalOptimization
+    src /workspaces/frayed-ends/src
+    examples /workspaces/frayed-ends/examples
+    tests /workspaces/frayed-ends/tests
+    docs /workspaces/frayed-ends/docs
+    CMakeLists.txt /workspaces/frayed-ends/
+    pyproject.toml /workspaces/frayed-ends/
+    README.md /workspaces/frayed-ends/
 
 %post
-    cd /workspaces/MRA-OrbitalOptimization && \
+    cd /workspaces/frayed-ends && \
+		export CMAKE_BUILD_PARALLEL_LEVEL=2 && \
         /opt/conda/bin/pip install -e .
 
 %runscript
