@@ -24,11 +24,12 @@ Note that we will not use MP2-F12 (which as used in the original description) bu
 
 # Directly Determined PNOs in a Nutshell
 
-The usual procedure for using pair-natural orbitals is
-1. Solve Hartree-Fock in the given basis set (Roothan Hall)
-2. Solve MP2 in the given basis set (using the virtual orbitals from the Roothan Hall procedure)
-3. Compute PNOs from MP2 amplitudes
-4. Continue with the PNOs in some way
+The usual procedure for using pair-natural orbitals is  
+
+1. Solve Hartree-Fock in the given basis set (Roothaan Hall). 
+2. Solve MP2 in the given basis set (using the virtual orbitals from the Roothaan Hall procedure). 
+3. Compute PNOs from MP2 amplitudes. 
+4. Continue with the PNOs in some way. 
 
 A typical example is: A subset of PNOs is selected and orthogonalized. Further many-body methods continue with these orbitals.
 This workflow is however only realizable if one works in a fixed set of finite basis functions.
