@@ -3,7 +3,7 @@ from .eigensolver import Eigensolver3D, Eigensolver2D
 from .integrals import Integrals2D, Integrals3D, Integrals_open_shell_3D
 from .moleculargeometry import MolecularGeometry
 from .madpno import MadPNO
-from .madworld import MadWorld2D, MadWorld3D, get_function_info
+from .madworld import MadWorld2D, MadWorld3D, get_function_info, cleanup
 from .minbas import AtomicBasisProjector
 from .mrafunctionfactory import MRAFunctionFactory2D, MRAFunctionFactory3D
 from .nwchem_converter import NWChem_Converter, NWChem_Converter_open_shell

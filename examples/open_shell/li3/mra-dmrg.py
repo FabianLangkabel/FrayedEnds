@@ -36,6 +36,7 @@ task scf
 with open("nwchem", "w") as f:
     f.write(nwchem_input)
 
+#replace this filepath ↓ with the path to your nwchem executable (found by "which nwchem")
 programm = sp.call("/opt/conda/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
 
 #Initalize world
@@ -160,3 +161,5 @@ ket = driver.get_random_mps(tag="GS", bond_dim=50, nroots=1)
 energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises,
     thrds=thrds, iprint=1)
 print('DMRG energy = %20.15f' % energy)
+
+fe.cleanup(globals())
