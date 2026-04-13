@@ -1,7 +1,7 @@
 ---
 title: "Directly Determined Pair-Natural Orbitals"
 author: "Jakob Kottmann"
-date: "2026-29-03"
+date: "2026-03-29"
 categories: [code]
 image-width: "1cm"
 image-height: "1cm"
@@ -11,18 +11,16 @@ format:
         eval: true
 ---
 
-In the following we will see how to compute pair-natural orbitals (PNOs) at the basis set limit,
-using the implementation originally described in ()[].
-We will see how we can use these PNOs to construct second-quantized Hamiltonians that can then be
-used to compute energies with classical and variational quantum methods.
+In the following we will see how to compute pair-natural orbitals (PNOs) at the basis set limit and
+use them to construct second-quantized Hamiltonians whose eigenstates can be approximated with the usual machinery.
 
-Note that we will not use MP2-F12 (see [here]()) but plain MP2 to determine the PNOs.
+Note that we will not use MP2-F12 (which as used in the original description) but plain MP2 to determine the PNOs.
 
 
 ## Relevant Literature
-- [Original description]() of directly determined PNOs.
-- [Application]() in the context of this tutorial.
-- [Diagonal Approximation]() used as a default in `FrayedEnds`
+- [Original description](https://doi.org/10.1063/1.5141880) of directly determined PNOs.
+- [Application](https://doi.org/10.1021/acs.jpclett.0c03410) in the context of this tutorial.
+- [Diagonal Approximation](https://doi.org/10.1103/PhysRevA.105.032449) used as a default in `FrayedEnds`
 
 # Directly Determined PNOs in a Nutshell
 
@@ -56,12 +54,12 @@ Already for this simple system, we can however not solve for virtual orbitals, a
 Virtual orbitals do exist in finite basis sets, as the basis is forcing them to be compact. Once we switch into an adaptive representation the orbitals will become more and more diffuse. For that reason, the typical route of using virtual orbitals to construct an expanded tensor-product basis for many-body wavefunctions is not a viable option here. 
 PNOs are one way to directly determine virtual (as in "orthogonal to the occupied Hartree-Fock space") orbitals. 
 
-1. Solve HartreeFock at the basis set limit (see [](); only occupied orbitals)
+1. Solve HartreeFock at the basis set limit (see [Harrison et. al.](https://doi.org/10.1063/1.1791051); only occupied orbitals)
    Leading to $\left\{\phi_k\right\}_{k=1}^{N_e/2}$ orbitals
 2. Chose Localization (Default: Foster-Boys)
 
 Pair natural orbitals are one way to compute a relatively cheap set of orbitals beyond the occupied Hartree-Fock space.
-We refer to []() for further details and just sketch the general structure.
+We refer to [the original description](https://doi.org/10.1063/1.5141880) for further details and just sketch the general structure.
 For each pair of Hartree-Fock orbitals $\phi_i, \phi_j$ we can compute a set of PNOs
 $$ \left\{\varphi^{ij}_k\right\}_{k=1}^{r_{ij}} $$
 where $r_{ij}$ are the pair ranks (a value the user can set). We usually pick a global rank $R$ (keyword=`maxrank`) $r_{ij}=R$.
@@ -70,7 +68,7 @@ The `FrayedEnds` default is using the diagonal approximation, which only compute
 
 3. Initial guess on PNOs
 4. Compute MP2 amplitudes within the current set
-5. Refine PNOs (similar fixed-point equation as Hartree-Fock above, see for the explicit potentials []())
+5. Refine PNOs (similar fixed-point equation as Hartree-Fock above, see the original descirption for the explicit potentials)
 6. Repeat 4/5 until convergence
 7. If necessary (depends on `maxrank`) back to 3
 
@@ -189,7 +187,7 @@ The results look like
 ![H2 dissociation using 2 spatial orbitals](h2_pno_2.png){width=400}
 </center>
 
-where we used the notation from []() to indicate method/basis(number of electrons, number of spin orbitals).
+where we used the notation method/basis(number of electrons, number of spin orbitals) following previous literature.
 In comparisson we can take a look at the results using the cc-pVTZ basis set (28 orbitals)
 <center>
 ![H2 dissociation using the cc-pVTZ basis](h2_56.png){width=400}
@@ -202,12 +200,5 @@ One key observation here is that even though MP2 is neither qualitatively not qu
 - FCI/cc-pVTZ(2,56) is basically there -0.996
 - More PNOs allow the system to relax: FCI/PNO(2,8)=0.995.
 
-For more qualitative and quantitative benchmarks we refer to []() and [](). 
-
-## H2O Molecule
-
-```python
-tbd
-```
-
+For more qualitative and quantitative benchmarks we refer to [this](https://doi.org/10.1103/PhysRevA.105.032449) and [this](https://arxiv.org/abs/2410.19116) article. 
 
