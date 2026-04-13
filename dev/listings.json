@@ -2,11 +2,11 @@
   {
     "listing": "/tutorials.html",
     "items": [
-      "/tutorials/MRA/MRA.html",
-      "/tutorials/NWChem_BeH2/NWChem_BeH2.html",
-      "/tutorials/ExcitedStates_H4/H4_ExcitedStates.html",
+      "/tutorials/PNO/PNO.html",
       "/tutorials/PNO_FCI/PNO_FCI.html",
-      "/tutorials/PNO/PNO.html"
+      "/tutorials/ExcitedStates_H4/H4_ExcitedStates.html",
+      "/tutorials/NWChem_BeH2/NWChem_BeH2.html",
+      "/tutorials/MRA/MRA.html"
     ]
   }
 ]

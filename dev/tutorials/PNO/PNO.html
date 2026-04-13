@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Jakob Kottmann">
-<meta name="dcterms.date" content="2028-05-03">
+<meta name="dcterms.date" content="2026-03-29">
 
 <title>FrayedEnds - Directly Determined Pair-Natural Orbitals</title>
 <style>
@@ -234,7 +234,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">May 3, 2028</p>
+      <p class="date">March 29, 2026</p>
     </div>
   </div>
   
@@ -246,14 +246,14 @@ window.Quarto = {
 </header>
 
 
-<p>In the following we will see how to compute pair-natural orbitals (PNOs) at the basis set limit, using the implementation originally described in ()[]. We will see how we can use these PNOs to construct second-quantized Hamiltonians that can then be used to compute energies with classical and variational quantum methods.</p>
-<p>Note that we will not use MP2-F12 (see <a href="">here</a>) but plain MP2 to determine the PNOs.</p>
+<p>In the following we will see how to compute pair-natural orbitals (PNOs) at the basis set limit and use them to construct second-quantized Hamiltonians whose eigenstates can be approximated with the usual machinery.</p>
+<p>Note that we will not use MP2-F12 (which as used in the original description) but plain MP2 to determine the PNOs.</p>
 <section id="relevant-literature" class="level2">
 <h2 class="anchored" data-anchor-id="relevant-literature">Relevant Literature</h2>
 <ul>
-<li><a href="">Original description</a> of directly determined PNOs.</li>
-<li><a href="">Application</a> in the context of this tutorial.</li>
-<li><a href="">Diagonal Approximation</a> used as a default in <code>FrayedEnds</code></li>
+<li><a href="https://doi.org/10.1063/1.5141880">Original description</a> of directly determined PNOs.</li>
+<li><a href="https://doi.org/10.1021/acs.jpclett.0c03410">Application</a> in the context of this tutorial.</li>
+<li><a href="https://doi.org/10.1103/PhysRevA.105.032449">Diagonal Approximation</a> used as a default in <code>FrayedEnds</code></li>
 </ul>
 </section>
 <section id="directly-determined-pnos-in-a-nutshell" class="level1">
@@ -279,14 +279,14 @@ Already for this simple system, we can however not solve for virtual orbitals, a
 </center>
 <p>Virtual orbitals do exist in finite basis sets, as the basis is forcing them to be compact. Once we switch into an adaptive representation the orbitals will become more and more diffuse. For that reason, the typical route of using virtual orbitals to construct an expanded tensor-product basis for many-body wavefunctions is not a viable option here. PNOs are one way to directly determine virtual (as in “orthogonal to the occupied Hartree-Fock space”) orbitals.</p>
 <ol type="1">
-<li>Solve HartreeFock at the basis set limit (see <a href=""></a>; only occupied orbitals) Leading to <span class="math inline">\(\left\{\phi_k\right\}_{k=1}^{N_e/2}\)</span> orbitals</li>
+<li>Solve HartreeFock at the basis set limit (see <a href="https://doi.org/10.1063/1.1791051">Harrison et. al.</a>; only occupied orbitals) Leading to <span class="math inline">\(\left\{\phi_k\right\}_{k=1}^{N_e/2}\)</span> orbitals</li>
 <li>Chose Localization (Default: Foster-Boys)</li>
 </ol>
-<p>Pair natural orbitals are one way to compute a relatively cheap set of orbitals beyond the occupied Hartree-Fock space. We refer to <a href=""></a> for further details and just sketch the general structure. For each pair of Hartree-Fock orbitals <span class="math inline">\(\phi_i, \phi_j\)</span> we can compute a set of PNOs <span class="math display">\[ \left\{\varphi^{ij}_k\right\}_{k=1}^{r_{ij}} \]</span> where <span class="math inline">\(r_{ij}\)</span> are the pair ranks (a value the user can set). We usually pick a global rank <span class="math inline">\(R\)</span> (keyword=<code>maxrank</code>) <span class="math inline">\(r_{ij}=R\)</span>. If no global rank is selected the PNOs are truncated based on their occupation numbers <span class="math inline">\(d^{ij}_k\)</span>. The <code>FrayedEnds</code> default is using the diagonal approximation, which only computes PNOs with <span class="math inline">\(i=j\)</span>.</p>
+<p>Pair natural orbitals are one way to compute a relatively cheap set of orbitals beyond the occupied Hartree-Fock space. We refer to <a href="https://doi.org/10.1063/1.5141880">the original description</a> for further details and just sketch the general structure. For each pair of Hartree-Fock orbitals <span class="math inline">\(\phi_i, \phi_j\)</span> we can compute a set of PNOs <span class="math display">\[ \left\{\varphi^{ij}_k\right\}_{k=1}^{r_{ij}} \]</span> where <span class="math inline">\(r_{ij}\)</span> are the pair ranks (a value the user can set). We usually pick a global rank <span class="math inline">\(R\)</span> (keyword=<code>maxrank</code>) <span class="math inline">\(r_{ij}=R\)</span>. If no global rank is selected the PNOs are truncated based on their occupation numbers <span class="math inline">\(d^{ij}_k\)</span>. The <code>FrayedEnds</code> default is using the diagonal approximation, which only computes PNOs with <span class="math inline">\(i=j\)</span>.</p>
 <ol start="3" type="1">
 <li>Initial guess on PNOs</li>
 <li>Compute MP2 amplitudes within the current set</li>
-<li>Refine PNOs (similar fixed-point equation as Hartree-Fock above, see for the explicit potentials <a href=""></a>)</li>
+<li>Refine PNOs (similar fixed-point equation as Hartree-Fock above, see the original descirption for the explicit potentials)</li>
 <li>Repeat 4/5 until convergence</li>
 <li>If necessary (depends on <code>maxrank</code>) back to 3</li>
 </ol>
@@ -376,7 +376,7 @@ for R in points:
 </figure>
 </div>
 </center>
-where we used the notation from <a href=""></a> to indicate method/basis(number of electrons, number of spin orbitals). In comparisson we can take a look at the results using the cc-pVTZ basis set (28 orbitals)
+where we used the notation method/basis(number of electrons, number of spin orbitals) following previous literature. In comparisson we can take a look at the results using the cc-pVTZ basis set (28 orbitals)
 <center>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -392,11 +392,7 @@ where we used the notation from <a href=""></a> to indicate method/basis(number 
 <li>FCI/cc-pVTZ(2,56) is basically there -0.996</li>
 <li>More PNOs allow the system to relax: FCI/PNO(2,8)=0.995.</li>
 </ul>
-<p>For more qualitative and quantitative benchmarks we refer to <a href=""></a> and <a href=""></a>.</p>
-</section>
-<section id="h2o-molecule" class="level2">
-<h2 class="anchored" data-anchor-id="h2o-molecule">H2O Molecule</h2>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>tbd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For more qualitative and quantitative benchmarks we refer to <a href="https://doi.org/10.1103/PhysRevA.105.032449">this</a> and <a href="https://arxiv.org/abs/2410.19116">this</a> article.</p>
 
 
 </section>
