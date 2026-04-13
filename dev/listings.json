@@ -2,6 +2,7 @@
   {
     "listing": "/tutorials.html",
     "items": [
+      "/tutorials/Orthonormailzation/orthonormalization_tutorial.html",
       "/tutorials/PNO/PNO.html",
       "/tutorials/PNO_FCI/PNO_FCI.html",
       "/tutorials/ExcitedStates_H4/H4_ExcitedStates.html",

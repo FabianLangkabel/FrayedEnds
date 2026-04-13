@@ -258,7 +258,13 @@ window.Quarto = {
 </section>
 <section id="directly-determined-pnos-in-a-nutshell" class="level1">
 <h1>Directly Determined PNOs in a Nutshell</h1>
-<p>The usual procedure for using pair-natural orbitals is 1. Solve Hartree-Fock in the given basis set (Roothan Hall) 2. Solve MP2 in the given basis set (using the virtual orbitals from the Roothan Hall procedure) 3. Compute PNOs from MP2 amplitudes 4. Continue with the PNOs in some way</p>
+<p>The usual procedure for using pair-natural orbitals is</p>
+<ol type="1">
+<li>Solve Hartree-Fock in the given basis set (Roothaan Hall).</li>
+<li>Solve MP2 in the given basis set (using the virtual orbitals from the Roothaan Hall procedure).</li>
+<li>Compute PNOs from MP2 amplitudes.</li>
+<li>Continue with the PNOs in some way.</li>
+</ol>
 <p>A typical example is: A subset of PNOs is selected and orthogonalized. Further many-body methods continue with these orbitals. This workflow is however only realizable if one works in a fixed set of finite basis functions. The main difference when working with adaptive multiwavelets is that we are loosely speaking working within a infinite <span class="math inline">\(L^2\)</span> basis. As an example: The Hartree-Fock equations in closed-shell formulation form look like <span class="math display">\[ \left(-\frac{\Delta}{2} + V + 2J - 2K\right)\phi_k = \epsilon_k \phi_k \]</span> with the usual definition of Hartree potential <span class="math inline">\(J\)</span> and exchange operator <span class="math inline">\(K\)</span> that explicitly depend on the occupied orbitals <span class="math inline">\(\phi_k\)</span> (<span class="math inline">\(k \in \left\{1,2,\dots,N_e/2\right\}\)</span> with <span class="math inline">\(N_e\)</span> being the number of electrons in the system. For the hydrogen molecule with hydrogen atoms at positions <span class="math inline">\(R\)</span> and <span class="math inline">\(L\)</span>, we have the external potential <span class="math display">\[ V(x) = \frac{-1}{\lvert R -x\rvert} + \frac{-1}{\lvert L-x \rvert} \]</span> and <span class="math inline">\(N_e=2\)</span>. We can solve for the occupied Hartree-Fock orbital <span class="math inline">\(\phi\)</span>, by rearranging the equation above <span class="math display">\[ \phi = -2\int G_\mu \left(V + 2K-J\right)\phi \operatorname{d}x  \]</span> where <span class="math inline">\(G_\mu\)</span> is the Green’s function for the bound state Helmholtz operator <span class="math inline">\(-{\Delta} - \mu\)</span> and <span class="math inline">\(\mu=-\sqrt{-2\epsilon}\)</span>. The equation can now be solved iteratively starting from an initial guess. The gif below illustrates the convergence from a guess that resembles the linear combination of two 1s orbitals.</p>
 <center>
 <div class="quarto-figure quarto-figure-center">
