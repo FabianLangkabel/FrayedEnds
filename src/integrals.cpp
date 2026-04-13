@@ -220,14 +220,8 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct
     if (method == "mixed") {
         std::vector<double> occupations;
 
-        if (occupations_arr.ndim() > 0 && occupations_arr.size() > 0) {
-            for (size_t i = 0; i < occupations_arr.size(); i++) {
+        for (size_t i = 0; i < occupations_arr.size(); i++) {
                 occupations.push_back(occupations_arr(i));
-            }
-        } else {
-            for (const auto& orb : all_orbs) {
-                occupations.push_back(orb.occupation);
-            }
         }
 
         if (occupations.size() != all_orbs.size()) {
@@ -258,8 +252,6 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct
         result[k].info = all_orbs[k].info;
     for (size_t k = 0; k < result.size(); k++)
         result[k].type = all_orbs[k].type;
-    for (size_t k = 0; k < result.size(); k++)
-        result[k].occupation = all_orbs[k].occupation;
 
     return result;
 }

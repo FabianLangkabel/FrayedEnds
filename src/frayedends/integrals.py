@@ -55,37 +55,33 @@ class Integrals3D:
         return self.impl.compute_overlap_integrals(orbitals, other)
 
     def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
+                self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
         if method == "mixed":
-            # Get occupations either from rdm1 or from orbitals
             if rdm1 is not None:
-                # Extract diagonal of rdm1 as occupations
                 rdm1_array = np.asarray(rdm1, dtype=np.float64)
-                if rdm1_array.ndim == 2:
-                    occupations = np.diag(rdm1_array)
-                elif rdm1_array.ndim == 1:
+                if rdm1_array.ndim == 1: # if rdm1 is already a vector of occupation numbers, we can directly pass it to the orthonormalization routine
                     occupations = rdm1_array.copy()
+                    occupations = np.ascontiguousarray(occupations, dtype=np.float64)
+                    return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+                elif rdm1_array.ndim == 2:
+                    # if rdm1 is a density matrix, we need to transform to natural orbitals
+                    orbitals, occupations, transformation_M = self.transform_to_natural_orbitals(orbitals, rdm1)
+                    occupations = np.ascontiguousarray(occupations, dtype=np.float64)
+                    # then orthnormalize
+                    orbitals = self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+                    # and transform back to original basis
+                    orbitals = self.transform(orbitals, transformation_M.T)
+                    return orbitals
+
                 else:
                     raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
-            else:
-                # Try to get occupations from orbitals
-                occupations = np.array([orb.occupation for orb in orbitals], dtype=np.float64)
-                if np.all(occupations == 0.0):
-                    raise ValueError(
-                        "For mixed orthonormalization, either provide rdm1 or set orbital.occupation values"
-                    )
-
-            # CRITICAL: Ensure it's a contiguous C-style array (required for C++ binding)
-            occupations = np.ascontiguousarray(occupations, dtype=np.float64)
-
-            return self.normalize(self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol))
+            else: 
+                raise ValueError("For method 'mixed', rdm1 (occupations or density matrix) must be provided")
         else:
             # For other methods, pass empty array
             occupations_empty = np.array([], dtype=np.float64)
-            return self.normalize(
-                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
-            )
+            return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
@@ -103,7 +99,7 @@ class Integrals3D:
         values, vectors = np.linalg.eigh(rdm1)  # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
         val = values[::-1]  # reverse the order of eigenvalues
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
-        return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
+        return self.transform(orbitals, vec), val, vec  # transform the orbitals to the natural orbitals
 
 
 class Integrals2D:
@@ -153,34 +149,33 @@ class Integrals2D:
         return self.impl.compute_overlap_integrals(orbitals, other)
 
     def orthonormalize(
-        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
+                self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
         if method == "mixed":
-            # Get occupations either from rdm1 or from orbitals
             if rdm1 is not None:
-                # Extract diagonal of rdm1 as occupations
                 rdm1_array = np.asarray(rdm1, dtype=np.float64)
-                if rdm1_array.ndim == 2:
-                    occupations = np.diag(rdm1_array)
-                elif rdm1_array.ndim == 1:
-                    occupations = rdm1_array
+                if rdm1_array.ndim == 1: # if rdm1 is already a vector of occupation numbers, we can directly pass it to the orthonormalization routine
+                    occupations = rdm1_array.copy()
+                    occupations = np.ascontiguousarray(occupations, dtype=np.float64)
+                    return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+                elif rdm1_array.ndim == 2:
+                    # if rdm1 is a density matrix, we need to transform to natural orbitals
+                    orbitals, occupations, transformation_M = self.transform_to_natural_orbitals(orbitals, rdm1)
+                    occupations = np.ascontiguousarray(occupations, dtype=np.float64)
+                    # then orthnormalize
+                    orbitals = self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
+                    # and transform back to original basis
+                    orbitals = self.transform(orbitals, transformation_M.T)
+                    return orbitals
+
                 else:
                     raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
-            else:
-                # Try to get occupations from orbitals
-                occupations = np.array([orb.occupation for orb in orbitals], dtype=np.float64)
-                if np.all(occupations == 0.0):
-                    raise ValueError(
-                        "For mixed orthonormalization, either provide rdm1 or set orbital.occupation values"
-                    )
-
-            return self.normalize(self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol))
+            else: 
+                raise ValueError("For method 'mixed', rdm1 (occupations or density matrix) must be provided")
         else:
             # For other methods, pass empty array
             occupations_empty = np.array([], dtype=np.float64)
-            return self.normalize(
-                self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
-            )
+            return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
 
     def project_out(self, kernel, target, *args, **kwargs):
         return self.impl.project_out(kernel, target)
@@ -198,7 +193,7 @@ class Integrals2D:
         values, vectors = np.linalg.eigh(rdm1)  # diagonalize the 1-RDM (the eigenvalues are ordered ascendingly)
         val = values[::-1]  # reverse the order of eigenvalues
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
-        return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
+        return self.transform(orbitals, vec), val, vec  # transform the orbitals to the natural orbitals
 
 
 class Integrals_open_shell_3D:

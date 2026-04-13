@@ -102,7 +102,7 @@ class Optimization3D:
                    - "cholesky": Cholesky decomposition orthonormalization
                    - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
             degeneracy_tol: Tolerance for determining if two orbital occupations
-                           are degenerate (only used for "mixed" method, default: 1e-6)
+                           are degenerate (only used for "mixed" method, default: 1e-3)
         """
         self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
@@ -214,7 +214,7 @@ class Optimization2D:
                    - "cholesky": Cholesky decomposition orthonormalization
                    - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
             degeneracy_tol: Tolerance for determining if two orbital occupations
-                           are degenerate (only used for "mixed" method, default: 1e-6)
+                           are degenerate (only used for "mixed" method, default: 1e-3)
         """
         self.impl.set_orthonormalization_method(method, degeneracy_tol)
 

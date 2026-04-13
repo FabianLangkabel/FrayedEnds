@@ -104,7 +104,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<3>::info)
         .def_rw("type", &SavedFct<3>::type)
-        .def_rw("occupation", &SavedFct<3>::occupation)
         .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"))
         .def("load_from_file", &SavedFct<3>::load_from_file, nb::arg("filepath"));
 
@@ -113,7 +112,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<2>::info)
         .def_rw("type", &SavedFct<2>::type)
-        .def_rw("occupation", &SavedFct<2>::occupation)
         .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"))
         .def("load_from_file", &SavedFct<2>::load_from_file, nb::arg("filepath"));
 

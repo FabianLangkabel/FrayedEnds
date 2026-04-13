@@ -58,7 +58,7 @@ template <std::size_t NDIM> class Integrals {
         std::vector<Function<double, NDIM>>& orbitals,
         const std::vector<double>& occupations,
         double degeneracy_tol);
-
+        
   public:
 
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals,
@@ -84,13 +84,6 @@ template <std::size_t NDIM> class Integrals {
     }
 
     void hello() { std::cout << "hello from the integrals class\n"; }
-
-  private:
-    // Helper method for mixed orthonormalization
-    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
-        std::vector<Function<double, NDIM>>& orbitals,
-        const madness::Tensor<double>& one_rdm,
-        double degeneracy_tol);
 
     MadnessProcess<NDIM>& madness_process;
 };
