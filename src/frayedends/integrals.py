@@ -1,12 +1,9 @@
 import numpy as np
 from tequila.quantumchemistry import NBodyTensor
 
-from ._frayedends_impl import (
-    Integrals2D as IntegralsInterface2D,
-)
-from ._frayedends_impl import (
-    Integrals3D as IntegralsInterface3D,
-)
+from ._frayedends_impl import Integrals2D as IntegralsInterface2D
+from ._frayedends_impl import Integrals3D as IntegralsInterface3D
+from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D
 
 
 class Integrals3D:
@@ -202,3 +199,36 @@ class Integrals2D:
         val = values[::-1]  # reverse the order of eigenvalues
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val  # transform the orbitals to the natural orbitals
+
+
+class Integrals_open_shell_3D:
+
+    impl = None
+
+    def __init__(self, madworld, *args, **kwargs):
+        self.impl = IntegralsInterface_open_shell_3D(madworld.impl)
+
+    def override_numerical_parameters(self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6,*args, **kwargs):
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
+
+    def compute_two_body_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
+        G = self.impl.compute_two_body_integrals(alpha_orbitals, beta_orbitals)
+        return G[0], G[1], G[2]
+
+    def compute_kinetic_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
+        T = self.impl.compute_kinetic_integrals(alpha_orbitals, beta_orbitals)
+        return T[0], T[1]
+
+    def compute_potential_integrals(self, alpha_orbitals, beta_orbitals, V, *args, **kwargs):
+        Pot = self.impl.compute_potential_integrals(alpha_orbitals, beta_orbitals, V)
+        return Pot[0], Pot[1]
+
+    def compute_effective_hamiltonian(self, core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset, *args, **kwargs):
+        H_eff = self.impl.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset)
+        return H_eff
+
+    def compute_nuclear_derivative(
+        self,
+        molecule,
+    ):
+        pass
