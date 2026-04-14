@@ -1,4 +1,12 @@
 import os
+import subprocess as sp
+
+import numpy as np
+from pyblock2._pyscf.ao2mo import integrals as itg
+from pyblock2.driver.core import DMRGDriver, SymmetryTypes
+
+import frayedends as fe
+
 os.environ["MAD_NUM_THREADS"] = "4"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "4"
@@ -10,37 +18,45 @@ molecule_name = "li3"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-basisset = 'sto-3g'
+basisset = "sto-3g"
 
 # Run NWChem calculation
-import subprocess as sp
-nwchem_input = '''
+nwchem_input = (
+    """
 title "molecule"
 memory stack 3000 mb heap 200 mb global 2800 mb
 charge 0  
 geometry noautoz noautosym nocenter
   Li 0.0 0.0 0.0
-  Li 0.0 0.0 ''' + distance.__str__() + '''
-  Li 0.0 0.0 ''' + (-distance).__str__() + '''
+  Li 0.0 0.0 """
+    + distance.__str__()
+    + """
+  Li 0.0 0.0 """
+    + (-distance).__str__()
+    + """
 end
 basis spherical
-  * library ''' + basisset + '''
+  * library """
+    + basisset
+    + """
 end
 scf  
  doublet; uhf
  maxiter 200
 end   
 task scf  
-'''
+"""
+)
 
 with open("nwchem", "w") as f:
     f.write(nwchem_input)
 
-#replace this filepath ↓ with the path to your nwchem executable (found by "which nwchem")
-programm = sp.call("/opt/conda/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
+# replace this filepath ↓ with the path to your nwchem executable (found by "which nwchem")
+programm = sp.call(
+    "/opt/conda/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
+)
 
-#Initalize world
-import frayedends as fe
+# Initalize world
 world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
@@ -97,21 +113,19 @@ for i in range(len(alpha_mos)):
     if i < 3:
         core_alpha_orbitals.append(alpha_mos[i])
         core_beta_orbitals.append(beta_mos[i])
-    elif i >=3:
+    elif i >= 3:
         active_alpha_orbitals.append(alpha_mos[i])
         active_beta_orbitals.append(beta_mos[i])
 
-import numpy as np
 
 integrals = fe.Integrals_open_shell_3D(world)
-c, h1, g2 = integrals.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy)
-g2[0] = g2[0].transpose(0,2,1,3)
-g2[1] = g2[1].transpose(0,2,1,3)
-g2[2] = g2[2].transpose(0,2,1,3)
+c, h1, g2 = integrals.compute_effective_hamiltonian(
+    core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy
+)
+g2[0] = g2[0].transpose(0, 2, 1, 3)
+g2[1] = g2[1].transpose(0, 2, 1, 3)
+g2[2] = g2[2].transpose(0, 2, 1, 3)
 
-
-from pyblock2._pyscf.ao2mo import integrals as itg
-from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SZ, n_threads=4)
 driver.initialize_system(n_sites=len(active_alpha_orbitals), n_elec=3, spin=1)
@@ -120,37 +134,47 @@ noises = [1e-4] * 4 + [1e-5] * 4 + [0]
 thrds = [1e-10] * 8
 mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=1)
 ket = driver.get_random_mps(tag="GS", bond_dim=50, nroots=1)
-energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises,
-    thrds=thrds, iprint=1)
-print('DMRG energy = %20.15f' % energy)
+energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises, thrds=thrds, iprint=1)
+print("DMRG energy = %20.15f" % energy)
 
 
 # Extract rdms
 rdm_1 = driver.get_1pdm(ket)
-rdm_2 = driver.get_2pdm(ket) 
+rdm_2 = driver.get_2pdm(ket)
 
 rdm_2_phys_aa = rdm_2[0].transpose(0, 1, 3, 2)
 rdm_2_phys_ab = rdm_2[1].transpose(0, 1, 3, 2)
 rdm_2_phys_bb = rdm_2[2].transpose(0, 1, 3, 2)
 
 
-one_body_en = np.einsum('ij,ij->', rdm_1[0], h1[0]) + np.einsum('ij,ij->', rdm_1[1], h1[1])
-two_body_en = 0.5 * (np.einsum('ijkl,ikjl->', rdm_2_phys_aa, g2[0]) 
-                     + 2 * np.einsum('ijkl,ikjl->', rdm_2_phys_ab, g2[1]) 
-                     + np.einsum('ijkl,ikjl->', rdm_2_phys_bb, g2[2]))
+one_body_en = np.einsum("ij,ij->", rdm_1[0], h1[0]) + np.einsum("ij,ij->", rdm_1[1], h1[1])
+two_body_en = 0.5 * (
+    np.einsum("ijkl,ikjl->", rdm_2_phys_aa, g2[0])
+    + 2 * np.einsum("ijkl,ikjl->", rdm_2_phys_ab, g2[1])
+    + np.einsum("ijkl,ikjl->", rdm_2_phys_bb, g2[2])
+)
 rdm_energy = one_body_en + two_body_en + c
-print('Energy from rdms = %20.15f' % rdm_energy)
+print("Energy from rdms = %20.15f" % rdm_energy)
 
 
 opti = fe.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-new_core_orbs, new_as_orbs, converged = opti.optimize_orbs(orbitals=[core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001, maxiter=1, orthonormalization_method="cd", refine_core=True)
+new_core_orbs, new_as_orbs, converged = opti.optimize_orbs(
+    orbitals=[core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals],
+    rdm1=rdm_1,
+    rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb],
+    opt_thresh=0.001,
+    occ_thresh=0.001,
+    maxiter=1,
+    orthonormalization_method="cd",
+    refine_core=True,
+)
 
 
 # Update Integrals with new orbitals
 c, h1, g2 = opti.get_effective_hamiltonian()
-g2[0] = g2[0].transpose(0,2,1,3)
-g2[1] = g2[1].transpose(0,2,1,3)
-g2[2] = g2[2].transpose(0,2,1,3)
+g2[0] = g2[0].transpose(0, 2, 1, 3)
+g2[1] = g2[1].transpose(0, 2, 1, 3)
+g2[2] = g2[2].transpose(0, 2, 1, 3)
 
 driver.initialize_system(n_sites=len(new_as_orbs[0]), n_elec=3, spin=1)
 bond_dims = [250] * 4 + [500]
@@ -158,8 +182,7 @@ noises = [1e-4] * 4 + [1e-5] * 4 + [0]
 thrds = [1e-10] * 8
 mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=1)
 ket = driver.get_random_mps(tag="GS", bond_dim=50, nroots=1)
-energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises,
-    thrds=thrds, iprint=1)
-print('DMRG energy = %20.15f' % energy)
+energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises, thrds=thrds, iprint=1)
+print("DMRG energy = %20.15f" % energy)
 
 fe.cleanup(globals())

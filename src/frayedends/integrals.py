@@ -55,12 +55,14 @@ class Integrals3D:
         return self.impl.compute_overlap_integrals(orbitals, other)
 
     def orthonormalize(
-                self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
+        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
         if method == "mixed":
             if rdm1 is not None:
                 rdm1_array = np.asarray(rdm1, dtype=np.float64)
-                if rdm1_array.ndim == 1: # if rdm1 is already a vector of occupation numbers, we can directly pass it to the orthonormalization routine
+                if (
+                    rdm1_array.ndim == 1
+                ):  # if rdm1 is already a vector of occupation numbers, we can directly pass it to the orthonormalization routine
                     occupations = rdm1_array.copy()
                     occupations = np.ascontiguousarray(occupations, dtype=np.float64)
                     return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
@@ -76,7 +78,7 @@ class Integrals3D:
 
                 else:
                     raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
-            else: 
+            else:
                 raise ValueError("For method 'mixed', rdm1 (occupations or density matrix) must be provided")
         else:
             # For other methods, pass empty array
@@ -149,12 +151,14 @@ class Integrals2D:
         return self.impl.compute_overlap_integrals(orbitals, other)
 
     def orthonormalize(
-                self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
+        self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
         if method == "mixed":
             if rdm1 is not None:
                 rdm1_array = np.asarray(rdm1, dtype=np.float64)
-                if rdm1_array.ndim == 1: # if rdm1 is already a vector of occupation numbers, we can directly pass it to the orthonormalization routine
+                if (
+                    rdm1_array.ndim == 1
+                ):  # if rdm1 is already a vector of occupation numbers, we can directly pass it to the orthonormalization routine
                     occupations = rdm1_array.copy()
                     occupations = np.ascontiguousarray(occupations, dtype=np.float64)
                     return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations, degeneracy_tol)
@@ -170,7 +174,7 @@ class Integrals2D:
 
                 else:
                     raise ValueError("rdm1 must be 1D (occupations) or 2D (density matrix)")
-            else: 
+            else:
                 raise ValueError("For method 'mixed', rdm1 (occupations or density matrix) must be provided")
         else:
             # For other methods, pass empty array
@@ -197,13 +201,14 @@ class Integrals2D:
 
 
 class Integrals_open_shell_3D:
-
     impl = None
 
     def __init__(self, madworld, *args, **kwargs):
         self.impl = IntegralsInterface_open_shell_3D(madworld.impl)
 
-    def override_numerical_parameters(self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6,*args, **kwargs):
+    def override_numerical_parameters(
+        self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6, *args, **kwargs
+    ):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
 
     def compute_two_body_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
@@ -218,8 +223,20 @@ class Integrals_open_shell_3D:
         Pot = self.impl.compute_potential_integrals(alpha_orbitals, beta_orbitals, V)
         return Pot[0], Pot[1]
 
-    def compute_effective_hamiltonian(self, core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset, *args, **kwargs):
-        H_eff = self.impl.compute_effective_hamiltonian(core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset)
+    def compute_effective_hamiltonian(
+        self,
+        core_alpha_orbitals,
+        core_beta_orbitals,
+        active_alpha_orbitals,
+        active_beta_orbitals,
+        V,
+        energy_offset,
+        *args,
+        **kwargs,
+    ):
+        H_eff = self.impl.compute_effective_hamiltonian(
+            core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset
+        )
         return H_eff
 
     def compute_nuclear_derivative(

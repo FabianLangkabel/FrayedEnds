@@ -1,3 +1,10 @@
+import subprocess as sp
+
+import madpy as mad
+import numpy as np
+from pyblock2._pyscf.ao2mo import integrals as itg
+from pyblock2.driver.core import DMRGDriver, SymmetryTypes
+
 distance = 1.0
 iteration_energies = []
 iterations = 6
@@ -5,36 +12,44 @@ molecule_name = "h3"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-basisset = 'sto-3g'
+basisset = "sto-3g"
 
 # Run NWChem calculation
-import subprocess as sp
-nwchem_input = '''
+nwchem_input = (
+    """
 title "molecule"
 memory stack 1500 mb heap 100 mb global 1400 mb
 charge 0  
 geometry noautosym nocenter
   H 0.0 0.0 0.0
-  H 0.0 0.0 ''' + distance.__str__() + '''
-  H 0.0 0.0 ''' + (-distance).__str__() + '''
+  H 0.0 0.0 """
+    + distance.__str__()
+    + """
+  H 0.0 0.0 """
+    + (-distance).__str__()
+    + """
 end
 basis  
-  * library ''' + basisset + '''
+  * library """
+    + basisset
+    + """
 end
 scf  
  doublet; uhf
  maxiter 200
 end   
 task scf  
-'''
+"""
+)
 
 with open("nwchem", "w") as f:
     f.write(nwchem_input)
 
-programm = sp.call("/opt/conda/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
+programm = sp.call(
+    "/opt/conda/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
+)
 
-#Initalize world
-import madpy as mad
+# Initalize world
 world = mad.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
@@ -83,19 +98,16 @@ display(HTML(f"<div style='display:flex; gap:10px'>{alpha_0_plot}{beta_0_plot}{a
 # Calculate Integrals
 integrals = mad.Integrals_open_shell_3D(world)
 c, h1, g2 = integrals.compute_effective_hamiltonian([], [], alpha_mos, beta_mos, Vnuc, nuclear_repulsion_energy)
-g2[0] = g2[0].transpose(0,2,1,3)
-g2[1] = g2[1].transpose(0,2,1,3)
-g2[2] = g2[2].transpose(0,2,1,3)
+g2[0] = g2[0].transpose(0, 2, 1, 3)
+g2[1] = g2[1].transpose(0, 2, 1, 3)
+g2[2] = g2[2].transpose(0, 2, 1, 3)
 
 # Alternative
 # G = integrals.compute_two_body_integrals(alpha_mos, beta_mos) #Physics Notation
 # T = integrals.compute_kinetic_integrals(alpha_mos, beta_mos)
 # V = integrals.compute_potential_integrals(alpha_mos, beta_mos, Vnuc)
 
-#Run DMRG
-from pyblock2._pyscf.ao2mo import integrals as itg
-from pyblock2.driver.core import DMRGDriver, SymmetryTypes
-import numpy as np
+# Run DMRG
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SZ, n_threads=4)
 driver.initialize_system(n_sites=3, n_elec=3, spin=1, orb_sym=[0, 0, 0])
 
@@ -105,34 +117,39 @@ thrds = [1e-10] * 8
 
 mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=1)
 ket = driver.get_random_mps(tag="GS", bond_dim=50, nroots=1)
-energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises,
-    thrds=thrds, iprint=1)
-print('DMRG energy = %20.15f' % energy)
-
+energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises, thrds=thrds, iprint=1)
+print("DMRG energy = %20.15f" % energy)
 
 
 # Extract rdms
 rdm_1 = driver.get_1pdm(ket)
-rdm_2 = driver.get_2pdm(ket) 
+rdm_2 = driver.get_2pdm(ket)
 
 rdm_2_phys_aa = rdm_2[0].transpose(0, 1, 3, 2)
 rdm_2_phys_ab = rdm_2[1].transpose(0, 1, 3, 2)
 rdm_2_phys_bb = rdm_2[2].transpose(0, 1, 3, 2)
 
-one_body_en = np.einsum('ij,ij->', rdm_1[0], h1[0]) + np.einsum('ij,ij->', rdm_1[1], h1[1])
-two_body_en = 0.5 * (np.einsum('ijkl,ikjl->', rdm_2_phys_aa, g2[0]) 
-                     + 2 * np.einsum('ijkl,ikjl->', rdm_2_phys_ab, g2[1]) 
-                     + np.einsum('ijkl,ikjl->', rdm_2_phys_bb, g2[2]))
+one_body_en = np.einsum("ij,ij->", rdm_1[0], h1[0]) + np.einsum("ij,ij->", rdm_1[1], h1[1])
+two_body_en = 0.5 * (
+    np.einsum("ijkl,ikjl->", rdm_2_phys_aa, g2[0])
+    + 2 * np.einsum("ijkl,ikjl->", rdm_2_phys_ab, g2[1])
+    + np.einsum("ijkl,ikjl->", rdm_2_phys_bb, g2[2])
+)
 rdm_energy = one_body_en + two_body_en + nuclear_repulsion_energy
-print('Energy from rdms = %20.15f' % rdm_energy)
-
+print("Energy from rdms = %20.15f" % rdm_energy)
 
 
 # Refine orbitals
 for i in range(len(alpha_mos)):
-    alpha_mos[i].type="active"
+    alpha_mos[i].type = "active"
 for i in range(len(beta_mos)):
-  beta_mos[i].type="active"
+    beta_mos[i].type = "active"
 
 opti = mad.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-opti.optimize_orbs(orbitals=[[], [], alpha_mos, beta_mos], rdm1=rdm_1, rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb], opt_thresh=0.001, occ_thresh=0.001)
+opti.optimize_orbs(
+    orbitals=[[], [], alpha_mos, beta_mos],
+    rdm1=rdm_1,
+    rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb],
+    opt_thresh=0.001,
+    occ_thresh=0.001,
+)

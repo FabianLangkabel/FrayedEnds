@@ -1,7 +1,7 @@
 import numpy as np
 
-from ._frayedends_impl import Optimization3D as OptInterface3D
 from ._frayedends_impl import Optimization2D as OptInterface2D
+from ._frayedends_impl import Optimization3D as OptInterface3D
 from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
 from .madworld import redirect_output
 
@@ -276,16 +276,16 @@ class Optimization2D:
             "BSH_eps": self.impl.BSH_eps,
         }
 
-class Optimization_open_shell_3D:
 
+class Optimization_open_shell_3D:
     _orbitals = None
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
-    converged = None # indicates if the last call converged
+    converged = None  # indicates if the last call converged
 
-    #@property
-    #def orbitals(self, *args, **kwargs):
+    # @property
+    # def orbitals(self, *args, **kwargs):
     #    return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
@@ -321,5 +321,7 @@ class Optimization_open_shell_3D:
         H_eff = self.impl.get_effective_hamiltonian()
         return H_eff
 
-    def override_numerical_parameters(self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6,*args, **kwargs):
+    def override_numerical_parameters(
+        self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6, *args, **kwargs
+    ):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)

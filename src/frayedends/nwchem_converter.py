@@ -41,8 +41,8 @@ class NWChem_Converter:
     def get_nuclear_repulsion_energy(self):
         return self.impl.get_nuclear_repulsion_energy()
 
-class NWChem_Converter_open_shell:
 
+class NWChem_Converter_open_shell:
     _alpha_mos = None
     _beta_mos = None
     _normalized_aos = None
