@@ -147,12 +147,17 @@ class MadWorld3D:
         else:
             self.impl.cube_plot(filename, mra_function, molecule.impl, zoom, datapoints, origin)
 
-    def evaluate(self, orbitals, points, units=None):
-        if units is None:
+    def evaluate(self, functions, points, units=None, silent=False, *args, **kwargs):
+        # convenience
+        nolist = not isinstance(functions, list)
+        if units is None and not silent:
             print("evaluate: no units given, default is Bohr!!!")
         if hasattr(units, "lower") and units.lower() == "angstrom":
             points = [x * 1.8897259886 for x in points]
-        return self.impl.evaluate(orbitals, points)
+        if nolist:
+            return self.impl.evaluate([functions], points)[0]
+        else:
+            return self.impl.evaluate(functions, points)
 
 
 class MadWorld2D:
