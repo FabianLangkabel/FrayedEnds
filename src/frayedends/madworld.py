@@ -1,8 +1,7 @@
 import inspect
 from functools import wraps
 
-from ._frayedends_impl import (MadnessProcess2D, MadnessProcess3D,
-                               RedirectOutput)
+from ._frayedends_impl import MadnessProcess2D, MadnessProcess3D, RedirectOutput
 
 
 def cleanup(globals):
@@ -63,7 +62,6 @@ class MadWorld3D:
     }
 
     def __init__(self, **kwargs):
-
         self.madness_parameters = dict(self.madness_parameters)
 
         for k, v in kwargs.items():
@@ -131,13 +129,9 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.plane_plot(
-                filename, mra_function.data, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
         else:
-            self.impl.plane_plot(
-                filename, mra_function, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
 
     def cube_plot(
         self,
@@ -149,13 +143,21 @@ class MadWorld3D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.cube_plot(
-                filename, mra_function.data, molecule.impl, zoom, datapoints, origin
-            )
+            self.impl.cube_plot(filename, mra_function.data, molecule.impl, zoom, datapoints, origin)
         else:
-            self.impl.cube_plot(
-                filename, mra_function, molecule.impl, zoom, datapoints, origin
-            )
+            self.impl.cube_plot(filename, mra_function, molecule.impl, zoom, datapoints, origin)
+
+    def evaluate(self, functions, points, units=None, silent=False, *args, **kwargs):
+        # convenience
+        nolist = not isinstance(functions, list)
+        if units is None and not silent:
+            print("evaluate: no units given, default is Bohr!!!")
+        if hasattr(units, "lower") and units.lower() == "angstrom":
+            points = [x * 1.8897259886 for x in points]
+        if nolist:
+            return self.impl.evaluate([functions], points)[0]
+        else:
+            return self.impl.evaluate(functions, points)
 
 
 class MadWorld2D:
@@ -172,7 +174,6 @@ class MadWorld2D:
     }
 
     def __init__(self, **kwargs):
-
         self.madness_parameters = dict(self.madness_parameters)
 
         for k, v in kwargs.items():
@@ -240,10 +241,18 @@ class MadWorld2D:
         origin=[0.0, 0.0, 0.0],
     ):
         if hasattr(mra_function, "data"):
-            self.impl.plane_plot(
-                filename, mra_function.data, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function.data, plane, zoom, datapoints, origin)
         else:
-            self.impl.plane_plot(
-                filename, mra_function, plane, zoom, datapoints, origin
-            )
+            self.impl.plane_plot(filename, mra_function, plane, zoom, datapoints, origin)
+
+    def evaluate(self, functions, points, units=None, silent=False, *args, **kwargs):
+        # convenience
+        nolist = not isinstance(functions, list)
+        if units is None and not silent:
+            print("evaluate: no units given, default is Bohr!!!")
+        if hasattr(units, "lower") and units.lower() == "angstrom":
+            points = [x * 1.8897259886 for x in points]
+        if nolist:
+            return self.impl.evaluate([functions], points)[0]
+        else:
+            return self.impl.evaluate(functions, points)

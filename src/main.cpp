@@ -48,6 +48,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("initial_level", &MadnessProcess<3>::initial_level)
         .def_rw("truncate_mode", &MadnessProcess<3>::truncate_mode)
         .def_rw("refine", &MadnessProcess<3>::refine)
+        .def("evaluate", &MadnessProcess<3>::evaluate)
         .def_rw("n_threads", &MadnessProcess<3>::n_threads);
     
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
@@ -78,6 +79,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("initial_level", &MadnessProcess<2>::initial_level)
         .def_rw("truncate_mode", &MadnessProcess<2>::truncate_mode)
         .def_rw("refine", &MadnessProcess<2>::refine)
+        .def("evaluate", &MadnessProcess<2>::evaluate)
         .def_rw("n_threads", &MadnessProcess<2>::n_threads);
 
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
@@ -174,6 +176,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<3>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<3>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<3>::save_effective_hamiltonian)
+        .def("set_orthonormalization_method", &Optimization<3>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<3>::get_orbitals)
         .def("get_c", &Optimization<3>::get_c)
         .def("get_h_tensor", &Optimization<3>::get_h_tensor)
@@ -205,6 +208,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<2>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<2>::save_effective_hamiltonian)
+        .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
         .def("get_c", &Optimization<2>::get_c)
         .def("get_h_tensor", &Optimization<2>::get_h_tensor)

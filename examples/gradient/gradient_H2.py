@@ -34,7 +34,6 @@ for distance in distance_list:
     current = 0.0
     print("Distance: ", distance)
     for iteration in range(100):
-
         integrals = fe.Integrals3D(world)
         G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
         T = integrals.compute_kinetic_integrals(orbitals)
@@ -56,12 +55,8 @@ for distance in distance_list:
         current = e + c
 
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
-        )
-        c = (
-            opti.get_c()
-        )  # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
+        orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+        c = opti.get_c()  # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 
         for i in range(len(orbitals)):
             world.line_plot(f"orb{i}.dat", orbitals[i])

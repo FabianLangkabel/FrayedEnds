@@ -1,0 +1,33 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "FrayedEnds"
+  description: "quantum computing and quantum chemistry"
+  image: frayed_ends.png
+  repo-url: https://github.com/FabianLangkabel/FrayedEnds
+  repo-actions: [source, issue]
+  navbar:
+    logo: frayedends_light.png
+    right:
+      - text: "Tutorials"
+        file: tutorials.qmd
+
+  favicon: favicon.ico
+  open-graph: true
+  google-analytics: G-V7DRP5E70N
+  cookie-consent:
+      type: express
+      style: simple
+
+format:
+  html:
+    theme:
+      light: [flatly, theme-light.scss]
+      dark: [darkly, theme-dark.scss]
+    css: styles.css
+
+execute:
+  freeze: auto
+

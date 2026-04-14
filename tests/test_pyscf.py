@@ -6,9 +6,7 @@ import frayedends
 
 
 @pytest.mark.parametrize("method", frayedends.pyscf_interface.SUPPORTED_RDM_METHODS)
-@pytest.mark.parametrize(
-    "geom", ["h 0.0 0.0 0.0\nh 0.0 0.0 0.75", "Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"]
-)
+@pytest.mark.parametrize("geom", ["h 0.0 0.0 0.0\nh 0.0 0.0 0.75", "Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods(geom, method):
     geom = geom.lower()
     world = frayedends.MadWorld3D()
@@ -35,7 +33,7 @@ def test_pyscf_methods(geom, method):
     )
     rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
 
-    if not "slow" in method:
+    if "slow" not in method:
         mol = tq.Molecule(geometry=geom, basis_set="sto-3g", frozen_core=False)
         if "fci" in method:
             method = "fci"

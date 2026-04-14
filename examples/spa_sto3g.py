@@ -2,6 +2,7 @@ import time
 
 import numpy
 import tequila as tq
+from matplotlib import pyplot as plt
 
 import frayedends
 
@@ -9,9 +10,7 @@ import frayedends
 def run(R):
     energies = {}
     # initialize the PNO interface
-    geom = "H 0.0 0.0 0.0\nH 0.0 0.0 {}\nH 0.0 0.0 {}\nH 0.0 0.0 {}".format(
-        R, 2 * R, 3 * R
-    )  # geometry in Angstrom
+    geom = "H 0.0 0.0 0.0\nH 0.0 0.0 {}\nH 0.0 0.0 {}\nH 0.0 0.0 {}".format(R, 2 * R, 3 * R)  # geometry in Angstrom
     print(geom)
 
     world = frayedends.MadWorld3D()
@@ -51,9 +50,7 @@ def run(R):
         u[2] = [0, 0, 1, 1]
         u[3] = [0, 0, -1, 1]
 
-        opt = tq.quantumchemistry.optimize_orbitals(
-            molecule=mol, circuit=U, silent=True, initial_guess=u.T
-        )
+        opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, silent=True, initial_guess=u.T)
         u = opt.mo_coeff
         mol = opt.molecule
         H = mol.make_hamiltonian()
@@ -80,9 +77,7 @@ def run(R):
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
         S = integrals.compute_overlap_integrals(orbitals)
 
-        mol = tq.Molecule(
-            geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
-        )
+        mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
         fci = mol.compute_energy("fci")
         U = mol.make_ansatz(name="SPA", edges=[(0, 1), (2, 3)])
         H = mol.make_hamiltonian()
@@ -95,9 +90,7 @@ def run(R):
         energies["FCI/MRA-NO[it={},wfn=spa]".format(iteration)] = fci
 
         opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
-        new_orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.01, occ_thresh=0.001
-        )
+        new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.01, occ_thresh=0.001)
 
         integrals = frayedends.Integrals3D(world)
         S = integrals.compute_overlap_integrals(orbitals, new_orbitals)
@@ -137,12 +130,9 @@ for R in x:
     start = time.time()
     energies = run(R=R)
     end = time.time()
-    print(f"took {end-start}s")
+    print(f"took {end - start}s")
     results += [energies]
     print(results)
-
-import numpy as np
-from matplotlib import pyplot as plt
 
 # x = list(numpy.linspace(start=0.5, stop=5.0, num=10, endpoint=False))
 

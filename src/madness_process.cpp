@@ -132,5 +132,41 @@ void MadnessProcess<3>::cube_plot(std::string filename, SavedFct<3> f, Molecular
                      params.zoom(), params.origin<3>());
 }
 
+template<std::size_t NDIM>
+std::vector<std::vector<double>> MadnessProcess<NDIM>::evaluate(std::vector<SavedFct<NDIM>> orbitals, std::vector<double> flat_points) {
+
+        // sanity check
+        if (flat_points.size() % NDIM != 0) {
+        throw std::invalid_argument(
+            "evaluate: flat_points size must be a multiple of NDIM = " + std::to_string(NDIM));
+        }
+
+        int npoints = flat_points.size()/3;
+
+        std::vector<Function<double, NDIM>> orbs;
+        for (SavedFct<NDIM> orb : orbitals)
+            orbs.push_back(loadfct(orb));
+
+        std::vector<std::vector<double>> ys;
+        for (auto orb:orbs){
+            std::vector<double> y;
+            auto k=0;
+            Tensor<double> values(npoints);
+            for(auto l=0;l<npoints;l++){
+                madness::Vector<double, NDIM> x;
+                for (auto i=0;i<x.size();++i) x[i]=flat_points[k+i];
+                k += x.size();
+                // this is slow (includes fences)
+                // for future:
+                // orb.eval + fence/broadcast
+                // or orb.cube_eval (see plotting)
+                values(l)=orb(x);
+            }
+            for(auto l=0;l<npoints;l++) y.push_back(values(l));
+            ys.push_back(y);
+        }
+        return ys;
+    }
+
 template class MadnessProcess<2>;
 template class MadnessProcess<3>;

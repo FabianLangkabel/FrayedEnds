@@ -16,26 +16,20 @@ n_orbitals = 5
 n_act_orbitals = 5
 n_act_electrons = 4
 for distance in distance_list:
-    print(
-            "------------------------------------------------------------------------------"
-        )
-    print(
-            "------------------------------------------------------------------------------"
-        )
+    print("------------------------------------------------------------------------------")
+    print("------------------------------------------------------------------------------")
     [print("Distance:", distance)]
     true_start = time.time()
     geometry = "Li 0.0 0.0 " + str(-distance / 2) + "\nH 0.0 0.0 " + str(distance / 2)
-    
+
     pno_start = time.time()
-    madpno = fe.MadPNO(
-        world, geometry, units="bohr", n_orbitals=n_orbitals
-    )
+    madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals)
     orbitals = madpno.get_orbitals()
     for orb in orbitals:
-        orb.type = "active" # in this example we do not freeze any orbitals, so we set all orbitals to active
-    
+        orb.type = "active"  # in this example we do not freeze any orbitals, so we set all orbitals to active
+
     pno_end = time.time()
-    print("Pno time:", pno_end-pno_start)
+    print("Pno time:", pno_end - pno_start)
 
     world.set_function_defaults()
     print(world.get_function_defaults())
@@ -49,9 +43,7 @@ for distance in distance_list:
     c = nuc_repulsion
     current = 0.0
     for iteration in range(10):
-        print(
-            "------------------------------------------------------------------------------"
-        )
+        print("------------------------------------------------------------------------------")
         integrals = fe.Integrals3D(world)
         G = integrals.compute_two_body_integrals(orbitals, ordering="chem")
         T = integrals.compute_kinetic_integrals(orbitals)
@@ -68,14 +60,14 @@ for distance in distance_list:
             fcivec, n_act_orbitals, n_act_electrons
         )  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
-        #for i in range(len(rdm1)):
+        # for i in range(len(rdm1)):
         #    print("rdm1[", i, ",", i, "]:", rdm1[i, i])
         fci_end = time.time()
-        print("fci time:", fci_end-fci_start)
+        print("fci time:", fci_end - fci_start)
 
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
 
-        if abs(e+c - current) < 1e-5:
+        if abs(e + c - current) < 1e-5:
             break
         current = e + c
 
@@ -90,12 +82,12 @@ for distance in distance_list:
             occ_thresh=0.0001,
         )
         opti_end = time.time()
-        print("orb opt time:", opti_end-opti_start)
+        print("orb opt time:", opti_end - opti_start)
         c = opti.get_c()
-    
+
     Energy_list.append(current)
 
-    molecule = fe.MolecularGeometry(geometry= geometry, units="bohr")
+    molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
     part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)
     Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V)
     part_deriv_c = molecule.nuclear_repulsion_derivative(1, 2)

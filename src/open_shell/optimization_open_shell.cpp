@@ -989,15 +989,15 @@ nb::tuple Optimization_open_shell<NDIM>::get_effective_hamiltonian() {
 
 
     // Return integrals
-    Numpy2D one_e_alpha_alpha(effective_one_e_integrals[0].ptr(), {as_dims[0], as_dims[0]}, one_e_alpha_caps);
-    Numpy2D one_e_beta_beta(effective_one_e_integrals[1].ptr(), {as_dims[1], as_dims[1]}, one_e_beta_caps);
+    Numpy2D one_e_alpha_alpha(effective_one_e_integrals[0].ptr(), {static_cast<unsigned long>(as_dims[0]), static_cast<unsigned long>(as_dims[0])}, one_e_alpha_caps);
+    Numpy2D one_e_beta_beta(effective_one_e_integrals[1].ptr(), {static_cast<unsigned long>(as_dims[1]), static_cast<unsigned long>(as_dims[1])}, one_e_beta_caps);
     nb::list h1_list;
     h1_list.append(one_e_alpha_alpha);
     h1_list.append(one_e_beta_beta);
 
-    Numpy4D alpha_alpha(Integral_storage.as_integrals_two_body[0].ptr(), {as_dims[0], as_dims[0], as_dims[0], as_dims[0]}, two_e_aa_caps);
-    Numpy4D beta_beta(Integral_storage.as_integrals_two_body[1].ptr(), {as_dims[1], as_dims[1], as_dims[1], as_dims[1]}, two_e_bb_caps);
-    Numpy4D alpha_beta(Integral_storage.as_integrals_two_body[2].ptr(), {as_dims[0], as_dims[1], as_dims[0], as_dims[1]}, two_e_ab_caps);
+    Numpy4D alpha_alpha(Integral_storage.as_integrals_two_body[0].ptr(), {static_cast<unsigned long>(as_dims[0]), static_cast<unsigned long>(as_dims[0]), static_cast<unsigned long>(as_dims[0]), static_cast<unsigned long>(as_dims[0])}, two_e_aa_caps);
+    Numpy4D beta_beta(Integral_storage.as_integrals_two_body[1].ptr(), {static_cast<unsigned long>(as_dims[1]), static_cast<unsigned long>(as_dims[1]), static_cast<unsigned long>(as_dims[1]), static_cast<unsigned long>(as_dims[1])}, two_e_bb_caps);
+    Numpy4D alpha_beta(Integral_storage.as_integrals_two_body[2].ptr(), {static_cast<unsigned long>(as_dims[0]), static_cast<unsigned long>(as_dims[1]), static_cast<unsigned long>(as_dims[0]), static_cast<unsigned long>(as_dims[1])}, two_e_ab_caps);
     //aa, ab, bb order external; aa, bb, ab order internal
     nb::list g2_list;
     g2_list.append(alpha_alpha);

@@ -8,12 +8,10 @@ from .madworld import MadWorld2D, MadWorld3D
 from .minbas import AtomicBasisProjector
 from .moleculargeometry import MolecularGeometry
 from .optimization import Optimization2D, Optimization3D
-from .pyscf_interface import HAS_PYSCF
+from .pyscf_interface import HAS_PYSCF, PySCFInterface
 from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
-from .pyscf_interface import PySCFInterface
-from .tequila_interface import HAS_TEQUILA
+from .tequila_interface import HAS_TEQUILA, TequilaInterface
 from .tequila_interface import SUPPORTED_RDM_METHODS as TEQUILA_METHODS
-from .tequila_interface import TequilaInterface
 
 SUPPORTED_RDM_METHODS = TEQUILA_METHODS + PYSCF_METHODS
 AVAILABLE_RDM_METHODS = []
@@ -44,30 +42,24 @@ def optimize_basis_3D(
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
 
-    if Vnuc == None and geometry == None:
+    if Vnuc is None and geometry is None:
         raise Exception("Please provide either a potential or a molecular geometry.")
-    elif Vnuc != None:
+    elif Vnuc is not None:
         c = nuclear_repulsion
-        if n_electrons == None:
-            raise Exception(
-                "If you provide a potential, you need to specifiy the number of electrons (n_electrons)."
-            )
-        if n_orbitals == None:
+        if n_electrons is None:
+            raise Exception("If you provide a potential, you need to specifiy the number of electrons (n_electrons).")
+        if n_orbitals is None:
             n_orbitals = n_electrons  # as of right now there is no frozen core implemented for calculations with a custom potential
     else:
         mol = MolecularGeometry(geometry)
         c = mol.get_nuclear_repulsion()
         Vnuc = mol.get_vnuc(world)
         if n_orbitals is None:
-            n_orbitals = mol.n_core_electrons // 2 + (
-                mol.n_electrons - mol.n_core_electrons
-            )
+            n_orbitals = mol.n_core_electrons // 2 + (mol.n_electrons - mol.n_core_electrons)
 
     if orbitals is None or "pno" in orbitals:
         if geometry is None:
-            raise Exception(
-                "If you want to use PNOs, you need to provide a molecular geometry."
-            )
+            raise Exception("If you want to use PNOs, you need to provide a molecular geometry.")
         madpno = MadPNO(world, geometry, n_orbitals=n_orbitals)
         if many_body_method == "spa" and "edges" not in kwargs:
             kwargs["edges"] = madpno.get_spa_edges()
@@ -75,9 +67,7 @@ def optimize_basis_3D(
         del madpno
     elif "sto" in orbitals and "3g" in orbitals:
         if geometry is None:
-            raise Exception(
-                "If you want to use the sto-3g basis, you need to provide a molecular geometry."
-            )
+            raise Exception("If you want to use the sto-3g basis, you need to provide a molecular geometry.")
         minbas = AtomicBasisProjector(world, geometry, aobasis="sto-3g")
         orbitals = minbas.orbitals
         for x in orbitals:
@@ -91,9 +81,7 @@ def optimize_basis_3D(
             orbitals = integrals.project_out(kernel=core, target=orbitals)
             orbitals = integrals.normalize(orbitals)
             # most likely no linear dependencies since core at CBS is different from sto-3g orbitals
-            orbitals = integrals.orthonormalize(
-                orbitals, method="rr_cholesky", rr_thresh=1.0e-5
-            )
+            orbitals = integrals.orthonormalize(orbitals, method="rr_cholesky", rr_thresh=1.0e-5)
             for x in core:
                 x.type = "frozen_occ"
             for x in orbitals:
@@ -103,9 +91,7 @@ def optimize_basis_3D(
             orbitals = integrals.normalize(orbitals)
     elif "eigen" in orbitals:
         if Vnuc is None:
-            raise Exception(
-                "If you want to use the eigensolver you need to provide a potential."
-            )
+            raise Exception("If you want to use the eigensolver you need to provide a potential.")
         eigen = Eigensolver3D(world, Vnuc)
         orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=n_orbitals * 2)
         del eigen
@@ -134,9 +120,7 @@ def optimize_basis_3D(
                     two_body_integrals=G,
                     constant_term=c,
                 )
-            rdm1, rdm2, energy = mol.compute_rdms(
-                method=many_body_method, return_energy=True
-            )
+            rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, return_energy=True)
         elif many_body_method in TEQUILA_METHODS:
             if geometry is None:
                 mol = TequilaInterface(
@@ -152,9 +136,7 @@ def optimize_basis_3D(
                     two_body_integrals=G,
                     constant_term=c,
                 )
-            rdm1, rdm2, energy = mol.compute_rdms(
-                method=many_body_method, *args, **kwargs
-            )
+            rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, *args, **kwargs)
         elif many_body_method == "dmrg":
             raise Exception("not here yet")
         elif callable(many_body_method):
@@ -214,8 +196,10 @@ def optimize_basis_2D(
         orbitals = orbitals.lower()
 
     c = nuclear_repulsion
-    if n_orbitals == None:
-        n_orbitals = n_electrons  # as of right now there is no frozen core implemented for calculations with a custom potential
+    if n_orbitals is None:
+        n_orbitals = (
+            n_electrons  # as of right now there is no frozen core implemented for calculations with a custom potential
+        )
 
     if orbitals is None or "eigen" in orbitals:
         eigen = Eigensolver2D(world, Vnuc)
@@ -238,9 +222,7 @@ def optimize_basis_2D(
                 two_body_integrals=G,
                 constant_term=c,
             )
-            rdm1, rdm2, energy = mol.compute_rdms(
-                method=many_body_method, return_energy=True
-            )
+            rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, return_energy=True)
         elif many_body_method in TEQUILA_METHODS_2D:
             mol = TequilaInterface(
                 n_electrons=n_electrons,
@@ -248,9 +230,7 @@ def optimize_basis_2D(
                 two_body_integrals=G,
                 constant_term=c,
             )
-            rdm1, rdm2, energy = mol.compute_rdms(
-                method=many_body_method, *args, **kwargs
-            )
+            rdm1, rdm2, energy = mol.compute_rdms(method=many_body_method, *args, **kwargs)
         elif many_body_method == "dmrg":
             raise Exception("not here yet")
         elif callable(many_body_method):

@@ -13,7 +13,7 @@ n_orbitals = 6  # Number of orbitals (all active in this example)
 
 def potential(x: float, y: float) -> float:  # Qdot potential
     r = np.array([x, y, 1e-10])
-    return - 2 / np.linalg.norm(r)
+    return -2 / np.linalg.norm(r)
 
 
 world = fe.MadWorld2D(

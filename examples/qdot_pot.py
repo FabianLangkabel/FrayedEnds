@@ -18,41 +18,29 @@ def potential(x: float, y: float, z: float) -> float:  # Qdot potential
     return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
 
 
-world = (
-    fe.MadWorld3D()
-)  # This is required for any MADNESS calculation as it initializes the required environment
+world = fe.MadWorld3D()  # This is required for any MADNESS calculation as it initializes the required environment
 
 factory = fe.MRAFunctionFactory3D(
     world, potential
 )  # This transform a python function into a MRA function which can be read by MADNESS
 mra_pot = factory.get_function()  # Potential as MRA function
 
-eigen = fe.Eigensolver3D(
-    world, mra_pot
-)  # This sets up the eigensolver, which provides initial guess orbitals
+eigen = fe.Eigensolver3D(world, mra_pot)  # This sets up the eigensolver, which provides initial guess orbitals
 orbitals = eigen.get_orbitals(
     0, n_orbitals, 0, n_states=5
 )  # The first three numbers are the numbers of frozen_core, active and frozen_virtual orbitals (in this case all orbitals are active)
 # The last number is the number of computed guess orbitals (in this case the ES will compute 5 orbitals and return the n_orbitals states with the lowest energy)
 
-world.line_plot(
-    "potential.dat", mra_pot, axis="z", datapoints=2001
-)  # This plots the potential along the z-axis
+world.line_plot("potential.dat", mra_pot, axis="z", datapoints=2001)  # This plots the potential along the z-axis
 for i in range(len(orbitals)):
-    world.line_plot(
-        f"es_orb{i}.dat", orbitals[i], axis="z", datapoints=2001
-    )  # Plots guess orbitals
+    world.line_plot(f"es_orb{i}.dat", orbitals[i], axis="z", datapoints=2001)  # Plots guess orbitals
 
 current = 0.0
 for iteration in range(6):
     integrals = fe.Integrals3D(world)  # Setup for integrals
-    G = integrals.compute_two_body_integrals(
-        orbitals, ordering="chem"
-    )  # g-tensor (electron-electron interaction)
+    G = integrals.compute_two_body_integrals(orbitals, ordering="chem")  # g-tensor (electron-electron interaction)
     T = integrals.compute_kinetic_integrals(orbitals)  # Kinetic energy
-    V = integrals.compute_potential_integrals(
-        orbitals, mra_pot
-    )  # Potential energy (h-tensor=T+V)
+    V = integrals.compute_potential_integrals(orbitals, mra_pot)  # Potential energy (h-tensor=T+V)
 
     # FCI calculation
     e, fcivec = fci.direct_spin0.kernel(

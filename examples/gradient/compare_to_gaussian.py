@@ -17,9 +17,7 @@ print("2 MRA orbitals: ", energy)
 
 for basis in ["sto-3g", "sto-6g", "6-31G", "cc-pVDZ", "cc-pVTZ", "cc-pVQZ", "cc-pV5Z"]:
     mol = tq.Molecule(geometry=geom, basis_set=basis)
-    print(
-        "{} orbitals gives: {:2.5f}".format(mol.n_orbitals, mol.compute_energy("fci"))
-    )
+    print("{} orbitals gives: {:2.5f}".format(mol.n_orbitals, mol.compute_energy("fci")))
 
     from pyscf import gto, mcscf, scf
 

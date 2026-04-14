@@ -716,8 +716,24 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
             auto Q = madness::QProjector<double, NDIM>(frozen_occ_orbs);
             active_orbs = Q(active_orbs);
         }
-        active_orbs = orthonormalize_symmetric(active_orbs);
-        // orbitals = orthonormalize_cd(orbitals);
+        // Orthonormalize active orbitals
+        if (orthonormalization_method == "symmetric") {
+            std::cout << "\n=== Symmetric Orthonormalization ===" << std::endl;
+            active_orbs = orthonormalize_symmetric(active_orbs);
+            std::cout << "=== Symmetric Orthonormalization Complete ===" << std::endl;
+        } else if (orthonormalization_method == "mixed") {
+            std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
+            active_orbs = orthonormalize_mixed_by_degeneracy(active_orbs);
+            std::cout << "=== Mixed Orthonormalization Complete ===" << std::endl;
+        } else if (orthonormalization_method == "cholesky") {
+            std::cout << "\n=== Cholesky Orthonormalization ===" << std::endl;
+            active_orbs = orthonormalize_cd(active_orbs);
+            std::cout << "=== Cholesky Orthonormalization Complete ===" << std::endl;
+        } else {
+            std::string error_msg = "Unknown orthonormalization method: " + orthonormalization_method;
+            MADNESS_EXCEPTION(error_msg.c_str(), 1);
+        }
+
         active_orbs = truncate(active_orbs, truncation_tol);
 
         // Check convergence
@@ -1028,6 +1044,125 @@ std::vector<double> Optimization<NDIM>::get_g_tensor() {
         }
     }
     return effective_two_body_integrals_elements;
+}
+
+template <std::size_t NDIM>
+void Optimization<NDIM>::set_orthonormalization_method(const std::string& method, double degeneracy_tol) {
+    orthonormalization_method = method;
+    degeneracy_tolerance = degeneracy_tol;
+}
+
+template <std::size_t NDIM>
+std::vector<Function<double, NDIM>> Optimization<NDIM>::orthonormalize_mixed_by_degeneracy(
+    std::vector<Function<double, NDIM>>& orbitals) {
+
+    std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
+
+    // Get orbital occupations from diagonal of 1-RDM
+    std::vector<double> occupations;
+    for (int i = 0; i < as_dim; i++) {
+        occupations.push_back(as_one_rdm(i, i));
+        std::cout << "Orbital " << i << " occupation: " << as_one_rdm(i, i) << std::endl;
+    }
+
+    // Identify degenerate groups
+    std::vector<std::pair<int, int>> groups; // (start, end) for each group
+    int i = 0;
+    while (i < as_dim) {
+        int start = i;
+        double current_occ = occupations[i];
+
+        // Find all consecutive orbitals with similar occupation
+        int j = i + 1;
+        while (j < as_dim && std::abs(occupations[j] - current_occ) < degeneracy_tolerance) {
+            j++;
+        }
+
+        groups.push_back(std::make_pair(start, j));
+        i = j;
+    }
+
+    std::cout << "Found " << groups.size() << " degeneracy groups:" << std::endl;
+
+    // Process each group: use symmetric within, orthogonalize between groups
+    std::vector<Function<double, NDIM>> result_orbitals;
+
+    for (size_t g = 0; g < groups.size(); g++) {
+        int start = groups[g].first;
+        int end = groups[g].second;
+        int group_size = end - start;
+
+        // Extract orbitals for this group
+        std::vector<Function<double, NDIM>> group_orbitals;
+        for (int k = start; k < end; k++) {
+            group_orbitals.push_back(orbitals[k]);
+        }
+
+        std::vector<Function<double, NDIM>> ortho_group_orbitals;
+
+        if (group_size == 1) {
+            // Non-degenerate single orbital
+            std::cout << "  Group " << g << " (orbital " << start << "): "
+                      << "occupation=" << occupations[start] << ", method=Cholesky" << std::endl;
+
+            // Orthogonalize against all previous orbitals using Cholesky-like procedure
+            if (result_orbitals.size() > 0) {
+                auto current_orb = group_orbitals[0];
+
+                // Project out components of previous orbitals
+                for (const auto& prev_orb : result_orbitals) {
+                    double overlap = madness::inner(current_orb, prev_orb);
+                    current_orb = current_orb - overlap * prev_orb;
+                }
+
+                // Normalize
+                double norm = current_orb.norm2();
+                if (norm > 1e-12) {
+                    current_orb.scale(1.0 / norm);
+                }
+
+                ortho_group_orbitals.push_back(current_orb);
+            } else {
+                // First orbital, just normalize
+                double norm = group_orbitals[0].norm2();
+                group_orbitals[0].scale(1.0 / norm);
+                ortho_group_orbitals = group_orbitals;
+            }
+        } else {
+            // Degenerate group: use Symmetric within manifold to preserve symmetry
+            std::cout << "  Group " << g << " (orbitals " << start << "-" << (end-1) << "): "
+                      << "occupations=[";
+            for (int k = start; k < end; k++) {
+                std::cout << occupations[k];
+                if (k < end - 1) std::cout << ", ";
+            }
+            std::cout << "], method=Symmetric (within group)" << std::endl;
+
+            // First, orthogonalize against all previous orbitals (Cholesky-like)
+            if (result_orbitals.size() > 0) {
+                for (auto& group_orb : group_orbitals) {
+                    for (const auto& prev_orb : result_orbitals) {
+                        double overlap = madness::inner(group_orb, prev_orb);
+                        group_orb = group_orb - overlap * prev_orb;
+                    }
+                }
+            }
+
+            // Then apply symmetric within the group to preserve symmetry
+            auto S = madness::matrix_inner(*(madness_process.world), group_orbitals, group_orbitals, true);
+            ortho_group_orbitals = madness::orthonormalize_symmetric(group_orbitals, S);
+        }
+
+        // Add to result
+        for (auto& orb : ortho_group_orbitals) {
+            result_orbitals.push_back(orb);
+        }
+    }
+
+
+    std::cout << "=== Mixed Orthonormalization Complete ===\n" << std::endl;
+
+    return result_orbitals;
 }
 
 template class Optimization<2>;
