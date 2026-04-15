@@ -1,4 +1,6 @@
-![FrayedEnds](frayed_ends.png)
+<div style="text-align: center;">
+  <img src="frayed_ends.png" width="50%">
+</div>
 
 # FrayedEnds 
 
