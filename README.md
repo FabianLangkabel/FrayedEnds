@@ -1,5 +1,5 @@
 <div style="display: flex; justify-content: center;">
-  <img src="frayed_ends.png" width="50%">
+  <img src="frayed_ends.png" width="25%">
 </div>
 
 
