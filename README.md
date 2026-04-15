@@ -1,4 +1,7 @@
-![FrayedEnds](frayed_ends.png)
+<div style="display: flex; justify-content: center;">
+  <img src="frayed_ends.png" width="50%">
+</div>
+
 
 # FrayedEnds 
 
