@@ -1,25 +1,27 @@
-import frayedends as fe
 import time
+
 import numpy as np
 from pyscf import fci
+
+import frayedends as fe
 
 iterations = 15
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-basisset = '6-31g'
+basisset = "6-31g"
 n_electrons = 4
-econv = 1.e-6 # Energy convergence threshold
+econv = 1.0e-6  # Energy convergence threshold
 
 iterations_results = []
 
 geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
 
-if geometry_mode == "equidistant": # linear H4 molecule with equidistant spacing d
+if geometry_mode == "equidistant":  # linear H4 molecule with equidistant spacing d
     distance = np.arange(2.5, 0.45, -0.05).tolist()
-elif geometry_mode == "h2_pair": # for H2 pair getting closer
+elif geometry_mode == "h2_pair":  # for H2 pair getting closer
     distance = np.arange(1.5, 0.2, -0.03).tolist()
 else:
     raise ValueError("geometry_mode must be 'equidistant' or 'h2_pair'")
@@ -42,15 +44,19 @@ for d in distance:
     reported_distance = 2 * d if geometry_mode == "h2_pair" else d
 
     if geometry_mode == "equidistant":  # for equidistant linear H4 molecule
-        geom = ("H 0.0 0.0 " + (-d - d / 2).__str__() + "\n"
-                "H 0.0 0.0 " + (-d / 2).__str__() + "\n"
-                "H 0.0 0.0 " + (d / 2).__str__() + "\n"
-                "H 0.0 0.0 " + (d + d / 2).__str__() + "\n")
+        geom = (
+            "H 0.0 0.0 " + (-d - d / 2).__str__() + "\n"
+            "H 0.0 0.0 " + (-d / 2).__str__() + "\n"
+            "H 0.0 0.0 " + (d / 2).__str__() + "\n"
+            "H 0.0 0.0 " + (d + d / 2).__str__() + "\n"
+        )
     elif geometry_mode == "h2_pair":  # for H2 molecules getting closer and closer to a H4 molecule
-        geom = ("H 0.0 0.0 " + (-d - 1.5).__str__() + "\n"
-                "H 0.0 0.0 " + (-d).__str__() + "\n"
-                "H 0.0 0.0 " + d.__str__() + "\n"
-                "H 0.0 0.0 " + (d + 1.5).__str__() + "\n")
+        geom = (
+            "H 0.0 0.0 " + (-d - 1.5).__str__() + "\n"
+            "H 0.0 0.0 " + (-d).__str__() + "\n"
+            "H 0.0 0.0 " + d.__str__() + "\n"
+            "H 0.0 0.0 " + (d + 1.5).__str__() + "\n"
+        )
     else:
         raise ValueError("Invalid geometry mode selected.")
 
@@ -65,7 +71,7 @@ for d in distance:
     integrals = fe.Integrals3D(world)
     orbs = integrals.orthonormalize(orbitals=orbs)
     for i in range(len(orbs)):
-        orbs[i].type="active"
+        orbs[i].type = "active"
 
     # for i in range(len(orbs)):
     #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
@@ -82,10 +88,10 @@ for d in distance:
         V = integrals.compute_potential_integrals(orbs, Vnuc)
 
         # FCI calculation
-        e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals,
-                                            n_electrons)  # Computes the energy and the FCI vector
-        rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, n_orbitals,
-                                                 n_electrons)  # Computes the 1- and 2- body reduced density matrices
+        e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals, n_electrons)  # Computes the energy and the FCI vector
+        rdm1, rdm2 = fci.direct_spin0.make_rdm12(
+            fcivec, n_orbitals, n_electrons
+        )  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
 
         e_tot = e + nuc_repulsion
@@ -104,7 +110,9 @@ for d in distance:
         with open("iterations_pno_fci_oo.dat", "a") as f:
             f.write(f"{reported_distance:.3f} {iteration} {iter_time:.2f} {e_tot: .15f}" + "\n")
 
-        iterations_results.append({"distance": reported_distance, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot})
+        iterations_results.append(
+            {"distance": reported_distance, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot}
+        )
 
         if np.isclose(e_tot, current, atol=econv, rtol=0.0):
             break  # The loop terminates as soon as the energy changes less than econv in one iteration step

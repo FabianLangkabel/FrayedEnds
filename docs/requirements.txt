@@ -1,3 +1,8 @@
 jupyter-book
 matplotlib
 numpy
+py3Dmol
+scipy
+tequila-basic
+qulacs
+pyscf

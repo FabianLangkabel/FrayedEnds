@@ -3,20 +3,22 @@ H4 linear molecule FCI calculation with Orbital Refinement
 Pair Natural Orbitals (PNOs) used as initial guesses
 """
 
-import frayedends as fe
 import time
+
 import numpy as np
 from pyscf import fci
 
+import frayedends as fe
+
 # Parameter Configuration
 molecule_name = "h4"
-n_electrons = 4     # Number of electrons
-iterations = 10     # Number of iterations
-box_size = 50.0     # Size of the simulation box
-wavelet_order = 7   # Order of wavelet basis functions
-madness_thresh = 0.0001 # Threshold for numerical precision of function representation
-econv = 1.e-6 # Energy convergence threshold
-basisset = '6-31g'  # Initial basis set for calculation
+n_electrons = 4  # Number of electrons
+iterations = 10  # Number of iterations
+box_size = 50.0  # Size of the simulation box
+wavelet_order = 7  # Order of wavelet basis functions
+madness_thresh = 0.0001  # Threshold for numerical precision of function representation
+econv = 1.0e-6  # Energy convergence threshold
+basisset = "6-31g"  # Initial basis set for calculation
 
 iterations_results = []
 
@@ -32,10 +34,7 @@ with open("results_pno_fci_oo.dat", "w") as f:
 total_start = time.perf_counter()
 
 # Defines a linear H4 molecule geometry with 1.0 Angstrom spacing between adjacent atoms
-geom = ("H 0.0 0.0 -1.5\n"
-        "H 0.0 0.0 -0.5\n"
-        "H 0.0 0.0 0.5\n"
-        "H 0.0 0.0 1.5\n")
+geom = "H 0.0 0.0 -1.5\nH 0.0 0.0 -0.5\nH 0.0 0.0 0.5\nH 0.0 0.0 1.5\n"
 
 # Setting up the numerical environment for the MRA calculations
 world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
@@ -44,19 +43,19 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 madpno = fe.MadPNO(world, geom, n_orbitals=8)
 orbs = madpno.get_orbitals()
 
-nuc_repulsion = madpno.get_nuclear_repulsion() # Compute nuclear repulsion energy
-Vnuc = madpno.get_nuclear_potential() # Compute nuclear potential
+nuc_repulsion = madpno.get_nuclear_repulsion()  # Compute nuclear repulsion energy
+Vnuc = madpno.get_nuclear_potential()  # Compute nuclear potential
 
 integrals = fe.Integrals3D(world)
-orbs = integrals.orthonormalize(orbitals=orbs) # Orthonormalize orbitals
+orbs = integrals.orthonormalize(orbitals=orbs)  # Orthonormalize orbitals
 
 n_orbitals = len(orbs)
 
 for i in range(len(orbs)):
-    orbs[i].type="active"
+    orbs[i].type = "active"
 
 for i in range(len(orbs)):
-    world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001) # Plot PNOs
+    world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot PNOs
 
 current = 0.0
 for iteration in range(iterations):
@@ -69,23 +68,25 @@ for iteration in range(iterations):
     V = integrals.compute_potential_integrals(orbs, Vnuc)
 
     # Full Configuration Interaction (FCI) calculation
-    e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals,
-                                        n_electrons)  # Computes the energy and the FCI vector
+    e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals, n_electrons)  # Computes the energy and the FCI vector
     # Calculate reduced density matrices needed for orbital refinement
-    rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, n_orbitals,
-                                             n_electrons)  # Computes the 1- and 2- body reduced density matrices
-    rdm2 = np.swapaxes(rdm2, 1, 2) # Change to physics notation
+    rdm1, rdm2 = fci.direct_spin0.make_rdm12(
+        fcivec, n_orbitals, n_electrons
+    )  # Computes the 1- and 2- body reduced density matrices
+    rdm2 = np.swapaxes(rdm2, 1, 2)  # Change to physics notation
 
-    e_tot = e + nuc_repulsion # Computes total energy
+    e_tot = e + nuc_repulsion  # Computes total energy
 
     print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
     # Orbital Refinement
     opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
-    orbs = opti.get_orbitals(orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001) # Refines the orbitals and returns the new ones
+    orbs = opti.get_orbitals(
+        orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+    )  # Refines the orbitals and returns the new ones
 
     for i in range(len(orbs)):
-        world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001) # Plot the refined orbitals
+        world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals
 
     iter_end = time.perf_counter()
     iter_time = iter_end - iter_start

@@ -58,9 +58,7 @@ def test_spa(data):
         G = integrals.compute_two_body_integrals(orbitals)
         del integrals
 
-        mol = tq.Molecule(
-            geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
-        )
+        mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
         U = mol.make_ansatz(name="SPA", edges=edges)
         H = mol.make_hamiltonian()
         E = tq.ExpectationValue(H=H, U=U)
@@ -82,3 +80,33 @@ def test_spa(data):
     assert numpy.isclose(energy, test_energy, atol=1.0e-3)
 
     del world
+
+def test_evaluate_3D():
+    def functor(x,y,z):
+        r = (x+1.0)**2 + (y+2.0)**2 + (z-3.0)**2
+        return 3.0*numpy.exp(-r**2)
+    world = frayedends.MadWorld3D(L=100.0)
+    factory = frayedends.MRAFunctionFactory3D(world, functor)
+    f = factory.get_function()
+    del factory
+    points = list(numpy.random.normal(loc=0.0, scale=20.0, size=3*100))
+    y = world.evaluate([f], points=points, units="bohr")[0]
+    i = 0
+    for k in range(len(y)):
+        assert numpy.isclose(y[k], functor(points[3*k],points[3*k+1],points[3*k+2]), atol=1.0e-3)
+        i += 3
+
+def test_evaluate_2D():
+    def functor(x,y):
+        r = (x+1.0)**2 + (y+2.0)**2
+        return 3.0*numpy.exp(-r**2)
+    world = frayedends.MadWorld2D(L=100.0)
+    factory = frayedends.MRAFunctionFactory2D(world, functor)
+    f = factory.get_function()
+    del factory
+    points = list(numpy.random.normal(loc=0.0, scale=20.0, size=3*100))
+    y = world.evaluate([f], points=points, units="bohr")[0]
+    i = 0
+    for k in range(len(y)):
+        assert numpy.isclose(y[k], functor(points[2*k],points[2*k+1],), atol=1.0e-3)
+        i += 3

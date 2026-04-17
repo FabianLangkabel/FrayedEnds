@@ -25,9 +25,13 @@ classifiers = [
     "License :: ???",
 ]
 dependencies = [
-    "numpy", "pyscf", "qulacs", "tequila-basic", "block2", "nanobind", "geometric",
-    "black>=24.4.2",
-    "isort>=5.10.0",
+    "numpy",
+    "pyscf",
+    "qulacs",
+    "tequila-basic",
+    "block2",
+    "nanobind",
+    "ruff",
     "clang-format>=17.0.6"
 ]
 
@@ -43,3 +47,39 @@ build-dir = "build/{wheel_tag}"
 
 # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["test*"]
+
+[tool.ruff.lint]
+select = [
+    # E: pycodestyle errors
+    "E",
+    # I: import sorting
+    "I"
+]
+ignore = [
+    # E501: Line too long
+    # Mostly taken care of by the formatter, remaining issues are string literals and comments which is not a priority
+    # at the moment
+    "E501",
+    # E731: Do not assign a `lambda` expression, use a `def`
+    # Annoying because it will split a one line lambda into a two line def, and then add empty lines before and after
+    # the def, so now the code is four times as long.
+    "E731",
+    # E741/E742/E743: Ambiguous variable/class/function name
+    # Not a significant issue when using a good font, and clashes with some conventions, e.g. I for identity
+    "E741",
+    "E742",
+    "E743",
+]
+
+# no input format checking in ipynb
+# clashes with quarto commands
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["I"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

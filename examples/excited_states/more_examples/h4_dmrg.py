@@ -1,14 +1,16 @@
 import subprocess as sp
-import frayedends as fe
 import time
+
 import numpy as np
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
+
+import frayedends as fe
 
 molecule_name = "h4"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-basisset = '6-31g'
+basisset = "6-31g"
 n_elec = 4
 number_roots = 3
 
@@ -17,9 +19,9 @@ iteration_results = []
 geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
 
-if geometry_mode == "equidistant": # linear H4 molecule with equidistant spacing d
+if geometry_mode == "equidistant":  # linear H4 molecule with equidistant spacing d
     distance = np.arange(2.5, 0.45, -0.05).tolist()
-elif geometry_mode == "h2_pair": # for H2 pair getting closer
+elif geometry_mode == "h2_pair":  # for H2 pair getting closer
     distance = np.arange(1.5, 0.2, -0.03).tolist()
 else:
     raise ValueError("geometry_mode must be 'equidistant' or 'h2_pair'")
@@ -34,47 +36,76 @@ for d in distance:
     reported_distance = 2 * d if geometry_mode == "h2_pair" else d
 
     if geometry_mode == "equidistant":
-        nwchem_input = '''
+        nwchem_input = (
+            """
         title "molecule"
         memory stack 1500 mb heap 100 mb global 1400 mb
         charge 0  
         geometry units angstrom noautosym nocenter
-            H 0.0 0.0 ''' + (-d-d/2).__str__() + '''
-            H 0.0 0.0 ''' + (-d/2).__str__() + '''
-            H 0.0 0.0 ''' + (d/2).__str__() + '''
-            H 0.0 0.0 ''' + (d+d/2).__str__() + '''
+            H 0.0 0.0 """
+            + (-d - d / 2).__str__()
+            + """
+            H 0.0 0.0 """
+            + (-d / 2).__str__()
+            + """
+            H 0.0 0.0 """
+            + (d / 2).__str__()
+            + """
+            H 0.0 0.0 """
+            + (d + d / 2).__str__()
+            + """
         end
         basis  
-          * library ''' + basisset + '''
+          * library """
+            + basisset
+            + """
         end
         scf  
          maxiter 200
         end   
         task scf  
-        '''
+        """
+        )
     elif geometry_mode == "h2_pair":
-        nwchem_input = '''
+        nwchem_input = (
+            """
         title "molecule"
         memory stack 1500 mb heap 100 mb global 1400 mb
         charge 0  
         geometry units angstrom noautosym nocenter
-            H 0.0 0.0 ''' + (-d - 2.55).__str__() + '''
-            H 0.0 0.0 ''' + (-d).__str__() + '''
-            H 0.0 0.0 ''' + d.__str__() + '''
-            H 0.0 0.0 ''' + (d + 2.55).__str__() + '''
+            H 0.0 0.0 """
+            + (-d - 2.55).__str__()
+            + """
+            H 0.0 0.0 """
+            + (-d).__str__()
+            + """
+            H 0.0 0.0 """
+            + d.__str__()
+            + """
+            H 0.0 0.0 """
+            + (d + 2.55).__str__()
+            + """
         end
         basis  
-          * library ''' + basisset + '''
+          * library """
+            + basisset
+            + """
         end
         scf  
          maxiter 200
         end   
         task scf  
-        '''
+        """
+        )
 
     with open("nwchem", "w") as f:
         f.write(nwchem_input)
-    programm = sp.call("/opt/anaconda3/envs/frayedends/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
+    programm = sp.call(
+        "/opt/anaconda3/envs/frayedends/bin/nwchem nwchem",
+        stdout=open("nwchem.out", "w"),
+        stderr=open("nwchem_err.log", "w"),
+        shell=True,
+    )
 
     world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
@@ -85,9 +116,9 @@ for d in distance:
     nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 
     for i in range(len(orbs)):
-        orbs[i].type="active"
+        orbs[i].type = "active"
 
-    #for i in range(len(orbs)):
+    # for i in range(len(orbs)):
     #   world.line_plot(f"initial_orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
     integrals = fe.Integrals3D(world)

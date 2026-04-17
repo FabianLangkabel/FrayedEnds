@@ -1,5 +1,6 @@
 /.vscode
 /build
+/.venv
 /__pycache__
 /.idea
 *.pyc
@@ -9,3 +10,4 @@
 *.cube
 molecule
 *.hdf5
+*.sif

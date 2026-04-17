@@ -1,7 +1,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-#include <nanobind/stl/tuple.h>
 #include "optimization.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
@@ -12,6 +11,9 @@
 #include "atombas.hpp"
 #include "madness_process.hpp"
 #include "moleculargeometry.hpp"
+#include "open_shell/nwchem_converter_open_shell.hpp"
+#include "open_shell/optimization_open_shell.hpp"
+#include "open_shell/integrals_open_shell.hpp"
 
 namespace nb = nanobind;
 
@@ -21,7 +23,18 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
-        .def("get_function_defaults", &MadnessProcess<3>::get_function_defaults)
+        .def("get_function_defaults", [](MadnessProcess<3>& self) {
+            auto t = self.get_function_defaults();
+            nb::dict d;
+            d["cell_width"] = std::get<0>(t);
+            d["k"] = std::get<1>(t);
+            d["thresh"] = std::get<2>(t);
+            d["initial_level"] = std::get<3>(t);
+            d["truncate_mode"] = std::get<4>(t);
+            d["refine"] = std::get<5>(t);
+            d["n_threads"] = std::get<6>(t);
+            return d;
+        })
         .def("update_function_defaults", &MadnessProcess<3>::update_function_defaults)
         .def("change_nthreads", &MadnessProcess<3>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<3>::loadfct)
@@ -35,13 +48,25 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("initial_level", &MadnessProcess<3>::initial_level)
         .def_rw("truncate_mode", &MadnessProcess<3>::truncate_mode)
         .def_rw("refine", &MadnessProcess<3>::refine)
+        .def("evaluate", &MadnessProcess<3>::evaluate)
         .def_rw("n_threads", &MadnessProcess<3>::n_threads);
-
+    
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
         .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
              nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
              nb::arg("refine"), nb::arg("n_threads"))
-        .def("get_function_defaults", &MadnessProcess<2>::get_function_defaults)
+        .def("get_function_defaults", [](MadnessProcess<2>& self) {
+            auto t = self.get_function_defaults();
+            nb::dict d;
+            d["cell_width"] = std::get<0>(t);
+            d["k"] = std::get<1>(t);
+            d["thresh"] = std::get<2>(t);
+            d["initial_level"] = std::get<3>(t);
+            d["truncate_mode"] = std::get<4>(t);
+            d["refine"] = std::get<5>(t);
+            d["n_threads"] = std::get<6>(t);
+            return d;
+        })
         .def("update_function_defaults", &MadnessProcess<2>::update_function_defaults)
         .def("change_nthreads", &MadnessProcess<2>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<2>::loadfct)
@@ -54,6 +79,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("initial_level", &MadnessProcess<2>::initial_level)
         .def_rw("truncate_mode", &MadnessProcess<2>::truncate_mode)
         .def_rw("refine", &MadnessProcess<2>::refine)
+        .def("evaluate", &MadnessProcess<2>::evaluate)
         .def_rw("n_threads", &MadnessProcess<2>::n_threads);
 
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
@@ -119,6 +145,15 @@ NB_MODULE(_frayedends_impl, m) {
         .def("normalize", &Integrals<2>::normalize)
         .def("orthonormalize", &Integrals<2>::orthonormalize);
 
+    nb::class_<Integrals_open_shell<3>>(m, "Integrals_open_shell_3D")
+        .def(nb::init<MadnessProcess<3>&>())
+        .def("compute_potential_integrals", &Integrals_open_shell<3>::nb_compute_potential_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"), nb::arg("potential"))
+        .def("compute_kinetic_integrals", &Integrals_open_shell<3>::nb_compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
+        .def("compute_two_body_integrals", &Integrals_open_shell<3>::nb_compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
+        .def("compute_effective_hamiltonian", &Integrals_open_shell<3>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
+        .def("override_numerical_parameters", static_cast<void (Integrals_open_shell<3>::*)(double, double, double, double, double)>(&Integrals_open_shell<3>::override_numerical_parameters), nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
+        
+
     nb::class_<Optimization<3>>(m, "Optimization3D")
         .def(nb::init<MadnessProcess<3>&>())
         .def("give_initial_orbitals", &Optimization<3>::give_initial_orbitals)
@@ -139,6 +174,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<3>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<3>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<3>::save_effective_hamiltonian)
+        .def("set_orthonormalization_method", &Optimization<3>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<3>::get_orbitals)
         .def("get_c", &Optimization<3>::get_c)
         .def("get_h_tensor", &Optimization<3>::get_h_tensor)
@@ -170,6 +206,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("save_orbitals", &Optimization<2>::save_orbitals)
         .def("save_effective_hamiltonian", &Optimization<2>::save_effective_hamiltonian)
+        .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
         .def("get_c", &Optimization<2>::get_c)
         .def("get_h_tensor", &Optimization<2>::get_h_tensor)
@@ -180,6 +217,23 @@ NB_MODULE(_frayedends_impl, m) {
         .def_rw("coulomb_eps", &Optimization<2>::coulomb_eps)
         .def_rw("BSH_lo", &Optimization<2>::BSH_lo)
         .def_rw("BSH_eps", &Optimization<2>::BSH_eps);
+
+    nb::class_<Optimization_open_shell<3>>(m, "Optimization_open_shell_3D")
+        .def(nb::init<MadnessProcess<3>&>())
+        .def("give_initial_orbitals", &Optimization_open_shell<3>::give_initial_orbitals)
+        .def("give_rdm_and_rotate_orbitals", &Optimization_open_shell<3>::give_rdm_and_rotate_orbitals)
+        .def("give_potential_and_repulsion", &Optimization_open_shell<3>::give_potential_and_repulsion)
+        .def("calculate_all_integrals", &Optimization_open_shell<3>::calculate_all_integrals)
+        .def("calculate_energies", &Optimization_open_shell<3>::calculate_energies)
+        .def("calculate_lagrange_multiplier", &Optimization_open_shell<3>::calculate_lagrange_multiplier)
+        .def("calculate_lagrange_multiplier_element_as_as", &Optimization_open_shell<3>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core", &Optimization_open_shell<3>::calculate_lagrange_multiplier_element_as_core)
+        .def("optimize_orbitals", &Optimization_open_shell<3>::optimize_orbitals)
+        .def("get_all_active_orbital_updates", &Optimization_open_shell<3>::get_all_active_orbital_updates)
+        .def("rotate_orbitals_back", &Optimization_open_shell<3>::rotate_orbitals_back)
+        .def("get_effective_hamiltonian", &Optimization_open_shell<3>::get_effective_hamiltonian)
+        .def("get_orbitals", &Optimization_open_shell<3>::get_orbitals)
+        .def("override_numerical_parameters", &Optimization_open_shell<3>::override_numerical_parameters, nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
 
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<MadnessProcess<3>&, const std::string&>())
@@ -210,7 +264,7 @@ NB_MODULE(_frayedends_impl, m) {
     nb::class_<PyFuncFactory<3>>(m, "PyFuncFactory3D")
         .def(nb::init<MadnessProcess<3>&, std::function<double(double, double, double)>&>())
         .def("get_mra_function", &PyFuncFactory<3>::get_mra_function);
-
+    
     nb::class_<PyFuncFactory<2>>(m, "PyFuncFactory2D")
         .def(nb::init<MadnessProcess<2>&, std::function<double(double, double)>&>())
         .def("get_mra_function", &PyFuncFactory<2>::get_mra_function);
@@ -236,4 +290,13 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_mos", &NWChem_Converter::get_mos)
         .def("get_vnuc", &NWChem_Converter::get_vnuc)
         .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy);
+
+    nb::class_<NWChem_Converter_open_shell>(m, "NWChem_Converter_open_shell")
+        .def(nb::init<MadnessProcess<3>&>())
+        .def("read_nwchem_file", &NWChem_Converter_open_shell::read_nwchem_file)
+        .def("get_normalized_aos", &NWChem_Converter_open_shell::get_normalized_aos)
+        .def("get_alpha_mos", &NWChem_Converter_open_shell::get_alpha_mos)
+        .def("get_beta_mos", &NWChem_Converter_open_shell::get_beta_mos)
+        .def("get_vnuc", &NWChem_Converter_open_shell::get_vnuc)
+        .def("get_nuclear_repulsion_energy", &NWChem_Converter_open_shell::get_nuclear_repulsion_energy);
 }

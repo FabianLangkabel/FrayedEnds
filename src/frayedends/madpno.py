@@ -8,7 +8,6 @@ from .madworld import get_function_info, redirect_output
 from .moleculargeometry import MolecularGeometry
 
 class MadPNO:
-
     _orbitals = None
     _h = None  # one-body tensor
     _g = None  # two-body tensor
@@ -59,10 +58,8 @@ class MadPNO:
             geometry = "molecule"
 
         if units is None:
-            if self.silent == False:
-                print(
-                    "Warning: No units passed with geometry, assuming units are angstrom."
-                )
+            if not self.silent:
+                print("Warning: No units passed with geometry, assuming units are angstrom.")
             units = "angstrom"
         else:
             units = units.lower()
@@ -71,7 +68,7 @@ class MadPNO:
             elif units in ["bohr", "atomic", "atomic units", "au", "a.u."]:
                 units = "bohr"
             else:
-                if self.silent == False:
+                if not self.silent:
                     print(
                         "Warning: Units passed with geometry not recognized (available units are angstrom or bohr), assuming units are angstrom."
                     )
@@ -90,9 +87,7 @@ class MadPNO:
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
-            self._orbitals = self.compute_orbitals(
-                n_orbitals=n_orbitals, *args, **kwargs
-            )
+            self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
@@ -247,9 +242,7 @@ class MadPNO:
         molecule_file_str = "molecule\n"
         molecule_file_str += geometry
         molecule_file_str += "\nend"
-        molecule_file_str = os.linesep.join(
-            [s for s in molecule_file_str.splitlines() if s]
-        )
+        molecule_file_str = os.linesep.join([s for s in molecule_file_str.splitlines() if s])
         f = open(filename, "w")
         f.write(molecule_file_str)
         f.close()

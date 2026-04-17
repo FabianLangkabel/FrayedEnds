@@ -42,7 +42,6 @@ e_rep = integrals.compute_two_body_integrals(frozen_orbitals).elems[0,0,0,0]
 c += kin + pot + e_rep
 u = None
 for iteration in range(6):
-
     integrals = frayedends.Integrals3D(world)
     G = integrals.compute_two_body_integrals(active_orbitals)
     FC_int = integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)

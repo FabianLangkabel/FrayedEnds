@@ -26,8 +26,7 @@ nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 
 c = nuc_repulsion
-for iteration in range(10):
-
+for iteration in range(30):
     integrals = frayedends.Integrals3D(world)
     G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)

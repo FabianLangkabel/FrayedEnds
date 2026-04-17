@@ -4,12 +4,11 @@ from ._frayedends_impl import Optimization2D as OptInterface2D
 from ._frayedends_impl import Optimization3D as OptInterface3D
 from ._frayedends_impl import SavedFct2D, SavedFct3D
 from .madworld import redirect_output, MadWorld2D, MadWorld3D
+from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
 
 
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
-    new_rdm1 = np.dot(
-        np.dot(TransformationMatrix.transpose(), rdm1), TransformationMatrix
-    )
+    new_rdm1 = np.dot(np.dot(TransformationMatrix.transpose(), rdm1), TransformationMatrix)
     n = rdm2.shape[0]
 
     temp1 = np.zeros(shape=(n, n, n, n))
@@ -71,7 +70,7 @@ class Optimization3D:
         "truncation_tol": 1e-6, #truncation tolerance for MRA representation of orbitals
         "coulomb_lo": 0.001, #lower cutoff for representation of Coulomb kernel
         "coulomb_eps": 1e-6,
-        "BSH_lo": 0.001, #lower cutoff for representation of BSH kernel
+        "BSH_lo": 0.001,  # lower cutoff for representation of BSH kernel
         "BSH_eps": 1e-6,
     }
 
@@ -89,13 +88,27 @@ class Optimization3D:
                 self.opt_parameters[k] = v
             else:
                 raise ValueError(f"Unknown parameter: {k}")
-        
+
         self.impl.nocc = self.opt_parameters["nocc"]
         self.impl.truncation_tol = self.opt_parameters["truncation_tol"]
         self.impl.coulomb_lo = self.opt_parameters["coulomb_lo"]
         self.impl.coulomb_eps = self.opt_parameters["coulomb_eps"]
         self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
         self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
+
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
+        """
+        Set the orthonormalization method for orbital optimization.
+
+        Args:
+            method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
+                   - "symmetric": Standard symmetric orthonormalization (default)
+                   - "cholesky": Cholesky decomposition orthonormalization
+                   - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
+            degeneracy_tol: Tolerance for determining if two orbital occupations
+                           are degenerate (only used for "mixed" method, default: 1e-3)
+        """
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
     def optimize_orbs(
@@ -175,7 +188,15 @@ class Optimization3D:
         return self._c
 
     def get_opt_parameters(self):
-        return {"nocc": self.impl.nocc, "truncation_tol": self.impl.truncation_tol, "coulomb_lo": self.impl.coulomb_lo, "coulomb_eps": self.impl.coulomb_eps, "BSH_lo": self.impl.BSH_lo, "BSH_eps": self.impl.BSH_eps}
+        return {
+            "nocc": self.impl.nocc,
+            "truncation_tol": self.impl.truncation_tol,
+            "coulomb_lo": self.impl.coulomb_lo,
+            "coulomb_eps": self.impl.coulomb_eps,
+            "BSH_lo": self.impl.BSH_lo,
+            "BSH_eps": self.impl.BSH_eps,
+        }
+
 
 class Optimization2D:
 
@@ -211,13 +232,27 @@ class Optimization2D:
                 self.opt_parameters[k] = v
             else:
                 raise ValueError(f"Unknown parameter: {k}")
-        
+
         self.impl.nocc = self.opt_parameters["nocc"]
         self.impl.truncation_tol = self.opt_parameters["truncation_tol"]
         self.impl.coulomb_lo = self.opt_parameters["coulomb_lo"]
         self.impl.coulomb_eps = self.opt_parameters["coulomb_eps"]
         self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
         self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
+
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
+        """
+        Set the orthonormalization method for orbital optimization.
+
+        Args:
+            method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
+                   - "symmetric": Standard symmetric orthonormalization (default)
+                   - "cholesky": Cholesky decomposition orthonormalization
+                   - "mixed": Use symmetric for degenerate orbitals, Cholesky for others
+            degeneracy_tol: Tolerance for determining if two orbital occupations
+                           are degenerate (only used for "mixed" method, default: 1e-3)
+        """
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
     def optimize_orbs(
@@ -298,4 +333,61 @@ class Optimization2D:
         return self._c
 
     def get_opt_parameters(self):
-        return {"nocc": self.impl.nocc, "truncation_tol": self.impl.truncation_tol, "coulomb_lo": self.impl.coulomb_lo, "coulomb_eps": self.impl.coulomb_eps, "BSH_lo": self.impl.BSH_lo, "BSH_eps": self.impl.BSH_eps}
+        return {
+            "nocc": self.impl.nocc,
+            "truncation_tol": self.impl.truncation_tol,
+            "coulomb_lo": self.impl.coulomb_lo,
+            "coulomb_eps": self.impl.coulomb_eps,
+            "BSH_lo": self.impl.BSH_lo,
+            "BSH_eps": self.impl.BSH_eps,
+        }
+
+
+class Optimization_open_shell_3D:
+    _orbitals = None
+    _Vnuc = None  # nuclear potential
+    _nuclear_repulsion = None
+    impl = None
+    converged = None  # indicates if the last call converged
+
+    # @property
+    # def orbitals(self, *args, **kwargs):
+    #    return self.get_orbitals(*args, **kwargs)
+
+    def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
+        self.impl = OptInterface_open_shell_3D(madworld.impl)
+        self._Vnuc = Vnuc
+        self._nuclear_repulsion = nuc_repulsion
+
+    @redirect_output("madopt.log")
+    def optimize_orbs(
+        self,
+        orbitals,
+        rdm1,
+        rdm2,
+        opt_thresh=1.0e-4,
+        occ_thresh=1.0e-5,
+        maxiter=3,
+        orthonormalization_method="symmetric",
+        refine_core=False,
+        *args,
+        **kwargs,
+    ):
+        self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
+        self.impl.give_initial_orbitals(orbitals[0], orbitals[1], orbitals[2], orbitals[3])
+        self.impl.give_rdm_and_rotate_orbitals(rdm1, rdm2)
+        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter, orthonormalization_method, refine_core)
+        self.impl.rotate_orbitals_back()
+        self._orbitals = self.impl.get_orbitals()
+        core_orbs = self._orbitals[:2]
+        as_orbs = self._orbitals[2:]
+        return core_orbs, as_orbs, converged
+
+    def get_effective_hamiltonian(self, *args, **kwargs):
+        H_eff = self.impl.get_effective_hamiltonian()
+        return H_eff
+
+    def override_numerical_parameters(
+        self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6, *args, **kwargs
+    ):
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)

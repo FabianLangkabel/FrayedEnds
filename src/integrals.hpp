@@ -44,11 +44,22 @@ template <std::size_t NDIM> class Integrals {
                                     int nocc = 2);
 
     std::vector<SavedFct<NDIM>> orthonormalize(std::vector<SavedFct<NDIM>> all_orbs, const std::string method,
-                                               const double rr_thresh);
+                                               const double rr_thresh = 0.0,
+                                               nb::ndarray<nb::numpy, double, nb::ndim<1>> occupations = {},
+                                               double degeneracy_tol = 1e-6);
     std::vector<SavedFct<NDIM>> normalize(std::vector<SavedFct<NDIM>> all_orbs);
 
     std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
+
+  private:
+    // Helper method for mixed orthonormalization using occupations
+    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
+        std::vector<Function<double, NDIM>>& orbitals,
+        const std::vector<double>& occupations,
+        double degeneracy_tol);
+        
+  public:
 
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals,
                                           nb::ndarray<nb::numpy, double, nb::ndim<2>> matrix) {
@@ -74,6 +85,5 @@ template <std::size_t NDIM> class Integrals {
 
     void hello() { std::cout << "hello from the integrals class\n"; }
 
-  private:
     MadnessProcess<NDIM>& madness_process;
 };

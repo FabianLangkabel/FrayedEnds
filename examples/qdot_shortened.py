@@ -17,9 +17,7 @@ def potential(x: float, y: float, z: float) -> float:  # Qdot potential
     return a * np.exp(-0.5 * np.linalg.norm(r) ** 2)
 
 
-world = (
-    fe.MadWorld3D()
-)  # This is required for any MADNESS calculation as it initializes the required environment
+world = fe.MadWorld3D()  # This is required for any MADNESS calculation as it initializes the required environment
 
 factory = fe.MRAFunctionFactory3D(
     world, potential
