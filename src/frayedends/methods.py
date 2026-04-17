@@ -102,7 +102,7 @@ def optimize_basis_3D(
                 "If you want to use the eigensolver you need to provide a potential."
             )
         eigen = Eigensolver3D(world, Vnuc)
-        orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=n_orbitals * 2)
+        orbitals = eigen.get_orbitals(n_orbitals=n_orbitals, n_guess_orbs=n_orbitals + 5)
         del eigen
 
     current = 0.0
@@ -158,7 +158,7 @@ def optimize_basis_3D(
             raise Exception(
                 f"many_body_method={str(many_body_method)} is neither a string that encodes a supported method nor callable\nsupported methods are: {SUPPORTED_RDM_METHODS}"
             )
-
+        print(energy)
         print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
         if numpy.isclose(
@@ -175,15 +175,28 @@ def optimize_basis_3D(
         if molgeom is not None and molgeom.n_core_electrons > 0:
             frozen_core_orbs = orbitals[: molgeom.n_core_electrons // 2]
             active_orbs = orbitals[molgeom.n_core_electrons // 2 :]
-        
-        opti = Optimization3D(world, Vnuc, c)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals,
-            rdm1=rdm1,
-            rdm2=rdm2,
-            opt_thresh=dconv,
-            occ_thresh=occ_thresh,
-        )
+
+            # orbital refinement with frozen core
+            opti = Optimization3D(world, Vnuc, c)
+            frozen_core_orbs, active_orbs = opti.get_orbitals(
+                orbitals=[frozen_core_orbs, active_orbs],
+                rdm1=rdm1,
+                rdm2=rdm2,
+                opt_thresh=dconv,
+                occ_thresh=occ_thresh,
+            )
+            orbitals = frozen_core_orbs + active_orbs
+        else:
+            # orbital refinement without frozen core
+            opti = Optimization3D(world, Vnuc, c)
+            orbitals = opti.get_orbitals(
+                orbitals=orbitals,
+                rdm1=rdm1,
+                rdm2=rdm2,
+                opt_thresh=dconv,
+                occ_thresh=occ_thresh,
+            )
+
         del opti
 
     return energy, orbitals, rdm1, rdm2
@@ -219,7 +232,7 @@ def optimize_basis_2D(
 
     if orbitals is None or "eigen" in orbitals:
         eigen = Eigensolver2D(world, Vnuc)
-        orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=n_orbitals * 2)
+        orbitals = eigen.get_orbitals(n_orbitals=n_orbitals, n_guess_orbs=n_orbitals + 5)
         del eigen
 
     current = 0.0

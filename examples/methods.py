@@ -4,7 +4,7 @@ import frayedends
 
 # define geometry (Angstrom)
 geom = """
-Li 0.0 0.0 0.0
+H 0.0 0.0 0.0
 H 0.0 0.0 5.0
 """
 

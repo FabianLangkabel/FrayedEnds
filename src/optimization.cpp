@@ -57,13 +57,13 @@ void Optimization<NDIM>::read_initial_orbitals(std::vector<std::string> frozen_o
     std::cout << "ReadOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
-template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> active_orbs) {
+template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (SavedFct<NDIM> orb : fr_core_orbs) {
-        frozen_occ_orbs.push_back(madness_process.loadfct(orb));
+            frozen_occ_orbs.push_back(madness_process.loadfct(orb));
     }
-    for (SavedFct<NDIM> orb : active_orbs) {
+    for (SavedFct<NDIM> orb : act_orbs) {
         active_orbs.push_back(madness_process.loadfct(orb));
     }
     core_dim = frozen_occ_orbs.size();
@@ -190,14 +190,13 @@ void Optimization<NDIM>::give_rdm_and_rotate_orbitals(std::vector<double> one_rd
     Tensor<double> evals(as_dim);
     syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
     sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
-    std::cout << evals << std::endl;
     TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
     TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
     active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "GiveRDMFiles took " << duration.count() << " seconds" << std::endl;
+    std::cout << "GiveRDMs took " << duration.count() << " seconds" << std::endl;
 }
 
 template <std::size_t NDIM>
@@ -886,16 +885,16 @@ template <std::size_t NDIM> void Optimization<NDIM>::save_orbitals(std::string O
 
 template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> Optimization<NDIM>::get_orbitals() {
     std::vector<SavedFct<NDIM>> fr_core_orbs;
-    std::vector<SavedFct<NDIM>> active_orbs;
+    std::vector<SavedFct<NDIM>> act_orbs;
     for (int i = 0; i < core_dim; i++) {
         SavedFct<NDIM> orb(frozen_occ_orbs[i]);
         fr_core_orbs.push_back(orb);
     }
     for (int i = 0; i < as_dim; i++) {
         SavedFct<NDIM> orb(active_orbs[i]);
-        active_orbs.push_back(orb);
+        act_orbs.push_back(orb);
     }
-    return std::make_tuple(fr_core_orbs, active_orbs);
+    return std::make_tuple(fr_core_orbs, act_orbs);
 }
 
 template <std::size_t NDIM> void Optimization<NDIM>::save_effective_hamiltonian(std::string OutputPath) {

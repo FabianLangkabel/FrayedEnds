@@ -51,7 +51,6 @@ class MadPNO:
             n_hf_orbs = n_tot_e / 2
             n_act_pairs = n_act_e / 2 
             maxrank = int(numpy.ceil((n_orbitals - n_hf_orbs) / n_act_pairs))
-            print(n_tot_e, n_act_e, n_hf_orbs, maxrank)
         
         # check if geometry is given as a file
         # if not write the file

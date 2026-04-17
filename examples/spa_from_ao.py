@@ -31,28 +31,34 @@ for i in range(len(atomics)):
 active = integrals.project_out(kernel=[orbitals[0]], target=atomics)
 active = integrals.orthonormalize(orbitals=active)
 # make an active space: hf, Li-s, H-1s
-orbitals = [orbitals[0], active[4], active[5]]
-orbitals[0].type = "frozen_occ"
-orbitals[1].type = "active"
-orbitals[2].type = "active"
+frozen_orbitals = [orbitals[0]]
+active_orbitals = [active[4], active[5]]
 
 c = nuc_repulsion
-
+# frozen core energy
+kin = 2*integrals.compute_kinetic_integrals(frozen_orbitals).trace() 
+pot = 2*integrals.compute_potential_integrals(frozen_orbitals, Vnuc).trace()
+e_rep = integrals.compute_two_body_integrals(frozen_orbitals).elems[0,0,0,0]
+c += kin + pot + e_rep
 u = None
 for iteration in range(6):
 
     integrals = frayedends.Integrals3D(world)
-    G = integrals.compute_two_body_integrals(orbitals)
-    T = integrals.compute_kinetic_integrals(orbitals)
-    V = integrals.compute_potential_integrals(orbitals, Vnuc)
-    S = integrals.compute_overlap_integrals(orbitals)
+    G = integrals.compute_two_body_integrals(active_orbitals)
+    FC_int = integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
+    T = integrals.compute_kinetic_integrals(active_orbitals)
+    V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
+    S = integrals.compute_overlap_integrals(active_orbitals)
     print(S)
 
-    for i in range(len(orbitals)):
-        world.line_plot(f"orb{i}.dat", orbitals[i])
+    for i in range(len(frozen_orbitals)):
+        world.line_plot(f"fr_orb{i}.dat", frozen_orbitals[i])
 
+    for i in range(len(active_orbitals)):
+        world.line_plot(f"act_orb{i}.dat", active_orbitals[i])
+    
     mol = tq.Molecule(
-        geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c
+        geom, one_body_integrals=T + V + FC_int, two_body_integrals=G, nuclear_repulsion=c, frozen_core=False, n_electrons=2
     )
     U = mol.make_ansatz(name="UpCCGSD")
 
@@ -71,13 +77,11 @@ for iteration in range(6):
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
     opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
-    orbitals = opti.get_orbitals(
-        orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+    frozen_orbitals, active_orbitals = opti.get_orbitals(
+        orbitals=[frozen_orbitals, active_orbitals], rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )
-    print(orbitals)
-
-    for i in range(len(orbitals)):
-        world.line_plot(f"orb{i}.dat", orbitals[i])
+    c = opti.get_c()
+    print(c)
 
 true_end = time()
 print("Total time: ", true_end - true_start)

@@ -7,3 +7,5 @@
 *.log
 *.dat
 *.cube
+molecule
+*.hdf5

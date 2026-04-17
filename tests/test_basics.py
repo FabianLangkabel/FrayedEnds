@@ -69,9 +69,13 @@ def test_spa(data):
         print(result.energy)
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
+        core_orbs = orbitals[:rdm1.shape[0]]
+        active_orbs = orbitals[rdm1.shape[0]:]
+
+
         opti = frayedends.Optimization3D(world, Vnuc, c)
         orbitals = opti.get_orbitals(
-            orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+            orbitals=[core_orbs, active_orbs], rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
         )
         del opti
 

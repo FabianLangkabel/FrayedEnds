@@ -24,7 +24,7 @@ template <std::size_t NDIM> class Optimization {
     ~Optimization();
 
     // input
-    void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> active_orbs);
+    void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs);
     void give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements);
 
     // output
