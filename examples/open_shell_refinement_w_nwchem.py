@@ -1,9 +1,10 @@
 import subprocess as sp
 
-import frayedends as fe
 import numpy as np
 from pyblock2._pyscf.ao2mo import integrals as itg
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
+
+import frayedends as fe
 
 distance = 1.0
 iteration_energies = []
@@ -46,7 +47,10 @@ with open("nwchem", "w") as f:
     f.write(nwchem_input)
 
 programm = sp.call(
-    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
+    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem",
+    stdout=open("nwchem.out", "w"),
+    stderr=open("nwchem_err.log", "w"),
+    shell=True,
 )
 
 # Initalize world

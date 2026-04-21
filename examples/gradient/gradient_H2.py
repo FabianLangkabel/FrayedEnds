@@ -8,7 +8,7 @@ import frayedends as fe
 
 world = fe.MadWorld3D(thresh=1e-6)
 
-distance_list = [0.76+ 0.01 * i for i in range(1)]
+distance_list = [0.76 + 0.01 * i for i in range(1)]
 Energy_list = []
 Gradient_list = []
 n_orbitals = 2
@@ -62,7 +62,7 @@ for distance in distance_list:
 
     for i in range(len(orbitals)):
         world.cube_plot(f"orb{i}_d{distance}", orbitals[i], molecule, zoom=5.0, datapoints=81)
-    
+
     Energy_list.append(e + c)
     # gradient calculation
     part_deriv_V = molecule.molecular_potential_derivative(world, 1, 2)

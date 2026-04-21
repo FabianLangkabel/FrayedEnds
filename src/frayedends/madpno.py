@@ -7,6 +7,7 @@ from ._frayedends_impl import PNOInterface
 from .madworld import get_function_info, redirect_output
 from .moleculargeometry import MolecularGeometry
 
+
 class MadPNO:
     _orbitals = None
     _h = None  # one-body tensor
@@ -48,9 +49,9 @@ class MadPNO:
             else:
                 n_act_e = n_tot_e
             n_hf_orbs = n_tot_e / 2
-            n_act_pairs = n_act_e / 2 
+            n_act_pairs = n_act_e / 2
             maxrank = int(numpy.ceil((n_orbitals - n_hf_orbs) / n_act_pairs))
-        
+
         # check if geometry is given as a file
         # if not write the file
         if not os.path.exists(geometry):
@@ -116,11 +117,7 @@ class MadPNO:
             orbitals = self.get_orbitals()
             info = get_function_info(orbitals)
             # indices of hf orbitals that are frozen and
-            occf = [
-                k
-                for k, x in enumerate(info)
-                if numpy.isclose(float(x["occ"]), 2.0) and k < nfreeze
-            ]
+            occf = [k for k, x in enumerate(info) if numpy.isclose(float(x["occ"]), 2.0) and k < nfreeze]
             # compute offset
             nof = len(occf)
             if nof == 0:

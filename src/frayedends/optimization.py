@@ -2,9 +2,9 @@ import numpy as np
 
 from ._frayedends_impl import Optimization2D as OptInterface2D
 from ._frayedends_impl import Optimization3D as OptInterface3D
-from ._frayedends_impl import SavedFct2D, SavedFct3D
-from .madworld import redirect_output, MadWorld2D, MadWorld3D
 from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
+from ._frayedends_impl import SavedFct2D, SavedFct3D
+from .madworld import MadWorld2D, MadWorld3D, redirect_output
 
 
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
@@ -55,7 +55,6 @@ def transform_rdms(TransformationMatrix, rdm1, rdm2):
 
 
 class Optimization3D:
-
     _fr_core_orbitals = None
     _active_orbitals = None
     _h = None  # one-body tensor
@@ -66,9 +65,9 @@ class Optimization3D:
     impl = None
     converged = None  # indicates if the last call converged
     opt_parameters = {
-        "nocc": 2, #occupation number of orbitals (for open shell use the open_shell class)
-        "truncation_tol": 1e-6, #truncation tolerance for MRA representation of orbitals
-        "coulomb_lo": 0.001, #lower cutoff for representation of Coulomb kernel
+        "nocc": 2,  # occupation number of orbitals (for open shell use the open_shell class)
+        "truncation_tol": 1e-6,  # truncation tolerance for MRA representation of orbitals
+        "coulomb_lo": 0.001,  # lower cutoff for representation of Coulomb kernel
         "coulomb_eps": 1e-6,
         "BSH_lo": 0.001,  # lower cutoff for representation of BSH kernel
         "BSH_eps": 1e-6,
@@ -121,22 +120,22 @@ class Optimization3D:
         maxiter=3,
         *args,
         **kwargs,
-    ):  
+    ):
         r"""
         this function performs the orbital refinement
-        input: 
+        input:
          - one body reduced density matrix (rdm1) and two body reduced density matrix (rdm2) as 2 and 4 dimensional numpy arrays, respectively
            expects ordering of the form:
               rdm1[i,j] = \sum_\sigma \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
               rdm2[i,j,k,l] = \sum_{\sigma,\tau} \langle a_{i,\sigma}^\dagger a_{j,\tau}^\dagger a_{l,\tau} a_{k,\sigma} \rangle
-         - orbitals is either a list of SavedFct3D objects (if all orbitals are active) or a list/tuple of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct3D objects. 
+         - orbitals is either a list of SavedFct3D objects (if all orbitals are active) or a list/tuple of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct3D objects.
          - opt_thresh is the threshold for convergence of the orbital refinement (based on the change of the energy)
          - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
          - maxiter is the maximum number of iterations for the orbital refinement
         output:
          - list of frozen core orbitals, list of refined active orbitals and convergence flag
         """
-        
+
         # Check if orbitals is a list of SavedFct3D or a list of [frozen_core, active] lists
         if isinstance(orbitals[0], SavedFct3D):
             frozen_core_orbs = []
@@ -144,10 +143,12 @@ class Optimization3D:
         else:
             frozen_core_orbs = orbitals[0]
             active_orbs = orbitals[1]
-        
+
         if (len(active_orbs) != np.shape(rdm1)[0]) or (len(active_orbs) != np.shape(rdm2)[0]):
-            raise ValueError(f"Number of active orbitals ({len(active_orbs)}) does not match the rdms dimensions ({np.shape(rdm1)} and {np.shape(rdm2)}).")
-        
+            raise ValueError(
+                f"Number of active orbitals ({len(active_orbs)}) does not match the rdms dimensions ({np.shape(rdm1)} and {np.shape(rdm2)})."
+            )
+
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
@@ -199,7 +200,6 @@ class Optimization3D:
 
 
 class Optimization2D:
-
     _fr_core_orbitals = None
     _active_orbitals = None
     _h = None  # one-body tensor
@@ -210,11 +210,11 @@ class Optimization2D:
     impl = None
     converged = None  # indicates if the last call converged
     opt_parameters = {
-        "nocc": 2, #occupation number of orbitals (for open shell use the open_shell class)
-        "truncation_tol": 1e-6, #truncation tolerance for MRA representation of orbitals
-        "coulomb_lo": 0.001, #lower cutoff for representation of Coulomb kernel
+        "nocc": 2,  # occupation number of orbitals (for open shell use the open_shell class)
+        "truncation_tol": 1e-6,  # truncation tolerance for MRA representation of orbitals
+        "coulomb_lo": 0.001,  # lower cutoff for representation of Coulomb kernel
         "coulomb_eps": 1e-6,
-        "BSH_lo": 0.001, #lower cutoff for representation of BSH kernel
+        "BSH_lo": 0.001,  # lower cutoff for representation of BSH kernel
         "BSH_eps": 1e-6,
     }
 
@@ -268,12 +268,12 @@ class Optimization2D:
     ):
         r"""
         this function performs the orbital refinement
-        input: 
+        input:
          - one body reduced density matrix (rdm1) and two body reduced density matrix (rdm2) as 2 and 4 dimensional numpy arrays, respectively
            expects ordering of the form:
               rdm1[i,j] = \sum_\sigma \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
               rdm2[i,j,k,l] = \sum_{\sigma,\tau} \langle a_{i,\sigma}^\dagger a_{j,\tau}^\dagger a_{l,\tau} a_{k,\sigma} \rangle
-         - orbitals is either a list of SavedFct2D objects (if all orbitals are active) or a list of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct2D objects. 
+         - orbitals is either a list of SavedFct2D objects (if all orbitals are active) or a list of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct2D objects.
          - opt_thresh is the threshold for convergence of the orbital refinement (based on the change of the energy)
          - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
          - maxiter is the maximum number of iterations for the orbital refinement
@@ -281,7 +281,7 @@ class Optimization2D:
          - if frozen_core_orbs is empty: list of refined active orbitals and convergence flag
          - else: list of frozen core orbitals, list of refined active orbitals and convergence flag
         """
-        
+
         # Check if orbitals is a list of SavedFct2D or a list of [frozen_core, active] lists
         if isinstance(orbitals[0], SavedFct2D):
             frozen_core_orbs = []
@@ -289,10 +289,12 @@ class Optimization2D:
         else:
             frozen_core_orbs = orbitals[0]
             active_orbs = orbitals[1]
-        
+
         if (len(active_orbs) != np.shape(rdm1)[0]) or (len(active_orbs) != np.shape(rdm2)[0]):
-            raise ValueError(f"Number of active orbitals ({len(active_orbs)}) does not match the rdms dimensions ({np.shape(rdm1)} and {np.shape(rdm2)}).")
-        
+            raise ValueError(
+                f"Number of active orbitals ({len(active_orbs)}) does not match the rdms dimensions ({np.shape(rdm1)} and {np.shape(rdm2)})."
+            )
+
         rdm1_list = rdm1.reshape(-1).tolist()
         rdm2_list = rdm2.reshape(-1).tolist()
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)

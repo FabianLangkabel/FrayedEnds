@@ -36,9 +36,9 @@ active_orbitals = [active[4], active[5]]
 
 c = nuc_repulsion
 # frozen core energy
-kin = 2*integrals.compute_kinetic_integrals(frozen_orbitals).trace() 
-pot = 2*integrals.compute_potential_integrals(frozen_orbitals, Vnuc).trace()
-e_rep = integrals.compute_two_body_integrals(frozen_orbitals).elems[0,0,0,0]
+kin = 2 * integrals.compute_kinetic_integrals(frozen_orbitals).trace()
+pot = 2 * integrals.compute_potential_integrals(frozen_orbitals, Vnuc).trace()
+e_rep = integrals.compute_two_body_integrals(frozen_orbitals).elems[0, 0, 0, 0]
 c += kin + pot + e_rep
 u = None
 for iteration in range(6):
@@ -55,9 +55,14 @@ for iteration in range(6):
 
     for i in range(len(active_orbitals)):
         world.line_plot(f"act_orb{i}.dat", active_orbitals[i])
-    
+
     mol = tq.Molecule(
-        geom, one_body_integrals=T + V + FC_int, two_body_integrals=G, nuclear_repulsion=c, frozen_core=False, n_electrons=2
+        geom,
+        one_body_integrals=T + V + FC_int,
+        two_body_integrals=G,
+        nuclear_repulsion=c,
+        frozen_core=False,
+        n_electrons=2,
     )
     U = mol.make_ansatz(name="UpCCGSD")
 

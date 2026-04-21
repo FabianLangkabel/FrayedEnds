@@ -1,9 +1,9 @@
+import subprocess as sp
 import time
 
 import numpy as np
 import tequila as tq
 from pyscf import fci
-import subprocess as sp
 
 import frayedends as fe
 
@@ -17,15 +17,11 @@ n_orbitals = 5
 n_act_orbitals = 4
 n_fr_orbitals = n_orbitals - n_act_orbitals
 n_act_electrons = 4
-miter_oopt=1
+miter_oopt = 1
 for distance in distance_list:
-    iteration_e=[]
-    print(
-            "------------------------------------------------------------------------------"
-        )
-    print(
-            "------------------------------------------------------------------------------"
-        )
+    iteration_e = []
+    print("------------------------------------------------------------------------------")
+    print("------------------------------------------------------------------------------")
     print("Distance:", distance)
     print("Maxiter orbital optimization:", miter_oopt)
     true_start = time.time()
@@ -34,25 +30,37 @@ for distance in distance_list:
 
     nwchem_start = time.time()
 
-    basisset = '6-31g'
+    basisset = "6-31g"
 
-    nwchem_input = '''
+    nwchem_input = (
+        """
 title "molecule"
 memory stack 1500 mb heap 100 mb global 1400 mb
 charge 0  
-geometry units bohr noautosym nocenter''' + '\n' + geometry + '''
+geometry units bohr noautosym nocenter"""
+        + "\n"
+        + geometry
+        + """
 end
 basis  
-* library ''' + basisset + '''
+* library """
+        + basisset
+        + """
 end
 scf  
 maxiter 200
 end   
-task scf  '''
+task scf  """
+    )
 
     with open("nwchem", "w") as f:
         f.write(nwchem_input)
-    programm = sp.call("/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem", stdout=open('nwchem.out', 'w'), stderr=open('nwchem_err.log', 'w'), shell = True)
+    programm = sp.call(
+        "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem",
+        stdout=open("nwchem.out", "w"),
+        stderr=open("nwchem_err.log", "w"),
+        shell=True,
+    )
 
     converter = fe.NWChem_Converter(world)
     converter.read_nwchem_file("nwchem")
@@ -60,9 +68,8 @@ task scf  '''
     Vnuc = converter.get_Vnuc()
     nuc_repulsion = converter.get_nuclear_repulsion_energy()
 
-
     nwchem_end = time.time()
-    print("NWChem time:", nwchem_end-nwchem_start)
+    print("NWChem time:", nwchem_end - nwchem_start)
 
     world.set_function_defaults()
     print(world.get_function_defaults())
@@ -94,18 +101,18 @@ task scf  '''
     rdm2 = np.swapaxes(rdm2, 1, 2)
     print("Initial FCI energy {:+2.7f}".format(e + c))
     fci_end = time.time()
-    print("fci time:", fci_end-fci_start)
+    print("fci time:", fci_end - fci_start)
 
     ac_orbitals = []
-    for i in range(n_fr_orbitals,len(nw_orbitals)):
+    for i in range(n_fr_orbitals, len(nw_orbitals)):
         ac_orbitals.append(nw_orbitals[i])
 
-    nat_orbs,occ_n,trans_M=integrals.transform_to_natural_orbitals(ac_orbitals, rdm1)
+    nat_orbs, occ_n, trans_M = integrals.transform_to_natural_orbitals(ac_orbitals, rdm1)
     world.cube_plot(f"nwchem_raw{0}", nw_orbitals[0], molgeom, zoom=5.0)
     print("Natural occupation numbers:", occ_n)
     for i in range(len(nat_orbs)):
-            world.cube_plot(f"nwchem_nat{i+1}", nat_orbs[i], molgeom, zoom=5.0)
-    
+        world.cube_plot(f"nwchem_nat{i + 1}", nat_orbs[i], molgeom, zoom=5.0)
+
     frozen_orbitals = []
     active_orbitals = []
     for i in range(n_fr_orbitals):
@@ -137,9 +144,8 @@ task scf  '''
     rdm2 = np.swapaxes(rdm2, 1, 2)
     print("Second FCI energy {:+2.7f}".format(e + c))
     fci_end = time.time()
-    
 
-    #Start of the main algorithm
+    # Start of the main algorithm
     current = e + c
     for iteration in range(401):
         opti_start = time.time()
@@ -154,17 +160,17 @@ task scf  '''
         )
         print("Converged?:", converged)
         opti_end = time.time()
-        print("orb opt time:", opti_end-opti_start)
+        print("orb opt time:", opti_end - opti_start)
         c = opti.get_c()
 
-        print( 
-            "------------------------------------------------------------------------------"
-        )
+        print("------------------------------------------------------------------------------")
         integrals = fe.Integrals3D(world)
         T = integrals.compute_kinetic_integrals(active_orbitals)
         V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
-        G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem", truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8)
-        FC_int= integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
+        G = integrals.compute_two_body_integrals(
+            active_orbitals, ordering="chem", truncation_tol=1e-8, coulomb_lo=0.00001, coulomb_eps=1e-8
+        )
+        FC_int = integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
         # print(FC_int)
         # print(T+V+FC_int)
         h1 = T + V + FC_int
@@ -178,7 +184,7 @@ task scf  '''
             nuclear_repulsion=c,
             n_electrons=4,
         )
-        H=mol.make_hamiltonian()
+        H = mol.make_hamiltonian()
         res = np.linalg.eigvalsh(H.to_matrix())
         print("Lowest eigenvalue of Hamiltonian:", res[0])
 
@@ -191,30 +197,25 @@ task scf  '''
             fcivec, n_act_orbitals, n_act_electrons
         )  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
-        #for i in range(len(rdm1)):
+        # for i in range(len(rdm1)):
         #    print("rdm1[", i, ",", i, "]:", rdm1[i, i])
         fci_end = time.time()
-        print("fci time:", fci_end-fci_start)
+        print("fci time:", fci_end - fci_start)
         for i in range(np.shape(rdm1)[0]):
             print("rdm1[", i, ",", i, "]:", rdm1[i, i])
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
-        if iteration in [5,20,250,400]:
+        if iteration in [5, 20, 250, 400]:
             nat_orbs1, occ_n = integrals.transform_to_natural_orbitals(active_orbitals, rdm1)
             print("Natural occupation numbers:", occ_n)
-            world.line_plot(f"it_{iteration:02d}_orb_{(0):01d}_{int(distance*100):03d}.dat", orbitals[0])
+            world.line_plot(f"it_{iteration:02d}_orb_{(0):01d}_{int(distance * 100):03d}.dat", orbitals[0])
             for i in range(len(nat_orbs1)):
-                world.cube_plot(f"nat1_orb{(i+1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
-                world.line_plot(f"it_{iteration:02d}_orb_{(i+1):01d}_{int(distance*100):03d}.dat", nat_orbs1[i])
-        
+                world.cube_plot(f"nat1_orb{(i + 1):01d}_it{iteration:03d}", nat_orbs1[i], molgeom, zoom=5.0)
+                world.line_plot(f"it_{iteration:02d}_orb_{(i + 1):01d}_{int(distance * 100):03d}.dat", nat_orbs1[i])
+
         current = e + c
         iteration_e.append(current)
-        
 
-        
     Energy_list.append(current)
-    
-    
-    
 
     molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
     part_deriv_V_0 = molecule.molecular_potential_derivative(world, 0, 2)
@@ -222,17 +223,17 @@ task scf  '''
     Deriv_tens = integrals.compute_potential_integrals(frozen_orbitals + active_orbitals, part_deriv_V_0)
     Deriv_tens2 = integrals.compute_potential_integrals(frozen_orbitals + active_orbitals, part_deriv_V_2)
     part_deriv_c = molecule.nuclear_repulsion_derivative(0, 2)
-    grad = 2*Deriv_tens[0,0]  #Be core orbital contribution
+    grad = 2 * Deriv_tens[0, 0]  # Be core orbital contribution
     for i in range(len(active_orbitals)):
         for j in range(len(active_orbitals)):
-            grad += rdm1[i, j] * Deriv_tens[i+1, j+1]
+            grad += rdm1[i, j] * Deriv_tens[i + 1, j + 1]
     print("gradient0: ", grad + part_deriv_c)
 
     part_deriv_c2 = molecule.nuclear_repulsion_derivative(2, 2)
-    grad2 = 2*Deriv_tens2[0,0]  #Be core orbital contribution
+    grad2 = 2 * Deriv_tens2[0, 0]  # Be core orbital contribution
     for i in range(len(active_orbitals)):
         for j in range(len(active_orbitals)):
-            grad2 += rdm1[i, j] * Deriv_tens2[i+1, j+1]
+            grad2 += rdm1[i, j] * Deriv_tens2[i + 1, j + 1]
     print("gradient2: ", grad2 + part_deriv_c2)
     Gradient_list.append(grad2 + part_deriv_c2 - grad - part_deriv_c)
 

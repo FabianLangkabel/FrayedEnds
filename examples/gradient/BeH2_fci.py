@@ -15,28 +15,22 @@ Gradient_list = []
 n_orbitals = 5
 n_act_orbitals = 4
 n_act_electrons = 4
-miter=1
+miter = 1
 for distance in distance_list:
-    print(
-            "------------------------------------------------------------------------------"
-        )
-    print(
-            "------------------------------------------------------------------------------"
-        )
+    print("------------------------------------------------------------------------------")
+    print("------------------------------------------------------------------------------")
     print("Distance:", distance)
     print("Maxiter orbital optimization:", miter)
     true_start = time.time()
     geometry = "H 0.0 0.0 " + str(-distance) + "\nBe 0.0 0.0 0.0" + "\nH 0.0 0.0 " + str(distance)
     molgeom = fe.MolecularGeometry(geometry=geometry, units="bohr")
-    
+
     pno_start = time.time()
-    madpno = fe.MadPNO(
-        world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "boys"}
-    )
+    madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "boys"})
     orbitals = madpno.get_orbitals()
-    
+
     pno_end = time.time()
-    print("Pno time:", pno_end-pno_start)
+    print("Pno time:", pno_end - pno_start)
 
     world.set_function_defaults()
     print(world.get_function_defaults())
@@ -58,9 +52,7 @@ for distance in distance_list:
     c = nuc_repulsion
     current = 0.0
     for iteration in range(5):
-        print( 
-            "------------------------------------------------------------------------------"
-        )
+        print("------------------------------------------------------------------------------")
         integrals = fe.Integrals3D(world)
         if iteration == 0:
             all_orbitals = frozen_orbitals + active_orbitals
@@ -78,19 +70,25 @@ for distance in distance_list:
             T = integrals.compute_kinetic_integrals(active_orbitals)
             V = integrals.compute_potential_integrals(active_orbitals, Vnuc)
             G = integrals.compute_two_body_integrals(active_orbitals, ordering="chem")
-            FC_int= integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
+            FC_int = integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
             # print(FC_int)
             # print(T+V+FC_int)
             h1 = T + V + FC_int
             g2 = G
             params.frozen_core = False
-            mol = tq.Molecule(parameters=params, one_body_integrals=h1, two_body_integrals=g2, nuclear_repulsion=c, n_electrons=n_act_electrons)
+            mol = tq.Molecule(
+                parameters=params,
+                one_body_integrals=h1,
+                two_body_integrals=g2,
+                nuclear_repulsion=c,
+                n_electrons=n_act_electrons,
+            )
 
         H = mol.make_hamiltonian()
-        start=time.time()
+        start = time.time()
         res = np.linalg.eigvalsh(H.to_matrix())
-        end =time.time()
-        print("Diagonalization time:", end-start)
+        end = time.time()
+        print("Diagonalization time:", end - start)
         print("Diagonalization energy:", res[0])
         fci_start = time.time()
         # FCI calculation
@@ -101,13 +99,13 @@ for distance in distance_list:
             fcivec, n_act_orbitals, n_act_electrons
         )  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
-        #for i in range(len(rdm1)):
+        # for i in range(len(rdm1)):
         #    print("rdm1[", i, ",", i, "]:", rdm1[i, i])
         fci_end = time.time()
-        print("fci time:", fci_end-fci_start)
+        print("fci time:", fci_end - fci_start)
         print(rdm1)
         print("iteration {} energy {:+2.7f}".format(iteration, e + c))
-        
+
         if abs(current - (e + c)) < 1e-6:
             print("FCI energy converged.")
             break
@@ -122,14 +120,13 @@ for distance in distance_list:
             maxiter=miter,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
-        )   
+        )
         opti_end = time.time()
-        print("orb opt time:", opti_end-opti_start)
+        print("orb opt time:", opti_end - opti_start)
         c = opti.get_c()
 
-        
     Energy_list.append(current)
-    
+
     all_orbitals = frozen_orbitals + active_orbitals
     for i in range(len(all_orbitals)):
         world.cube_plot(f"d_{distance}_orbital_{i}", all_orbitals[i], molgeom, zoom=5.0, datapoints=81)
@@ -140,17 +137,17 @@ for distance in distance_list:
     Deriv_tens = integrals.compute_potential_integrals(all_orbitals, part_deriv_V_0)
     Deriv_tens2 = integrals.compute_potential_integrals(all_orbitals, part_deriv_V_2)
     part_deriv_c = molgeom.nuclear_repulsion_derivative(0, 2)
-    grad = 2*Deriv_tens[0,0]  #Be core orbital contribution
+    grad = 2 * Deriv_tens[0, 0]  # Be core orbital contribution
     for i in range(len(active_orbitals)):
         for j in range(len(active_orbitals)):
-            grad += rdm1[i, j] * Deriv_tens[i+1, j+1]
+            grad += rdm1[i, j] * Deriv_tens[i + 1, j + 1]
     print("gradient0: ", grad + part_deriv_c)
 
     part_deriv_c2 = molgeom.nuclear_repulsion_derivative(2, 2)
-    grad2 = 2*Deriv_tens2[0,0]  #Be core orbital contribution
+    grad2 = 2 * Deriv_tens2[0, 0]  # Be core orbital contribution
     for i in range(len(active_orbitals)):
         for j in range(len(active_orbitals)):
-            grad2 += rdm1[i, j] * Deriv_tens2[i+1, j+1]
+            grad2 += rdm1[i, j] * Deriv_tens2[i + 1, j + 1]
     print("gradient2: ", grad2 + part_deriv_c2)
     Gradient_list.append(grad2 + part_deriv_c2 - grad - part_deriv_c)
     print(molgeom.compute_dR_dE(world, orbitals, rdm1, nocc=2))

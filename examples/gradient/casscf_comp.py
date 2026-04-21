@@ -1,6 +1,9 @@
-from pyscf import gto, scf, mcscf, lo
+from pyscf import gto, lo, mcscf, scf
 
-def calculate_casscf_energy_and_gradient(geometry, basis='cc-pV5Z', unit='bohr', charge=0, spin=0, nactorb=4, nactelec=2):
+
+def calculate_casscf_energy_and_gradient(
+    geometry, basis="cc-pV5Z", unit="bohr", charge=0, spin=0, nactorb=4, nactelec=2
+):
     """
     Calculate the ground state energy of a molecule using CASSCF.
 
@@ -24,15 +27,15 @@ def calculate_casscf_energy_and_gradient(geometry, basis='cc-pV5Z', unit='bohr',
     mf = scf.RHF(mol)
     mf.kernel()
 
-    #loc_orbs = lo.Boys(mol, mf.mo_coeff).kernel()
+    # loc_orbs = lo.Boys(mol, mf.mo_coeff).kernel()
 
     # Perform CASSCF calculation
     mc = mcscf.CASSCF(mf, nactorb, nactelec)
-    #mc.conv_tol = 1e-10          # Stricter convergence tolerance (default ~1e-7)
-    #mc.max_cycle_macro = 200      # More macro iterations (default 100)
-    #mc.max_cycle_micro = 5       # More micro iterations (default 4)
-    #mc.max_stepsize = 0.005
-    #mc.kernel(mo_coeff=loc_orbs)
+    # mc.conv_tol = 1e-10          # Stricter convergence tolerance (default ~1e-7)
+    # mc.max_cycle_macro = 200      # More macro iterations (default 100)
+    # mc.max_cycle_micro = 5       # More micro iterations (default 4)
+    # mc.max_stepsize = 0.005
+    # mc.kernel(mo_coeff=loc_orbs)
     mc.kernel()
 
     # Calculate the gradient
@@ -40,12 +43,13 @@ def calculate_casscf_energy_and_gradient(geometry, basis='cc-pV5Z', unit='bohr',
 
     return mc.e_tot, mc_grad
 
-distance_list=[0.02+0.02*i for i in range(200)]
+
+distance_list = [0.02 + 0.02 * i for i in range(200)]
 energy_list = []
 gradient_list = []
 for i in range(len(distance_list)):
     # Example usage: H2 molecule
-    geometry = f'H 0.0 0.0 {-distance_list[i]/2}\nH 0.0 0.0 {distance_list[i]/2}'
+    geometry = f"H 0.0 0.0 {-distance_list[i] / 2}\nH 0.0 0.0 {distance_list[i] / 2}"
     energy, gradient = calculate_casscf_energy_and_gradient(geometry)
 
     print(f"Ground state energy (CASSCF): {energy} Hartree")

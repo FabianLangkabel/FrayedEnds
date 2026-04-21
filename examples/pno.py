@@ -1,7 +1,8 @@
 from time import time
 
-import tequila as tq
 import numpy as np
+import tequila as tq
+
 import frayedends
 
 true_start = time()
@@ -50,13 +51,18 @@ for iteration in range(30):
     print(len(orbitals))
     print("iteration {} energy {:+2.10f}".format(iteration, result.energy))
 
-    orbitals = [orbitals[:1],orbitals[1:]]
+    orbitals = [orbitals[:1], orbitals[1:]]
     opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(
-        orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001, redirect_filename=f"madopt{iteration}.log"
+        orbitals=orbitals,
+        rdm1=rdm1,
+        rdm2=rdm2,
+        opt_thresh=0.001,
+        occ_thresh=0.001,
+        redirect_filename=f"madopt{iteration}.log",
     )
-    orbitals = orbitals[0]+orbitals[1]
-    
+    orbitals = orbitals[0] + orbitals[1]
+
 
 true_end = time()
 print("Total time: ", true_end - true_start)

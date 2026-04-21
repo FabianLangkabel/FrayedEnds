@@ -1,11 +1,11 @@
 import numpy
 
 from ._frayedends_impl import SavedFct2D, SavedFct3D
+from .atomicbasisprojector import AtomicBasisProjector
 from .eigensolver import Eigensolver2D, Eigensolver3D
 from .integrals import Integrals2D, Integrals3D
 from .madpno import MadPNO
 from .madworld import MadWorld2D, MadWorld3D
-from .atomicbasisprojector import AtomicBasisProjector
 from .moleculargeometry import MolecularGeometry
 from .optimization import Optimization2D, Optimization3D
 from .pyscf_interface import HAS_PYSCF, PySCFInterface
@@ -43,7 +43,7 @@ def optimize_basis_3D(
         orbitals = orbitals.lower()
 
     molgeom = None
-    if Vnuc == None and geometry == None:
+    if Vnuc is None and geometry is None:
         raise Exception("Please provide either a potential or a molecular geometry.")
     elif Vnuc is not None:
         c = nuclear_repulsion
@@ -56,9 +56,7 @@ def optimize_basis_3D(
         c = molgeom.get_nuclear_repulsion()
         Vnuc = molgeom.get_vnuc(world)
         if n_orbitals is None:
-            n_orbitals = molgeom.n_core_electrons // 2 + (
-                molgeom.n_electrons - molgeom.n_core_electrons
-            )
+            n_orbitals = molgeom.n_core_electrons // 2 + (molgeom.n_electrons - molgeom.n_core_electrons)
 
     if orbitals is None or "pno" in orbitals:
         if geometry is None:
@@ -82,9 +80,7 @@ def optimize_basis_3D(
             orbitals = integrals.project_out(kernel=core, target=orbitals)
             orbitals = integrals.normalize(orbitals)
             # most likely no linear dependencies since core at CBS is different from sto-3g orbitals
-            orbitals = integrals.orthonormalize(
-                orbitals, method="rr_cholesky", rr_thresh=1.0e-5
-            )
+            orbitals = integrals.orthonormalize(orbitals, method="rr_cholesky", rr_thresh=1.0e-5)
             orbitals = core + orbitals
             # just to be save
             orbitals = integrals.normalize(orbitals)
@@ -157,7 +153,7 @@ def optimize_basis_3D(
             dconv = 10 * econv
         if occ_thresh is None:
             occ_thresh = econv
-        
+
         if molgeom is not None and molgeom.n_core_electrons > 0:
             frozen_core_orbs = orbitals[: molgeom.n_core_electrons // 2]
             active_orbs = orbitals[molgeom.n_core_electrons // 2 :]

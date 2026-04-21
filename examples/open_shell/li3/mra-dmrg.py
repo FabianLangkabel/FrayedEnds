@@ -53,7 +53,10 @@ with open("nwchem", "w") as f:
 
 # replace this filepath ↓ with the path to your nwchem executable (found by "which nwchem")
 programm = sp.call(
-    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
+    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem",
+    stdout=open("nwchem.out", "w"),
+    stderr=open("nwchem_err.log", "w"),
+    shell=True,
 )
 
 # Initalize world

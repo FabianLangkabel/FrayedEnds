@@ -1,7 +1,8 @@
 import subprocess as sp
 
-import frayedends as fe
 import py3Dmol
+
+import frayedends as fe
 
 distance = 2.5
 iteration_energies = []
