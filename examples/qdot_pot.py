@@ -27,7 +27,7 @@ mra_pot = factory.get_function()  # Potential as MRA function
 
 eigen = fe.Eigensolver3D(world, mra_pot)  # This sets up the eigensolver, which provides initial guess orbitals
 orbitals = eigen.get_orbitals(
-    0, n_orbitals, 0, n_states=5
+    n_orbitals=n_orbitals, n_guess_orbs=5
 )  # The first three numbers are the numbers of frozen_core, active and frozen_virtual orbitals (in this case all orbitals are active)
 # The last number is the number of computed guess orbitals (in this case the ES will compute 5 orbitals and return the n_orbitals states with the lowest energy)
 

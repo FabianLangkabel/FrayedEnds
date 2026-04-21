@@ -37,7 +37,7 @@ template <std::size_t NDIM> class Eigensolver {
 
     // Function to calculate the energy
     double energy(const Function<double, NDIM>& phi, const Function<double, NDIM>& V);
-    std::vector<SavedFct<NDIM>> get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const;
+    std::vector<SavedFct<NDIM>> get_orbitals(int n_orbitals) const;
 
   private:
     MadnessProcess<NDIM>& madness_process;

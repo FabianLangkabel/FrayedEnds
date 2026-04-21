@@ -64,8 +64,6 @@ def run(R):
     orbitals = integrals.transform(orbitals, u)
 
     c = nuc_repulsion
-    for x in orbitals:
-        x.type = "active"
 
     current = result.energy
     for iteration in range(3):

@@ -1,0 +1,78 @@
+#pragma once
+
+#include "functionsaver.hpp"
+#include <iomanip>
+#include <madness/mra/vmra.h>
+#include <madness/chem/SCF.h>
+#include <madness/chem/nemo.h>
+#include <madness/chem/PNO.h>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <cstring>
+#include <fstream>
+#include <regex>
+#include <utility> // For std::pair
+#include <tuple>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include "madness_process.hpp"
+
+using namespace madness;
+namespace nb = nanobind;
+
+class AtomBasProjector {
+  public:
+    AtomBasProjector(MadnessProcess<3>& mp, std::string argv, std::string basisname) : madness_process(mp), basisname(basisname) {
+        auto [argc, charArray] = stringToCharPointerArray(argv);
+        parser = commandlineparser(argc, charArray);
+        freeCharPointerArray(charArray, argc);
+    }
+    ~AtomBasProjector() { atomicbasis.clear(); }
+
+    void run() {
+        SCF calc(*(madness_process.world), parser);
+        calc.reset_aobasis(basisname);
+        atomicbasis = calc.project_ao_basis(*(madness_process.world), calc.aobasis);
+        nuclear_repulsion = calc.molecule.nuclear_repulsion_energy();
+        calc.make_nuclear_potential(*(madness_process.world));
+        Vnuc = calc.potentialmanager->vnuclear();
+    }
+
+    std::vector<SavedFct<3>> solve_scf(const double thresh = 1.e-4) {
+        SCF calc(*(madness_process.world), parser);
+        calc.set_protocol<3>(*(madness_process.world), thresh);
+        calc.make_nuclear_potential(*(madness_process.world));
+        MolecularEnergy E(*(madness_process.world), calc);
+        double energy = E.value(calc.molecule.get_all_coords().flat()); // ugh! (indeed)
+
+        std::vector<SavedFct<3>> result;
+        for (const auto f : calc.amo) {
+            result.push_back(SavedFct<3>(f));
+        }
+        return result;
+    }
+
+    std::vector<SavedFct<3>> get_atomic_basis() const {
+        std::vector<SavedFct<3>> result;
+        for (auto x : atomicbasis) {
+            SavedFct<3> y(x);
+            result.push_back(y);
+        }
+        return result;
+    }
+
+    std::string get_basis_name() const { return basisname; }
+
+    SavedFct<3> get_nuclear_potential() { return SavedFct<3>(Vnuc); }
+
+    double get_nuclear_repulsion() const { return nuclear_repulsion; }
+
+  private:
+    MadnessProcess<3>& madness_process;
+    commandlineparser parser;
+    std::vector<madness::Function<double, 3>> atomicbasis;
+    std::string basisname;
+    double nuclear_repulsion;
+    madness::Function<double, 3> Vnuc;
+};

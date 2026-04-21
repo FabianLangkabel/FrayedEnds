@@ -228,17 +228,10 @@ Function<double, NDIM> Eigensolver<NDIM>::optimize(Function<double, NDIM>& V,
     return phi;
 }
 template <std::size_t NDIM>
-std::vector<SavedFct<NDIM>> Eigensolver<NDIM>::get_orbitals(int core_dim, int as_dim, int froz_virt_dim) const {
+std::vector<SavedFct<NDIM>> Eigensolver<NDIM>::get_orbitals(int n_orbitals) const {
     std::vector<SavedFct<NDIM>> sav_orbs;
-    for (auto i = 0; i < (core_dim + as_dim + froz_virt_dim); ++i) {
+    for (auto i = 0; i < n_orbitals; ++i) {
         SavedFct<NDIM> sav_orb(orbitals[i]);
-        if (i < core_dim) {
-            sav_orb.type = "frozen_occ";
-        } else if (i < core_dim + as_dim) {
-            sav_orb.type = "active";
-        } else if (i < core_dim + as_dim + froz_virt_dim) {
-            sav_orb.type = "frozen_virt";
-        }
         sav_orbs.push_back(sav_orb);
     }
     return sav_orbs;

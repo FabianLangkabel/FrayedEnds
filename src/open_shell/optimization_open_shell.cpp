@@ -878,7 +878,6 @@ std::vector<std::vector<SavedFct<NDIM>>> Optimization_open_shell<NDIM>::get_orbi
         std::vector<SavedFct<NDIM>> core_orbs;
         for (int i = 0; i < core_dims[spin]; i++) {
             SavedFct<NDIM> orb(frozen_occ_orbs[spin][i]);
-            orb.type = "frozen_occ";
             core_orbs.push_back(orb);
             std::cout << "Norm spin: " << spin << " core orb " << i << ":" << frozen_occ_orbs[spin][i].norm2() << std::endl;
         }
@@ -889,7 +888,6 @@ std::vector<std::vector<SavedFct<NDIM>>> Optimization_open_shell<NDIM>::get_orbi
         std::vector<SavedFct<NDIM>> as_orbs;
         for (int i = 0; i < as_dims[spin]; i++) {
             SavedFct<NDIM> orb(active_orbs[spin][i]);
-            orb.type = "active";
             as_orbs.push_back(orb);
             std::cout << "Norm spin: " << spin << " as orb " << i << ":" << active_orbs[spin][i].norm2() << std::endl;
         }

@@ -24,14 +24,14 @@ template <std::size_t NDIM> class Optimization {
     ~Optimization();
 
     // input
-    void give_initial_orbitals(std::vector<SavedFct<NDIM>> all_orbs);
+    void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs);
     void give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements);
 
     // output
     double get_c();
     std::vector<double> get_h_tensor();
     std::vector<double> get_g_tensor();
-    std::vector<SavedFct<NDIM>> get_orbitals();
+    std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
     void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files,
@@ -59,9 +59,7 @@ template <std::size_t NDIM> class Optimization {
 
     // helper
     void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
-    madness::Tensor<double> matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B,
-                                       std::size_t n);
-
+    
     int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
     double coulomb_lo = 0.001;
