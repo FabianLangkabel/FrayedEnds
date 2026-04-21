@@ -1,9 +1,10 @@
 import subprocess as sp
 
-import madpy as mad
 import numpy as np
 from pyblock2._pyscf.ao2mo import integrals as itg
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
+
+import frayedends as fe
 
 distance = 1.0
 iteration_energies = []
@@ -46,14 +47,17 @@ with open("nwchem", "w") as f:
     f.write(nwchem_input)
 
 programm = sp.call(
-    "/opt/conda/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
+    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem",
+    stdout=open("nwchem.out", "w"),
+    stderr=open("nwchem_err.log", "w"),
+    shell=True,
 )
 
 # Initalize world
-world = mad.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
-converter = mad.NWChem_Converter_open_shell(world)
+converter = fe.NWChem_Converter_open_shell(world)
 converter.read_nwchem_file("nwchem")
 aos = converter.get_normalized_aos()
 alpha_mos, beta_mos = converter.get_mos()
@@ -82,7 +86,7 @@ def orbital_view(molecule, orbital, label):
     """
     return html
 
-molecule = mad.MadMolecule()
+molecule = fe.MadMolecule()
 molecule.add_atom(0, 0, 0, "H")
 molecule.add_atom(0, 0, distance, "H")
 molecule.add_atom(0, 0, -distance, "H")
@@ -96,7 +100,7 @@ display(HTML(f"<div style='display:flex; gap:10px'>{alpha_0_plot}{beta_0_plot}{a
 '''
 
 # Calculate Integrals
-integrals = mad.Integrals_open_shell_3D(world)
+integrals = fe.Integrals_open_shell_3D(world)
 c, h1, g2 = integrals.compute_effective_hamiltonian([], [], alpha_mos, beta_mos, Vnuc, nuclear_repulsion_energy)
 g2[0] = g2[0].transpose(0, 2, 1, 3)
 g2[1] = g2[1].transpose(0, 2, 1, 3)
@@ -140,12 +144,8 @@ print("Energy from rdms = %20.15f" % rdm_energy)
 
 
 # Refine orbitals
-for i in range(len(alpha_mos)):
-    alpha_mos[i].type = "active"
-for i in range(len(beta_mos)):
-    beta_mos[i].type = "active"
 
-opti = mad.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
+opti = fe.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
 opti.optimize_orbs(
     orbitals=[[], [], alpha_mos, beta_mos],
     rdm1=rdm_1,
@@ -153,3 +153,4 @@ opti.optimize_orbs(
     opt_thresh=0.001,
     occ_thresh=0.001,
 )
+fe.cleanup(globals())

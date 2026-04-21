@@ -1,6 +1,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/tuple.h>
 #include "optimization.hpp"
 #include "pno_interface.hpp"
 #include "sum_of_gaussians.hpp"
@@ -8,7 +9,7 @@
 #include "integrals.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
-#include "minbas.hpp"
+#include "atombas.hpp"
 #include "madness_process.hpp"
 #include "moleculargeometry.hpp"
 #include "open_shell/nwchem_converter_open_shell.hpp"
@@ -103,7 +104,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const Function<double, 3>&>())
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<3>::info)
-        .def_rw("type", &SavedFct<3>::type)
         .def("save_to_file", &SavedFct<3>::save_to_file, nb::arg("filepath"))
         .def("load_from_file", &SavedFct<3>::load_from_file, nb::arg("filepath"));
 
@@ -111,7 +111,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<const Function<double, 2>&>())
         .def(nb::init<const std::string&>())
         .def_rw("info", &SavedFct<2>::info)
-        .def_rw("type", &SavedFct<2>::type)
         .def("save_to_file", &SavedFct<2>::save_to_file, nb::arg("filepath"))
         .def("load_from_file", &SavedFct<2>::load_from_file, nb::arg("filepath"));
 
@@ -246,14 +245,14 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
         .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion);
 
-    nb::class_<MinBasProjector>(m, "MinBasProjector")
-        .def(nb::init<MadnessProcess<3>&, const std::string&>())
-        .def("run", &MinBasProjector::run)
-        .def("get_nuclear_potential", &MinBasProjector::get_nuclear_potential)
-        .def("get_basis_name", &MinBasProjector::get_basis_name)
-        .def("get_atomic_basis", &MinBasProjector::get_atomic_basis)
-        .def("solve_scf", &MinBasProjector::solve_scf)
-        .def("get_nuclear_repulsion", &MinBasProjector::get_nuclear_repulsion);
+    nb::class_<AtomBasProjector>(m, "AtomBasProjector")
+        .def(nb::init<MadnessProcess<3>&, const std::string&, const std::string&>())
+        .def("run", &AtomBasProjector::run)
+        .def("get_nuclear_potential", &AtomBasProjector::get_nuclear_potential)
+        .def("get_basis_name", &AtomBasProjector::get_basis_name)
+        .def("get_atomic_basis", &AtomBasProjector::get_atomic_basis)
+        .def("solve_scf", &AtomBasProjector::solve_scf)
+        .def("get_nuclear_repulsion", &AtomBasProjector::get_nuclear_repulsion);
 
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<MadnessProcess<3>&, const std::vector<double>&, const double&,

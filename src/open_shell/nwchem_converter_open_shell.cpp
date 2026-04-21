@@ -76,7 +76,7 @@ std::vector<SavedFct<3>> NWChem_Converter_open_shell::get_normalized_aos() {
     std::vector<SavedFct<3>> all_orbs;
     for (int i = 0; i < aos.size(); i++) {
         SavedFct<3> orb(aos[i]);
-        orb.type = "ao";
+        orb.info = "ao";
         all_orbs.push_back(orb);
     }
     return all_orbs;
@@ -86,7 +86,7 @@ std::vector<SavedFct<3>> NWChem_Converter_open_shell::get_alpha_mos() {
     std::vector<SavedFct<3>> all_orbs;
     for (int i = 0; i < alpha_mos.size(); i++) {
         SavedFct<3> orb(alpha_mos[i]);
-        orb.type = "so_alpha";
+        orb.info = "so_alpha";
         all_orbs.push_back(orb);
     }
     return all_orbs;
@@ -96,7 +96,7 @@ std::vector<SavedFct<3>> NWChem_Converter_open_shell::get_beta_mos() {
     std::vector<SavedFct<3>> all_orbs;
     for (int i = 0; i < beta_mos.size(); i++) {
         SavedFct<3> orb(beta_mos[i]);
-        orb.type = "so_beta";
+        orb.info = "so_beta";
         all_orbs.push_back(orb);
     }
     return all_orbs;

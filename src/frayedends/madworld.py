@@ -44,7 +44,7 @@ def get_function_info(orbitals):
         for kv in x.info.strip().split(" "):
             kv = kv.split("=")
             info[kv[0]] = eval(kv[1])
-        result.append({"type": x.type, **info})
+        result.append({**info})
     return result
 
 
@@ -53,12 +53,12 @@ class MadWorld3D:
 
     madness_parameters = {
         "L": 50.0,  # half the box length, units: bohr
-        "k": 7,
-        "thresh": 1.0e-5,
-        "initial_level": 3,
+        "k": 7,  # wavelet order
+        "thresh": 1.0e-5,  # threshold for function representation
+        "initial_level": 3,  # initial projection level
         "truncate_mode": 1,
         "refine": True,
-        "n_threads": -1,
+        "n_threads": -1,  # default is all available threads
     }
 
     def __init__(self, **kwargs):
@@ -114,7 +114,7 @@ class MadWorld3D:
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
             if name is None:
-                x = "function_" + functions[i].type + " " + functions[i].info
+                x = "function_" + functions[i].info
                 self.line_plot(f"{x}{i}.dat", functions[i])
             else:
                 self.line_plot(f"{name}{i}.dat", functions[i])
@@ -165,12 +165,12 @@ class MadWorld2D:
 
     madness_parameters = {
         "L": 50.0,  # half the box length, units: bohr
-        "k": 7,
-        "thresh": 1.0e-5,
-        "initial_level": 3,
+        "k": 7,  # wavelet order
+        "thresh": 1.0e-5,  # threshold for function representation
+        "initial_level": 3,  # initial projection level
         "truncate_mode": 1,
         "refine": True,
-        "n_threads": -1,
+        "n_threads": -1,  # default is all available threads
     }
 
     def __init__(self, **kwargs):
@@ -226,7 +226,7 @@ class MadWorld2D:
     def plot_lines(self, functions, name=None):
         for i in range(len(functions)):
             if name is None:
-                x = "function_" + functions[i].type + " " + functions[i].info
+                x = "function_" + functions[i].info
                 self.line_plot(f"{x}{i}.dat", functions[i])
             else:
                 self.line_plot(f"{name}{i}.dat", functions[i])

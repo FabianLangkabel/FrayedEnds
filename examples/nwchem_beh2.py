@@ -1,7 +1,8 @@
 import subprocess as sp
 
-import madpy as mad
 import py3Dmol
+
+import frayedends as fe
 
 distance = 2.5
 iteration_energies = []
@@ -47,17 +48,17 @@ programm = sp.call(
 )
 
 # Initalize world
-world = mad.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
-converter = mad.NWChem_Converter(world)
+converter = fe.NWChem_Converter(world)
 converter.read_nwchem_file("nwchem")
 aos = converter.get_normalized_aos()
 mos = converter.get_mos()
 del converter
 
 # Visualization of orbitals
-molecule = mad.MadMolecule()
+molecule = fe.MadMolecule()
 molecule.add_atom(0, 0, 0, "Be")
 molecule.add_atom(0, 0, distance, "H")
 molecule.add_atom(0, 0, -distance, "H")

@@ -59,21 +59,14 @@ void Optimization<NDIM>::read_initial_orbitals(std::vector<std::string> frozen_o
     std::cout << "ReadOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
-template <std::size_t NDIM>
-void Optimization<NDIM>::give_initial_orbitals(std::vector<SavedFct<NDIM>> all_orbs) {
+template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    for (SavedFct<NDIM> orb : all_orbs) {
-        if (orb.type == "frozen_occ") {
+    for (SavedFct<NDIM> orb : fr_core_orbs) {
             frozen_occ_orbs.push_back(madness_process.loadfct(orb));
-        } else if (orb.type == "active") {
-            active_orbs.push_back(madness_process.loadfct(orb));
-        } else if (orb.type == "frozen_virt") {
-            frozen_virt_orb.push_back(madness_process.loadfct(orb));
-        } else {
-            std::cerr << "Unknown orbital type: " << orb.type
-                      << ". Recognized types are frozen_occ, active and frozen_virt." << std::endl;
-        }
+    }
+    for (SavedFct<NDIM> orb : act_orbs) {
+        active_orbs.push_back(madness_process.loadfct(orb));
     }
     core_dim = frozen_occ_orbs.size();
     as_dim = active_orbs.size();
@@ -108,23 +101,6 @@ void Optimization<NDIM>::sort_eigenpairs_descending(madness::Tensor<double>& eig
 
     eigenvalues = sorted_eigenvalues;
     eigenvectors = sorted_eigenvectors;
-}
-
-template <std::size_t NDIM>
-madness::Tensor<double> Optimization<NDIM>::matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B,
-                                                 std::size_t n) {
-    madness::Tensor<double> C(n, n);
-
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            double sum = 0.0;
-            for (std::size_t k = 0; k < n; ++k) {
-                sum += A(i, k) * B(k, j);
-            }
-            C(i, j) = sum;
-        }
-    }
-    return C;
 }
 
 template <std::size_t NDIM>
@@ -216,22 +192,21 @@ void Optimization<NDIM>::give_rdm_and_rotate_orbitals(std::vector<double> one_rd
     Tensor<double> evals(as_dim);
     syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
     sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
-    std::cout << evals << std::endl;
     TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
     TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
     active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "GiveRDMFiles took " << duration.count() << " seconds" << std::endl;
+    std::cout << "GiveRDMs took " << duration.count() << " seconds" << std::endl;
 }
 
 template <std::size_t NDIM>
 void Optimization<NDIM>::TransformMatrix(madness::Tensor<double>* ObjectMatrix,
                                    madness::Tensor<double>& TransformationMatrix) {
     int n = TransformationMatrix.dim(0);
-    madness::Tensor<double> temp = matmul_mxm(*ObjectMatrix, TransformationMatrix, n);
-    *ObjectMatrix = matmul_mxm(transpose(TransformationMatrix), temp, n);
+    madness::Tensor<double> temp = inner(*ObjectMatrix, TransformationMatrix);
+    *ObjectMatrix = inner(transpose(TransformationMatrix), temp);
 }
 
 template <std::size_t NDIM>
@@ -932,32 +907,18 @@ void Optimization<NDIM>::save_orbitals(std::string OutputPath) {
     }
 }
 
-template <std::size_t NDIM>
-std::vector<SavedFct<NDIM>> Optimization<NDIM>::get_orbitals() {
-    std::vector<SavedFct<NDIM>> all_orbs;
-    int j = 0;
+template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> Optimization<NDIM>::get_orbitals() {
+    std::vector<SavedFct<NDIM>> fr_core_orbs;
+    std::vector<SavedFct<NDIM>> act_orbs;
     for (int i = 0; i < core_dim; i++) {
         SavedFct<NDIM> orb(frozen_occ_orbs[i]);
-        orb.type = "frozen_occ";
-        all_orbs.push_back(orb);
-        j++;
-        std::cout << "Norm orb " << i << ":" << frozen_occ_orbs[i].norm2() << std::endl;
+        fr_core_orbs.push_back(orb);
     }
     for (int i = 0; i < as_dim; i++) {
         SavedFct<NDIM> orb(active_orbs[i]);
-        orb.type = "active";
-        all_orbs.push_back(orb);
-        j++;
-        std::cout << "Norm orb " << i << ":" << active_orbs[i].norm2() << std::endl;
+        act_orbs.push_back(orb);
     }
-    for (int i = 0; i < froz_virt_dim; i++) {
-        SavedFct<NDIM> orb(frozen_virt_orb[i]);
-        orb.type = "frozen_virt";
-        all_orbs.push_back(orb);
-        j++;
-        std::cout << "Norm orb " << i << ":" << frozen_virt_orb[i].norm2() << std::endl;
-    }
-    return all_orbs;
+    return std::make_tuple(fr_core_orbs, act_orbs);
 }
 
 template <std::size_t NDIM>
