@@ -70,7 +70,7 @@ class AtomicBasisProjector:
 
     def get_orbitals(self):
         return self.orbitals
-    
+
     def parameter_string(
         self, madworld, molecule_file, units, aobasis, **kwargs
     ) -> str:
