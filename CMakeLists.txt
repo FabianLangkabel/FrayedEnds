@@ -63,6 +63,9 @@ nanobind_add_module(
   src/nwchem_converter.cpp
   src/moleculargeometry.cpp
   src/coulomboperator_nd.hpp
+  src/open_shell/integrals_open_shell.cpp
+  src/open_shell/optimization_open_shell.cpp
+  src/open_shell/nwchem_converter_open_shell.cpp
 )
 
 # Install directive for scikit-build-core

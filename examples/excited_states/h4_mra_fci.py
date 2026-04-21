@@ -72,7 +72,7 @@ programm = sp.call(
 # Setting up the numerical environment for the MRA calculations
 world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-# Read the atomic orbitals (AOs) and the molecular orbitals (MOs) from the NWchem calculation and translate them into multiwavelets
+# Read the molecular orbitals (MOs) from the NWchem calculation and translate them into multiwavelets
 converter = fe.NWChem_Converter(world)
 converter.read_nwchem_file("nwchem")
 orbs = converter.get_mos()

@@ -50,6 +50,7 @@ wheel.py-api = "cp312"
 
 [tool.ruff]
 line-length = 120
+extend-exclude = ["test*"]
 
 [tool.ruff.lint]
 select = [
@@ -73,6 +74,11 @@ ignore = [
     "E742",
     "E743",
 ]
+
+# no input format checking in ipynb
+# clashes with quarto commands
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["I"]
 
 [tool.ruff.format]
 quote-style = "double"

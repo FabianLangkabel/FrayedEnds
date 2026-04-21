@@ -208,24 +208,41 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::normalize(std::vector<SavedFct<NDIM
 
 template <std::size_t NDIM>
 std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct<NDIM>> all_orbs,
-                                                            const std::string method, double rr_thresh) {
+                                                            const std::string method, double rr_thresh,
+                                                            nb::ndarray<nb::numpy, double, nb::ndim<1>> occupations_arr,
+                                                            double degeneracy_tol) {
     std::vector<Function<double, NDIM>> basis;
     for (SavedFct<NDIM> orb : all_orbs)
         basis.push_back(madness_process.loadfct(orb));
-    // compute overlap, to be passed in orthonormalization routines and potentially printed
-    auto S = madness::matrix_inner(*(madness_process.world), basis, basis, true);
 
     auto out_basis = basis;
-    if (method == "cholesky") {
-        out_basis = madness::orthonormalize_cd(basis, S);
-    } else if (method == "symmetric") {
-        out_basis = madness::orthonormalize_symmetric(basis, S);
-    } else if (method == "canonical") {
-        out_basis = madness::orthonormalize_canonical(basis, S, rr_thresh);
-    } else if (method == "rr_cholesky") {
-        out_basis = madness::orthonormalize_rrcd(basis, S, rr_thresh);
+
+    if (method == "mixed") {
+        std::vector<double> occupations;
+
+        for (size_t i = 0; i < occupations_arr.size(); i++) {
+                occupations.push_back(occupations_arr(i));
+        }
+
+        if (occupations.size() != all_orbs.size()) {
+            MADNESS_EXCEPTION("mixed orthonormalization: number of occupations must match number of orbitals", 1);
+        }
+
+        out_basis = orthonormalize_mixed_by_degeneracy(basis, occupations, degeneracy_tol);
     } else {
-        MADNESS_EXCEPTION("unknown orthonormalization method", 1);
+        auto S = madness::matrix_inner(*(madness_process.world), basis, basis, true);
+
+        if (method == "cholesky") {
+            out_basis = madness::orthonormalize_cd(basis, S);
+        } else if (method == "symmetric") {
+            out_basis = madness::orthonormalize_symmetric(basis, S);
+        } else if (method == "canonical") {
+            out_basis = madness::orthonormalize_canonical(basis, S, rr_thresh);
+        } else if (method == "rr_cholesky") {
+            out_basis = madness::orthonormalize_rrcd(basis, S, rr_thresh);
+        } else {
+            MADNESS_EXCEPTION("unknown orthonormalization method", 1);
+        }
     }
 
     std::vector<SavedFct<NDIM>> result;
@@ -275,6 +292,120 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_on(std::vector<SavedFct<NDI
     for (size_t k = 0; k < target.size(); k++)
         result.push_back(SavedFct<NDIM>(z[k], target[k].type, target[k].info));
     return result;
+}
+
+template <std::size_t NDIM>
+std::vector<Function<double, NDIM>> Integrals<NDIM>::orthonormalize_mixed_by_degeneracy(
+    std::vector<Function<double, NDIM>>& orbitals,
+    const std::vector<double>& occupations,
+    double degeneracy_tol) {
+
+    std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
+
+    int n_orb = occupations.size();
+
+    for (int i = 0; i < n_orb; i++) {
+        std::cout << "Orbital " << i << " occupation: " << occupations[i] << std::endl;
+    }
+
+    // Identify degenerate groups
+    std::vector<std::pair<int, int>> groups; // (start, end) for each group
+    int i = 0;
+    while (i < n_orb) {
+        int start = i;
+        double current_occ = occupations[i];
+
+        // Find all consecutive orbitals with similar occupation
+        int j = i + 1;
+        while (j < n_orb && std::abs(occupations[j] - current_occ) < degeneracy_tol) {
+            j++;
+        }
+
+        groups.push_back(std::make_pair(start, j));
+        i = j;
+    }
+
+    std::cout << "Found " << groups.size() << " degeneracy groups:" << std::endl;
+
+    // Process each group: use symmetric within, orthogonalize between groups
+    std::vector<Function<double, NDIM>> result_orbitals;
+
+    for (size_t g = 0; g < groups.size(); g++) {
+        int start = groups[g].first;
+        int end = groups[g].second;
+        int group_size = end - start;
+
+        // Extract orbitals for this group
+        std::vector<Function<double, NDIM>> group_orbitals;
+        for (int k = start; k < end; k++) {
+            group_orbitals.push_back(orbitals[k]);
+        }
+
+        std::vector<Function<double, NDIM>> ortho_group_orbitals;
+
+        if (group_size == 1) {
+            // Non-degenerate single orbital
+            std::cout << "  Group " << g << " (orbital " << start << "): "
+                      << "occupation=" << occupations[start] << ", method=Cholesky" << std::endl;
+
+            // Orthogonalize against all previous orbitals using Cholesky-like procedure
+            if (result_orbitals.size() > 0) {
+                auto current_orb = group_orbitals[0];
+
+                // Project out components of previous orbitals
+                for (const auto& prev_orb : result_orbitals) {
+                    double overlap = madness::inner(current_orb, prev_orb);
+                    current_orb = current_orb - overlap * prev_orb;
+                }
+
+                // Normalize
+                double norm = current_orb.norm2();
+                if (norm > 1e-12) {
+                    current_orb.scale(1.0 / norm);
+                }
+
+                ortho_group_orbitals.push_back(current_orb);
+            } else {
+                // First orbital, just normalize
+                double norm = group_orbitals[0].norm2();
+                group_orbitals[0].scale(1.0 / norm);
+                ortho_group_orbitals = group_orbitals;
+            }
+        } else {
+            // Degenerate group: use Symmetric within manifold to preserve symmetry
+            std::cout << "  Group " << g << " (orbitals " << start << "-" << (end-1) << "): "
+                      << "occupations=[";
+            for (int k = start; k < end; k++) {
+                std::cout << occupations[k];
+                if (k < end - 1) std::cout << ", ";
+            }
+            std::cout << "], method=Symmetric (within group)" << std::endl;
+
+            // First, orthogonalize against all previous orbitals (Cholesky-like)
+            if (result_orbitals.size() > 0) {
+                for (auto& group_orb : group_orbitals) {
+                    for (const auto& prev_orb : result_orbitals) {
+                        double overlap = madness::inner(group_orb, prev_orb);
+                        group_orb = group_orb - overlap * prev_orb;
+                    }
+                }
+            }
+
+            // Then apply symmetric within the group to preserve symmetry
+            auto S = madness::matrix_inner(*(madness_process.world), group_orbitals, group_orbitals, true);
+            ortho_group_orbitals = madness::orthonormalize_symmetric(group_orbitals, S);
+        }
+
+        // Add to result
+        for (auto& orb : ortho_group_orbitals) {
+            result_orbitals.push_back(orb);
+        }
+    }
+
+
+    std::cout << "=== Mixed Orthonormalization Complete ===\n" << std::endl;
+
+    return result_orbitals;
 }
 
 template class Integrals<2>;

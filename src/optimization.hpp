@@ -52,6 +52,11 @@ template <std::size_t NDIM> class Optimization {
     void save_orbitals(std::string OutputPath);
     void save_effective_hamiltonian(std::string OutputPath);
 
+    // Orthonormalization control
+    void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-3);
+    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
+        std::vector<Function<double, NDIM>>& orbitals);
+
     // helper
     void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
     madness::Tensor<double> matmul_mxm(const madness::Tensor<double>& A, const madness::Tensor<double>& B,
@@ -110,4 +115,8 @@ template <std::size_t NDIM> class Optimization {
     // Stored AS orbital combinations
     std::vector<Function<double, NDIM>> orbs_kl;      // |kl>
     std::vector<Function<double, NDIM>> coul_orbs_mn; // 1/r|mn>
+
+    // Orthonormalization settings
+    std::string orthonormalization_method = "symmetric";
+    double degeneracy_tolerance = 1e-3;
 };
