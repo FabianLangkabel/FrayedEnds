@@ -70,8 +70,6 @@ orbs = converter.get_mos()
 Vnuc = converter.get_Vnuc()
 nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 
-for i in range(len(orbs)):
-    orbs[i].type = "active"
 
 """
 Calculate initial integrals

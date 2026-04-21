@@ -7,7 +7,7 @@ from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 
 import frayedends as fe
 
-os.environ["MAD_NUM_THREADS"] = "4"
+os.environ["MAD_NUM_THREADS"] = "8"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "4"
 
@@ -53,7 +53,7 @@ with open("nwchem", "w") as f:
 
 # replace this filepath ↓ with the path to your nwchem executable (found by "which nwchem")
 programm = sp.call(
-    "/opt/conda/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
+    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
 )
 
 # Initalize world

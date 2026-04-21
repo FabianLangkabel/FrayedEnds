@@ -40,8 +40,6 @@ def energy_and_gradient(
     # for more details on this method see: J.S. Kottmann, F.A. Bischoff, E.F. Valeev, J. Chem. Phys. 152, 2020
     madpno = fe.MadPNO(world, geom_str[0], units=geom_str[1], n_orbitals=n_orbitals)
     orbitals = madpno.get_orbitals()  # initial guess orbitals as MRA functions, orb.type determines whether the orbital is 'active' or 'frozen_occ' (in this case all active)
-    for orb in orbitals:
-        orb.type = "active"  # set all orbitals to active, since frozen_core orbs are not refined at this point
     pno_end = time()
     print("pno time:", pno_end - pno_start)
 
@@ -91,14 +89,12 @@ def energy_and_gradient(
             rdm2=rdm2,
             maxiter=maxiter_orbopt,  # maximum number of iterations the refinement algorithm does
         )  # orbitals are now the refined orbitals
-        for orb in orbitals:
-            print(orb.type)
         ref_end = time()
         print("orb ref time:", ref_end - ref_start)
         # with the refined orbitals obtained the algorithm loops back to recompute integrals -> fci -> orbital refinement until convergence
 
     # as soon as our energy is converged we can compute the energy gradient w.r.t. nuclear coordinates
-    grad = molgeom.compute_dR_dE(world, orbitals, rdm1)
+    grad = molgeom.compute_dR_dE(world, rdm1, orbitals)
     true_end = time()
     print("total time:", true_end - true_start)
     return current_energy, np.array(grad)

@@ -25,9 +25,7 @@ for distance in distance_list:
     pno_start = time.time()
     madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals)
     orbitals = madpno.get_orbitals()
-    for orb in orbitals:
-        orb.type = "active"  # in this example we do not freeze any orbitals, so we set all orbitals to active
-
+    
     pno_end = time.time()
     print("Pno time:", pno_end - pno_start)
 

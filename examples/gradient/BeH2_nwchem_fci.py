@@ -100,31 +100,22 @@ task scf  '''
     for i in range(n_fr_orbitals,len(nw_orbitals)):
         ac_orbitals.append(nw_orbitals[i])
 
-    nat_orbs,occ_n=integrals.transform_to_natural_orbitals(ac_orbitals, rdm1)
+    nat_orbs,occ_n,trans_M=integrals.transform_to_natural_orbitals(ac_orbitals, rdm1)
     world.cube_plot(f"nwchem_raw{0}", nw_orbitals[0], molgeom, zoom=5.0)
     print("Natural occupation numbers:", occ_n)
     for i in range(len(nat_orbs)):
             world.cube_plot(f"nwchem_nat{i+1}", nat_orbs[i], molgeom, zoom=5.0)
     
-    orbitals = []
-    for i in range(n_orbitals):
-        if i < n_fr_orbitals:
-            orbitals.append(nw_orbitals[i])
-            orbitals[i].type = "frozen_occ"
-        else:
-            orbitals.append(nat_orbs[i - n_fr_orbitals])
-            orbitals[i].type = "active"
-    frozen_orbitals=[]
-    active_orbitals=[]
-    for i in range(len(orbitals)):
-        if orbitals[i].type == "frozen_occ":
-            frozen_orbitals.append(orbitals[i])
-        else:
-            active_orbitals.append(orbitals[i])
+    frozen_orbitals = []
+    active_orbitals = []
+    for i in range(n_fr_orbitals):
+        frozen_orbitals.append(nw_orbitals[i])
+    for i in range(n_fr_orbitals, n_orbitals):
+        active_orbitals.append(nat_orbs[i - n_fr_orbitals])
 
-    G = integrals.compute_two_body_integrals(orbitals)
-    T = integrals.compute_kinetic_integrals(orbitals)
-    V = integrals.compute_potential_integrals(orbitals, Vnuc)
+    G = integrals.compute_two_body_integrals(frozen_orbitals + active_orbitals)
+    T = integrals.compute_kinetic_integrals(frozen_orbitals + active_orbitals)
+    V = integrals.compute_potential_integrals(frozen_orbitals + active_orbitals, Vnuc)
     mol = tq.Molecule(
         geometry,
         units="bohr",
@@ -153,22 +144,17 @@ task scf  '''
     for iteration in range(401):
         opti_start = time.time()
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals,
+        frozen_orbitals, active_orbitals, converged = opti.optimize_orbs(
             rdm1=rdm1,
             rdm2=rdm2,
+            orbitals=[frozen_orbitals, active_orbitals],
             maxiter=1,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
-            redirect_filename=f"madopt_it{iteration}.log"
         )
-        print("Converged?:", opti.converged)
+        print("Converged?:", converged)
         opti_end = time.time()
         print("orb opt time:", opti_end-opti_start)
-        active_orbitals = []
-        for i in range(len(orbitals)):
-            if orbitals[i].type == "active":
-                active_orbitals.append(orbitals[i])
         c = opti.get_c()
 
         print( 
@@ -233,8 +219,8 @@ task scf  '''
     molecule = fe.MolecularGeometry(geometry=geometry, units="bohr")
     part_deriv_V_0 = molecule.molecular_potential_derivative(world, 0, 2)
     part_deriv_V_2 = molecule.molecular_potential_derivative(world, 2, 2)
-    Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V_0)
-    Deriv_tens2 = integrals.compute_potential_integrals(orbitals, part_deriv_V_2)
+    Deriv_tens = integrals.compute_potential_integrals(frozen_orbitals + active_orbitals, part_deriv_V_0)
+    Deriv_tens2 = integrals.compute_potential_integrals(frozen_orbitals + active_orbitals, part_deriv_V_2)
     part_deriv_c = molecule.nuclear_repulsion_derivative(0, 2)
     grad = 2*Deriv_tens[0,0]  #Be core orbital contribution
     for i in range(len(active_orbitals)):

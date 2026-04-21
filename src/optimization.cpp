@@ -912,10 +912,7 @@ template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<
     std::vector<SavedFct<NDIM>> act_orbs;
     for (int i = 0; i < core_dim; i++) {
         SavedFct<NDIM> orb(frozen_occ_orbs[i]);
-        orb.type = "frozen_occ";
-        all_orbs.push_back(orb);
-        j++;
-        std::cout << "Norm orb " << j << ":" << frozen_occ_orbs[i].norm2() << std::endl;
+        fr_core_orbs.push_back(orb);
     }
     for (int i = 0; i < as_dim; i++) {
         SavedFct<NDIM> orb(active_orbs[i]);

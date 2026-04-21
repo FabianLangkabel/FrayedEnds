@@ -53,6 +53,7 @@ def test_spa(data):
     for iteration in range(1):
         integrals = frayedends.Integrals3D(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
+        n_orbitals = len(orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
         T = integrals.compute_kinetic_integrals(orbitals)
         G = integrals.compute_two_body_integrals(orbitals)
@@ -67,8 +68,8 @@ def test_spa(data):
         print(result.energy)
         rdm1, rdm2 = mol.compute_rdms(U, variables=result.variables)
 
-        core_orbs = orbitals[:rdm1.shape[0]]
-        active_orbs = orbitals[rdm1.shape[0]:]
+        core_orbs = orbitals[:(len(orbitals)-rdm1.shape[0])]
+        active_orbs = orbitals[(len(orbitals)-rdm1.shape[0]):]
 
 
         opti = frayedends.Optimization3D(world, Vnuc, c)

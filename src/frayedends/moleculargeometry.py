@@ -4,6 +4,7 @@ import re
 from pyscf.gto import M
 from scipy.constants import physical_constants
 from tequila import Molecule
+import numpy as np
 
 from ._frayedends_impl import MolecularGeometry as MolecularGeometryImpl
 from .integrals import Integrals3D
@@ -118,7 +119,7 @@ class MolecularGeometry:
         # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
         n_atoms = len(self.to_json()["symbols"])
         
-        if len(act_orbs)!=rdm1.shape[0]:
+        if len(act_orbs)!=np.shape(rdm1)[0]:
             raise ValueError("Number of active orbitals does not match 1-RDM size.")
         
         integrals = Integrals3D(madworld)
@@ -151,7 +152,7 @@ class MolecularGeometry:
         # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
         n_atoms = len(self.to_json()["symbols"])
         
-        if len(act_orbs)!=rdm1.shape[0]:
+        if len(act_orbs)!=np.shape(rdm1)[0]:
             raise ValueError("Number of active orbitals does not match 1-RDM size.")
         
         integrals = Integrals3D(madworld)

@@ -45,29 +45,28 @@ for distance in distance_list:
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals3D(world)
-    orbitals = integrals.orthonormalize(orbitals=orbitals)
+    all_orbitals = integrals.orthonormalize(orbitals=orbitals)
 
     frozen_orbitals = []
-    for orb in orbitals:
-        if orb.type == "frozen_occ":
+    active_orbitals = []
+    for i, orb in enumerate(all_orbitals):
+        if i < len(all_orbitals) - n_act_orbitals:
             frozen_orbitals.append(orb)
+        else:
+            active_orbitals.append(orb)
 
     c = nuc_repulsion
     current = 0.0
     for iteration in range(5):
-        active_orbitals = []
-        for i in range(len(orbitals)):
-            if orbitals[i].type == "active":
-                active_orbitals.append(orbitals[i])
-
         print( 
             "------------------------------------------------------------------------------"
         )
         integrals = fe.Integrals3D(world)
         if iteration == 0:
-            G = integrals.compute_two_body_integrals(orbitals)
-            T = integrals.compute_kinetic_integrals(orbitals)
-            V = integrals.compute_potential_integrals(orbitals, Vnuc)
+            all_orbitals = frozen_orbitals + active_orbitals
+            G = integrals.compute_two_body_integrals(all_orbitals)
+            T = integrals.compute_kinetic_integrals(all_orbitals)
+            V = integrals.compute_potential_integrals(all_orbitals, Vnuc)
             mol = molgeom.to_tq_mol(
                 one_body_integrals=T + V,
                 two_body_integrals=G,
@@ -116,33 +115,30 @@ for distance in distance_list:
 
         opti_start = time.time()
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals,
+        frozen_orbitals, active_orbitals, converged = opti.optimize_orbs(
             rdm1=rdm1,
             rdm2=rdm2,
+            orbitals=[frozen_orbitals, active_orbitals],
             maxiter=miter,
             opt_thresh=0.0001,
             occ_thresh=0.0001,
         )   
         opti_end = time.time()
         print("orb opt time:", opti_end-opti_start)
-        active_orbitals = []
-        for i in range(len(orbitals)):
-            if orbitals[i].type == "active":
-                active_orbitals.append(orbitals[i])
         c = opti.get_c()
 
         
     Energy_list.append(current)
     
-    for i in range(len(orbitals)):
-        world.cube_plot(f"d_{distance}_orbital_{i}", orbitals[i], molgeom, zoom=5.0, datapoints=81)
-        world.line_plot(f"d_{distance}_orbital_{i}.dat", orbitals[i])
+    all_orbitals = frozen_orbitals + active_orbitals
+    for i in range(len(all_orbitals)):
+        world.cube_plot(f"d_{distance}_orbital_{i}", all_orbitals[i], molgeom, zoom=5.0, datapoints=81)
+        world.line_plot(f"d_{distance}_orbital_{i}.dat", all_orbitals[i])
 
     part_deriv_V_0 = molgeom.molecular_potential_derivative(world, 0, 2)
     part_deriv_V_2 = molgeom.molecular_potential_derivative(world, 2, 2)
-    Deriv_tens = integrals.compute_potential_integrals(orbitals, part_deriv_V_0)
-    Deriv_tens2 = integrals.compute_potential_integrals(orbitals, part_deriv_V_2)
+    Deriv_tens = integrals.compute_potential_integrals(all_orbitals, part_deriv_V_0)
+    Deriv_tens2 = integrals.compute_potential_integrals(all_orbitals, part_deriv_V_2)
     part_deriv_c = molgeom.nuclear_repulsion_derivative(0, 2)
     grad = 2*Deriv_tens[0,0]  #Be core orbital contribution
     for i in range(len(active_orbitals)):
