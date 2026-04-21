@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Timo Scharfe">
+<meta name="dcterms.date" content="2026-04-21">
 
-<title>FrayedEnds - Geometry Optimization with FrayedEnds and geomeTRIC</title>
+<title>FrayedEnds - Geometry optimization with FrayedEnds and geomeTRIC</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -164,13 +166,13 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="FrayedEnds - Geometry Optimization with FrayedEnds and geomeTRIC">
+<meta property="og:title" content="FrayedEnds - Geometry optimization with FrayedEnds and geomeTRIC">
 <meta property="og:description" content="quantum computing and quantum chemistry">
-<meta property="og:image" content="frayed_ends.png">
+<meta property="og:image" content="geom_opt_picture.png">
 <meta property="og:site_name" content="FrayedEnds">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -206,20 +208,37 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Geometry Optimization with FrayedEnds and geomeTRIC</h1>
-</div>
+<h1 class="title">Geometry optimization with FrayedEnds and geomeTRIC</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">code</div>
+  </div>
+  </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Timo Scharfe </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 21, 2026</p>
+    </div>
+  </div>
   
     
   </div>
@@ -229,8 +248,6 @@ window.Quarto = {
 </header>
 
 
-<section id="geometry-optimization-with-frayedends-and-geometric" class="level1">
-<h1>Geometry Optimization with FrayedEnds and geomeTRIC</h1>
 <p>This tutorial is about optimizing molecular geometries using FrayedEnds and geomeTRIC. We use FrayedEnds and the fci implementation in pyscf to calculate the ground state energy and energy gradient for a given geometry and use geomeTRIC (via the geomeTRIC interface in pyscf) to adjust the molecular coordinates until the optimal geometry is reached.</p>
 <p>To run this you need pyscf, numpy and frayedends installed.</p>
 <div id="f7341447" class="cell" data-execution_count="1">
@@ -243,6 +260,7 @@ window.Quarto = {
 <div id="296aeafa" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>world <span class="op">=</span> fe.MadWorld3D(thresh<span class="op">=</span><span class="fl">1e-4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p><code>MADNESS runtime initialized with 7 threads in the pool and affinity OFF</code></p>
 <p>The main part of this implementation is the function that calculates the ground state energy and gradient of a given molecular geometry. Our function needs the MADNESS world, a MolecularGeometry object (which is this quantum chemistry package’s molecule object) and the number of orbitals which should be considered in the calculation. The rest of the input parameters specify how many iterations should be done at maximum and when the energy is considered converged.</p>
 <p>To perform calculations with our orbital basis, the orbitals need to be represented by MADNESS using MRA. These MRA representations are C++ objects, which are transformed into “SavedFct3D” objects when passed to python (or “SavedFct2D” when doing 2D calculations). When these SavedFct3D objects are passed back to the C++ backend, the MRA representation can be loaded again.</p>
 <p>To determine the energy, we first determine a set of molecular orbitals using the pair-natural-orbitals (PNO) algorithm described in J.S. Kottmann, F.A. Bischoff, E.F. Valeev, J. Chem. Phys. 152, 2020. Those orbitals are passed to python as “SavedFct3D” objects. The orbital refinement code, which is called later, will need to know which of these orbitals are considered frozen core orbitals and which are active. For this, it checks the orb.type attribute. In this calculation we set all orbitals to active, since (as of March 2026) frozen core orbitals are not refined and we want to refine all of our orbitals.</p>
@@ -312,7 +330,7 @@ window.Quarto = {
 <span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>    grad <span class="op">=</span> molgeom.compute_dR_dE(world, rdm1, orbitals)</span>
 <span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> current_energy, np.array(grad)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>All that is left now is to use the pyscf interface for geomeTRIC to wrap the energy_and_gradient function, define a molecular geometry that should be optimized and set the desired number of orbitals. Finally we call the geomeTRIC optimizer.</p>
+<p>All that is left now is to use the pyscf interface for geomeTRIC to wrap the energy_and_gradient function, define a molecular geometry that should be optimized (in this case just h2, so the calculation does not take as long, but larger molecules are also possible) and set the desired number of orbitals. Finally we call the geomeTRIC optimizer.</p>
 <div id="3708a07d" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> f(pyscf_mol):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    molgeom <span class="op">=</span> fe.MolecularGeometry.from_pyscf_mol(pyscf_mol, units<span class="op">=</span><span class="st">"bohr"</span>)</span>
@@ -328,9 +346,150 @@ window.Quarto = {
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"new geometry (a)"</span>)</span>
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(new_mol.tostring())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<details>
+<summary>
+Output
+</summary>
+<pre><code>
+
+geometric-optimize called with the following command line:
+/Users/timo/miniforge3/envs/fe_test/lib/python3.11/site-packages/ipykernel_launcher.py --f=/Users/timo/Library/Jupyter/runtime/kernel-v3d98c8c9c29a3f4798fe31ce0453d96c3397fb41c.json
+
+                                        ())))))))))))))))/                     
+                                    ())))))))))))))))))))))))),                
+                                *)))))))))))))))))))))))))))))))))             
+                        #,    ()))))))))/                .)))))))))),          
+                      #%%%%,  ())))))                        .))))))))*        
+                      *%%%%%%,  ))              ..              ,))))))).      
+                        *%%%%%%,         ***************/.        .)))))))     
+                #%%/      (%%%%%%,    /*********************.       )))))))    
+              .%%%%%%#      *%%%%%%,  *******/,     **********,      .))))))   
+                .%%%%%%/      *%%%%%%,  **              ********      .))))))  
+          ##      .%%%%%%/      (%%%%%%,                  ,******      /)))))  
+        %%%%%%      .%%%%%%#      *%%%%%%,    ,/////.       ******      )))))) 
+      #%      %%      .%%%%%%/      *%%%%%%,  ////////,      *****/     ,))))) 
+    #%%  %%%  %%%#      .%%%%%%/      (%%%%%%,  ///////.     /*****      ))))).
+  #%%%%.      %%%%%#      /%%%%%%*      #%%%%%%   /////)     ******      ))))),
+    #%%%%##%  %%%#      .%%%%%%/      (%%%%%%,  ///////.     /*****      ))))).
+      ##     %%%      .%%%%%%/      *%%%%%%,  ////////.      *****/     ,))))) 
+        #%%%%#      /%%%%%%/      (%%%%%%      /)/)//       ******      )))))) 
+          ##      .%%%%%%/      (%%%%%%,                  *******      ))))))  
+                .%%%%%%/      *%%%%%%,  **.             /*******      .))))))  
+              *%%%%%%/      (%%%%%%   ********/*..,*/*********       *))))))   
+                #%%/      (%%%%%%,    *********************/        )))))))    
+...
+&gt;  Max-Grad  &lt; 4.50e-04
+&gt;  RMS-Disp  &lt; 1.20e-03
+&gt;  Max-Disp  &lt; 1.80e-03
+&gt; === End Optimization Info ===
+Output is truncated. View as a scrollable element or open in a text editor. Adjust cell output settings...
+
+Geometry optimization cycle 1
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.500000    0.000000  0.000000  0.000000
+   H   0.000000   0.000000   0.500000    0.000000  0.000000  0.000000
+
+WARN: Mole.unit (angstrom) is changed to Bohr
+
+iteration 0 energy -1.1283885
+iteration 1 energy -1.1294028
+iteration 2 energy -1.1295112
+iteration 3 energy -1.1295254
+cycle 1: E = -1.12951119445  dE = -1.12951  norm(grad) = 0.108844
+Step    0 : Gradient = 7.696e-02/7.696e-02 (rms/max) Energy = -1.1295111944
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 1.00000e-01
+
+Geometry optimization cycle 2
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.400000    0.000000  0.000000  0.100000
+   H   0.000000   0.000000   0.400000    0.000000  0.000000 -0.100000
+iteration 0 energy -1.1503284
+iteration 1 energy -1.1509446
+iteration 2 energy -1.1509989
+cycle 2: E = -1.15094463084  dE = -0.0214334  norm(grad) = 0.0375677
+Step    1 : Displace = 1.000e-01/1.000e-01 (rms/max) Trust = 1.000e-01 (=) Grad = 2.656e-02/2.656e-02 (rms/max) E (change) = -1.1509446308 (-2.143e-02) Quality = 0.977
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 1.33352e-01
+
+Geometry optimization cycle 3
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.347292    0.000000  0.000000  0.052708
+   H   0.000000   0.000000   0.347292    0.000000  0.000000 -0.052708
+iteration 0 energy -1.1491849
+iteration 1 energy -1.1495901
+iteration 2 energy -1.1496271
+cycle 3: E = -1.14959007859  dE = 0.00135455  norm(grad) = 0.0653876
+Step    2 : Displace = 5.271e-02/5.271e-02 (rms/max) Trust = 1.414e-01 (+) Grad = 4.624e-02/4.624e-02 (rms/max) E (change) = -1.1495900786 (+1.355e-03) Quality = -0.512
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 3.65454e-01
+
+Geometry optimization cycle 4
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.373646    0.000000  0.000000 -0.026354
+   H   0.000000   0.000000   0.373646    0.000000  0.000000  0.026354
+iteration 0 energy -1.1515166
+iteration 1 energy -1.1520571
+iteration 2 energy -1.1521021
+cycle 4: E = -1.15205713809  dE = -0.00246706  norm(grad) = 0.0051986
+Step    3 : Displace = 2.635e-02/2.635e-02 (rms/max) Trust = 2.635e-02 (-) Grad = 3.676e-03/3.676e-03 (rms/max) E (change) = -1.1520571381 (-2.467e-03) Quality = 0.883
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 4.27298e-01
+
+Geometry optimization cycle 5
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.375922    0.000000  0.000000 -0.002276
+   H   0.000000   0.000000   0.375922    0.000000  0.000000  0.002276
+iteration 0 energy -1.1515446
+iteration 1 energy -1.1520850
+iteration 2 energy -1.1521307
+cycle 5: E = -1.15208500278  dE = -2.78647e-05  norm(grad) = 0.000901434
+Step    4 : Displace = 2.276e-03/2.276e-03 (rms/max) Trust = 3.727e-02 (+) Grad = 6.374e-04/6.374e-04 (rms/max) E (change) = -1.1520850028 (-2.786e-05) Quality = 1.762
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 3.53205e-01
+
+Geometry optimization cycle 6
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.376400    0.000000  0.000000 -0.000477
+   H   0.000000   0.000000   0.376400    0.000000  0.000000  0.000477
+iteration 0 energy -1.1515470
+iteration 1 energy -1.1520876
+iteration 2 energy -1.1521334
+cycle 6: E = -1.15208756153  dE = -2.55875e-06  norm(grad) = 1.61261e-05
+Step    5 : Displace = 4.775e-04/4.775e-04 (rms/max) Trust = 5.271e-02 (+) Grad = 1.140e-05/1.140e-05 (rms/max) E (change) = -1.1520875615 (-2.559e-06) Quality = 4.449
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 3.46886e-01
+
+Geometry optimization cycle 7
+Cartesian coordinates (Angstrom)
+ Atom        New coordinates             dX        dY        dZ
+   H   0.000000   0.000000  -0.376409    0.000000  0.000000 -0.000009
+   H   0.000000   0.000000   0.376409    0.000000  0.000000  0.000009
+iteration 0 energy -1.1515470
+iteration 1 energy -1.1520876
+iteration 2 energy -1.1521334
+cycle 7: E = -1.15208759768  dE = -3.61495e-08  norm(grad) = 5.69956e-08
+Step    6 : Displace = 8.698e-06/8.698e-06 (rms/max) Trust = 7.454e-02 (+) Grad = 4.030e-08/4.030e-08 (rms/max) E (change) = -1.1520875977 (-3.615e-08) Quality = 192.882
+Hessian Eigenvalues: 5.00000e-02 5.00000e-02 5.00000e-02 ... 5.00000e-02 5.00000e-02 3.46886e-01
+Converged! =D
+
+    #==========================================================================#
+    #| If this code has benefited your research, please support us by citing: |#
+    #|                                                                        |#
+    #| Wang, L.-P.; Song, C.C. (2016) "Geometry optimization made simple with |#
+    #| translation and rotation coordinates", J. Chem, Phys. 144, 214108.     |#
+    #| http://dx.doi.org/10.1063/1.4952956                                    |#
+    #==========================================================================#
+    Time elapsed since start of run_optimizer: 100.826 seconds
+new geometry (a)
+H           0.00000000        0.00000000       -0.37640864
+H           0.00000000        0.00000000        0.37640864
 
 
-</section>
+</code></pre>
+</details>
+
+
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -805,25 +964,64 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         }
       };
     }
-      // Attach click handler to the DT
-      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-      for (const annoteDlNode of annoteDls) {
-        annoteDlNode.addEventListener('click', (event) => {
-          const clickedEl = event.target;
-          if (clickedEl !== selectedAnnoteEl) {
-            unselectCodeLines();
-            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-            if (activeEl) {
-              activeEl.classList.remove('code-annotation-active');
-            }
-            selectCodeLines(clickedEl);
-            clickedEl.classList.add('code-annotation-active');
-          } else {
-            // Unselect the line
-            unselectCodeLines();
-            clickedEl.classList.remove('code-annotation-active');
+      const annoteTargets = window.document.querySelectorAll('.code-annotation-anchor');
+      for (let i=0; i<annoteTargets.length; i++) {
+        const annoteTarget = annoteTargets[i];
+        const targetCell = annoteTarget.getAttribute("data-target-cell");
+        const targetAnnotation = annoteTarget.getAttribute("data-target-annotation");
+        const contentFn = () => {
+          const content = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          if (content) {
+            const tipContent = content.cloneNode(true);
+            tipContent.classList.add("code-annotation-tip-content");
+            return tipContent.outerHTML;
           }
-        });
+        }
+        const config = {
+          allowHTML: true,
+          content: contentFn,
+          onShow: (instance) => {
+            selectCodeLines(instance.reference);
+            instance.reference.classList.add('code-annotation-active');
+            window.tippy.hideAll();
+          },
+          onHide: (instance) => {
+            unselectCodeLines();
+            instance.reference.classList.remove('code-annotation-active');
+          },
+          maxWidth: 300,
+          delay: [50, 0],
+          duration: [200, 0],
+          offset: [5, 10],
+          arrow: true,
+          appendTo: function(el) {
+            return el.parentElement.parentElement.parentElement;
+          },
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'quarto',
+          placement: 'right',
+          popperOptions: {
+            modifiers: [
+            {
+              name: 'flip',
+              options: {
+                flipVariations: false, // true by default
+                allowedAutoPlacements: ['right'],
+                fallbackPlacements: ['right', 'top', 'top-start', 'top-end', 'bottom', 'bottom-start', 'bottom-end', 'left'],
+              },
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                mainAxis: false,
+                altAxis: false
+              }
+            }
+            ]        
+          }      
+        };
+        window.tippy(annoteTarget, config); 
       }
   const findCites = (el) => {
     const parentEl = el.parentElement;
