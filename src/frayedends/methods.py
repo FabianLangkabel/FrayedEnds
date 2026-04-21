@@ -140,7 +140,7 @@ def optimize_basis_3D(
             raise Exception(
                 f"many_body_method={str(many_body_method)} is neither a string that encodes a supported method nor callable\nsupported methods are: {SUPPORTED_RDM_METHODS}"
             )
-        
+
         print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
         if numpy.isclose(
