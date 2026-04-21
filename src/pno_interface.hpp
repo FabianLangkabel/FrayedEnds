@@ -316,35 +316,18 @@ class PNOInterface {
         sto3g = nemo.get_calc()->project_ao_basis(*(madness_process.world), nemo.get_calc()->aobasis);
     }
 
-    std::vector<SavedFct<3>> get_pnos(int core_dim, int as_dim, int froz_virt_dim) const {
-        if (core_dim + as_dim + froz_virt_dim != basis.size()) {
-            std::cerr << "PNOInterface::GetPNOs: core_dim + as_dim + froz_virt_dim != basis.size() " << core_dim << " "
-                      << as_dim << " " << froz_virt_dim << " " << basis.size() << std::endl;
-        }
+    std::vector<SavedFct<3>> get_pnos() const {
         std::vector<SavedFct<3>> pnos;
         size_t offset = 0;
         for (auto i = 0; i < basis.size(); ++i) {
             SavedFct<3> pnorb(basis[i]);
-            if (i < core_dim) {
-                pnorb.type = "frozen_occ";
-                pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
-                pnorb.info += "pair1=" + std::to_string(ids[i].first) + " ";
-                pnorb.info += "pair2=" + std::to_string(ids[i].second) + " ";
-            } else if (i < core_dim + as_dim) {
-                pnorb.type = "active";
-                pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
-                if (occ[i] != 2.0)
-                    offset = core_dim;
-                else
-                    offset = 0;
-                pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
-                pnorb.info += "pair2=" + std::to_string(ids[i].second + offset) + " ";
-            } else if (i < core_dim + as_dim + froz_virt_dim) {
-                pnorb.type = "frozen_virt";
-                pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
-                pnorb.info += "pair1=" + std::to_string(ids[i].first + core_dim) + " ";
-                pnorb.info += "pair2=" + std::to_string(ids[i].second + core_dim) + " ";
-            }
+            pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
+            if (occ[i] != 2.0)
+                offset = this->nfreeze;
+            else
+                offset = 0;
+            pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
+            pnorb.info += "pair2=" + std::to_string(ids[i].second + offset) + " ";
             pnos.push_back(pnorb);
         }
         return pnos;

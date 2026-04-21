@@ -200,8 +200,6 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::normalize(std::vector<SavedFct<NDIM
         result.push_back(SavedFct<NDIM>(x));
     for (size_t k = 0; k < result.size(); k++)
         result[k].info = all_orbs[k].info;
-    for (size_t k = 0; k < result.size(); k++)
-        result[k].type = all_orbs[k].type;
 
     return result;
 }
@@ -250,9 +248,6 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct
         result.push_back(SavedFct<NDIM>(x));
     for (size_t k = 0; k < result.size(); k++)
         result[k].info = all_orbs[k].info;
-    for (size_t k = 0; k < result.size(); k++)
-        result[k].type = all_orbs[k].type;
-
     return result;
 }
 
@@ -271,7 +266,7 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_out(std::vector<SavedFct<ND
     madness::normalize(*(madness_process.world), z);
     std::vector<SavedFct<NDIM>> result;
     for (size_t k = 0; k < target.size(); k++)
-        result.push_back(SavedFct<NDIM>(z[k], target[k].type, target[k].info));
+        result.push_back(SavedFct<NDIM>(z[k], target[k].info));
     return result;
 }
 
@@ -290,7 +285,7 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_on(std::vector<SavedFct<NDI
     madness::normalize(*(madness_process.world), z);
     std::vector<SavedFct<NDIM>> result;
     for (size_t k = 0; k < target.size(); k++)
-        result.push_back(SavedFct<NDIM>(z[k], target[k].type, target[k].info));
+        result.push_back(SavedFct<NDIM>(z[k], target[k].info));
     return result;
 }
 

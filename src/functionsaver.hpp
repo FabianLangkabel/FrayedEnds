@@ -43,13 +43,10 @@ template <std::size_t NDIM> class SavedFct {
   public:
     std::string saved_str = ""; // should this be private?
     std::string info = "";
-    std::string type = "";
 
-    SavedFct(Function<double, NDIM> f) : type("unknown"), info("None") { saved_str = get_data_string(f); }
+    SavedFct(Function<double, NDIM> f) : info("None") { saved_str = get_data_string(f); }
 
-    SavedFct(Function<double, NDIM> f, const std::string type) : type(type) { saved_str = get_data_string(f); }
-
-    SavedFct(Function<double, NDIM> f, const std::string type, const std::string info) : type(type), info(info) {
+    SavedFct(Function<double, NDIM> f, const std::string info) : info(info) {
         saved_str = get_data_string(f);
     }
 
@@ -77,10 +74,6 @@ template <std::size_t NDIM> class SavedFct {
         len = info.size();
         out.write(reinterpret_cast<const char*>(&len), sizeof(len));
         out.write(info.data(), len);
-
-        len = type.size();
-        out.write(reinterpret_cast<const char*>(&len), sizeof(len));
-        out.write(type.data(), len);
     }
 
     void load_from_file(const std::string& filepath) {
@@ -101,12 +94,6 @@ template <std::size_t NDIM> class SavedFct {
         buffer = new char[len];
         in.read(buffer, len);
         info.assign(buffer, len);
-        delete[] buffer;
-
-        in.read(reinterpret_cast<char*>(&len), sizeof(len));
-        buffer = new char[len];
-        in.read(buffer, len);
-        type.assign(buffer, len);
         delete[] buffer;
     }
 };

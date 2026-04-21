@@ -5,4 +5,9 @@
 /.idea
 *.pyc
 .DS_Store
+*.log
+*.dat
+*.cube
+molecule
+*.hdf5
 *.sif

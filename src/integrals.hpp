@@ -79,7 +79,7 @@ template <std::size_t NDIM> class Integrals {
 
         std::vector<SavedFct<NDIM>> result;
         for (size_t k = 0; k < orbitals.size(); k++)
-            result.push_back(SavedFct<NDIM>(y[k], orbitals[k].type, orbitals[k].info + " transformed "));
+            result.push_back(SavedFct<NDIM>(y[k], orbitals[k].info + " transformed "));
         return result;
     }
 

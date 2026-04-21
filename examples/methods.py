@@ -19,20 +19,7 @@ method = "fci_dhf_slow"  # dhf_slow allows complex integrals, but doesn't conver
 
 # initial orbitals
 # can also just be a vector of MRA functions imported from somewhere else
-orbitals = "manual"  # "pno", "sto-3g"
-if orbitals == "manual":
-    world.change_nthreads(0)
-    f1 = frayedends.MRAFunctionFactory3D(
-        world, pyfunc=lambda x, y, z: numpy.exp(-0.5 * (x**2 + y**2 + z**2) ** 0.5)
-    ).get_function(type="active")
-    f2 = frayedends.MRAFunctionFactory3D(
-        world,
-        pyfunc=lambda x, y, z: numpy.exp(-0.5 * (x**2 + y**2 + (z - 1.0) ** 2) ** 0.5),
-    ).get_function(type="active")
-    orbitals = [f1, f2]
-    world.change_nthreads(11)
-    integrals = frayedends.Integrals3D(world)
-    orbitals = integrals.orthonormalize(orbitals=orbitals)
+orbitals = "sto-3g"  # "pno", "sto-3g"
 
 # run the tandem optimization
 # either madness + tequila

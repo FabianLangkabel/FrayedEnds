@@ -6,13 +6,11 @@ class MRAFunctionFactory3D:
     impl = None
     test = 0
 
-    def __init__(self, madworld, pyfunc, *args, **kwargs):
+    def __init__(self, madworld, pyfunc):
         self.impl = FuncFactory3D(madworld.impl, pyfunc)
 
-    def get_function(self, type=None, info=None):
+    def get_function(self, info=None):
         tmp = self.impl.get_mra_function()
-        if type is not None:
-            tmp.type = type
         if info is not None:
             tmp.info = info
         return tmp
@@ -25,10 +23,8 @@ class MRAFunctionFactory2D:
     def __init__(self, madworld, pyfunc, *args, **kwargs):
         self.impl = FuncFactory2D(madworld.impl, pyfunc)
 
-    def get_function(self, type=None, info=None):
+    def get_function(self, info=None):
         tmp = self.impl.get_mra_function()
-        if type is not None:
-            tmp.type = type
         if info is not None:
             tmp.info = info
         return tmp

@@ -1,11 +1,11 @@
 import numpy
 
 from ._frayedends_impl import SavedFct2D, SavedFct3D
+from .atomicbasisprojector import AtomicBasisProjector
 from .eigensolver import Eigensolver2D, Eigensolver3D
 from .integrals import Integrals2D, Integrals3D
 from .madpno import MadPNO
 from .madworld import MadWorld2D, MadWorld3D
-from .minbas import AtomicBasisProjector
 from .moleculargeometry import MolecularGeometry
 from .optimization import Optimization2D, Optimization3D
 from .pyscf_interface import HAS_PYSCF, PySCFInterface
@@ -42,6 +42,7 @@ def optimize_basis_3D(
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
 
+    molgeom = None
     if Vnuc is None and geometry is None:
         raise Exception("Please provide either a potential or a molecular geometry.")
     elif Vnuc is not None:
@@ -51,11 +52,11 @@ def optimize_basis_3D(
         if n_orbitals is None:
             n_orbitals = n_electrons  # as of right now there is no frozen core implemented for calculations with a custom potential
     else:
-        mol = MolecularGeometry(geometry)
-        c = mol.get_nuclear_repulsion()
-        Vnuc = mol.get_vnuc(world)
+        molgeom = MolecularGeometry(geometry)
+        c = molgeom.get_nuclear_repulsion()
+        Vnuc = molgeom.get_vnuc(world)
         if n_orbitals is None:
-            n_orbitals = mol.n_core_electrons // 2 + (mol.n_electrons - mol.n_core_electrons)
+            n_orbitals = molgeom.n_core_electrons // 2 + (molgeom.n_electrons - molgeom.n_core_electrons)
 
     if orbitals is None or "pno" in orbitals:
         if geometry is None:
@@ -70,22 +71,16 @@ def optimize_basis_3D(
             raise Exception("If you want to use the sto-3g basis, you need to provide a molecular geometry.")
         minbas = AtomicBasisProjector(world, geometry, aobasis="sto-3g")
         orbitals = minbas.orbitals
-        for x in orbitals:
-            x.type = "active"
         # test if we have frozen core: if yes, we need the HF orbitals as core orbitals
-        if mol.n_core_electrons > 0:
+        if molgeom.n_core_electrons > 0:
             hf = minbas.solve_scf()
-            core = [hf[k] for k in range(mol.n_core_electrons // 2)]
+            core = [hf[k] for k in range(molgeom.n_core_electrons // 2)]
             integrals = Integrals3D(world)
             orbitals = integrals.orthonormalize(orbitals, method="symmetric")
             orbitals = integrals.project_out(kernel=core, target=orbitals)
             orbitals = integrals.normalize(orbitals)
             # most likely no linear dependencies since core at CBS is different from sto-3g orbitals
             orbitals = integrals.orthonormalize(orbitals, method="rr_cholesky", rr_thresh=1.0e-5)
-            for x in core:
-                x.type = "frozen_occ"
-            for x in orbitals:
-                x.type = "active"
             orbitals = core + orbitals
             # just to be save
             orbitals = integrals.normalize(orbitals)
@@ -93,7 +88,7 @@ def optimize_basis_3D(
         if Vnuc is None:
             raise Exception("If you want to use the eigensolver you need to provide a potential.")
         eigen = Eigensolver3D(world, Vnuc)
-        orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=n_orbitals * 2)
+        orbitals = eigen.get_orbitals(n_orbitals=n_orbitals, n_guess_orbs=n_orbitals + 5)
         del eigen
 
     current = 0.0
@@ -158,14 +153,32 @@ def optimize_basis_3D(
             dconv = 10 * econv
         if occ_thresh is None:
             occ_thresh = econv
-        opti = Optimization3D(world, Vnuc, c)
-        orbitals = opti.get_orbitals(
-            orbitals=orbitals,
-            rdm1=rdm1,
-            rdm2=rdm2,
-            opt_thresh=dconv,
-            occ_thresh=occ_thresh,
-        )
+
+        if molgeom is not None and molgeom.n_core_electrons > 0:
+            frozen_core_orbs = orbitals[: molgeom.n_core_electrons // 2]
+            active_orbs = orbitals[molgeom.n_core_electrons // 2 :]
+
+            # orbital refinement with frozen core
+            opti = Optimization3D(world, Vnuc, c)
+            frozen_core_orbs, active_orbs = opti.get_orbitals(
+                orbitals=[frozen_core_orbs, active_orbs],
+                rdm1=rdm1,
+                rdm2=rdm2,
+                opt_thresh=dconv,
+                occ_thresh=occ_thresh,
+            )
+            orbitals = frozen_core_orbs + active_orbs
+        else:
+            # orbital refinement without frozen core
+            opti = Optimization3D(world, Vnuc, c)
+            orbitals = opti.get_orbitals(
+                orbitals=orbitals,
+                rdm1=rdm1,
+                rdm2=rdm2,
+                opt_thresh=dconv,
+                occ_thresh=occ_thresh,
+            )
+
         del opti
 
     return energy, orbitals, rdm1, rdm2
@@ -203,7 +216,7 @@ def optimize_basis_2D(
 
     if orbitals is None or "eigen" in orbitals:
         eigen = Eigensolver2D(world, Vnuc)
-        orbitals = eigen.get_orbitals(0, n_orbitals, 0, n_states=n_orbitals * 2)
+        orbitals = eigen.get_orbitals(n_orbitals=n_orbitals, n_guess_orbs=n_orbitals + 5)
         del eigen
 
     current = 0.0

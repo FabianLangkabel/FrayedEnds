@@ -81,8 +81,6 @@ nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 
 n_orbitals = len(orbs)
 
-for i in range(n_orbitals):
-    orbs[i].type = "active"
 
 for i in range(n_orbitals):
     world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot guess orbitals
