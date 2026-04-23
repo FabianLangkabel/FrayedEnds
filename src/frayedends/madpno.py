@@ -33,6 +33,7 @@ class MadPNO:
         maxrank=None,
         diagonal=True,
         frozen_core=True,
+        cispd=-1,
         *args,
         **kwargs,
     ):
@@ -82,9 +83,11 @@ class MadPNO:
             maxrank=maxrank,
             diagonal=diagonal,
             frozen_core=frozen_core,
+            cispd=cispd,
             *args,
             **kwargs,
         )
+        print(f"DEBUG: MADNESS-String: {pno_input_string}")
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
@@ -168,6 +171,7 @@ class MadPNO:
         maxrank=10,
         diagonal=True,
         frozen_core=True,
+        cispd=-1,
         **kwargs,
     ) -> str:
         """
@@ -175,6 +179,7 @@ class MadPNO:
         :param maxrank: maxrank for each set of PNOs
         :param diagonal: use diagonal approximation (default True)
         :param frozen_core: use frozen core approximation (default True)
+        :param cispd: number of excited states for CIS(D) PNO generation (default -1)
         :param kwargs: additional key/value pairs. Example kwargs={"dft":{"k":5, "econv":1.e-6}, "pno":{...}, ... }
         :return: parameter string for the PNO class in madness
         """
@@ -185,11 +190,18 @@ class MadPNO:
             "xc": "hf",
             "L": madworld.get_function_defaults()["cell_width"] / 2,
             "k": madworld.get_function_defaults()["k"],
-            "econv": 1.0e-4,
+            "econv": 1.0e-6,
             "dconv": 5.0e-4,
             "localize": "boys",
         }
         data["nemo"] = {"ncf": "( none , 1.0)"}
+        if cispd > -1:
+            data["tdhf"] = {
+                "nexcitations": cispd,
+                "thresh": 1.0e-5,
+                "restart": "no_restart"
+            }
+
         data["pno"] = {
             "maxrank": maxrank,
             "f12": "false",
@@ -215,23 +227,13 @@ class MadPNO:
                 + molecule_file
                 + '"'
             )
-        input_str += ' --dft="'
-        for k, v in data["dft"].items():
-            input_str += "{}={}; ".format(k, v)
-        input_str = input_str[:-2] + '"'
-        input_str += ' --pno="'
-        for k, v in data["pno"].items():
-            input_str += "{}={}; ".format(k, v)
-        input_str = input_str[:-2] + '"'
-        input_str += ' --nemo="'
-        for k, v in data["nemo"].items():
-            input_str += "{}={}; ".format(k, v)
-        input_str = input_str[:-2] + '"'
-        if data["plot"] != {}:
-            input_str += ' --plot="'
-            for k, v in data["plot"].items():
-                input_str += "{}={}; ".format(k, v)
-            input_str = input_str[:-2] + '"'
+
+        for item in ["dft", "pno", "nemo", "tdhf", "plot"]:
+            if item in data and data[item]:
+                input_str += ' --{}="'.format(item)
+                for k, v in data[item].items():
+                    input_str += "{}={}; ".format(k, v)
+                input_str = input_str[:-2] + '"'
 
         return input_str
 

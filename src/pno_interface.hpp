@@ -5,6 +5,7 @@
 #include <madness/mra/vmra.h>
 #include <madness/chem/SCF.h>
 #include <madness/chem/nemo.h>
+#include <madness/chem/TDHF.h>
 #include <madness/chem/PNO.h>
 #include <string>
 #include <vector>
@@ -123,30 +124,106 @@ class PNOInterface {
 
         // Compute the SCF Reference
         const double time_scf_start = wall_time();
-        Nemo nemo(*(madness_process.world), parser);
-        nemo.get_calc()->param.print();
-        const double scf_energy = nemo.value();
+        auto nemo = std::make_shared<Nemo>(*(madness_process.world), parser);
+        nemo->get_calc()->param.print();
+        const double scf_energy = nemo->value();
         if (madness_process.world->rank() == 0)
             print("nemo energy: ", scf_energy);
         if (madness_process.world->rank() == 0)
             printf(" at time %.1f\n", wall_time());
         const double time_scf_end = wall_time();
         // assert that no nemo corrfactor is actually used (not yet supported in PNO-MP2)
-        if (nemo.ncf->type() != madness::NuclearCorrelationFactor::None) {
+        if (nemo->ncf->type() != madness::NuclearCorrelationFactor::None) {
             MADNESS_EXCEPTION(
                 "Nuclear Correlation Factors not yet supported in MRA-PNOs. Add ncf (none,1.0) to your dft input", 1);
         }
         {
-            Vnuc = nemo.ncf->U2();
-            nuclear_repulsion = nemo.get_calc()->molecule.nuclear_repulsion_energy();
+            Vnuc = nemo->ncf->U2();
+            nuclear_repulsion = nemo->get_calc()->molecule.nuclear_repulsion_energy();
+        }
+        if (madness_process.world->rank() == 0) {
+            parser.print_map();
+        }
+
+        int n_excitations = -1;
+        if (parser.key_exists("tdhf")) {
+            std::smatch m;
+            std::string s = parser.value("tdhf");
+            if (std::regex_search(s, m, std::regex(R"(nexcitations\s+(\d+))")))
+                n_excitations = std::stoi(m[1]);
+        }
+
+        if (madness_process.world->rank() == 0) {
+            printf("DEBUG: Found n_excitations = %d\n", n_excitations);
+        }
+
+        std::vector<CC_vecfunction> cis_roots;
+        if (n_excitations > -1) {
+            if (madness_process.world->rank() == 0) {
+                std::cout << "--------------------------------------------------\n";
+                std::cout << "TDHF CIS will be computed with " << n_excitations << " excitations \n";
+                std::cout << "--------------------------------------------------\n";
+            }
+
+            // Compute TDHF CIS vectors
+            const double time_cis_start = wall_time();;
+            TDHF tdhf(*(madness_process.world), parser, nemo);
+            if (madness_process.world->rank() == 0) {
+                std::cout << "CIS parameters: \n";
+            }
+            tdhf.get_parameters().print("cis", "end");
+            tdhf.prepare_calculation();
+            cis_roots = tdhf.solve_cis();
+            const double time_cis_end = wall_time();
+
+            size_t freeze_offset = 0;
+            PNOParameters temp_params(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
+            freeze_offset = temp_params.freeze();
+
+            if (madness_process.world->rank() == 0) {
+                std::cout << "Total CIS roots found: " << cis_roots.size() << "\n";
+            }
+
+            for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
+                const auto& xvec = cis_roots[ex].functions;
+
+                if (madness_process.world->rank() == 0) {
+                    std::cout << "Saving CIS x-vectors for excitation " << ex
+                              << " (contains " << xvec.size() << " functions)" << std::endl;
+                }
+
+                for (auto const& [idx, cc_func] : xvec) {
+                    std::string filename = std::to_string(ex) + "_x" + std::to_string(idx);
+                    save(cc_func.function, filename);
+                }
+            }
+
+            if (madness_process.world->rank() == 0) {
+                std::cout << std::setfill(' ');
+                std::cout << "\n\n\n";
+                std::cout << "--------------------------------------------------\n";
+                std::cout << "TDHF CIS ended \n";
+                std::cout << "--------------------------------------------------\n";
+                std::cout << std::setw(25) << "time cis" << " = " << time_cis_end - time_cis_start << "\n";
+                std::cout << "--------------------------------------------------\n";
+            }
+        } else {
+            if (madness_process.world->rank() == 0) {
+                    std::cout << "\n\n\n";
+                    std::cout << "--------------------------------------------------\n";
+                    std::cout << "TDHF CIS will be skipped since no excitations were requested \n";
+                    std::cout << "--------------------------------------------------\n";
+            }
         }
 
         // Compute MRA-PNO-MP2-F12
         const double time_pno_start = wall_time();
-        PNOParameters parameters(*(madness_process.world), parser, nemo.get_calc()->molecule, TAG_PNO);
+        PNOParameters parameters(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
         F12Parameters paramf12(*(madness_process.world), parser, parameters, TAG_F12);
-        PNO pno(*(madness_process.world), nemo, parameters, paramf12);
-        pno.solve();
+        PNO pno(*(madness_process.world), *nemo, parameters, paramf12);
+
+        std::vector<PNOPairs> all_pairs;
+        pno.solve(all_pairs);
         const double time_pno_end = wall_time();
 
         if (madness_process.world->rank() == 0) {
@@ -160,23 +237,82 @@ class PNOInterface {
             std::cout << "--------------------------------------------------\n";
         }
 
+        if (n_excitations > -1) {
+            for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
+                parser.set_keyval("pno", parser.value("pno") + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
+
+                PNOParameters cispd_parameters(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
+                F12Parameters cispd_paramf12(*(madness_process.world), parser, cispd_parameters, TAG_F12);
+                PNO pno_cispd(*(madness_process.world), *nemo, cispd_parameters, cispd_paramf12);
+
+                std::vector<PNOPairs> all_cispd_pairs;
+                pno_cispd.solve(all_cispd_pairs);
+
+                for (const auto& pair: all_cispd_pairs) {
+                    all_pairs.push_back(std::move(pair));
+                }
+            }
+        }
+
         if (madness_process.world->rank() == 0) {
-            std::cout << "restarting PNO to reload pairs that converged before and were frozen\n";
+            parser.print_map();
+        }
+
+        if (madness_process.world->rank() == 0) {
+            std::cout << "restarting PNO to reload all pairs that converged before and were frozen\n";
         }
         pno.param.set_user_defined_value<std::string>("restart", "all");
         pno.param.set_user_defined_value<std::string>("no_opt", "all");
         pno.param.set_user_defined_value<std::string>("no_guess", "all");
         pno.param.set_user_defined_value<std::string>("adaptive_solver", "none");
-        std::vector<PNOPairs> all_pairs;
+        pno.param.set_user_defined_value<std::string>("no_compute", "cispd");
+
+        all_pairs.clear();
         pno.solve(all_pairs);
 
+        if (madness_process.world->rank() == 0) {
+            parser.print_map();
+        }
+        if (n_excitations > -1) {
+            for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
+                parser.set_keyval("pno", parser.value("pno") + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega) + "; no_compute mp2; restart cispd; no_opt all;");
+
+                PNOParameters cispd_parameters_reload(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
+                F12Parameters cispd_paramf12_reload(*(madness_process.world), parser, cispd_parameters_reload, TAG_F12);
+                PNO pno_cispd_reload(*(madness_process.world), *nemo, cispd_parameters_reload, cispd_paramf12_reload);
+
+                std::vector<PNOPairs> all_cispd_pairs_reload;
+                pno_cispd_reload.solve(all_cispd_pairs_reload);
+
+                for (const auto& pair: all_cispd_pairs_reload) {
+                    all_pairs.push_back(std::move(pair));
+                }
+            }
+        }
         double mp2_energy = 0.0;
         if (madness_process.world->rank() == 0)
             std::cout << std::setw(25) << "time pno" << " = " << time_pno_end - time_pno_start << "\n";
+
         for (const auto& pairs : all_pairs) {
+            if (pairs.type == CISPD_PAIRTYPE) {
+                if (madness_process.world->rank() == 0) {
+                    const double delta = pairs.energies.total_energy();
+                    std::cout << "\n================CIS(D) Excitation "
+                              << pairs.cis.number << "================\n";
+                    std::cout << std::setw(25) << "omega(CIS)"
+                              << " = " << pairs.cis.omega << "\n";
+                    std::cout << std::setw(25) << "delta(CIS(D))"
+                              << " = " << delta << "\n";
+                    std::cout << std::setw(25) << "omega(CIS(D))"
+                              << " = " << pairs.cis.omega + delta << "\n";
+                    std::cout << "================================================\n";
+                }
+                continue;
+            }
             if (pairs.type == MP2_PAIRTYPE) {
                 mp2_energy = pairs.energies.total_energy();
             }
+
             std::pair<size_t, size_t> ranks = pno.get_average_rank(pairs.pno_ij);
             if (madness_process.world->rank() == 0) {
                 std::string name;
@@ -208,7 +344,7 @@ class PNOInterface {
             std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
         FunctionDefaults<3>::set_thresh(thresh);
 
-        vecfuncT reference = nemo.get_calc()->amo;
+        vecfuncT reference = nemo->get_calc()->amo;
         const size_t npno = basis_size - reference.size();
         vecfuncT obs_pnos;
         std::vector<real_function_3d> rest_pnos;
@@ -218,6 +354,9 @@ class PNOInterface {
         std::vector<std::pair<size_t, size_t>> rest_ids;
 
         for (auto& pairs : all_pairs) {
+            if (pairs.type != MP2_PAIRTYPE) {
+                continue;
+            }
             const auto& pno_ij = pairs.pno_ij;
             const auto& rdm_evals = pairs.rdm_evals_ij;
 
@@ -312,8 +451,8 @@ class PNOInterface {
         this->ids = pno_ids;
 
         nfreeze = pno.param.freeze();
-        nemo.get_calc()->reset_aobasis("sto-3g");
-        sto3g = nemo.get_calc()->project_ao_basis(*(madness_process.world), nemo.get_calc()->aobasis);
+        nemo->get_calc()->reset_aobasis("sto-3g");
+        sto3g = nemo->get_calc()->project_ao_basis(*(madness_process.world), nemo->get_calc()->aobasis);
     }
 
     std::vector<SavedFct<3>> get_pnos() const {
