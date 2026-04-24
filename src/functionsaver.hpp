@@ -3,6 +3,8 @@
 #include <madness/mra/mra.h>
 #include <madness/mra/funcplot.h>
 #include <madness/mra/nonlinsol.h>
+#include <madness/world/vector_archive.h>
+#include <madness/world/parallel_archive.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -11,30 +13,46 @@
 
 using namespace madness;
 
-// helper function to delete the used files
-inline void delete_file(const std::string& filename) {
-    if (std::remove(filename.c_str()) != 0) {
-        throw std::runtime_error("Failed to delete file: " + filename);
-    }
+// Serialize Function directly to string using ParallelOutputArchive with VectorOutputArchive
+template <std::size_t NDIM>
+inline std::string serialize_function_to_string(const Function<double, NDIM>& f) {
+    World& world = f.world();
+    
+    // Create a local vector to hold serialized data
+    std::vector<unsigned char> data;
+    
+    // Create VectorOutputArchive wrapping the data vector
+    archive::VectorOutputArchive local_ar(data);
+    
+    // Create ParallelOutputArchive wrapping the VectorOutputArchive
+    archive::ParallelOutputArchive<archive::VectorOutputArchive> par_ar(world, local_ar);
+    
+    // Serialize the function - this populates the data vector
+    par_ar & f;
+    
+    // Convert vector<unsigned char> to string
+    return std::string(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
-// Helper function to convert a binary .00000 file into a string
-inline std::string read_binary_file(const std::string& filename) {
-    // Open the file in binary mode
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
-    }
-
-    // Read the file contents into a string
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-
-    // Close the file
-    file.close();
-
-    // Return the contents as a string
-    return buffer.str();
+// Deserialize Function from string using ParallelInputArchive with VectorInputArchive
+template <std::size_t NDIM>
+inline Function<double, NDIM> deserialize_function_from_string(
+    World& world, const std::string& data) {
+    
+    // Convert string to vector
+    std::vector<unsigned char> buffer(data.begin(), data.end());
+    
+    // Create VectorInputArchive wrapping the buffer
+    archive::VectorInputArchive local_ar(buffer);
+    
+    // Create ParallelInputArchive wrapping the VectorInputArchive
+    archive::ParallelInputArchive<archive::VectorInputArchive> par_ar(world, local_ar);
+    
+    // Deserialize the function
+    Function<double, NDIM> f;
+    par_ar & f;
+    
+    return f;
 }
 
 // This class is used to save the MRA function
@@ -44,18 +62,10 @@ template <std::size_t NDIM> class SavedFct {
     std::string saved_str = ""; // should this be private?
     std::string info = "";
 
-    SavedFct(Function<double, NDIM> f) : info("None") { saved_str = get_data_string(f); }
+    SavedFct(Function<double, NDIM> f) : info("None") { saved_str = serialize_function_to_string(f); }
 
     SavedFct(Function<double, NDIM> f, const std::string info) : info(info) {
-        saved_str = get_data_string(f);
-    }
-
-    std::string get_data_string(Function<double, NDIM> f) const {
-        std::string filename = "saved_fct0504030201"; // TODO: use the cloud for this
-        save(f, filename);
-        std::string data_string = read_binary_file(filename + ".00000");
-        delete_file(filename + ".00000");
-        return data_string;
+        saved_str = serialize_function_to_string(f);
     }
 
     SavedFct(const std::string& filepath) { load_from_file(filepath); }
@@ -97,25 +107,6 @@ template <std::size_t NDIM> class SavedFct {
         delete[] buffer;
     }
 };
-
-// Helper function to convert a string into a binary .00000 file
-template <std::size_t NDIM>
-inline void write_binary_file(const SavedFct<NDIM>& Sf,
-                              const std::string& filename) { // TODO: make sure the filename is unique
-    std::string filename2 = filename + ".00000";
-    // Open the file in binary mode
-    std::string content = Sf.saved_str;
-    std::ofstream file(filename2, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename2);
-    }
-
-    // Write the string content to the file
-    file.write(content.data(), content.size());
-
-    // Close the file
-    file.close();
-}
 
 template class SavedFct<2>;
 template class SavedFct<3>;

@@ -112,9 +112,9 @@ class Optimization3D:
     @redirect_output("madopt.log")
     def optimize_orbs(
         self,
+        orbitals: list,
         rdm1: np.ndarray,
         rdm2: np.ndarray,
-        orbitals: list,
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
         maxiter=3,
@@ -257,9 +257,9 @@ class Optimization2D:
     @redirect_output("madopt.log")
     def optimize_orbs(
         self,
+        orbitals: list,
         rdm1: np.ndarray,
         rdm2: np.ndarray,
-        orbitals: list,
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
         maxiter=3,
