@@ -196,6 +196,7 @@ class PNOInterface {
                 for (auto const& [idx, cc_func] : xvec) {
                     std::string filename = std::to_string(ex) + "_x" + std::to_string(idx);
                     save(cc_func.function, filename);
+                    cis_x_functions.push_back(cc_func.function);
                 }
             }
 
@@ -249,7 +250,6 @@ class PNOInterface {
                 PNO pno_cispd(*(madness_process.world), *nemo, cispd_parameters, cispd_paramf12);
 
                 std::vector<PNOPairs> cispd_pairs;
-                cispd_pairs.push_back(all_pairs[0]);
                 pno_cispd.solve(cispd_pairs);
 
                 for (size_t i = 1; i < cispd_pairs.size(); ++i)
@@ -370,11 +370,11 @@ class PNOInterface {
 
         vecfuncT reference = nemo->get_calc()->amo;
         const size_t npno = basis_size - reference.size();
-        vecfuncT obs_pnos;
 
-        std::vector<double> occ;
-        std::vector<std::pair<size_t, size_t>> pno_ids;
-        std::vector<std::string> labels;
+        vecfuncT mp2_pnos, cispd_pnos;
+        std::vector<double> mp2_occ, cispd_occ;
+        std::vector<std::pair<size_t, size_t>> mp2_ids, cispd_ids;
+        std::vector<std::string> mp2_labels, cispd_labels;
 
         for (auto& pairs : all_pairs) {
             if (pairs.type != MP2_PAIRTYPE && pairs.type != CISPD_PAIRTYPE) {
@@ -384,6 +384,7 @@ class PNOInterface {
             const auto& rdm_evals = pairs.rdm_evals_ij;
 
             const bool only_diag = true;
+
             std::vector<real_function_3d> all_current_pnos;
             std::vector<double> all_current_occ;
             std::vector<std::pair<size_t, size_t>> all_current_ids;
@@ -426,28 +427,48 @@ class PNOInterface {
             if (madness_process.world->rank() == 0)
                 std::cout << "sorted " << "\n";
 
-
-            std::vector<double> unzipped_first;
-            std::vector<real_function_3d> unzipped_second;
-            std::vector<std::pair<size_t, size_t>> unzipped_third;
-            std::vector<std::string> unzipped_fourth;
             auto limit = std::min(npno, zipped.size());
             for (auto i = 0; i < limit; ++i) {
-                unzipped_first.push_back(std::get<0>(zipped[i]));
-                unzipped_second.push_back(std::get<1>(zipped[i]));
-                unzipped_third.push_back(std::get<2>(zipped[i]));
-                unzipped_fourth.push_back(std::get<3>(zipped[i]));
+                if (pairs.type == MP2_PAIRTYPE) {
+                    mp2_pnos.push_back(std::get<1>(zipped[i]));
+                    mp2_occ.push_back(std::get<0>(zipped[i]));
+                    mp2_ids.push_back(std::get<2>(zipped[i]));
+                    mp2_labels.push_back(std::get<3>(zipped[i]));
+                } else if (pairs.type == CISPD_PAIRTYPE) {
+                    cispd_pnos.push_back(std::get<1>(zipped[i]));
+                    cispd_occ.push_back(std::get<0>(zipped[i]));
+                    cispd_ids.push_back(std::get<2>(zipped[i]));
+                    cispd_labels.push_back(std::get<3>(zipped[i]));
+                }
             }
             if (madness_process.world->rank() == 0)
                 std::cout << "unzipped " << "\n";
-
-            occ.insert(occ.end(), unzipped_first.begin(), unzipped_first.end());
-            all_current_pnos = unzipped_second;
-            pno_ids.insert(pno_ids.end(), unzipped_third.begin(), unzipped_third.end());
-            labels.insert(labels.end(), unzipped_fourth.begin(), unzipped_fourth.end());
-
-            obs_pnos.insert(obs_pnos.end(), all_current_pnos.begin(), all_current_pnos.end());
         }
+
+        vecfuncT obs_pnos;
+        std::vector<double> occ;
+        std::vector<std::pair<size_t, size_t>> pno_ids;
+        std::vector<std::string> labels;
+
+        // insert mp2 pnos first, then cis and cispd pnos (if any), then orthogonalize all together
+        obs_pnos.insert(obs_pnos.end(), mp2_pnos.begin(), mp2_pnos.end());
+        occ.insert(occ.end(), mp2_occ.begin(), mp2_occ.end());
+        pno_ids.insert(pno_ids.end(), mp2_ids.begin(), mp2_ids.end());
+        labels.insert(labels.end(), mp2_labels.begin(), mp2_labels.end());
+
+        // insert cis x functions
+        for (auto& xfct : cis_x_functions) {
+            obs_pnos.push_back(xfct);
+            occ.push_back(1.0);
+            pno_ids.push_back({0, 0});
+            labels.push_back("CIS_X");
+        }
+
+        // insert cispd pnos after mp2 pnos
+        obs_pnos.insert(obs_pnos.end(), cispd_pnos.begin(), cispd_pnos.end());
+        occ.insert(occ.end(), cispd_occ.begin(), cispd_occ.end());
+        pno_ids.insert(pno_ids.end(), cispd_ids.begin(), cispd_ids.end());
+        labels.insert(labels.end(), cispd_labels.begin(), cispd_labels.end());
 
         if (madness_process.world->rank() == 0)
             std::cout << "collected " << obs_pnos.size() << " pnos" << "\n";
@@ -520,14 +541,15 @@ class PNOInterface {
         nfreeze = pno.param.freeze();
         nemo->get_calc()->reset_aobasis("sto-3g");
         sto3g = nemo->get_calc()->project_ao_basis(*(madness_process.world), nemo->get_calc()->aobasis);
-    }
+        }
 
     std::vector<SavedFct<3>> get_pnos_filtered(const std::string& type_filter = "") const {
         std::vector<SavedFct<3>> filtered_pnos;
         for (size_t i = 0; i < basis.size(); ++i) {
-            if (labels[i] == "HF" || labels[i].find(type_filter) != std::string::npos) {
+            if (labels[i].find(type_filter) != std::string::npos) {
                 SavedFct<3> pnorb(basis[i]);
-                size_t offset = (labels[i] == "HF") ? 0 : this->nfreeze;
+
+                size_t offset = (labels[i] == "HF" || labels[i] == "CIS_X") ? 0 : this->nfreeze;
 
                 pnorb.info = "type=" + labels[i] + " occ=" + std::to_string(occ[i]) + " ";
                 pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
@@ -540,12 +562,21 @@ class PNOInterface {
     }
 
     std::vector<SavedFct<3>> get_gs_orbs() const {
-        return get_pnos_filtered("MP2");
+        auto hf = get_pnos_filtered("HF");
+        auto mp2 = get_pnos_filtered("MP2");
+
+        hf.insert(hf.end(), mp2.begin(), mp2.end());
+        return hf;
     }
 
     std::vector<SavedFct<3>> get_ex_orbs() const {
-        return get_pnos_filtered("CISPD");
+        auto x_orbs = get_pnos_filtered("CIS_X");
+        auto cispd_orbs = get_pnos_filtered("CISPD");
+
+        x_orbs.insert(x_orbs.end(), cispd_orbs.begin(), cispd_orbs.end());
+        return x_orbs;
     }
+
     double get_nuclear_repulsion() const { return nuclear_repulsion; }
 
     std::vector<SavedFct<3>> get_sto3g() const {
@@ -562,6 +593,7 @@ class PNOInterface {
     vecfuncT basis;
     real_function_3d Vnuc;
     vecfuncT sto3g;
+    std::vector<real_function_3d> cis_x_functions;
 
   protected:
     size_t nfreeze;
