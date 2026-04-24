@@ -136,7 +136,7 @@ std::vector<std::vector<double>> MadnessProcess<NDIM>::evaluate(std::vector<Save
             "evaluate: flat_points size must be a multiple of NDIM = " + std::to_string(NDIM));
         }
 
-        int npoints = flat_points.size()/3;
+        int npoints = flat_points.size()/NDIM;
 
         std::vector<Function<double, NDIM>> orbs;
         for (SavedFct<NDIM> orb : orbitals)
