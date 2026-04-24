@@ -17,6 +17,7 @@
 #include <tuple>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include "integrals.hpp"
 #include "madness_process.hpp"
 
 using namespace madness;
@@ -237,6 +238,8 @@ class PNOInterface {
             std::cout << "--------------------------------------------------\n";
         }
 
+        // Compute CISPD-PNO
+        const double time_cispd_start = wall_time();
         if (n_excitations > -1) {
             for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
                 parser.set_keyval("pno", parser.value("pno") + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
@@ -245,13 +248,24 @@ class PNOInterface {
                 F12Parameters cispd_paramf12(*(madness_process.world), parser, cispd_parameters, TAG_F12);
                 PNO pno_cispd(*(madness_process.world), *nemo, cispd_parameters, cispd_paramf12);
 
-                std::vector<PNOPairs> all_cispd_pairs;
-                pno_cispd.solve(all_cispd_pairs);
+                std::vector<PNOPairs> cispd_pairs;
+                cispd_pairs.push_back(all_pairs[0]);
+                pno_cispd.solve(cispd_pairs);
 
-                for (const auto& pair: all_cispd_pairs) {
-                    all_pairs.push_back(std::move(pair));
-                }
+                for (size_t i = 1; i < cispd_pairs.size(); ++i)
+                    all_pairs.push_back(std::move(cispd_pairs[i]));
             }
+        }
+        const double time_cispd_end = wall_time();
+
+        if (madness_process.world->rank() == 0) {
+            std::cout << std::setfill(' ');
+            std::cout << "\n";
+            std::cout << "--------------------------------------------------\n";
+            std::cout << "CISPD ended \n";
+            std::cout << "--------------------------------------------------\n";
+            std::cout << std::setw(25) << "time cispd" << " = " << time_cispd_end - time_cispd_start << "\n";
+            std::cout << "--------------------------------------------------\n";
         }
 
         if (madness_process.world->rank() == 0) {
@@ -261,13 +275,15 @@ class PNOInterface {
         if (madness_process.world->rank() == 0) {
             std::cout << "restarting PNO to reload all pairs that converged before and were frozen\n";
         }
+
+        const std::string pno_base = parser.value("pno");
+        all_pairs.clear();
+
         pno.param.set_user_defined_value<std::string>("restart", "all");
         pno.param.set_user_defined_value<std::string>("no_opt", "all");
         pno.param.set_user_defined_value<std::string>("no_guess", "all");
         pno.param.set_user_defined_value<std::string>("adaptive_solver", "none");
-        pno.param.set_user_defined_value<std::string>("no_compute", "cispd");
 
-        all_pairs.clear();
         pno.solve(all_pairs);
 
         if (madness_process.world->rank() == 0) {
@@ -275,23 +291,31 @@ class PNOInterface {
         }
         if (n_excitations > -1) {
             for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
-                parser.set_keyval("pno", parser.value("pno") + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega) + "; no_compute mp2; restart cispd; no_opt all;");
+                parser.set_keyval("pno", pno_base + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
 
-                PNOParameters cispd_parameters_reload(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
-                F12Parameters cispd_paramf12_reload(*(madness_process.world), parser, cispd_parameters_reload, TAG_F12);
-                PNO pno_cispd_reload(*(madness_process.world), *nemo, cispd_parameters_reload, cispd_paramf12_reload);
+                PNOParameters cispd_reload_parameters(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
+                F12Parameters cispd_reload_paramf12(*(madness_process.world), parser, cispd_reload_parameters, TAG_F12);
+                PNO pno_reload(*(madness_process.world), *nemo, cispd_reload_parameters, cispd_reload_paramf12);
 
-                std::vector<PNOPairs> all_cispd_pairs_reload;
-                pno_cispd_reload.solve(all_cispd_pairs_reload);
+                pno_reload.param.set_user_defined_value<std::string>("restart", "all");
+                pno_reload.param.set_user_defined_value<std::string>("no_opt",  "mp2");
+                pno_reload.param.set_user_defined_value<std::string>("no_guess","all");
+                pno_reload.param.set_user_defined_value<std::string>("adaptive_solver","none");
+                pno_reload.param.set_user_defined_value<std::string>("no_compute", "mp2");
 
-                for (const auto& pair: all_cispd_pairs_reload) {
-                    all_pairs.push_back(std::move(pair));
+                std::vector<PNOPairs> cispd_reload_pairs;
+                pno_reload.solve(cispd_reload_pairs);
+
+                for (size_t i = 1; i < cispd_reload_pairs.size(); ++i)
+                    all_pairs.push_back(std::move(cispd_reload_pairs[i]));
                 }
-            }
         }
+
         double mp2_energy = 0.0;
-        if (madness_process.world->rank() == 0)
+        if (madness_process.world->rank() == 0) {
             std::cout << std::setw(25) << "time pno" << " = " << time_pno_end - time_pno_start << "\n";
+            std::cout << std::setw(25) << "time cispd" << " = " << time_cispd_end - time_cispd_start << "\n";
+        }
 
         for (const auto& pairs : all_pairs) {
             if (pairs.type == CISPD_PAIRTYPE) {
@@ -347,14 +371,13 @@ class PNOInterface {
         vecfuncT reference = nemo->get_calc()->amo;
         const size_t npno = basis_size - reference.size();
         vecfuncT obs_pnos;
-        std::vector<real_function_3d> rest_pnos;
+
         std::vector<double> occ;
-        std::vector<double> rest_occ;
         std::vector<std::pair<size_t, size_t>> pno_ids;
-        std::vector<std::pair<size_t, size_t>> rest_ids;
+        std::vector<std::string> labels;
 
         for (auto& pairs : all_pairs) {
-            if (pairs.type != MP2_PAIRTYPE) {
+            if (pairs.type != MP2_PAIRTYPE && pairs.type != CISPD_PAIRTYPE) {
                 continue;
             }
             const auto& pno_ij = pairs.pno_ij;
@@ -362,6 +385,9 @@ class PNOInterface {
 
             const bool only_diag = true;
             std::vector<real_function_3d> all_current_pnos;
+            std::vector<double> all_current_occ;
+            std::vector<std::pair<size_t, size_t>> all_current_ids;
+
             // collect PNOs from all pairs and sort by occupation number, keeping pair information via name
             for (ElectronPairIterator it = pno.pit(); it; ++it) {
                 if (only_diag and not it.diagonal()) {
@@ -369,21 +395,30 @@ class PNOInterface {
                         std::cout << "skipping pair (not diagonal) " << it.name() << "\n";
                     continue;
                 }
+                if (it.ij() >= pno_ij.size() || pno_ij[it.ij()].size() == 0) continue;
+
                 if (madness_process.world->rank() == 0)
-                    std::cout << "adding " << it.name() << "\n";
+                    std::cout << "adding " << it.name() << " from " << pairs.type << "\n";
+
                 const auto& pair = pno_ij[it.ij()];
+
                 all_current_pnos.insert(all_current_pnos.end(), pair.begin(), pair.end());
+
                 for (auto ii = 0; ii < rdm_evals[it.ij()].size(); ++ii) {
-                    occ.push_back(rdm_evals[it.ij()][ii]);
-                    pno_ids.push_back(
+                    all_current_occ.push_back(rdm_evals[it.ij()][ii]);
+                    all_current_ids.push_back(
                         std::make_pair(it.i(), it.j())); // for each eigenvalue ~ PNO, store pair affiliation
                 }
             }
+
             if (madness_process.world->rank() == 0)
                 std::cout << "done " << "\n";
-            std::vector<std::tuple<double, real_function_3d, std::pair<size_t, size_t>>> zipped;
+
+            std::string current_label = (pairs.type == MP2_PAIRTYPE) ? "MP2" : "CISPD_Ex" + std::to_string(pairs.cis.number);
+            std::vector<std::tuple<double, real_function_3d, std::pair<size_t, size_t>, std::string>> zipped;
+
             for (auto i = 0; i < all_current_pnos.size(); ++i) {
-                zipped.push_back(std::make_tuple(occ[i], all_current_pnos[i], pno_ids[i]));
+                zipped.push_back(std::make_tuple(all_current_occ[i], all_current_pnos[i], all_current_ids[i], current_label));
             }
 
             std::sort(zipped.begin(), zipped.end(),
@@ -391,20 +426,25 @@ class PNOInterface {
             if (madness_process.world->rank() == 0)
                 std::cout << "sorted " << "\n";
 
+
             std::vector<double> unzipped_first;
             std::vector<real_function_3d> unzipped_second;
             std::vector<std::pair<size_t, size_t>> unzipped_third;
-            for (auto i = 0; i < npno; ++i) {
+            std::vector<std::string> unzipped_fourth;
+            auto limit = std::min(npno, zipped.size());
+            for (auto i = 0; i < limit; ++i) {
                 unzipped_first.push_back(std::get<0>(zipped[i]));
                 unzipped_second.push_back(std::get<1>(zipped[i]));
                 unzipped_third.push_back(std::get<2>(zipped[i]));
+                unzipped_fourth.push_back(std::get<3>(zipped[i]));
             }
             if (madness_process.world->rank() == 0)
                 std::cout << "unzipped " << "\n";
 
-            occ = unzipped_first;
+            occ.insert(occ.end(), unzipped_first.begin(), unzipped_first.end());
             all_current_pnos = unzipped_second;
-            pno_ids = unzipped_third;
+            pno_ids.insert(pno_ids.end(), unzipped_third.begin(), unzipped_third.end());
+            labels.insert(labels.end(), unzipped_fourth.begin(), unzipped_fourth.end());
 
             obs_pnos.insert(obs_pnos.end(), all_current_pnos.begin(), all_current_pnos.end());
         }
@@ -416,7 +456,34 @@ class PNOInterface {
 
         madness::QProjector<double, 3> Q(*(madness_process.world), reference);
         obs_pnos = Q(obs_pnos);
+
+        if (obs_pnos.size() > 1) {
+            if (madness_process.world->rank() == 0)
+                std::cout << "Orthonormalizing via Integrals class (mixed method)..." << std::endl;
+
+            Integrals<3> helper(madness_process);
+            std::vector<SavedFct<3>> tmp_saved;
+            for(auto& f : obs_pnos) tmp_saved.push_back(SavedFct<3>(f));
+            nb::ndarray<nb::numpy, double, nb::ndim<1>> occ_ndarray;
+            auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
+            obs_pnos.clear();
+            for(auto& s : ortho_saved) obs_pnos.push_back(madness_process.loadfct(s));
+        }
+
+        if (occ.size() > obs_pnos.size()) {
+            occ.resize(obs_pnos.size());
+            pno_ids.resize(obs_pnos.size());
+            labels.resize(obs_pnos.size());
+             if (madness_process.world->rank() == 0)
+                std::cout << "Warning: More occupation numbers than PNOs, resizing to " << obs_pnos.size() << "\n";
+        }
+
+        this->labels = std::vector<std::string>(reference.size(), "HF");
+        this->labels.insert(this->labels.end(), labels.begin(), labels.end());
+
         vecfuncT xbasis = reference;
+
+
         if (madness_process.world->rank() == 0)
             std::cout << "Forming basis with " << xbasis.size() << " orbitals" << "\n";
         xbasis.insert(xbasis.end(), obs_pnos.begin(), obs_pnos.end());
@@ -455,21 +522,29 @@ class PNOInterface {
         sto3g = nemo->get_calc()->project_ao_basis(*(madness_process.world), nemo->get_calc()->aobasis);
     }
 
-    std::vector<SavedFct<3>> get_pnos() const {
-        std::vector<SavedFct<3>> pnos;
-        size_t offset = 0;
-        for (auto i = 0; i < basis.size(); ++i) {
-            SavedFct<3> pnorb(basis[i]);
-            pnorb.info = "occ=" + std::to_string(occ[i]) + " ";
-            if (occ[i] != 2.0)
-                offset = this->nfreeze;
-            else
-                offset = 0;
-            pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
-            pnorb.info += "pair2=" + std::to_string(ids[i].second + offset) + " ";
-            pnos.push_back(pnorb);
+    std::vector<SavedFct<3>> get_pnos_filtered(const std::string& type_filter = "") const {
+        std::vector<SavedFct<3>> filtered_pnos;
+        for (size_t i = 0; i < basis.size(); ++i) {
+            if (labels[i] == "HF" || labels[i].find(type_filter) != std::string::npos) {
+                SavedFct<3> pnorb(basis[i]);
+                size_t offset = (labels[i] == "HF") ? 0 : this->nfreeze;
+
+                pnorb.info = "type=" + labels[i] + " occ=" + std::to_string(occ[i]) + " ";
+                pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
+                pnorb.info += "pair2=" + std::to_string(ids[i].second + offset) + " ";
+
+                filtered_pnos.push_back(pnorb);
+            }
         }
-        return pnos;
+        return filtered_pnos;
+    }
+
+    std::vector<SavedFct<3>> get_gs_orbs() const {
+        return get_pnos_filtered("MP2");
+    }
+
+    std::vector<SavedFct<3>> get_ex_orbs() const {
+        return get_pnos_filtered("CISPD");
     }
     double get_nuclear_repulsion() const { return nuclear_repulsion; }
 
@@ -493,6 +568,7 @@ class PNOInterface {
     double nuclear_repulsion;
     std::vector<double> occ;
     std::vector<std::pair<size_t, size_t>> ids;
+    std::vector<std::string> labels;
 
   public:
     std::size_t get_frozen_core_dim() const { return this->nfreeze; }

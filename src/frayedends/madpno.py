@@ -158,10 +158,16 @@ class MadPNO:
     def compute_orbitals(self, n_orbitals, *args, **kwargs):
         self.impl.run(n_orbitals)
         # package the orbitals
-        orbitals = self.impl.get_pnos()
+        orbitals = self.impl.get_pnos_filtered("")
         self.cleanup(*args, **kwargs)
         self._orbitals = orbitals
         return orbitals
+
+    def get_gs_orbs(self, *args, **kwargs):
+        return self.impl.get_gs_orbs()
+
+    def get_ex_orbs(self, *args, **kwargs):
+        return self.impl.get_ex_orbs()
 
     def parameter_string(
         self,
