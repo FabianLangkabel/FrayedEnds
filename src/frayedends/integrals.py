@@ -21,7 +21,7 @@ class Integrals3D:
         coulomb_lo=0.001,
         coulomb_eps=1e-6,
         nocc=2,
-    ):
+    ) -> np.ndarray:
         g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
@@ -38,18 +38,18 @@ class Integrals3D:
         coulomb_lo=0.001,
         coulomb_eps=1e-6,
         nocc=2,
-    ):
+    ) -> np.ndarray:
         return self.impl.compute_frozen_core_interaction(
             frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
 
-    def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
+    def compute_kinetic_integrals(self, orbitals, *args, **kwargs) -> np.ndarray:
         return self.impl.compute_kinetic_integrals(orbitals)
 
-    def compute_potential_integrals(self, orbitals, V, *args, **kwargs):
+    def compute_potential_integrals(self, orbitals, V, *args, **kwargs) -> np.ndarray:
         return self.impl.compute_potential_integrals(orbitals, V)
 
-    def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
+    def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs) -> np.ndarray:
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
@@ -120,7 +120,7 @@ class Integrals2D:
         coulomb_lo=0.001,
         coulomb_eps=1e-6,
         nocc=2,
-    ):
+    ) -> np.ndarray:
         g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
@@ -136,18 +136,18 @@ class Integrals2D:
         coulomb_lo=0.001,
         coulomb_eps=1e-6,
         nocc=2,
-    ):
+    ) -> np.ndarray:
         return self.impl.compute_frozen_core_interaction(
             frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
         )
 
-    def compute_kinetic_integrals(self, orbitals, *args, **kwargs):
+    def compute_kinetic_integrals(self, orbitals, *args, **kwargs) -> np.ndarray:
         return self.impl.compute_kinetic_integrals(orbitals)
 
-    def compute_potential_integrals(self, orbitals, V, *args, **kwargs):
+    def compute_potential_integrals(self, orbitals, V, *args, **kwargs) -> np.ndarray:
         return self.impl.compute_potential_integrals(orbitals, V)
 
-    def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs):
+    def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs) -> np.ndarray:
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
