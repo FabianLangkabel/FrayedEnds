@@ -61,12 +61,7 @@ template <std::size_t NDIM> void MadnessProcess<NDIM>::update_function_defaults(
 
 // load a function from a SavedFct object
 template <std::size_t NDIM> Function<double, NDIM> MadnessProcess<NDIM>::loadfct(const SavedFct<NDIM>& Sf) {
-    std::string filename = "saved_fct01020304"; // TODO: use the cloud for this
-    write_binary_file(Sf, filename);
-    Function<double, NDIM> f1 = FunctionFactory<double, NDIM>(*world);
-    load(f1, filename);
-    delete_file(filename + ".00000");
-    return f1;
+    return deserialize_function_from_string<NDIM>(*world, Sf.saved_str);
 }
 
 // load a function from a binary file
@@ -141,7 +136,7 @@ std::vector<std::vector<double>> MadnessProcess<NDIM>::evaluate(std::vector<Save
             "evaluate: flat_points size must be a multiple of NDIM = " + std::to_string(NDIM));
         }
 
-        int npoints = flat_points.size()/3;
+        int npoints = flat_points.size()/NDIM;
 
         std::vector<Function<double, NDIM>> orbs;
         for (SavedFct<NDIM> orb : orbitals)
