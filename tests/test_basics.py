@@ -86,11 +86,11 @@ def test_evaluate_3D():
     def functor(x,y,z):
         r = (x+1.0)**2 + (y+2.0)**2 + (z-3.0)**2
         return 3.0*numpy.exp(-r**2)
-    world = frayedends.MadWorld3D(L=100.0)
+    world = frayedends.MadWorld3D(L=20.0)
     factory = frayedends.MRAFunctionFactory3D(world, functor)
     f = factory.get_function()
     del factory
-    points = list(numpy.random.normal(loc=0.0, scale=20.0, size=3*100))
+    points = list(numpy.clip(numpy.random.normal(loc=0.0, scale=1.0, size=3*100), a_max=20, a_min=-20))
     y = world.evaluate([f], points=points, units="bohr")[0]
     i = 0
     for k in range(len(y)):
@@ -101,13 +101,13 @@ def test_evaluate_2D():
     def functor(x,y):
         r = (x+1.0)**2 + (y+2.0)**2
         return 3.0*numpy.exp(-r**2)
-    world = frayedends.MadWorld2D(L=100.0)
+    world = frayedends.MadWorld2D(L=20.0)
     factory = frayedends.MRAFunctionFactory2D(world, functor)
     f = factory.get_function()
     del factory
-    points = list(numpy.random.normal(loc=0.0, scale=20.0, size=3*100))
+    points = list(numpy.clip(numpy.random.normal(loc=0.0, scale=1.0, size=2*100), a_max=20, a_min=-20))
     y = world.evaluate([f], points=points, units="bohr")[0]
     i = 0
     for k in range(len(y)):
-        assert numpy.isclose(y[k], functor(points[2*k],points[2*k+1],), atol=1.0e-3)
-        i += 3
+        assert numpy.isclose(y[k], functor(points[2*k],points[2*k+1]), atol=1.0e-3)
+        i += 2
