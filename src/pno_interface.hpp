@@ -142,20 +142,14 @@ class PNOInterface {
             Vnuc = nemo->ncf->U2();
             nuclear_repulsion = nemo->get_calc()->molecule.nuclear_repulsion_energy();
         }
-        if (madness_process.world->rank() == 0) {
-            parser.print_map();
-        }
 
         int n_excitations = -1;
+        // read number of excitations for TDHF CIS
         if (parser.key_exists("tdhf")) {
             std::smatch m;
             std::string s = parser.value("tdhf");
             if (std::regex_search(s, m, std::regex(R"(nexcitations\s+(\d+))")))
                 n_excitations = std::stoi(m[1]);
-        }
-
-        if (madness_process.world->rank() == 0) {
-            printf("DEBUG: Found n_excitations = %d\n", n_excitations);
         }
 
         std::vector<CC_vecfunction> cis_roots;
@@ -176,10 +170,6 @@ class PNOInterface {
             tdhf.prepare_calculation();
             cis_roots = tdhf.solve_cis();
             const double time_cis_end = wall_time();
-
-            size_t freeze_offset = 0;
-            PNOParameters temp_params(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
-            freeze_offset = temp_params.freeze();
 
             if (madness_process.world->rank() == 0) {
                 std::cout << "Total CIS roots found: " << cis_roots.size() << "\n";
@@ -241,19 +231,27 @@ class PNOInterface {
 
         // Compute CISPD-PNO
         const double time_cispd_start = wall_time();
+        const std::string pno_base = parser.value("pno"); // save original pno key to modify it for cispd and then reset it later for the final pno run
+
         if (n_excitations > -1) {
             for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
-                parser.set_keyval("pno", parser.value("pno") + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
+                // add cispd-specific parameters to parser for excitation calculation
+                parser.set_keyval("pno", pno_base + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
 
                 PNOParameters cispd_parameters(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
                 F12Parameters cispd_paramf12(*(madness_process.world), parser, cispd_parameters, TAG_F12);
                 PNO pno_cispd(*(madness_process.world), *nemo, cispd_parameters, cispd_paramf12);
 
                 std::vector<PNOPairs> cispd_pairs;
+
+                if (!all_pairs.empty()) { // all_pairs should contain at least the mp2 pairs, but check to be sure
+                    cispd_pairs.push_back(all_pairs[0]); // add mp2 as starting point for cispd
+                }
+
                 pno_cispd.solve(cispd_pairs);
 
                 for (size_t i = 1; i < cispd_pairs.size(); ++i)
-                    all_pairs.push_back(std::move(cispd_pairs[i]));
+                    all_pairs.push_back(std::move(cispd_pairs[i])); // add only the cispd pairs to the list of all pairs, mp2 is already included
             }
         }
         const double time_cispd_end = wall_time();
@@ -269,26 +267,19 @@ class PNOInterface {
         }
 
         if (madness_process.world->rank() == 0) {
-            parser.print_map();
-        }
-
-        if (madness_process.world->rank() == 0) {
             std::cout << "restarting PNO to reload all pairs that converged before and were frozen\n";
         }
 
-        const std::string pno_base = parser.value("pno");
-        all_pairs.clear();
+        all_pairs.clear(); // clear all pairs for restart
 
         pno.param.set_user_defined_value<std::string>("restart", "all");
         pno.param.set_user_defined_value<std::string>("no_opt", "all");
         pno.param.set_user_defined_value<std::string>("no_guess", "all");
         pno.param.set_user_defined_value<std::string>("adaptive_solver", "none");
 
-        pno.solve(all_pairs);
+        pno.solve(all_pairs); // solve MP2 again to reload all pairs that converged before and were frozen
 
-        if (madness_process.world->rank() == 0) {
-            parser.print_map();
-        }
+        // now loop over cispd excitations and reload each of them to get the pairs that converged before and were frozen for each excitation
         if (n_excitations > -1) {
             for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
                 parser.set_keyval("pno", pno_base + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
@@ -427,8 +418,8 @@ class PNOInterface {
             if (madness_process.world->rank() == 0)
                 std::cout << "sorted " << "\n";
 
-            auto limit = std::min(npno, zipped.size());
-            for (auto i = 0; i < limit; ++i) {
+            // collect npno for each type of pairs (mp2 and cispd)
+            for (auto i = 0; i < npno; ++i) {
                 if (pairs.type == MP2_PAIRTYPE) {
                     mp2_pnos.push_back(std::get<1>(zipped[i]));
                     mp2_occ.push_back(std::get<0>(zipped[i]));
@@ -445,12 +436,84 @@ class PNOInterface {
                 std::cout << "unzipped " << "\n";
         }
 
+        Integrals<3> helper(madness_process);
+        nb::ndarray<nb::numpy, double, nb::ndim<1>> occ_ndarray;
+
+        // Orthogonalize MP2 PNOs
+        if (!mp2_pnos.empty()) {
+            if (madness_process.world->rank() == 0)
+                std::cout << "Orthonormalizing MP2 PNOs" << std::endl;
+
+            madness::QProjector<double, 3> Q_hf(*(madness_process.world), reference); // projector to ensure orthogonality to reference (HF orbitals)
+            mp2_pnos = Q_hf(mp2_pnos); //project out reference (HF) from pnos to ensure orthogonality
+
+            if (mp2_pnos.size() > 1) {
+                std::vector<SavedFct<3>> tmp_saved;
+                for(auto& f : mp2_pnos) {
+                    tmp_saved.push_back(SavedFct<3>(f));
+                }
+                auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
+                mp2_pnos.clear(); // clear mp2_pnos to fill with orthogonalized versions
+                for(auto& s : ortho_saved) {
+                    mp2_pnos.push_back(madness_process.loadfct(s));
+                }
+            }
+        }
+
+        // Orthogonalize CIS X functions
+        if (!cis_x_functions.empty()) {
+            if (madness_process.world->rank() == 0)
+                std::cout << "Orthonormalizing CIS X functions" << std::endl;
+
+            vecfuncT hf_mp2_ref = reference; // start with reference (HF)
+            hf_mp2_ref.insert(hf_mp2_ref.end(), mp2_pnos.begin(), mp2_pnos.end()); // add mp2 pnos to HF reference for projector
+            madness::QProjector<double, 3> Q_hf_mp2_ref(*(madness_process.world), hf_mp2_ref);
+            cis_x_functions = Q_hf_mp2_ref(cis_x_functions); //project out reference (HF and MP2) from cis x functions to ensure orthogonality
+
+            if (cis_x_functions.size() > 1) {
+                std::vector<SavedFct<3>> tmp_saved;
+                for(auto& f : cis_x_functions) {
+                    tmp_saved.push_back(SavedFct<3>(f));
+                }
+                auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
+                cis_x_functions.clear(); // clear cis_x_functions to fill with orthogonalized versions
+                for(auto& s : ortho_saved) {
+                    cis_x_functions.push_back(madness_process.loadfct(s));
+                }
+            }
+        }
+
+        // Orthogonalize CISPD PNOs
+        if (!cispd_pnos.empty()) {
+            if (madness_process.world->rank() == 0)
+                std::cout << "Orthonormalizing CISPD PNOs" << std::endl;
+
+            vecfuncT gs_full = reference; // start with reference (HF)
+            gs_full.insert(gs_full.end(), mp2_pnos.begin(), mp2_pnos.end()); // add mp2 pnos to HF reference
+            gs_full.insert(gs_full.end(), cis_x_functions.begin(), cis_x_functions.end()); // add cis x functions to HF+MP2 reference for projector to ensure orthogonality
+
+            madness::QProjector<double, 3> Q_gs(*(madness_process.world), gs_full);
+            cispd_pnos = Q_gs(cispd_pnos); // project out reference (HF, MP2 and CIS X) from cispd pnos to ensure orthogonality
+
+            if (cispd_pnos.size() > 1) {
+                std::vector<SavedFct<3>> tmp_saved;
+                for(auto& f : cispd_pnos) {
+                    tmp_saved.push_back(SavedFct<3>(f));
+                }
+                auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
+                cispd_pnos.clear(); // clear cispd_pnos to fill with orthogonalized versions
+                for(auto& s : ortho_saved) {
+                    cispd_pnos.push_back(madness_process.loadfct(s));
+                }
+            }
+        }
+
         vecfuncT obs_pnos;
         std::vector<double> occ;
         std::vector<std::pair<size_t, size_t>> pno_ids;
         std::vector<std::string> labels;
 
-        // insert mp2 pnos first, then cis and cispd pnos (if any), then orthogonalize all together
+        // insert mp2 pnos first
         obs_pnos.insert(obs_pnos.end(), mp2_pnos.begin(), mp2_pnos.end());
         occ.insert(occ.end(), mp2_occ.begin(), mp2_occ.end());
         pno_ids.insert(pno_ids.end(), mp2_ids.begin(), mp2_ids.end());
@@ -464,31 +527,32 @@ class PNOInterface {
             labels.push_back("CIS_X");
         }
 
-        // insert cispd pnos after mp2 pnos
+        // insert cispd pnos after mp2 pnos and cis x functions
         obs_pnos.insert(obs_pnos.end(), cispd_pnos.begin(), cispd_pnos.end());
         occ.insert(occ.end(), cispd_occ.begin(), cispd_occ.end());
         pno_ids.insert(pno_ids.end(), cispd_ids.begin(), cispd_ids.end());
         labels.insert(labels.end(), cispd_labels.begin(), cispd_labels.end());
 
-        if (madness_process.world->rank() == 0)
+        if (madness_process.world->rank() == 0) {
             std::cout << "collected " << obs_pnos.size() << " pnos" << "\n";
+            std::cout << "mp2 pnos: " << mp2_pnos.size() << "\n";
+            std::cout << "cis x functions: " << cis_x_functions.size() << "\n";
+            std::cout << "cispd pnos: " << cispd_pnos.size() << "\n";
+        }
         if (madness_process.world->rank() == 0)
             std::cout << "and " << reference.size() << " reference orbitals" << "\n";
 
-        madness::QProjector<double, 3> Q(*(madness_process.world), reference);
-        obs_pnos = Q(obs_pnos);
-
         if (obs_pnos.size() > 1) {
             if (madness_process.world->rank() == 0)
-                std::cout << "Orthonormalizing via Integrals class (mixed method)..." << std::endl;
+                std::cout << "Orthonormalizing all orbs" << std::endl;
 
-            Integrals<3> helper(madness_process);
             std::vector<SavedFct<3>> tmp_saved;
             for(auto& f : obs_pnos) tmp_saved.push_back(SavedFct<3>(f));
-            nb::ndarray<nb::numpy, double, nb::ndim<1>> occ_ndarray;
             auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
             obs_pnos.clear();
-            for(auto& s : ortho_saved) obs_pnos.push_back(madness_process.loadfct(s));
+            for(auto& s : ortho_saved) {
+                obs_pnos.push_back(madness_process.loadfct(s));
+            }
         }
 
         if (occ.size() > obs_pnos.size()) {
@@ -502,8 +566,7 @@ class PNOInterface {
         this->labels = std::vector<std::string>(reference.size(), "HF");
         this->labels.insert(this->labels.end(), labels.begin(), labels.end());
 
-        vecfuncT xbasis = reference;
-
+        vecfuncT xbasis = reference; // start with reference (HF) orbitals as basis
 
         if (madness_process.world->rank() == 0)
             std::cout << "Forming basis with " << xbasis.size() << " orbitals" << "\n";
@@ -520,15 +583,15 @@ class PNOInterface {
         if (madness_process.world->rank() == 0)
             std::cout << "currently " << pno_ids.size() << " pno ids" << "\n";
 
-        std::vector<double> tmpx(reference.size(), 2.0);
+        std::vector<double> tmpx(reference.size(), 2.0); // assign occupation number 2.0 to HF orbitals
         tmpx.insert(tmpx.end(), occ.begin(), occ.end());
-        occ = tmpx;
+        occ = tmpx; // insert occ of HF orbitals at the beginning
 
         std::vector<std::pair<size_t, size_t>> tmpy;
         for (size_t k = 0; k < reference.size(); k++)
             tmpy.push_back(std::make_pair(k, k));
         tmpy.insert(tmpy.end(), pno_ids.begin(), pno_ids.end());
-        pno_ids = tmpy;
+        pno_ids = tmpy; // insert pair ids for HF orbitals at the beginning
 
         if (madness_process.world->rank() == 0)
             std::cout << "currently " << occ.size() << " occupation numbers" << "\n";
@@ -541,8 +604,9 @@ class PNOInterface {
         nfreeze = pno.param.freeze();
         nemo->get_calc()->reset_aobasis("sto-3g");
         sto3g = nemo->get_calc()->project_ao_basis(*(madness_process.world), nemo->get_calc()->aobasis);
-        }
+    }
 
+    // helper function to filter pnos by type (mp2, cispd, cis_x)
     std::vector<SavedFct<3>> get_pnos_filtered(const std::string& type_filter = "") const {
         std::vector<SavedFct<3>> filtered_pnos;
         for (size_t i = 0; i < basis.size(); ++i) {
@@ -561,6 +625,7 @@ class PNOInterface {
         return filtered_pnos;
     }
 
+    // get all orbitals that are either HF or MP2 PNOs (ground state orbitals)
     std::vector<SavedFct<3>> get_gs_orbs() const {
         auto hf = get_pnos_filtered("HF");
         auto mp2 = get_pnos_filtered("MP2");
@@ -569,6 +634,7 @@ class PNOInterface {
         return hf;
     }
 
+    // get all orbitals that are either CIS X vectors or CISPD PNOs (excitations)
     std::vector<SavedFct<3>> get_ex_orbs() const {
         auto x_orbs = get_pnos_filtered("CIS_X");
         auto cispd_orbs = get_pnos_filtered("CISPD");
