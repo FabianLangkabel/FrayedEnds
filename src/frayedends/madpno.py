@@ -203,7 +203,7 @@ class MadPNO:
         data["nemo"] = {"ncf": "( none , 1.0)"}
         if cispd > -1:
             data["tdhf"] = {
-                "nexcitations": cispd,
+                "nexcitations": cispd + 1,
                 "thresh": 1.0e-5,
                 "restart": "no_restart"
             }
