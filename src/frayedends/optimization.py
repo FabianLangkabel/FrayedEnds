@@ -278,8 +278,7 @@ class Optimization2D:
          - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
          - maxiter is the maximum number of iterations for the orbital refinement
         output:
-         - if frozen_core_orbs is empty: list of refined active orbitals and convergence flag
-         - else: list of frozen core orbitals, list of refined active orbitals and convergence flag
+         - list of frozen core orbitals, list of refined active orbitals and convergence flag
         """
 
         # Check if orbitals is a list of SavedFct2D or a list of [frozen_core, active] lists
