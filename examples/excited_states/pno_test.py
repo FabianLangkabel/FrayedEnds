@@ -23,10 +23,10 @@ gs_orbs = madpno.get_gs_orbs()
 ex_orbs = madpno.get_ex_orbs()
 
 for i in range(len(gs_orbs)):
-    world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule)
+    world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
 
 for i in range(len(ex_orbs)):
-    world.cube_plot(f"ex_orb{i}", ex_orbs[i], molecule)
+    world.cube_plot(f"ex_orb{i}", ex_orbs[i], molecule, zoom=4.0)
 
 combined_orbs = madpno.get_gs_orbs() + madpno.get_ex_orbs()
 nuc_repulsion = madpno.get_nuclear_repulsion()
@@ -42,13 +42,14 @@ H_core = T + V
 G = integrals.compute_two_body_integrals(combined_orbs, ordering="chem").elems
 n_orbitals = len(combined_orbs)
 
-e_roots, fcivecs = fci.direct_spin0.kernel(H_core, G, n_orbitals, n_electrons, nroots=2)
+e_roots, fcivecs = fci.direct_spin0.kernel(H_core, G, n_orbitals, n_electrons, nroots=3)
 
 e_ground_tot = e_roots[0] + nuc_repulsion
 e_excited_tot = e_roots[1] + nuc_repulsion
+e_excited_tot_2 = e_roots[2] + nuc_repulsion
 
 print(f"Total Energy (Ground State):    {e_ground_tot:+2.8f}")
 print(f"Total Energy (1st Excited):     {e_excited_tot:+2.8f}")
-print(f"Excitation Energy (Vertical):   {(e_excited_tot - e_ground_tot)*27.2114:2.4f}")
+print(f"Total Energy (2nd Excited):     {e_excited_tot_2:+2.8f}")
 
 fe.cleanup(globals())
