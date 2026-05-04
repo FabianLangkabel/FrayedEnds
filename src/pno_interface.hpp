@@ -152,7 +152,9 @@ class PNOInterface {
                 n_excitations = std::stoi(m[1]);
         }
 
-        std::vector<CC_vecfunction> cis_roots;
+        std::vector<CC_vecfunction> cis_roots; // store cis roots with their x vectors and excitation energies for later use in cispd
+        std::vector<vecfuncT> cis_x_per_root; // store cis roots x vectors per root
+
         if (n_excitations > -1) {
             if (madness_process.world->rank() == 0) {
                 std::cout << "--------------------------------------------------\n";
@@ -175,6 +177,8 @@ class PNOInterface {
                 std::cout << "Total CIS roots found: " << cis_roots.size() << "\n";
             }
 
+            cis_x_per_root.resize(cis_roots.size()); // resize cis_x_per_root to store x vectors for each root
+
             for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
                 const auto& xvec = cis_roots[ex].functions;
 
@@ -186,7 +190,7 @@ class PNOInterface {
                 for (auto const& [idx, cc_func] : xvec) {
                     std::string filename = std::to_string(ex) + "_x" + std::to_string(idx);
                     save(cc_func.function, filename);
-                    cis_x_functions.push_back(cc_func.function);
+                    cis_x_per_root[ex].push_back(cc_func.function); // store x vector functions for each root
                 }
             }
 
@@ -362,6 +366,9 @@ class PNOInterface {
         vecfuncT reference = nemo->get_calc()->amo;
         const size_t npno = basis_size - reference.size();
 
+        const size_t n_cis_x_per_root = cis_x_per_root.empty() ? 0 : cis_x_per_root[0].size(); // assume same number of cis x functions per root, if cis x functions exist
+        const size_t npno_cispd = (npno > n_cis_x_per_root) ? npno - n_cis_x_per_root : 0;
+
         vecfuncT mp2_pnos, cispd_pnos;
         std::vector<double> mp2_occ, cispd_occ;
         std::vector<std::pair<size_t, size_t>> mp2_ids, cispd_ids;
@@ -393,13 +400,10 @@ class PNOInterface {
                     std::cout << "adding " << it.name() << " from " << pairs.type << "\n";
 
                 const auto& pair = pno_ij[it.ij()];
-
                 all_current_pnos.insert(all_current_pnos.end(), pair.begin(), pair.end());
-
                 for (auto ii = 0; ii < rdm_evals[it.ij()].size(); ++ii) {
                     all_current_occ.push_back(rdm_evals[it.ij()][ii]);
-                    all_current_ids.push_back(
-                        std::make_pair(it.i(), it.j())); // for each eigenvalue ~ PNO, store pair affiliation
+                    all_current_ids.push_back(std::make_pair(it.i(), it.j())); // for each eigenvalue ~ PNO, store pair affiliation
                 }
             }
 
@@ -413,13 +417,15 @@ class PNOInterface {
                 zipped.push_back(std::make_tuple(all_current_occ[i], all_current_pnos[i], all_current_ids[i], current_label));
             }
 
-            std::sort(zipped.begin(), zipped.end(),
-                      [](const auto& i, const auto& j) { return std::get<0>(i) > std::get<0>(j); });
+            std::sort(zipped.begin(), zipped.end(), [](const auto& i, const auto& j) { return std::get<0>(i) > std::get<0>(j); });
             if (madness_process.world->rank() == 0)
                 std::cout << "sorted " << "\n";
 
+            size_t n_take = (pairs.type == CISPD_PAIRTYPE) ? npno_cispd : npno;
+            n_take = std::min(n_take, zipped.size());
+
             // collect npno for each type of pairs (mp2 and cispd)
-            for (auto i = 0; i < npno; ++i) {
+            for (auto i = 0; i < n_take; ++i) {
                 if (pairs.type == MP2_PAIRTYPE) {
                     mp2_pnos.push_back(std::get<1>(zipped[i]));
                     mp2_occ.push_back(std::get<0>(zipped[i]));
@@ -458,42 +464,58 @@ class PNOInterface {
                     mp2_pnos.push_back(madness_process.loadfct(s));
                 }
             }
+
+            mp2_occ.resize(mp2_pnos.size());
+            mp2_ids.resize(mp2_pnos.size());
+            mp2_labels.resize(mp2_pnos.size());
         }
 
         // Orthogonalize CIS X functions
-        if (!cis_x_functions.empty()) {
+        vecfuncT hf_mp2_ref = reference; // start with reference (HF)
+        hf_mp2_ref.insert(hf_mp2_ref.end(), mp2_pnos.begin(), mp2_pnos.end()); // add mp2 pnos to HF reference for projector
+
+        if (!cis_x_per_root.empty()) {
             if (madness_process.world->rank() == 0)
                 std::cout << "Orthonormalizing CIS X functions" << std::endl;
 
-            vecfuncT hf_mp2_ref = reference; // start with reference (HF)
-            hf_mp2_ref.insert(hf_mp2_ref.end(), mp2_pnos.begin(), mp2_pnos.end()); // add mp2 pnos to HF reference for projector
-            madness::QProjector<double, 3> Q_hf_mp2_ref(*(madness_process.world), hf_mp2_ref);
-            cis_x_functions = Q_hf_mp2_ref(cis_x_functions); //project out reference (HF and MP2) from cis x functions to ensure orthogonality
+            for (size_t ex = 0; ex < cis_x_per_root.size(); ++ex) {
+                auto& x_funcs = cis_x_per_root[ex];
+                if (x_funcs.empty()) continue;
 
-            if (cis_x_functions.size() > 1) {
-                std::vector<SavedFct<3>> tmp_saved;
-                for(auto& f : cis_x_functions) {
-                    tmp_saved.push_back(SavedFct<3>(f));
+                if (madness_process.world->rank() == 0)
+                    std::cout << "Orthonormalizing CIS X functions for excitation " << ex << std::endl;
+
+                madness::QProjector<double, 3> Q_hf_mp2_ref(*(madness_process.world), hf_mp2_ref);
+                x_funcs = Q_hf_mp2_ref(x_funcs);
+
+                if (x_funcs.size() > 1) {
+                    std::vector<SavedFct<3>> tmp_saved;
+                    for(auto& f : x_funcs) {
+                        tmp_saved.push_back(SavedFct<3>(f));
+                    }
+                    auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
+                    x_funcs.clear();
+                    for(auto& s : ortho_saved) {
+                        x_funcs.push_back(madness_process.loadfct(s));
+                    }
                 }
-                auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
-                cis_x_functions.clear(); // clear cis_x_functions to fill with orthogonalized versions
-                for(auto& s : ortho_saved) {
-                    cis_x_functions.push_back(madness_process.loadfct(s));
-                }
+
+                hf_mp2_ref.insert(hf_mp2_ref.end(), x_funcs.begin(), x_funcs.end());
             }
         }
+
+        cis_x_functions.clear();
+        for (auto& xv : cis_x_per_root)
+            cis_x_functions.insert(cis_x_functions.end(), xv.begin(), xv.end());
 
         // Orthogonalize CISPD PNOs
         if (!cispd_pnos.empty()) {
             if (madness_process.world->rank() == 0)
                 std::cout << "Orthonormalizing CISPD PNOs" << std::endl;
 
-            vecfuncT gs_full = reference; // start with reference (HF)
-            gs_full.insert(gs_full.end(), mp2_pnos.begin(), mp2_pnos.end()); // add mp2 pnos to HF reference
-            gs_full.insert(gs_full.end(), cis_x_functions.begin(), cis_x_functions.end()); // add cis x functions to HF+MP2 reference for projector to ensure orthogonality
+            madness::QProjector<double, 3> Q_gs(*(madness_process.world), hf_mp2_ref); // hf_mp2_ref now contains reference (HF), MP2 pnos and cis x functions
+            cispd_pnos = Q_gs(cispd_pnos); // project out reference (HF and MP2 pnos) from cispd pnos to ensure orthogonality
 
-            madness::QProjector<double, 3> Q_gs(*(madness_process.world), gs_full);
-            cispd_pnos = Q_gs(cispd_pnos); // project out reference (HF, MP2 and CIS X) from cispd pnos to ensure orthogonality
 
             if (cispd_pnos.size() > 1) {
                 std::vector<SavedFct<3>> tmp_saved;
@@ -506,6 +528,10 @@ class PNOInterface {
                     cispd_pnos.push_back(madness_process.loadfct(s));
                 }
             }
+
+            cispd_occ.resize(cispd_pnos.size());
+            cispd_ids.resize(cispd_pnos.size());
+            cispd_labels.resize(cispd_pnos.size());
         }
 
         vecfuncT obs_pnos;
@@ -547,7 +573,9 @@ class PNOInterface {
                 std::cout << "Orthonormalizing all orbs" << std::endl;
 
             std::vector<SavedFct<3>> tmp_saved;
-            for(auto& f : obs_pnos) tmp_saved.push_back(SavedFct<3>(f));
+            for(auto& f : obs_pnos) {
+                tmp_saved.push_back(SavedFct<3>(f));
+            }
             auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
             obs_pnos.clear();
             for(auto& s : ortho_saved) {
@@ -555,13 +583,9 @@ class PNOInterface {
             }
         }
 
-        if (occ.size() > obs_pnos.size()) {
-            occ.resize(obs_pnos.size());
-            pno_ids.resize(obs_pnos.size());
-            labels.resize(obs_pnos.size());
-             if (madness_process.world->rank() == 0)
-                std::cout << "Warning: More occupation numbers than PNOs, resizing to " << obs_pnos.size() << "\n";
-        }
+        occ.resize(obs_pnos.size());
+        pno_ids.resize(obs_pnos.size());
+        labels.resize(obs_pnos.size());
 
         this->labels = std::vector<std::string>(reference.size(), "HF");
         this->labels.insert(this->labels.end(), labels.begin(), labels.end());
@@ -570,7 +594,9 @@ class PNOInterface {
 
         if (madness_process.world->rank() == 0)
             std::cout << "Forming basis with " << xbasis.size() << " orbitals" << "\n";
-        xbasis.insert(xbasis.end(), obs_pnos.begin(), obs_pnos.end());
+
+        xbasis.insert(xbasis.end(), obs_pnos.begin(), obs_pnos.end()); // add pnos to basis after reference (HF) orbitals
+
         if (madness_process.world->rank() == 0)
             std::cout << "filled up to " << xbasis.size() << " orbitals" << "\n";
 
