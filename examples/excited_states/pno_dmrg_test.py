@@ -35,7 +35,7 @@ nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 
 integrals = fe.Integrals3D(world)
-combined_orbs = madpno.get_gs_orbs() + madpno.get_ex_orbs()
+combined_orbs = gs_orbs + ex_orbs
 combined_orbs = integrals.orthonormalize(orbitals=combined_orbs)
 
 T = integrals.compute_kinetic_integrals(combined_orbs)
