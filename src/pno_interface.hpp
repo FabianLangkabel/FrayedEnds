@@ -364,15 +364,24 @@ class PNOInterface {
         FunctionDefaults<3>::set_thresh(thresh);
 
         vecfuncT reference = nemo->get_calc()->amo;
-        const size_t npno = basis_size - reference.size();
+        const size_t npno = basis_size - reference.size(); 
+        std::cout << "basis size requested: " << basis_size << "\n";
+        std::cout << "reference size: " << reference.size() << "\n";
+        std::cout << "number of PNOs requested: " << npno << "\n";
 
         const size_t n_cis_x_per_root = cis_x_per_root.empty() ? 0 : cis_x_per_root[0].size(); // assume same number of cis x functions per root, if cis x functions exist
-        const size_t npno_cispd = (npno > n_cis_x_per_root) ? npno - n_cis_x_per_root : 0;
+        const size_t npno_cispd = (basis_size > n_cis_x_per_root) ? basis_size - n_cis_x_per_root : 0;
 
-        vecfuncT mp2_pnos, cispd_pnos;
-        std::vector<double> mp2_occ, cispd_occ;
-        std::vector<std::pair<size_t, size_t>> mp2_ids, cispd_ids;
-        std::vector<std::string> mp2_labels, cispd_labels;
+        vecfuncT mp2_pnos;
+        std::vector<double> mp2_occ;
+        std::vector<std::pair<size_t, size_t>> mp2_ids;
+        std::vector<std::string> mp2_labels;
+
+        // collect cispd per excitation 
+        std::vector<vecfuncT>                              cispd_pnos_per_ex(cis_roots.size());
+        std::vector<std::vector<double>>                   cispd_occ_per_ex(cis_roots.size());
+        std::vector<std::vector<std::pair<size_t,size_t>>> cispd_ids_per_ex(cis_roots.size());
+        std::vector<std::vector<std::string>>              cispd_labels_per_ex(cis_roots.size());
 
         for (auto& pairs : all_pairs) {
             if (pairs.type != MP2_PAIRTYPE && pairs.type != CISPD_PAIRTYPE) {
@@ -432,10 +441,12 @@ class PNOInterface {
                     mp2_ids.push_back(std::get<2>(zipped[i]));
                     mp2_labels.push_back(std::get<3>(zipped[i]));
                 } else if (pairs.type == CISPD_PAIRTYPE) {
-                    cispd_pnos.push_back(std::get<1>(zipped[i]));
-                    cispd_occ.push_back(std::get<0>(zipped[i]));
-                    cispd_ids.push_back(std::get<2>(zipped[i]));
-                    cispd_labels.push_back(std::get<3>(zipped[i]));
+                    // store per excitation index
+                    const size_t ex = (size_t)pairs.cis.number;
+                    cispd_pnos_per_ex[ex].push_back(std::get<1>(zipped[i]));
+                    cispd_occ_per_ex[ex].push_back(std::get<0>(zipped[i]));
+                    cispd_ids_per_ex[ex].push_back(std::get<2>(zipped[i]));
+                    cispd_labels_per_ex[ex].push_back(std::get<3>(zipped[i]));
                 }
             }
             if (madness_process.world->rank() == 0)
@@ -465,9 +476,13 @@ class PNOInterface {
                 }
             }
 
-            mp2_occ.resize(mp2_pnos.size());
-            mp2_ids.resize(mp2_pnos.size());
-            mp2_labels.resize(mp2_pnos.size());
+            if (mp2_pnos.size() < mp2_occ.size()) {
+                if (madness_process.world->rank() == 0)
+                    std::cout << "Warning: Linear dependence detected in MP2 PNOs. Resizing occupation, id and label arrays to match number of orthogonalized PNOs (" << mp2_pnos.size() << ")\n";
+                mp2_occ.resize(mp2_pnos.size());
+                mp2_ids.resize(mp2_pnos.size());
+                mp2_labels.resize(mp2_pnos.size());
+            }
         }
 
         // Orthogonalize CIS X functions
@@ -508,30 +523,51 @@ class PNOInterface {
         for (auto& xv : cis_x_per_root)
             cis_x_functions.insert(cis_x_functions.end(), xv.begin(), xv.end());
 
+        madness::QProjector<double, 3> Q_gs(*(madness_process.world), hf_mp2_ref); // hf_mp2_ref now contains reference (HF), MP2 pnos and cis x functions
+
+        vecfuncT cispd_pnos;
+        std::vector<double> cispd_occ;
+        std::vector<std::pair<size_t, size_t>> cispd_ids;
+        std::vector<std::string> cispd_labels;
+
         // Orthogonalize CISPD PNOs
-        if (!cispd_pnos.empty()) {
+        for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
+            auto& ex_pnos = cispd_pnos_per_ex[ex];
+            if (ex_pnos.empty()) continue;
+
             if (madness_process.world->rank() == 0)
-                std::cout << "Orthonormalizing CISPD PNOs" << std::endl;
+                std::cout << "Orthonormalizing CISPD PNOs for excitation " << ex
+                          << " (" << ex_pnos.size() << " PNOs)" << std::endl;
 
-            madness::QProjector<double, 3> Q_gs(*(madness_process.world), hf_mp2_ref); // hf_mp2_ref now contains reference (HF), MP2 pnos and cis x functions
-            cispd_pnos = Q_gs(cispd_pnos); // project out reference (HF and MP2 pnos) from cispd pnos to ensure orthogonality
+            ex_pnos = Q_gs(ex_pnos); // project out reference (HF and MP2 pnos) from cispd pnos to ensure orthogonality
 
-
-            if (cispd_pnos.size() > 1) {
+            if (ex_pnos.size() > 1) {
                 std::vector<SavedFct<3>> tmp_saved;
-                for(auto& f : cispd_pnos) {
+                for(auto& f : ex_pnos) {
                     tmp_saved.push_back(SavedFct<3>(f));
                 }
                 auto ortho_saved = helper.orthonormalize(tmp_saved, "symmetric", 1e-7, occ_ndarray, 1e-6);
-                cispd_pnos.clear(); // clear cispd_pnos to fill with orthogonalized versions
+                ex_pnos.clear(); // clear cispd_pnos to fill with orthogonalized versions
                 for(auto& s : ortho_saved) {
-                    cispd_pnos.push_back(madness_process.loadfct(s));
+                    ex_pnos.push_back(madness_process.loadfct(s));
                 }
             }
 
-            cispd_occ.resize(cispd_pnos.size());
-            cispd_ids.resize(cispd_pnos.size());
-            cispd_labels.resize(cispd_pnos.size());
+            if (ex_pnos.size() < cispd_occ_per_ex[ex].size()) {
+                if (madness_process.world->rank() == 0)
+                    std::cout << "Warning: Linear dependence detected in CISPD PNOs for excitation " << ex << ". Resizing occupation, id and label arrays to match number of orthogonalized PNOs (" << ex_pnos.size() << ")\n";
+                cispd_occ_per_ex[ex].resize(ex_pnos.size());
+                cispd_ids_per_ex[ex].resize(ex_pnos.size());
+                cispd_labels_per_ex[ex].resize(ex_pnos.size());
+            }
+
+            if (madness_process.world->rank() == 0)
+                std::cout << "Excitation " << ex << ": " << ex_pnos.size() << " CISPD PNOs after orthonorm.\n";
+
+            cispd_pnos.insert(cispd_pnos.end(), ex_pnos.begin(), ex_pnos.end());
+            cispd_occ.insert(cispd_occ.end(), cispd_occ_per_ex[ex].begin(), cispd_occ_per_ex[ex].end());
+            cispd_ids.insert(cispd_ids.end(), cispd_ids_per_ex[ex].begin(), cispd_ids_per_ex[ex].end());
+            cispd_labels.insert(cispd_labels.end(), cispd_labels_per_ex[ex].begin(), cispd_labels_per_ex[ex].end());
         }
 
         vecfuncT obs_pnos;
@@ -582,10 +618,14 @@ class PNOInterface {
                 obs_pnos.push_back(madness_process.loadfct(s));
             }
         }
-
-        occ.resize(obs_pnos.size());
-        pno_ids.resize(obs_pnos.size());
-        labels.resize(obs_pnos.size());
+        
+        if (obs_pnos.size() < occ.size()) {
+            if (madness_process.world->rank() == 0)
+                std::cout << "Warning: Linear dependence detected in combined set of PNOs. Resizing occupation, id and label arrays to match number of orthogonalized PNOs (" << obs_pnos.size() << ")\n";
+            occ.resize(obs_pnos.size());
+            pno_ids.resize(obs_pnos.size());
+            labels.resize(obs_pnos.size());
+        }
 
         this->labels = std::vector<std::string>(reference.size(), "HF");
         this->labels.insert(this->labels.end(), labels.begin(), labels.end());
@@ -657,6 +697,10 @@ class PNOInterface {
         auto mp2 = get_pnos_filtered("MP2");
 
         hf.insert(hf.end(), mp2.begin(), mp2.end());
+
+        for (auto& orb : hf) {
+            std::cout << "GS Orb info: " << orb.info << "\n";
+        }
         return hf;
     }
 
@@ -666,6 +710,9 @@ class PNOInterface {
         auto cispd_orbs = get_pnos_filtered("CISPD");
 
         x_orbs.insert(x_orbs.end(), cispd_orbs.begin(), cispd_orbs.end());
+        for (auto& orb : x_orbs) {
+            std::cout << "EX Orb info: " << orb.info << "\n";
+        }
         return x_orbs;
     }
 
