@@ -432,6 +432,11 @@ class PNOInterface {
 
             size_t n_take = (pairs.type == CISPD_PAIRTYPE) ? npno_cispd : npno;
             n_take = std::min(n_take, zipped.size());
+            if (madness_process.world->rank() == 0 && n_take < npno_cispd) {
+                std::cout << "Warning: requested " << npno_cispd
+                        << " CISPD PNOs for excitation " << pairs.cis.number
+                        << " but only " << zipped.size() << " available.\n";
+            }
 
             // collect npno for each type of pairs (mp2 and cispd)
             for (auto i = 0; i < n_take; ++i) {
@@ -582,11 +587,12 @@ class PNOInterface {
         labels.insert(labels.end(), mp2_labels.begin(), mp2_labels.end());
 
         // insert cis x functions
+        int ex = 0;
         for (auto& xfct : cis_x_functions) {
             obs_pnos.push_back(xfct);
             occ.push_back(1.0);
             pno_ids.push_back({0, 0});
-            labels.push_back("CIS_X");
+            labels.push_back("CIS_X_Ex" + std::to_string(ex));
         }
 
         // insert cispd pnos after mp2 pnos and cis x functions
@@ -679,7 +685,7 @@ class PNOInterface {
             if (labels[i].find(type_filter) != std::string::npos) {
                 SavedFct<3> pnorb(basis[i]);
 
-                size_t offset = (labels[i] == "HF" || labels[i] == "CIS_X") ? 0 : this->nfreeze;
+                size_t offset = (labels[i] == "HF" || labels[i].find("CIS_X") != std::string::npos) ? 0 : this->nfreeze;
 
                 pnorb.info = "type=" + labels[i] + " occ=" + std::to_string(occ[i]) + " ";
                 pnorb.info += "pair1=" + std::to_string(ids[i].first + offset) + " ";
@@ -692,7 +698,7 @@ class PNOInterface {
     }
 
     // get all orbitals that are either HF or MP2 PNOs (ground state orbitals)
-    std::vector<SavedFct<3>> get_gs_orbs() const {
+    std::vector<SavedFct<3>> get_gs_orbitals() const {
         auto hf = get_pnos_filtered("HF");
         auto mp2 = get_pnos_filtered("MP2");
 
@@ -705,7 +711,7 @@ class PNOInterface {
     }
 
     // get all orbitals that are either CIS X vectors or CISPD PNOs (excitations)
-    std::vector<SavedFct<3>> get_ex_orbs() const {
+    std::vector<SavedFct<3>> get_ex_orbitals() const {
         auto x_orbs = get_pnos_filtered("CIS_X");
         auto cispd_orbs = get_pnos_filtered("CISPD");
 
