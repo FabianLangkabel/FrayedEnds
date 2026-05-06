@@ -9,18 +9,26 @@ from .moleculargeometry import MolecularGeometry
 
 
 class MadPNO:
-    _orbitals = None
+    _gs_orbitals = None # ground state orbitals (HF + MP2 PNOs)
+    _ex_orbitals = None # excited state orbitals (CIS X vectors + CISPD PNOs)
     _h = None  # one-body tensor
     _g = None  # two-body tensor
     _c = 0.0  # constant term
     impl = None
 
     @property
-    def orbitals(self, *args, **kwargs):
+    def gs_orbitals(self, *args, **kwargs):
         """
-        Convenience
+        Convenience access for ground state orbitals
         """
-        return self.get_orbitals(*args, **kwargs)
+        return self.get_gs_orbitals(*args, **kwargs)
+
+    @property
+    def ex_orbitals(self, *args, **kwargs):
+        """
+        Convenience access for excited state orbitals
+        """
+        return self.get_ex_orbitals(*args, **kwargs)
 
     def __init__(
         self,
@@ -91,11 +99,31 @@ class MadPNO:
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
-            self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
+            self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
+
+    @redirect_output("madpno.log")
+    def compute_orbitals(self, n_orbitals, *args, **kwargs):
+        self.impl.run(n_orbitals)
+        # package the orbitals
+        self._gs_orbitals = self.impl.get_gs_orbitals()
+        self._ex_orbitals = self.impl.get_ex_orbitals()
+        self.cleanup(*args, **kwargs)
+
+    def get_gs_orbitals(self, *args, **kwargs):
+        if self._gs_orbitals is not None:
+            return self._gs_orbitals
+        else:
+            raise Exception("ground state orbitals not yet computed")
+
+    def get_ex_orbitals(self, *args, **kwargs):
+        if self._ex_orbitals is not None:
+            return self._ex_orbitals
+        else:
+            raise Exception("excited state orbitals not yet computed")
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
-        orbitals = self.get_orbitals(*args, **kwargs)
+        orbitals = self.get_gs_orbitals(*args, **kwargs)
         info = get_function_info(orbitals)
         nhf = len([x for x in info if numpy.isclose(float(x["occ"]), 2.0)])
         diagonal = {k: [] for k in range(nhf)}
@@ -117,7 +145,7 @@ class MadPNO:
         edges = [tuple(sorted(x)) for x in pno_groupings.values()]
         nfreeze = self.impl.get_frozen_core_dim()
         if frozen_core:
-            orbitals = self.get_orbitals()
+            orbitals = self.get_gs_orbitals()
             info = get_function_info(orbitals)
             # indices of hf orbitals that are frozen and
             occf = [k for k, x in enumerate(info) if numpy.isclose(float(x["occ"]), 2.0) and k < nfreeze]
@@ -139,12 +167,6 @@ class MadPNO:
             edges = [tuple([y - nof for y in x]) for x in edges]
         return edges
 
-    def get_orbitals(self, *args, **kwargs):
-        if self._orbitals is not None:
-            return self._orbitals
-        else:
-            raise Exception("orbitals not yet computed")
-
     def get_nuclear_potential(self, *args, **kwargs):
         return self.impl.get_nuclear_potential()
 
@@ -153,21 +175,6 @@ class MadPNO:
 
     def get_sto3g(self, *args, **kwargs):
         return self.impl.get_sto3g()
-
-    @redirect_output("madpno.log")
-    def compute_orbitals(self, n_orbitals, *args, **kwargs):
-        self.impl.run(n_orbitals)
-        # package the orbitals
-        orbitals = self.impl.get_pnos_filtered("")
-        self.cleanup(*args, **kwargs)
-        self._orbitals = orbitals
-        return orbitals
-
-    def get_gs_orbs(self, *args, **kwargs):
-        return self.impl.get_gs_orbs()
-
-    def get_ex_orbs(self, *args, **kwargs):
-        return self.impl.get_ex_orbs()
 
     def parameter_string(
         self,

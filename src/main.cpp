@@ -244,8 +244,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_pnos_filtered", &PNOInterface::get_pnos_filtered, nb::arg("type_filter") = "")
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
         .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion)
-        .def("get_gs_orbs", &PNOInterface::get_gs_orbs)
-        .def("get_ex_orbs", &PNOInterface::get_ex_orbs);
+        .def("get_gs_orbitals", &PNOInterface::get_gs_orbitals)
+        .def("get_ex_orbitals", &PNOInterface::get_ex_orbitals);
 
     nb::class_<AtomBasProjector>(m, "AtomBasProjector")
         .def(nb::init<MadnessProcess<3>&, const std::string&, const std::string&>())
