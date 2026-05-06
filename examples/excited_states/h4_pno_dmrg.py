@@ -36,7 +36,7 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Get 8 Pair Natural Orbitals (PNOs)
 madpno = fe.MadPNO(world, geom, n_orbitals=8)
-orbs = madpno.get_orbitals()
+orbs = madpno.get_gs_orbitals()
 
 nuc_repulsion = madpno.get_nuclear_repulsion()  # Compute nuclear repulsion energy
 Vnuc = madpno.get_nuclear_potential()  # Compute nuclear potential

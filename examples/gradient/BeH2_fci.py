@@ -27,7 +27,7 @@ for distance in distance_list:
 
     pno_start = time.time()
     madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals, dft={"localize": "boys"})
-    orbitals = madpno.get_orbitals()
+    orbitals = madpno.get_gs_orbitals()
 
     pno_end = time.time()
     print("Pno time:", pno_end - pno_start)

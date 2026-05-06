@@ -11,7 +11,7 @@ geom = "Li 0.0 0.0 0.0\nH 0.0 0.0 3.0"  # geometry in Angstrom
 world = frayedends.MadWorld3D()
 
 madpno = frayedends.MadPNO(world, geom, n_orbitals=3)
-orbitals = madpno.get_orbitals()
+orbitals = madpno.get_gs_orbitals()
 edges = madpno.get_spa_edges()
 atomics = madpno.get_sto3g()
 

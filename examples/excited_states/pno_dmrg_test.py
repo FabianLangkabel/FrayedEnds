@@ -10,7 +10,7 @@ box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
 econv = 1.0e-6
-number_roots = 2
+number_roots = 3
 
 
 molecule = fe.MolecularGeometry(units="angstrom")
@@ -22,8 +22,8 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 madpno = fe.MadPNO(world, geom, n_orbitals=4, cispd=1)
 
-gs_orbs = madpno.get_gs_orbs()
-ex_orbs = madpno.get_ex_orbs()
+gs_orbs = madpno.get_gs_orbitals()
+ex_orbs = madpno.get_ex_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)

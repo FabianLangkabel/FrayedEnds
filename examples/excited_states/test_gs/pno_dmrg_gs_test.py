@@ -21,7 +21,7 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 madpno = fe.MadPNO(world, geom, n_orbitals=4)
 
-gs_orbs = madpno.get_gs_orbs()
+gs_orbs = madpno.get_gs_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)

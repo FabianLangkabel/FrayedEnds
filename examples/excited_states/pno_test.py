@@ -19,8 +19,8 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 madpno = fe.MadPNO(world, geom, n_orbitals=2, cispd=1)
 
-gs_orbs = madpno.get_gs_orbs()
-ex_orbs = madpno.get_ex_orbs()
+gs_orbs = madpno.get_gs_orbitals()
+ex_orbs = madpno.get_ex_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
@@ -28,7 +28,7 @@ for i in range(len(gs_orbs)):
 for i in range(len(ex_orbs)):
     world.cube_plot(f"ex_orb{i}", ex_orbs[i], molecule, zoom=4.0)
 
-combined_orbs = madpno.get_gs_orbs() + madpno.get_ex_orbs()
+combined_orbs = gs_orbs + ex_orbs
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 

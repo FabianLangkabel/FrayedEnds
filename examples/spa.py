@@ -12,7 +12,7 @@ geom = "H 0.0 0.0 0.0\nH 0.0 0.0 3.5\nH 0.0 0.0 7.0\nH 0.0 0.0 10.5"  # geometry
 world = frayedends.MadWorld3D()
 
 madpno = frayedends.MadPNO(world, geom, n_orbitals=4)
-orbitals = madpno.get_orbitals()
+orbitals = madpno.get_gs_orbitals()
 edges = madpno.get_spa_edges()
 
 nuc_repulsion = madpno.get_nuclear_repulsion()
