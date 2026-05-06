@@ -22,7 +22,7 @@ for distance in distance_list:
     molecule.add_atom(0.0, 0.0, 0.0, "H")
     molecule.add_atom(0.0, 0.0, distance, "H")
     madpno = fe.MadPNO(world, geometry, units="bohr", n_orbitals=n_orbitals, maxrank=1)
-    orbitals = madpno.get_orbitals()
+    orbitals = madpno.get_gs_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
