@@ -95,7 +95,7 @@ class MadPNO:
             *args,
             **kwargs,
         )
-        print(f"DEBUG: MADNESS-String: {pno_input_string}")
+
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
