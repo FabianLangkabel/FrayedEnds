@@ -19,7 +19,7 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 madpno = fe.MadPNO(world, geom, n_orbitals=2, cispd=1)
 
-gs_orbs = madpno.get_gs_orbitals()
+gs_orbs = madpno.get_orbitals()
 ex_orbs = madpno.get_ex_orbitals()
 
 for i in range(len(gs_orbs)):

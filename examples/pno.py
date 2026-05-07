@@ -14,7 +14,7 @@ world = frayedends.MadWorld3D()
 
 # initialize the PNO interface
 madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=3)
-orbitals = madpno.get_gs_orbitals()
+orbitals = madpno.get_orbitals()
 
 print("info:", frayedends.get_function_info(orbitals))
 print("pno_groupings:", madpno.get_pno_groupings())

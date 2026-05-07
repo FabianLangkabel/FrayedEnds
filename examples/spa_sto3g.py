@@ -16,7 +16,7 @@ def run(R):
     world = frayedends.MadWorld3D()
 
     madpno = frayedends.MadPNO(world, geom, n_orbitals=4, maxrank=1)
-    orbitals = madpno.get_gs_orbitals()
+    orbitals = madpno.get_orbitals()
     atomics = madpno.get_sto3g()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()

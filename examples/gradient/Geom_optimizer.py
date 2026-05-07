@@ -39,7 +39,7 @@ def energy_and_gradient(
     # we calculate initial guess orbitals for the orbital refinement using pair natural orbitals (PNO)
     # for more details on this method see: J.S. Kottmann, F.A. Bischoff, E.F. Valeev, J. Chem. Phys. 152, 2020
     madpno = fe.MadPNO(world, geom_str[0], units=geom_str[1], n_orbitals=n_orbitals)
-    orbitals = madpno.get_gs_orbitals()  # initial guess orbitals as MRA functions, orb.type determines whether the orbital is 'active' or 'frozen_occ' (in this case all active)
+    orbitals = madpno.get_orbitals()  # initial guess orbitals as MRA functions, orb.type determines whether the orbital is 'active' or 'frozen_occ' (in this case all active)
     pno_end = time()
     print("pno time:", pno_end - pno_start)
 

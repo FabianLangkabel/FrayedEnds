@@ -22,7 +22,7 @@ world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 madpno = fe.MadPNO(world, geom, n_orbitals=4, cispd=1)  # ground state + 2 excited states 
 
-gs_orbs = madpno.get_gs_orbitals()
+gs_orbs = madpno.get_orbitals()
 ex_orbs = madpno.get_ex_orbitals()
 
 for i in range(len(gs_orbs)):
