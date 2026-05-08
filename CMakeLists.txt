@@ -54,7 +54,7 @@ nanobind_add_module(
   src/main.cpp
   src/optimization.cpp
   src/functionsaver.hpp
-  src/pno_interface.hpp
+  src/pno_interface.cpp
   src/sum_of_gaussians.hpp
   src/integrals.cpp
   src/madness_process.cpp
