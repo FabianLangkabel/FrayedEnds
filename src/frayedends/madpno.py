@@ -9,7 +9,7 @@ from .moleculargeometry import MolecularGeometry
 
 
 class MadPNO:
-    _gs_orbitals = None # ground state orbitals (HF + MP2 PNOs)
+    _orbitals = None # ground state orbitals (HF + MP2 PNOs) 
     _ex_orbitals = None # excited state orbitals (CIS X vectors + CISPD PNOs)
     _h = None  # one-body tensor
     _g = None  # two-body tensor
@@ -17,11 +17,11 @@ class MadPNO:
     impl = None
 
     @property
-    def gs_orbitals(self, *args, **kwargs):
+    def orbitals(self, *args, **kwargs):
         """
         Convenience access for ground state orbitals
         """
-        return self.get_gs_orbitals(*args, **kwargs)
+        return self.get_orbitals(*args, **kwargs)
 
     @property
     def ex_orbitals(self, *args, **kwargs):
@@ -105,13 +105,13 @@ class MadPNO:
     def compute_orbitals(self, n_orbitals, *args, **kwargs):
         self.impl.run(n_orbitals)
         # package the orbitals
-        self._gs_orbitals = self.impl.get_gs_orbitals()
+        self._orbitals = self.impl.get_gs_orbitals()
         self._ex_orbitals = self.impl.get_ex_orbitals()
         self.cleanup(*args, **kwargs)
 
-    def get_gs_orbitals(self, *args, **kwargs):
-        if self._gs_orbitals is not None:
-            return self._gs_orbitals
+    def get_orbitals(self, *args, **kwargs):
+        if self._orbitals is not None:
+            return self._orbitals
         else:
             raise Exception("ground state orbitals not yet computed")
 
@@ -123,7 +123,7 @@ class MadPNO:
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
-        orbitals = self.get_gs_orbitals(*args, **kwargs)
+        orbitals = self.get_orbitals(*args, **kwargs)
         info = get_function_info(orbitals)
         nhf = len([x for x in info if numpy.isclose(float(x["occ"]), 2.0)])
         diagonal = {k: [] for k in range(nhf)}
@@ -145,7 +145,7 @@ class MadPNO:
         edges = [tuple(sorted(x)) for x in pno_groupings.values()]
         nfreeze = self.impl.get_frozen_core_dim()
         if frozen_core:
-            orbitals = self.get_gs_orbitals()
+            orbitals = self.get_orbitals()
             info = get_function_info(orbitals)
             # indices of hf orbitals that are frozen and
             occf = [k for k, x in enumerate(info) if numpy.isclose(float(x["occ"]), 2.0) and k < nfreeze]
