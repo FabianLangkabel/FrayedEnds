@@ -369,9 +369,6 @@ class PNOInterface {
         std::cout << "reference size: " << reference.size() << "\n";
         std::cout << "number of PNOs requested: " << npno << "\n";
 
-        const size_t n_cis_x_per_root = cis_x_per_root.empty() ? 0 : cis_x_per_root[0].size(); // assume same number of cis x functions per root, if cis x functions exist
-        const size_t npno_cispd = (basis_size > n_cis_x_per_root) ? basis_size - n_cis_x_per_root : 0;
-
         vecfuncT mp2_pnos;
         std::vector<double> mp2_occ;
         std::vector<std::pair<size_t, size_t>> mp2_ids;
@@ -430,10 +427,32 @@ class PNOInterface {
             if (madness_process.world->rank() == 0)
                 std::cout << "sorted " << "\n";
 
-            size_t n_take = (pairs.type == CISPD_PAIRTYPE) ? npno_cispd : npno;
+            size_t n_take = 0;
+
+            if (pairs.type == MP2_PAIRTYPE) {
+                n_take = npno;
+            }
+            else if (pairs.type == CISPD_PAIRTYPE) {
+                const size_t ex = (size_t)pairs.cis.number;
+
+                size_t n_cis_x = 0;
+                if (ex < cis_x_per_root.size()) {
+                    n_cis_x = cis_x_per_root[ex].size();
+                }
+
+                n_take = (basis_size > n_cis_x) ? basis_size - n_cis_x : 0;
+
+                if (madness_process.world->rank() == 0) {
+                    std::cout << "CISPD excitation " << ex
+                            << ": basis_size=" << basis_size
+                            << ", n_CIS_X=" << n_cis_x
+                            << ", npno_cispd=" << n_take << "\n";
+                }
+            }
+            const size_t requested = n_take;
             n_take = std::min(n_take, zipped.size());
-            if (madness_process.world->rank() == 0 && n_take < npno_cispd) {
-                std::cout << "Warning: requested " << npno_cispd
+            if (madness_process.world->rank() == 0 && n_take < requested) {
+                std::cout << "Warning: requested " << requested
                         << " CISPD PNOs for excitation " << pairs.cis.number
                         << " but only " << zipped.size() << " available.\n";
             }
@@ -587,12 +606,13 @@ class PNOInterface {
         labels.insert(labels.end(), mp2_labels.begin(), mp2_labels.end());
 
         // insert cis x functions
-        int ex = 0;
-        for (auto& xfct : cis_x_functions) {
-            obs_pnos.push_back(xfct);
-            occ.push_back(1.0);
-            pno_ids.push_back({0, 0});
-            labels.push_back("CIS_X_Ex" + std::to_string(ex));
+        for (size_t ex = 0; ex < cis_x_per_root.size(); ++ex) {
+            for (auto& xfct : cis_x_per_root[ex]) {
+                obs_pnos.push_back(xfct);
+                occ.push_back(1.0);
+                pno_ids.push_back({0, 0});
+                labels.push_back("CIS_X_Ex" + std::to_string(ex));
+            }
         }
 
         // insert cispd pnos after mp2 pnos and cis x functions
