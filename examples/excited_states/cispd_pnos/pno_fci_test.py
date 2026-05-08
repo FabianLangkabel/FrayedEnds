@@ -17,18 +17,18 @@ geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 
 world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-madpno = fe.MadPNO(world, geom, n_orbitals=2, cispd=1)
+madpno = fe.MadPNO(world, geom, n_orbitals=12)  # ground state + 2 excited states
 
 gs_orbs = madpno.get_orbitals()
-ex_orbs = madpno.get_ex_orbitals()
+# ex_orbs = madpno.get_ex_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
 
-for i in range(len(ex_orbs)):
-    world.cube_plot(f"ex_orb{i}", ex_orbs[i], molecule, zoom=4.0)
+#for i in range(len(ex_orbs)):
+#    world.cube_plot(f"ex_orb{i}", ex_orbs[i], molecule, zoom=4.0)
 
-combined_orbs = gs_orbs + ex_orbs
+combined_orbs = gs_orbs #+ ex_orbs
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 
