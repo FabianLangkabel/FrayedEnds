@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <memory>
 #include <nanobind/nanobind.h>
-#include "utility_open_shell.hpp"
+#include "../refinement_utility.hpp"
 
 using namespace madness;
 namespace nb = nanobind;
@@ -31,8 +31,8 @@ class Integrals_open_shell {
     ~Integrals_open_shell() {};
 
     //Numerical parameters
-    open_shell_utils::NumericalParameters num_params;
-    void override_numerical_parameters(open_shell_utils::NumericalParameters params) {
+    refinement_utils::NumericalParameters num_params;
+    void override_numerical_parameters(refinement_utils::NumericalParameters params) {
         num_params = params;
     }
     void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {

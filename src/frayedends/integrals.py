@@ -9,8 +9,12 @@ from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open
 class Integrals3D:
     impl = None
 
-    def __init__(self, madworld, *args, **kwargs):
+    def __init__(self, madworld, **kwargs):
         self.impl = IntegralsInterface3D(madworld.impl)
+        self.set_numerical_parameters(**kwargs)
+
+    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6):
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps)
 
     # computes the g-tensor: the coulomb interaction between the provided orbitals
     def compute_two_body_integrals(
@@ -22,12 +26,13 @@ class Integrals3D:
         coulomb_eps=1e-6,
         nocc=2,
     ) -> np.ndarray:
-        g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
+        g_elems = self.impl.compute_two_body_integrals(orbitals)
+        g_elems_old = self.impl.compute_two_body_integrals_old(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
             return g.reorder(to=ordering)
         else:
-            return g
+            return g, NBodyTensor(elems=g_elems_old, ordering="phys")  # return both new and old integrals for testing purposes
 
     # computes coulomb interaction between frozen core orbitals and active space orbitals
     def compute_frozen_core_interaction(
@@ -39,20 +44,25 @@ class Integrals3D:
         coulomb_eps=1e-6,
         nocc=2,
     ) -> np.ndarray:
-        return self.impl.compute_frozen_core_interaction(
-            frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
-        )
+        return self.impl.compute_frozen_core_interaction(frozen_core_orbs, active_orbs), self.impl.compute_frozen_core_interaction_old(frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc)  # return both new and old integrals for testing purposes
 
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs) -> np.ndarray:
-        return self.impl.compute_kinetic_integrals(orbitals)
+        return self.impl.compute_kinetic_integrals(orbitals), self.impl.compute_kinetic_integrals_old(orbitals)
 
     def compute_potential_integrals(self, orbitals, V, *args, **kwargs) -> np.ndarray:
-        return self.impl.compute_potential_integrals(orbitals, V)
+        return self.impl.compute_potential_integrals(orbitals, V), self.impl.compute_potential_integrals_old(orbitals, V)
 
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs) -> np.ndarray:
         if other is None:
             other = orbitals
-        return self.impl.compute_overlap_integrals(orbitals, other)
+        return self.impl.compute_overlap_integrals(orbitals, other), self.impl.compute_overlap_integrals_old(orbitals, other)
+    
+    def get_effective_hamiltonian(self, core_orbitals, active_orbitals, V, energy_offset) -> tuple[float, np.ndarray, np.ndarray]:
+        H_eff = self.impl.compute_effective_hamiltonian(
+            core_orbitals, active_orbitals, V, energy_offset
+        )
+        return H_eff
+
 
     def orthonormalize(
         self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
@@ -109,25 +119,32 @@ class Integrals3D:
 class Integrals2D:
     impl = None
 
-    def __init__(self, madworld, *args, **kwargs):
-        self.impl = IntegralsInterface2D(madworld.impl)
+    def __init__(self, madworld, **kwargs):
+        self.impl = IntegralsInterface3D(madworld.impl)
+        self.set_numerical_parameters(**kwargs)
 
+    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6):
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps)
+
+    # computes the g-tensor: the coulomb interaction between the provided orbitals
     def compute_two_body_integrals(
         self,
-        orbitals,
-        ordering="phys",
+        orbitals,  # active space orbitals
+        ordering="phys",  # ordering of the tensor, possible choices: "phys" (1212), "chem" (1122), "openfermion" (1221)
         truncation_tol=1e-6,
         coulomb_lo=0.001,
         coulomb_eps=1e-6,
         nocc=2,
     ) -> np.ndarray:
-        g_elems = self.impl.compute_two_body_integrals(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
+        g_elems = self.impl.compute_two_body_integrals(orbitals)
+        g_elems_old = self.impl.compute_two_body_integrals_old(orbitals, truncation_tol, coulomb_lo, coulomb_eps, nocc)
         g = NBodyTensor(elems=g_elems, ordering="phys")
         if ordering != "phys":
             return g.reorder(to=ordering)
         else:
-            return g
+            return g, NBodyTensor(elems=g_elems_old, ordering="phys")  # return both new and old integrals for testing purposes
 
+    # computes coulomb interaction between frozen core orbitals and active space orbitals
     def compute_frozen_core_interaction(
         self,
         frozen_core_orbs,
@@ -137,21 +154,25 @@ class Integrals2D:
         coulomb_eps=1e-6,
         nocc=2,
     ) -> np.ndarray:
-        return self.impl.compute_frozen_core_interaction(
-            frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc
-        )
+        return self.impl.compute_frozen_core_interaction(frozen_core_orbs, active_orbs), self.impl.compute_frozen_core_interaction_old(frozen_core_orbs, active_orbs, truncation_tol, coulomb_lo, coulomb_eps, nocc)  # return both new and old integrals for testing purposes
 
     def compute_kinetic_integrals(self, orbitals, *args, **kwargs) -> np.ndarray:
-        return self.impl.compute_kinetic_integrals(orbitals)
+        return self.impl.compute_kinetic_integrals(orbitals), self.impl.compute_kinetic_integrals_old(orbitals)
 
     def compute_potential_integrals(self, orbitals, V, *args, **kwargs) -> np.ndarray:
-        return self.impl.compute_potential_integrals(orbitals, V)
+        return self.impl.compute_potential_integrals(orbitals, V), self.impl.compute_potential_integrals_old(orbitals, V)
 
     def compute_overlap_integrals(self, orbitals, other=None, *args, **kwargs) -> np.ndarray:
         if other is None:
             other = orbitals
-        return self.impl.compute_overlap_integrals(orbitals, other)
+        return self.impl.compute_overlap_integrals(orbitals, other), self.impl.compute_overlap_integrals_old(orbitals, other)
 
+    def get_effective_hamiltonian(self, core_orbitals, active_orbitals, V, energy_offset) -> tuple[float, np.ndarray, np.ndarray]:
+        H_eff = self.impl.compute_effective_hamiltonian(
+            core_orbitals, active_orbitals, V, energy_offset
+        )
+        return H_eff
+    
     def orthonormalize(
         self, orbitals, method="symmetric", rr_thresh=0.0, rdm1=None, degeneracy_tol=1e-6, *args, **kwargs
     ):
@@ -240,9 +261,3 @@ class Integrals_open_shell_3D:
             core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset
         )
         return H_eff
-
-    def compute_nuclear_derivative(
-        self,
-        molecule,
-    ):
-        pass

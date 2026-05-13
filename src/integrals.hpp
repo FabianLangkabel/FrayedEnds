@@ -2,6 +2,7 @@
 #include "madness_process.hpp"
 #include "functionsaver.hpp"
 #include "coulomboperator_nd.hpp"
+#include "refinement_utility.hpp"
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
@@ -17,40 +18,92 @@
 
 using namespace madness;
 namespace nb = nanobind;
+using Numpy2D = nb::ndarray<nb::numpy, double, nb::ndim<2>>;
+using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
 
 template <std::size_t NDIM> class Integrals {
   public:
     Integrals(MadnessProcess<NDIM>& mp);
     ~Integrals() {};
 
-    madness::Tensor<double> potential_integrals;
+    // Numerical parameters
+    refinement_utils::NumericalParameters num_params;
+    void override_numerical_parameters(refinement_utils::NumericalParameters params) {
+        num_params = params;
+    }
+    void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps) {
+        num_params = {truncation_tol, coulomb_lo, coulomb_eps, 0.001, 1e-6}; //BSH parameters irrelevant for integrals class
+    }
+
+    // Utility functions
+    std::vector<Function<double, NDIM>> read_orbitals(std::vector<SavedFct<NDIM>> orbs);
+    void update_as_integral_combinations(const std::vector<Function<double, NDIM>> &orbitals, std::vector<Function<double, NDIM>> &orbs_kl, std::vector<Function<double, NDIM>> &coul_orbs_mn);
+    void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa);
+    void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa, std::vector<Function<double, NDIM>> &coul_orbs_aa);
+    
+    // Nanobind bindings for Integrators
+    Numpy2D nb_compute_overlap_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other);
+    Numpy2D nb_compute_potential_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const SavedFct<NDIM>& potential);
+    Numpy2D nb_compute_kinetic_integrals(const std::vector<SavedFct<NDIM>>& all_orbs);
+    Numpy4D nb_compute_two_body_integrals(const std::vector<SavedFct<NDIM>>& all_orbs);
+    Numpy2D nb_compute_frozen_core_interaction(const std::vector<SavedFct<NDIM>>& fr_c_orbs, const std::vector<SavedFct<NDIM>>& a_orbs);
+    nb::tuple nb_compute_effective_hamiltonian(const std::vector<SavedFct<NDIM>>& core_orbitals, const std::vector<SavedFct<NDIM>>& active_orbitals, const SavedFct<NDIM>& potential, double energy_offset);
+
+
+    //tempporaries for testing 
+    Numpy2D nb_compute_overlap_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other);
+    Numpy2D nb_compute_potential_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs, const SavedFct<NDIM>& potential);
+    Numpy2D nb_compute_kinetic_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs);
+    Numpy4D nb_compute_two_body_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs, double truncation_tol, double coulomb_lo, double coulomb_eps, int nocc);
+    Numpy2D nb_compute_frozen_core_interaction_old(const std::vector<SavedFct<NDIM>>& fr_c_orbs, const std::vector<SavedFct<NDIM>>& a_orbs, double truncation_tol, double coulomb_lo, double coulomb_eps, int nocc);
     madness::Tensor<double> overlap_integrals;
+    madness::Tensor<double> potential_integrals;
     madness::Tensor<double> kinetic_integrals;
     madness::Tensor<double> two_body_integrals;
     madness::Tensor<double> frozen_core_interaction;
+    //
+    
+    // Integrators
+    Tensor<double> compute_potential_integrals(const std::vector<Function<double, NDIM>>& orbitals,const Function<double, NDIM>& V);
+    Tensor<double> compute_kinetic_integrals(const std::vector<Function<double, NDIM>>& orbitals);
+    Tensor<double> compute_two_body_integrals(const std::vector<Function<double, NDIM>> &orbitals, const std::vector<Function<double, NDIM>> &orbs_kl, const std::vector<Function<double, NDIM>> &coul_orbs_mn);
+    double compute_core_energy(const std::vector<Function<double, NDIM>>& core_orbitals, std::vector<Function<double, NDIM>>& orbs_aa, std::vector<Function<double, NDIM>>& coul_orbs_aa, const Function<double, NDIM>& V, double energy_offset);
+    Tensor<double> compute_core_as_integrals_one_body(const std::vector<Function<double, NDIM>>& core_orbitals, const std::vector<Function<double, NDIM>>& active_orbitals, const Function<double, NDIM>& V);
+    
+    std::array<Tensor<double>, 2> compute_core_as_2e_integrals_energy(
+        const std::vector<Function<double, NDIM>> &core_orbitals, 
+        const std::vector<Function<double, NDIM>> &active_orbitals, 
+        const std::vector<Function<double, NDIM>> &orbs_kl, 
+        const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
+        const std::vector<Function<double, NDIM>> &orbs_aa
+    );
 
-    nb::ndarray<nb::numpy, double, nb::ndim<2>> compute_overlap_integrals(std::vector<SavedFct<NDIM>> all_orbs,
-                                                                          std::vector<SavedFct<NDIM>> other);
-    nb::ndarray<nb::numpy, double, nb::ndim<2>> compute_potential_integrals(std::vector<SavedFct<NDIM>> all_orbs,
-                                                                            SavedFct<NDIM> potential);
-    nb::ndarray<nb::numpy, double, nb::ndim<2>> compute_kinetic_integrals(std::vector<SavedFct<NDIM>> all_orbs);
-    nb::ndarray<nb::numpy, double, nb::ndim<4>> compute_two_body_integrals(std::vector<SavedFct<NDIM>> all_orbs,
-                                                                           double truncation_tol = 1e-6,
-                                                                           double coulomb_lo = 0.001,
-                                                                           double coulomb_eps = 1e-6, int nocc = 2);
-    nb::ndarray<nb::numpy, double, nb::ndim<2>>
-    compute_frozen_core_interaction(std::vector<SavedFct<NDIM>> fr_c_orbs, std::vector<SavedFct<NDIM>> a_orbs,
-                                    double truncation_tol = 1e-6, double coulomb_lo = 0.001, double coulomb_eps = 1e-6,
-                                    int nocc = 2);
+    std::array<Tensor<double>, 3> compute_core_as_2e_integrals_as_refinement(
+        const std::vector<Function<double, NDIM>> &core_orbitals, 
+        const std::vector<Function<double, NDIM>> &active_orbitals, 
+        const std::vector<Function<double, NDIM>> &orbs_kl, 
+        const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
+        const std::vector<Function<double, NDIM>> &orbs_aa
+    );
 
+    std::array<Tensor<double>, 4> compute_core_as_2e_integrals_core_refinement(
+        const std::vector<Function<double, NDIM>> &core_orbitals, 
+        const std::vector<Function<double, NDIM>> &active_orbitals, 
+        const std::vector<Function<double, NDIM>> &orbs_kl, 
+        const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
+        const std::vector<Function<double, NDIM>> &orbs_aa,
+        const std::vector<Function<double, NDIM>> &coul_orbs_aa
+    );
+
+    // Orthonormalization and related utilities
     std::vector<SavedFct<NDIM>> orthonormalize(std::vector<SavedFct<NDIM>> all_orbs, const std::string method,
                                                const double rr_thresh = 0.0,
                                                nb::ndarray<nb::numpy, double, nb::ndim<1>> occupations = {},
                                                double degeneracy_tol = 1e-6);
     std::vector<SavedFct<NDIM>> normalize(std::vector<SavedFct<NDIM>> all_orbs);
-
     std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
+    std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals, Numpy2D matrix);
 
   private:
     // Helper method for mixed orthonormalization using occupations
@@ -58,32 +111,6 @@ template <std::size_t NDIM> class Integrals {
         std::vector<Function<double, NDIM>>& orbitals,
         const std::vector<double>& occupations,
         double degeneracy_tol);
-        
-  public:
-
-    std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals,
-                                          nb::ndarray<nb::numpy, double, nb::ndim<2>> matrix) {
-        std::vector<Function<double, NDIM>> x;
-        for (SavedFct<NDIM> orb : orbitals)
-            x.push_back(madness_process.loadfct(orb));
-
-        // @todo there are more efficient ways (flatten and rewire the pointer of the first entry)
-        madness::Tensor<double> U(matrix.shape(0), matrix.shape(1));
-        for (auto k = 0; k < matrix.shape(0); ++k) {
-            for (auto l = 0; l < matrix.shape(1); ++l) {
-                U(k, l) = matrix(k, l);
-            }
-        }
-
-        auto y = madness::transform(*(madness_process.world), x, U);
-
-        std::vector<SavedFct<NDIM>> result;
-        for (size_t k = 0; k < orbitals.size(); k++)
-            result.push_back(SavedFct<NDIM>(y[k], orbitals[k].info + " transformed "));
-        return result;
-    }
-
-    void hello() { std::cout << "hello from the integrals class\n"; }
 
     MadnessProcess<NDIM>& madness_process;
 };

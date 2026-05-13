@@ -65,7 +65,6 @@ class Optimization3D:
     impl = None
     converged = None  # indicates if the last call converged
     opt_parameters = {
-        "nocc": 2,  # occupation number of orbitals (for open shell use the open_shell class)
         "truncation_tol": 1e-6,  # truncation tolerance for MRA representation of orbitals
         "coulomb_lo": 0.001,  # lower cutoff for representation of Coulomb kernel
         "coulomb_eps": 1e-6,
@@ -210,7 +209,6 @@ class Optimization2D:
     impl = None
     converged = None  # indicates if the last call converged
     opt_parameters = {
-        "nocc": 2,  # occupation number of orbitals (for open shell use the open_shell class)
         "truncation_tol": 1e-6,  # truncation tolerance for MRA representation of orbitals
         "coulomb_lo": 0.001,  # lower cutoff for representation of Coulomb kernel
         "coulomb_eps": 1e-6,

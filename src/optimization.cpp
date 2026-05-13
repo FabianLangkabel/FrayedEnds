@@ -12,7 +12,6 @@ Optimization<NDIM>::~Optimization() {
     Vnuc.clear();
     frozen_occ_orbs.clear();
     active_orbs.clear();
-    frozen_virt_orb.clear();
     orbs_kl.clear();
     coul_orbs_mn.clear();
 }
@@ -21,42 +20,6 @@ template <std::size_t NDIM>
 void Optimization<NDIM>::give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion) {
     Vnuc = madness_process.loadfct(potential);
     nuclear_repulsion_energy = nuclear_repulsion;
-}
-
-template <std::size_t NDIM>
-void Optimization<NDIM>::read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files,
-                                       std::vector<std::string> active_orbs_files,
-                                       std::vector<std::string> frozen_virt_orb_files) {
-    auto start_time = std::chrono::high_resolution_clock::now();
-
-    this->frozen_occ_orbs_files = frozen_occ_orbs_files;
-    this->active_orbs_files = active_orbs_files;
-    this->frozen_virt_orb_files = frozen_virt_orb_files;
-
-    for (int i = 0; i < frozen_occ_orbs_files.size(); i++) {
-        Function<double, NDIM> orb = FunctionFactory<double, NDIM>(*(madness_process.world));
-        load(orb, frozen_occ_orbs_files[i]);
-        frozen_occ_orbs.push_back(orb);
-    }
-
-    for (int i = 0; i < active_orbs_files.size(); i++) {
-        Function<double, NDIM> orb = FunctionFactory<double, NDIM>(*(madness_process.world));
-        load(orb, active_orbs_files[i]);
-        active_orbs.push_back(orb);
-    }
-
-    for (int i = 0; i < frozen_virt_orb_files.size(); i++) {
-        Function<double, NDIM> orb = FunctionFactory<double, NDIM>(*(madness_process.world));
-        load(orb, frozen_virt_orb_files[i]);
-        frozen_virt_orb.push_back(orb);
-    }
-    core_dim = frozen_occ_orbs.size();
-    as_dim = active_orbs.size();
-    froz_virt_dim = frozen_virt_orb.size();
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "ReadOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
 template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs) {
@@ -70,7 +33,6 @@ template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::
     }
     core_dim = frozen_occ_orbs.size();
     as_dim = active_orbs.size();
-    froz_virt_dim = frozen_virt_orb.size();
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
@@ -101,55 +63,6 @@ void Optimization<NDIM>::sort_eigenpairs_descending(madness::Tensor<double>& eig
 
     eigenvalues = sorted_eigenvalues;
     eigenvectors = sorted_eigenvectors;
-}
-
-template <std::size_t NDIM>
-void Optimization<NDIM>::read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file) {
-    auto start_time = std::chrono::high_resolution_clock::now();
-
-    //****************************************
-    // Read active space RDMs
-    //****************************************
-    as_one_rdm = madness::Tensor<double>(as_dim, as_dim);
-    as_two_rdm = madness::Tensor<double>(as_dim, as_dim);
-
-    std::vector<double> one_rdm_data = npy::read_npy<double>(one_rdm_file).data;
-    std::vector<double> two_rdm_data = npy::read_npy<double>(two_rdm_file).data;
-
-    int x = 0;
-    for (int i = 0; i < as_dim; i++) {
-        for (int j = 0; j < as_dim; j++) {
-            as_one_rdm(i, j) = one_rdm_data[x];
-            x++;
-        }
-    }
-
-    x = 0;
-    for (int i = 0; i < as_dim; i++) {
-        for (int j = 0; j < as_dim; j++) {
-            for (int k = 0; k < as_dim; k++) {
-                for (int l = 0; l < as_dim; l++) {
-                    as_two_rdm(i, j, k, l) = two_rdm_data[x];
-                    x++;
-                }
-            }
-        }
-    }
-
-    //****************************************
-    // Rotate active Space Orbitals
-    //****************************************
-    ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
-    Tensor<double> evals(as_dim);
-    syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
-    sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
-    TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
-    TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
-    active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "ReadRDMFiles took " << duration.count() << " seconds" << std::endl;
 }
 
 // this function just takes two lists of doubles, without any information about the shape, might be better to change
@@ -192,87 +105,13 @@ void Optimization<NDIM>::give_rdm_and_rotate_orbitals(std::vector<double> one_rd
     Tensor<double> evals(as_dim);
     syev(as_one_rdm, ActiveSpaceRotationMatrix, evals);
     sort_eigenpairs_descending(ActiveSpaceRotationMatrix, evals);
-    TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
-    TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
+    refinement_utils::TransformMatrix(&as_one_rdm, ActiveSpaceRotationMatrix);
+    refinement_utils::TransformTensor(as_two_rdm, ActiveSpaceRotationMatrix);
     active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "GiveRDMs took " << duration.count() << " seconds" << std::endl;
-}
-
-template <std::size_t NDIM>
-void Optimization<NDIM>::TransformMatrix(madness::Tensor<double>* ObjectMatrix,
-                                   madness::Tensor<double>& TransformationMatrix) {
-    int n = TransformationMatrix.dim(0);
-    madness::Tensor<double> temp = inner(*ObjectMatrix, TransformationMatrix);
-    *ObjectMatrix = inner(transpose(TransformationMatrix), temp);
-}
-
-template <std::size_t NDIM>
-void Optimization<NDIM>::TransformTensor(madness::Tensor<double>& ObjectTensor,
-                                   madness::Tensor<double>& TransformationMatrix) {
-    int n = TransformationMatrix.dim(0);
-    madness::Tensor<double> temp1(n, n, n, n);
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            for (int k2 = 0; k2 < n; k2++) {
-                for (int l = 0; l < n; l++) {
-                    double k_value = 0;
-                    for (int k = 0; k < n; k++) {
-                        k_value += TransformationMatrix(k, k2) * ObjectTensor(i, j, k, l);
-                    }
-                    temp1(i, j, k2, l) = k_value;
-                }
-            }
-        }
-    }
-
-    madness::Tensor<double> temp2(n, n, n, n);
-    for (int i2 = 0; i2 < n; i2++) {
-        for (int j = 0; j < n; j++) {
-            for (int k2 = 0; k2 < n; k2++) {
-                for (int l = 0; l < n; l++) {
-                    double i_value = 0;
-                    for (int i = 0; i < n; i++) {
-                        i_value += TransformationMatrix(i, i2) * temp1(i, j, k2, l);
-                    }
-                    temp2(i2, j, k2, l) = i_value;
-                }
-            }
-        }
-    }
-
-    madness::Tensor<double> temp3(n, n, n, n);
-    for (int i2 = 0; i2 < n; i2++) {
-        for (int j = 0; j < n; j++) {
-            for (int k2 = 0; k2 < n; k2++) {
-                for (int l2 = 0; l2 < n; l2++) {
-                    double l_value = 0;
-                    for (int l = 0; l < n; l++) {
-                        l_value += TransformationMatrix(l, l2) * temp2(i2, j, k2, l);
-                    }
-                    temp3(i2, j, k2, l2) = l_value;
-                }
-            }
-        }
-    }
-
-    madness::Tensor<double> temp4(n, n, n, n);
-    for (int i2 = 0; i2 < n; i2++) {
-        for (int j2 = 0; j2 < n; j2++) {
-            for (int k2 = 0; k2 < n; k2++) {
-                for (int l2 = 0; l2 < n; l2++) {
-                    double j_value = 0;
-                    for (int j = 0; j < n; j++) {
-                        j_value += TransformationMatrix(j, j2) * temp3(i2, j, k2, l2);
-                    }
-                    temp4(i2, j2, k2, l2) = j_value;
-                }
-            }
-        }
-    }
-    ObjectTensor = temp4;
 }
 
 template <std::size_t NDIM>
@@ -885,26 +724,10 @@ void Optimization<NDIM>::rotate_orbitals_back() {
         }
     }
 
-    TransformMatrix(&as_one_rdm, RotationMatrixBack);
-    TransformTensor(as_two_rdm, RotationMatrixBack);
+    refinement_utils::TransformMatrix(&as_one_rdm, RotationMatrixBack);
+    refinement_utils::TransformTensor(as_two_rdm, RotationMatrixBack);
     active_orbs = transform(*(madness_process.world), active_orbs, RotationMatrixBack);
     calculate_all_integrals();
-}
-
-template <std::size_t NDIM>
-void Optimization<NDIM>::save_orbitals(std::string OutputPath) {
-    for (int i = 0; i < core_dim; i++) {
-        std::string base_filename = frozen_occ_orbs_files[i].substr(frozen_occ_orbs_files[i].find_last_of("/\\") + 1);
-        save(frozen_occ_orbs[i], OutputPath + "/" + base_filename);
-    }
-    for (int i = 0; i < as_dim; i++) {
-        std::string base_filename = active_orbs_files[i].substr(active_orbs_files[i].find_last_of("/\\") + 1);
-        save(active_orbs[i], OutputPath + "/" + base_filename);
-    }
-    for (int i = 0; i < froz_virt_dim; i++) {
-        std::string base_filename = frozen_virt_orb_files[i].substr(frozen_virt_orb_files[i].find_last_of("/\\") + 1);
-        save(frozen_virt_orb[i], OutputPath + "/" + base_filename);
-    }
 }
 
 template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> Optimization<NDIM>::get_orbitals() {
@@ -921,49 +744,6 @@ template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<
     return std::make_tuple(fr_core_orbs, act_orbs);
 }
 
-template <std::size_t NDIM>
-void Optimization<NDIM>::save_effective_hamiltonian(std::string OutputPath) {
-    std::vector<double> effective_one_body_integrals_elements;
-    std::vector<double> effective_two_body_integrals_elements;
-
-    madness::Tensor<double> effective_one_body_integrals = as_integrals_one_body;
-    for (int k = 0; k < as_dim; k++) {
-        for (int l = 0; l < as_dim; l++) {
-            for (int a = 0; a < core_dim; a++) {
-                effective_one_body_integrals(k, l) +=
-                    0.5 * nocc *
-                    (2 * core_as_integrals_two_body_akal(a, k, l) - core_as_integrals_two_body_akla(a, k, l));
-            }
-            effective_one_body_integrals_elements.push_back(effective_one_body_integrals(k, l));
-        }
-    }
-
-    for (int k = 0; k < as_dim; k++) {
-        for (int l = 0; l < as_dim; l++) {
-            for (int m = 0; m < as_dim; m++) {
-                for (int n = 0; n < as_dim; n++) {
-                    effective_two_body_integrals_elements.push_back(as_integrals_two_body(k, l, m, n));
-                }
-            }
-        }
-    }
-
-    std::ofstream c_file;
-    c_file.open(OutputPath + "/c.txt");
-    c_file << std::setprecision(15) << (core_total_energy + nuclear_repulsion_energy);
-    c_file.close();
-
-    std::vector<unsigned long> one_e_ints_shape{(unsigned long)as_dim, (unsigned long)as_dim};
-    const npy::npy_data<double> one_e_data{effective_one_body_integrals_elements, one_e_ints_shape, false};
-    npy::write_npy(OutputPath + "/htensor.npy", one_e_data);
-
-    std::vector<unsigned long> two_e_ints_shape{(unsigned long)as_dim, (unsigned long)as_dim, (unsigned long)as_dim,
-                                                (unsigned long)as_dim};
-    const npy::npy_data<double> two_e_data{effective_two_body_integrals_elements, two_e_ints_shape, false};
-    npy::write_npy(OutputPath + "/gtensor.npy", two_e_data);
-}
-
-// the following three functions correspond to SaveEffectiveHamiltonian
 template <std::size_t NDIM>
 double Optimization<NDIM>::get_c() {
     return core_total_energy + nuclear_repulsion_energy;

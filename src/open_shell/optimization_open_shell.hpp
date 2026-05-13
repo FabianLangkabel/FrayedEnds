@@ -11,12 +11,11 @@
 #include <algorithm>
 #include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
-#include "../npy.hpp"
 #include "../functionsaver.hpp"
 #include "../madness_process.hpp"
 #include "../coulomboperator_nd.hpp"
 #include "integrals_open_shell.hpp"
-#include "utility_open_shell.hpp"
+#include "../refinement_utility.hpp"
 #include "open_shell_integral_storage.hpp"
 
 using namespace madness;
@@ -30,7 +29,7 @@ class Optimization_open_shell {
     Optimization_open_shell(MadnessProcess<NDIM>& mp);
     ~Optimization_open_shell();
 
-    open_shell_utils::NumericalParameters num_params;
+    refinement_utils::NumericalParameters num_params;
     void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
         if (Integrator) {

@@ -11,17 +11,29 @@
 #include <algorithm>
 #include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
-#include "npy.hpp"
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 #include "coulomboperator_nd.hpp"
+#include "integrals.hpp"
+#include "refinement_utility.hpp"
 
 using namespace madness;
+namespace nb = nanobind;
+using Numpy2D = nb::ndarray<nb::numpy, double, nb::ndim<2>>;
+using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
 
 template <std::size_t NDIM> class Optimization {
   public:
     Optimization(MadnessProcess<NDIM>& mp);
     ~Optimization();
+
+    refinement_utils::NumericalParameters num_params;
+    void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
+        num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
+        if (Integrator) {
+            Integrator->override_numerical_parameters(num_params);
+        }
+    }
 
     // input
     void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs);
@@ -31,35 +43,33 @@ template <std::size_t NDIM> class Optimization {
     double get_c();
     std::vector<double> get_h_tensor();
     std::vector<double> get_g_tensor();
+    nb::tuple get_effective_hamiltonian();
     std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
-    void read_initial_orbitals(std::vector<std::string> frozen_occ_orbs_files,
-                               std::vector<std::string> active_orbs_files,
-                               std::vector<std::string> frozen_virt_orb_files);
-    void read_rdm_files_and_rotate_orbitals(std::string one_rdm_file, std::string two_rdm_file);
-    void TransformMatrix(madness::Tensor<double>* ObjectMatrix, madness::Tensor<double>& TransformationMatrix);
-    void TransformTensor(madness::Tensor<double>& ObjectTensor, madness::Tensor<double>& TransformationMatrix);
     void calculate_all_integrals();
     void calculate_core_energy();
     void calculate_energies();
     void calculate_lagrange_multiplier();
     double calculate_lagrange_multiplier_element_as_as(int z, int i);
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
+    // core lagrange
     bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter);
     std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
     void rotate_orbitals_back();
-    void save_orbitals(std::string OutputPath);
-    void save_effective_hamiltonian(std::string OutputPath);
+    // core stuff missing of course
+    
+    bool has_core_orbitals;
+    bool refine_core;
 
     // Orthonormalization control
     void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-3);
     std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
-        std::vector<Function<double, NDIM>>& orbitals);
+        std::vector<Function<double, NDIM>>& orbitals); // use integrals stuff
 
     // helper
     void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
-    
+
     int nocc = 2; // spatial orbital = 2; spin orbitals = 1
     double truncation_tol = 1e-6;
     double coulomb_lo = 0.001;
@@ -70,21 +80,17 @@ template <std::size_t NDIM> class Optimization {
   private:
     MadnessProcess<NDIM>& madness_process;
 
+    Integrals<NDIM>* Integrator;
     // Madness + Molecule
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy = 0.0;
     Function<double, NDIM> Vnuc;
 
     // Orbitals
-    std::vector<std::string> frozen_occ_orbs_files;
-    std::vector<std::string> active_orbs_files;
-    std::vector<std::string> frozen_virt_orb_files;
     std::vector<Function<double, NDIM>> frozen_occ_orbs;
     std::vector<Function<double, NDIM>> active_orbs;
-    std::vector<Function<double, NDIM>> frozen_virt_orb;
     int core_dim;
     int as_dim;
-    int froz_virt_dim;
 
     // RDMs
     madness::Tensor<double> ActiveSpaceRotationMatrix;
@@ -109,10 +115,12 @@ template <std::size_t NDIM> class Optimization {
     double highest_error;
     madness::Tensor<double> LagrangeMultiplier_AS_AS;
     madness::Tensor<double> LagrangeMultiplier_AS_Core;
+    // core ref lm
 
     // Stored AS orbital combinations
     std::vector<Function<double, NDIM>> orbs_kl;      // |kl>
     std::vector<Function<double, NDIM>> coul_orbs_mn; // 1/r|mn>
+    std::vector<Function<double, NDIM>> orbs_aa;
 
     // Orthonormalization settings
     std::string orthonormalization_method = "symmetric";

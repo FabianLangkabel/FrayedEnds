@@ -7,13 +7,14 @@
 #include <cstring>
 #include <stdexcept>
 
+// utility functions for open shell and closed shell Optimization and Integrals classes
+
 using namespace madness;
 namespace nb = nanobind;
 using Numpy2D = nb::ndarray<nb::numpy, double, nb::ndim<2>>;
 using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
 
-namespace open_shell_utils {
-
+namespace refinement_utils {
     struct NumericalParameters {
         double truncation_tol = 1e-6;
         double coulomb_lo = 0.001;
