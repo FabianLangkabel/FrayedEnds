@@ -4,6 +4,7 @@
 #include "madness_process.hpp"
 #include <madness/mra/vmra.h>
 #include <madness/chem/nemo.h>
+#include <madness/chem/PNO.h>
 #include <string>
 #include <vector>
 #include <utility>
@@ -84,28 +85,49 @@ class PNOInterface {
 
     SavedFct<3> get_nuclear_potential(); 
     void run(const size_t basis_size);
+    void compute_scf();
+    void compute_cis(const size_t n_excitations);
+    void compute_cispd(const size_t basis_size);
 
     double get_nuclear_repulsion() const { return nuclear_repulsion; };
     std::size_t get_frozen_core_dim() const { return this->nfreeze; };
-
-    std::vector<SavedFct<3>> get_pnos_filtered(const std::string& type_filter = "") const;
-    std::vector<SavedFct<3>> get_gs_orbitals() const;
-    std::vector<SavedFct<3>> get_ex_orbitals() const;
+    std::vector<SavedFct<3>> get_hf_orbitals() const;
+    std::vector<SavedFct<3>> get_mp2_pnos() const;
+    std::vector<SavedFct<3>> get_orbitals() const;
+    std::vector<SavedFct<3>> get_cis_x_orbs() const;
+    std::vector<SavedFct<3>> get_cispd_orbs() const;    
     std::vector<SavedFct<3>> get_sto3g() const;
 
   private:
     MadnessProcess<3>& madness_process;
-
     commandlineparser parser;
-    vecfuncT basis;
-    real_function_3d Vnuc;
-    vecfuncT sto3g;
-    std::vector<real_function_3d> cis_x_functions;
+
+    std::shared_ptr<Nemo> nemo;
+    std::vector<real_function_3d> hf_orbitals; // store HF orbitals
+    real_function_3d Vnuc; // store nuclear potential
+
+    std::vector<madness::PNOPairs> mp2_pairs;
+    std::vector<real_function_3d> mp2_pnos;
+    bool mp2_computed = false; // flag to indicate if MP2 PNOs were computed 
+
+    std::vector<CC_vecfunction> cis_roots;
+    std::vector<std::vector<real_function_3d>> cis_x_per_root; // cis_x_per_root to store x vectors for each root
+    bool cis_computed = false; // flag to indicate if CIS X vectors were computed 
+
+    std::vector<real_function_3d> cispd_pnos;
+
+    std::vector<real_function_3d> basis; // HF orbitals + MP2 PNOs
+    std::vector<real_function_3d> sto3g;
 
   protected:
     size_t nfreeze;
     double nuclear_repulsion;
-    std::vector<double> occ;
-    std::vector<std::pair<size_t, size_t>> ids;
-    std::vector<std::string> labels;
+    double scf_energy;
+    std::vector<double> occ; // occ of HF + MP2 PNOs
+    std::vector<std::pair<size_t, size_t>> ids; // ids of HF + MP2 PNOs
+    std::vector<std::string> labels; 
+
+    std::vector<double> cispd_occ;
+    std::vector<std::pair<size_t, size_t>> cispd_ids;
+    std::vector<std::string> cispd_labels;
 };
