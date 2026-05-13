@@ -240,12 +240,17 @@ NB_MODULE(_frayedends_impl, m) {
         .def(nb::init<MadnessProcess<3>&, const std::string&>())
         .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
         .def("run", &PNOInterface::run)
-        .def("get_sto3g", &PNOInterface::get_sto3g)
-        .def("get_pnos_filtered", &PNOInterface::get_pnos_filtered, nb::arg("type_filter") = "")
+        .def("compute_scf", &PNOInterface::compute_scf)
+        .def("compute_cis", &PNOInterface::compute_cis)
+        .def("compute_cispd", &PNOInterface::compute_cispd)
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
         .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion)
-        .def("get_gs_orbitals", &PNOInterface::get_gs_orbitals)
-        .def("get_ex_orbitals", &PNOInterface::get_ex_orbitals);
+        .def("get_hf_orbitals", &PNOInterface::get_hf_orbitals)
+        .def("get_mp2_pnos", &PNOInterface::get_mp2_pnos)
+        .def("get_orbitals", &PNOInterface::get_orbitals)
+        .def("get_cis_x_orbs", &PNOInterface::get_cis_x_orbs)
+        .def("get_cispd_orbs", &PNOInterface::get_cispd_orbs)
+        .def("get_sto3g", &PNOInterface::get_sto3g);
 
     nb::class_<AtomBasProjector>(m, "AtomBasProjector")
         .def(nb::init<MadnessProcess<3>&, const std::string&, const std::string&>())
