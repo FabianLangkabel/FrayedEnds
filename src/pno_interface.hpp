@@ -94,8 +94,8 @@ class PNOInterface {
     std::vector<SavedFct<3>> get_hf_orbitals() const;
     std::vector<SavedFct<3>> get_mp2_pnos() const;
     std::vector<SavedFct<3>> get_orbitals() const;
-    std::vector<SavedFct<3>> get_cis_x_orbs() const;
-    std::vector<SavedFct<3>> get_cispd_orbs() const;    
+    std::vector<std::vector<SavedFct<3>>> get_cis_x_per_root() const;
+    std::vector<SavedFct<3>> get_cispd_orbitals() const;    
     std::vector<SavedFct<3>> get_sto3g() const;
 
   private:
@@ -115,6 +115,9 @@ class PNOInterface {
     bool cis_computed = false; // flag to indicate if CIS X vectors were computed 
 
     std::vector<real_function_3d> cispd_pnos;
+    std::vector<double> cispd_occ;
+    std::vector<std::pair<size_t, size_t>> cispd_ids;
+    std::vector<std::string> cispd_labels;
 
     std::vector<real_function_3d> basis; // HF orbitals + MP2 PNOs
     std::vector<real_function_3d> sto3g;
@@ -123,11 +126,8 @@ class PNOInterface {
     size_t nfreeze;
     double nuclear_repulsion;
     double scf_energy;
+
     std::vector<double> occ; // occ of HF + MP2 PNOs
     std::vector<std::pair<size_t, size_t>> ids; // ids of HF + MP2 PNOs
     std::vector<std::string> labels; 
-
-    std::vector<double> cispd_occ;
-    std::vector<std::pair<size_t, size_t>> cispd_ids;
-    std::vector<std::string> cispd_labels;
 };

@@ -377,18 +377,6 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
 
         pno_cispd.solve(cispd_pairs);
 
-        pno_cispd.param.set_user_defined_value<std::string>("restart", "all");
-        pno_cispd.param.set_user_defined_value<std::string>("no_opt", "all");
-        pno_cispd.param.set_user_defined_value<std::string>("no_guess", "all");
-        pno_cispd.param.set_user_defined_value<std::string>("adaptive_solver", "none");
-
-        cispd_pairs.clear(); 
-        if (mp2_computed && !mp2_pairs.empty()) {
-            cispd_pairs.push_back(mp2_pairs[0]); 
-        }
-
-        pno_cispd.solve(cispd_pairs);
-
         std::vector<real_function_3d> all_current_pnos;
         std::vector<double> all_current_occ;
         std::vector<std::pair<size_t, size_t>> all_current_ids;
@@ -426,7 +414,7 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
 
         std::vector<std::tuple<double, real_function_3d, std::pair<size_t, size_t>, std::string>> zipped;
 
-        const std::string current_label = "CISPD_Ex" + std::to_string(ex);
+        const std::string current_label = "CISPD_EX" + std::to_string(ex);
         for (auto i = 0; i < all_current_pnos.size(); ++i) {
             zipped.push_back(std::make_tuple(all_current_occ[i], all_current_pnos[i], all_current_ids[i], current_label));
         }
@@ -449,7 +437,7 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
             cispd_pnos_per_ex[ex].push_back(std::get<1>(zipped[i]));
             cispd_occ_per_ex[ex].push_back(std::get<0>(zipped[i]));
             cispd_ids_per_ex[ex].push_back(std::get<2>(zipped[i]));
-            cispd_labels_per_ex[ex].push_back("CISPD_Ex" + std::to_string(ex));
+            cispd_labels_per_ex[ex].push_back("CISPD_EX" + std::to_string(ex));
         }
 
         this->cispd_pnos.insert(cispd_pnos.end(), cispd_pnos_per_ex[ex].begin(), cispd_pnos_per_ex[ex].end());
@@ -514,19 +502,30 @@ std::vector<SavedFct<3>> PNOInterface::get_orbitals() const {
     return hf;
 }
 
-std::vector<SavedFct<3>> PNOInterface::get_cis_x_orbs() const {
-    std::vector<SavedFct<3>> cis_orbs;
+std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
+    std::vector<std::vector<SavedFct<3>>> result;
     for (size_t ex = 0; ex < cis_x_per_root.size(); ++ex) {
+        std::vector<SavedFct<3>> roots;
         for (const auto& func : cis_x_per_root[ex]) {
             SavedFct<3> pnorb(func);
             pnorb.info = "type=CIS_X_EX" + std::to_string(ex) + " occ=1.0 pair1=0 pair2=0";
-            cis_orbs.push_back(pnorb);
+            roots.push_back(pnorb);
         }
+
+        if (madness_process.world->rank() == 0) {
+            for (const auto& orb : roots) {
+                std::cout << "CIS X for exitation " << ex <<" info: " << orb.info << "\n";
+            }
+        }
+        
+        result.push_back(roots);
     }
-    return cis_orbs;
+
+    
+    return result;
 }
 
-std::vector<SavedFct<3>> PNOInterface::get_cispd_orbs() const {
+std::vector<SavedFct<3>> PNOInterface::get_cispd_orbitals() const {
     std::vector<SavedFct<3>> cispd_orbs;
     for (size_t i = 0; i < cispd_pnos.size(); ++i) {
         SavedFct<3> pnorb(cispd_pnos[i]);
@@ -535,6 +534,12 @@ std::vector<SavedFct<3>> PNOInterface::get_cispd_orbs() const {
         pnorb.info += "pair1=" + std::to_string(cispd_ids[i].first + nfreeze) + " ";
         pnorb.info += "pair2=" + std::to_string(cispd_ids[i].second + nfreeze);
         cispd_orbs.push_back(pnorb);
+    }
+
+    if (madness_process.world->rank() == 0) {
+        for (const auto& orb : cispd_orbs) {
+            std::cout << "CISPD info: " << orb.info << "\n";
+        }
     }
     return cispd_orbs;
 }

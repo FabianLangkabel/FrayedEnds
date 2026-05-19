@@ -248,8 +248,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_hf_orbitals", &PNOInterface::get_hf_orbitals)
         .def("get_mp2_pnos", &PNOInterface::get_mp2_pnos)
         .def("get_orbitals", &PNOInterface::get_orbitals)
-        .def("get_cis_x_orbs", &PNOInterface::get_cis_x_orbs)
-        .def("get_cispd_orbs", &PNOInterface::get_cispd_orbs)
+        .def("get_cis_x_per_root", &PNOInterface::get_cis_x_per_root)
+        .def("get_cispd_orbitals", &PNOInterface::get_cispd_orbitals)
         .def("get_sto3g", &PNOInterface::get_sto3g);
 
     nb::class_<AtomBasProjector>(m, "AtomBasProjector")
