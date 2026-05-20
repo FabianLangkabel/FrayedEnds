@@ -10,7 +10,9 @@ from .moleculargeometry import MolecularGeometry
 
 class MadPNO:
     _orbitals = None # ground state orbitals (HF + MP2 PNOs) 
-    _ex_orbitals = None # excited state orbitals (CIS X vectors + CISPD PNOs)
+    _cis_per_root = None # CIS X functions per root 
+    _cis_orbitals = None # flat list with CIS X functions
+    _cispd_orbitals = None # CISPD PNOs for excited states
     _h = None  # one-body tensor
     _g = None  # two-body tensor
     _c = 0.0  # constant term
@@ -24,11 +26,31 @@ class MadPNO:
         return self.get_orbitals(*args, **kwargs)
 
     @property
-    def ex_orbitals(self, *args, **kwargs):
+    def cis_per_root(self):
         """
-        Convenience access for excited state orbitals
+        CIS X vectors per root for excited states
         """
-        return self.get_ex_orbitals(*args, **kwargs)
+        if self._cis_per_root is not None:
+            return self._cis_per_root
+        raise Exception("CIS orbitals not yet computed. Call compute_cis() first.")
+    
+    @property
+    def cis_orbitals(self):
+        """
+        flat orthonormalized CIS X vector for excited states
+        """
+        if self._cis_orbitals is not None:
+            return self._cis_orbitals
+        raise Exception("CIS orbitals not yet computed. Call compute_cis() first and then orthonormalize_cis().")
+    
+    @property
+    def cispd_orbitals(self):
+        """
+        CISPD PNOs for excited states
+        """
+        if self._cispd_orbitals is not None:
+            return self._cispd_orbitals
+        raise Exception("CISPD orbitals not yet computed. Call compute_cispd() first.")
 
     def __init__(
         self,
@@ -41,7 +63,6 @@ class MadPNO:
         maxrank=None,
         diagonal=True,
         frozen_core=True,
-        cispd=-1,
         *args,
         **kwargs,
     ):
@@ -91,7 +112,6 @@ class MadPNO:
             maxrank=maxrank,
             diagonal=diagonal,
             frozen_core=frozen_core,
-            cispd=cispd,
             *args,
             **kwargs,
         )
@@ -103,23 +123,60 @@ class MadPNO:
 
     @redirect_output("madpno.log")
     def compute_orbitals(self, n_orbitals, *args, **kwargs):
+        # Calculate HF + MP2 PNOs (ground state orbitals)
         self.impl.run(n_orbitals)
         # package the orbitals
-        self._orbitals = self.impl.get_gs_orbitals()
-        self._ex_orbitals = self.impl.get_ex_orbitals()
+        self._orbitals = self.impl.get_orbitals()
         self.cleanup(*args, **kwargs)
+
+    @redirect_output("cis.log")
+    def compute_cis(self, n_excitation, *args, **kwargs):
+        # Compute cis x functions 
+        if self._orbitals is None:
+            raise Exception("compute_orbitals() must be called before compute_cis()")
+        self.impl.compute_cis(n_excitation)
+        self._cis_per_root = self.impl.get_cis_x_per_root()
+
+        return self._cis_per_root
+
+    def orthonormalize_cis(self, integrals_obj, *args, **kwargs):
+        if self._cis_per_root is None: 
+            raise Exception("CIS orbitals not yet computed. Call compute_cis() first")
+        
+        hf_mp2_ref = list(self.orbitals)
+
+        if self._cis_per_root:
+            for ex in range(len(self._cis_per_root)):
+                x_funcs = self._cis_per_root[ex]
+                if not x_funcs:
+                    continue
+                x_funcs = integrals_obj.project_out(hf_mp2_ref, x_funcs)
+                if len(x_funcs) > 1:
+                    x_funcs = integrals_obj.orthonormalize(x_funcs, "symmetric", 1e-7)
+                self._cis_per_root[ex] = x_funcs
+                hf_mp2_ref.extend(x_funcs)
+
+        cis_flat = []
+        for root in self._cis_per_root:
+            cis_flat.extend(root)
+        
+        self._cis_orbitals = cis_flat
+        return self._cis_orbitals
+    
+    @redirect_output("cispd.log")
+    def compute_cispd(self, n_orbitals, *args, **kwargs):
+        if self._cis_per_root is None:
+            raise Exception("compute_cis() must be called before compute_cispd()")
+        self.impl.compute_cispd(n_orbitals)
+        self._cispd_orbitals = self.impl.get_cispd_orbitals()
+        self.cleanup(*args, **kwargs)
+        return self._cispd_orbitals
 
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is not None:
             return self._orbitals
         else:
             raise Exception("ground state orbitals not yet computed")
-
-    def get_ex_orbitals(self, *args, **kwargs):
-        if self._ex_orbitals is not None:
-            return self._ex_orbitals
-        else:
-            raise Exception("excited state orbitals not yet computed")
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
@@ -139,6 +196,53 @@ class MadPNO:
         if diagonal:
             return diagonal
         return {**diagonal, **off_diagonal}
+    
+    def get_ex_pno_groupings(self, diagonal=True, *args, **kwargs):
+        if self._cis_orbitals is None or self._cispd_orbitals is None:
+            raise Exception("No excited state orbitals computed yet.")
+        
+        offset = len(self._orbitals) 
+        diagonal_group = {}
+        off_diagonal_group = {}
+        ex_orbitals = self._cis_orbitals + self._cispd_orbitals
+        info = get_function_info(ex_orbitals)
+    
+        for k, x in enumerate(info):
+            label = x["type"] 
+            if "EX" not in label:
+                continue
+            ex = int(label.split("EX")[-1])
+
+            x = int(info[k]["pair1"])
+            y = int(info[k]["pair2"])
+
+            if x == y:
+                if ex not in diagonal_group:
+                    diagonal_group[ex] = {}
+                if x not in diagonal_group[ex]:
+                    diagonal_group[ex][x] = []
+                
+                diagonal_group[ex][x].append(k + offset)
+            else: 
+                if ex not in off_diagonal_group:
+                    off_diagonal_group[ex] = {}
+                if (x,y) not in off_diagonal_group[ex]:
+                    off_diagonal_group[ex][(x,y)] = []
+                
+                off_diagonal_group[ex][(x,y)].append(k + offset)
+
+        if diagonal:
+            return diagonal_group
+        
+        combined = {}
+        all_excitations = set(diagonal_group.keys()).union(off_diagonal_group.keys())
+
+        for ex in all_excitations:
+            ex_diagonal = diagonal_group.get(ex, {})
+            ex_off_diagonal = off_diagonal_group.get(ex, {})
+            combined[ex] = {**ex_diagonal, **ex_off_diagonal}
+        
+        return combined
 
     def get_spa_edges(self, frozen_core=True):
         pno_groupings = self.get_pno_groupings(diagonal=True)
@@ -165,6 +269,17 @@ class MadPNO:
             edges = [edge for edge in edges if len(edge) != 0 and edge[0] not in occf]
             # correct edges with offset
             edges = [tuple([y - nof for y in x]) for x in edges]
+        return edges
+    
+    def get_ex_spa_edges(self, excitation, frozen_core=True):
+        all_groupings = self.get_ex_pno_groupings(diagonal=True)
+        pno_grouping_ex = all_groupings.get(excitation, {}) # get pno_grouping per excitation
+        edges = [tuple(sorted(x)) for x in pno_grouping_ex.values() if len(x) > 0]
+        nfreeze = self.impl.get_frozen_core_dim()
+
+        if frozen_core:
+            edges = [tuple([y - nfreeze for y in edge]) for edge in edges]
+
         return edges
 
     def get_nuclear_potential(self, *args, **kwargs):
@@ -208,12 +323,6 @@ class MadPNO:
             "localize": "boys",
         }
         data["nemo"] = {"ncf": "( none , 1.0)"}
-        if cispd > -1:
-            data["tdhf"] = {
-                "nexcitations": cispd + 1,
-                "thresh": 1.0e-5,
-                "restart": "no_restart"
-            }
 
         data["pno"] = {
             "maxrank": maxrank,
@@ -241,7 +350,7 @@ class MadPNO:
                 + '"'
             )
 
-        for item in ["dft", "pno", "nemo", "tdhf", "plot"]:
+        for item in ["dft", "pno", "nemo", "plot"]:
             if item in data and data[item]:
                 input_str += ' --{}="'.format(item)
                 for k, v in data[item].items():
