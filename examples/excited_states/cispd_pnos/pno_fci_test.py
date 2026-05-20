@@ -16,31 +16,40 @@ molecule.add_atom(0.0, 0.0, 0.5, "H")
 geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 
 world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+integrals = fe.Integrals3D(world)
 
-madpno = fe.MadPNO(world, geom, n_orbitals=12)  # ground state + 2 excited states
+madpno = fe.MadPNO(world, geom, n_orbitals=4)  # ground state + 2 excited states 
 
 gs_orbs = madpno.get_orbitals()
-# ex_orbs = madpno.get_ex_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
 
-#for i in range(len(ex_orbs)):
-#    world.cube_plot(f"ex_orb{i}", ex_orbs[i], molecule, zoom=4.0)
+cis_x_per_root = madpno.compute_cis(n_excitation=2)
+cis_orbs = madpno.orthonormalize_cis(integrals_obj=integrals)
 
-combined_orbs = gs_orbs #+ ex_orbs
+for i in range(len(cis_orbs)):
+    world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
+
+cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+
+for i in range(len(cispd_orbs)):
+    world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)
+
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 
-integrals = fe.Integrals3D(world)
+orbs = gs_orbs + cis_orbs + cispd_orbs
+orbs = integrals.orthonormalize(orbitals=orbs)
 
-combined_orbs = integrals.orthonormalize(orbitals=combined_orbs)
+for i in range(len(orbs)):
+    world.cube_plot(f"orb{i}", orbs[i], molecule, zoom=4.0)
 
-T = integrals.compute_kinetic_integrals(combined_orbs)
-V = integrals.compute_potential_integrals(combined_orbs, Vnuc)
+T = integrals.compute_kinetic_integrals(orbs)
+V = integrals.compute_potential_integrals(orbs, Vnuc)
 H_core = T + V
-G = integrals.compute_two_body_integrals(combined_orbs, ordering="chem").elems
-n_orbitals = len(combined_orbs)
+G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
+n_orbitals = len(orbs)
 
 e_roots, fcivecs = fci.direct_spin0.kernel(H_core, G, n_orbitals, n_electrons, nroots=3)
 
