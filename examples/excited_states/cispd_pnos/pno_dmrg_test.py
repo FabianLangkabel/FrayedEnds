@@ -35,6 +35,7 @@ for i in range(len(cis_orbs)):
     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
 cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+cispd_orbs = madpno.orthonormalize_cispd(integrals_obj=integrals)
 
 for i in range(len(cispd_orbs)):
     world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)
@@ -86,5 +87,11 @@ for i in range(len(idx)):
 sa_1pdm = sa_1pdm[idx_back][:, idx_back]
 sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
 sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
+
+natural_orbs, occ_n, vec = integrals.transform_to_natural_orbitals(orbs, sa_1pdm)
+print("Natural orbital occupation: ", occ_n)
+
+for i in range(len(natural_orbs)):
+    world.cube_plot(f"nat_orb{i}", natural_orbs[i], molecule, zoom=4.0)
 
 fe.cleanup(globals())

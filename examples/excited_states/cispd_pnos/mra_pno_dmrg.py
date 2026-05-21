@@ -58,6 +58,7 @@ for i in range(len(cis_orbs)):
 
 cispd_start = time.perf_counter()
 cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+cispd_orbs = madpno.orthonormalize_cispd(integrals_obj=integrals)
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD PNOs took %.2f seconds" % cispd_time)
