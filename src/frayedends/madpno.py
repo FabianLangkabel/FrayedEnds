@@ -143,7 +143,7 @@ class MadPNO:
         if self._cis_per_root is None: 
             raise Exception("CIS orbitals not yet computed. Call compute_cis() first")
         
-        hf_mp2_ref = list(self.orbitals)
+        hf_mp2_ref = list(self._orbitals)
 
         if self._cis_per_root:
             for ex in range(len(self._cis_per_root)):
@@ -170,6 +170,21 @@ class MadPNO:
         self.impl.compute_cispd(n_orbitals)
         self._cispd_orbitals = self.impl.get_cispd_orbitals()
         self.cleanup(*args, **kwargs)
+        return self._cispd_orbitals
+    
+    def orthonormalize_cispd(self, integrals_obj, *args, **kwargs):
+        if self._cispd_orbitals is None:
+            raise Exception("CISPD orbitals not yet computed. Call compute_cispd() first.")
+        if self._cis_orbitals is None:
+            raise Exception("CIS orbitals not yet computed. Call compute_cis() and orthonormalize_cis() first.")
+        
+        reference = list(self._orbitals) + list(self._cis_orbitals)
+        cispd_orbitals_normalized = integrals_obj.project_out(reference, list(self._cispd_orbitals))
+
+        if len(cispd_orbitals_normalized) > 1:
+            cispd_orbitals_normalized = integrals_obj.orthonormalize(cispd_orbitals_normalized,"symmetric", 1e-7)
+
+        self._cispd_orbitals = cispd_orbitals_normalized
         return self._cispd_orbitals
 
     def get_orbitals(self, *args, **kwargs):
