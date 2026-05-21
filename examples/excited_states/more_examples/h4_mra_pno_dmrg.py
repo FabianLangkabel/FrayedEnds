@@ -203,4 +203,7 @@ for d in distance:
     with open("distance_times_pno_dmrg_oo.dat", "a") as f:
         f.write(f"{reported_distance:.3f} {dist_time:.2f}\n")
 
-    fe.cleanup(globals())
+    del integrals
+    del opti
+    del madpno
+    del world
