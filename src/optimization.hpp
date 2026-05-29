@@ -30,36 +30,57 @@ template <std::size_t NDIM> class Optimization {
     refinement_utils::NumericalParameters num_params;
     void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
-        if (Integrator) {
-            Integrator->override_numerical_parameters(num_params);
-        }
+        Integrator.override_numerical_parameters(num_params);
+    }
+
+    std::array<std::tuple<std::string, double>, 8> get_numerical_parameters() {
+        return {std::make_tuple("truncation_tol", num_params.truncation_tol),
+                std::make_tuple("coulomb_lo", num_params.coulomb_lo),
+                std::make_tuple("coulomb_eps", num_params.coulomb_eps),
+                std::make_tuple("BSH_lo", num_params.BSH_lo),
+                std::make_tuple("BSH_eps", num_params.BSH_eps),
+                std::make_tuple("Integrator truncation_tol", Integrator.num_params.truncation_tol),
+                std::make_tuple("Integrator coulomb_lo", Integrator.num_params.coulomb_lo),
+                std::make_tuple("Integrator coulomb_eps", Integrator.num_params.coulomb_eps)};
     }
 
     // input
     void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs);
-    void give_rdm_and_rotate_orbitals(std::vector<double> one_rdm_elements, std::vector<double> two_rdm_elements);
+    void give_rdm_and_rotate_orbitals(Numpy2D& one_rdms, Numpy4D& two_rdms);
 
     // output
-    double get_c();
-    std::vector<double> get_h_tensor();
-    std::vector<double> get_g_tensor();
     nb::tuple get_effective_hamiltonian();
     std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
     void calculate_all_integrals();
-    void calculate_core_energy();
     void calculate_energies();
     void calculate_lagrange_multiplier();
     double calculate_lagrange_multiplier_element_as_as(int z, int i);
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
-    // core lagrange
-    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter);
+    double calculate_lagrange_multiplier_element_core_core(int z, int c); // Core refinement
+    double calculate_lagrange_multiplier_element_core_as(int z, int c); // Core refinement
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c);
     std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
+    std::vector<Function<double, NDIM>> get_all_core_orbital_updates(); // Core refinement
     void rotate_orbitals_back();
     // core stuff missing of course
+
+    // Old stuff for testing
+    void calculate_all_integrals_old();
+    void calculate_core_energy_old();
+    void calculate_lagrange_multiplier_old();
+    void calculate_energies_old();
+    double calculate_lagrange_multiplier_element_as_as_old(int z, int i);
+    double calculate_lagrange_multiplier_element_as_core_old(int z, int i);
+    bool optimize_orbitals_old(double optimization_thresh, double NO_occupation_thresh, int maxiter);
+    std::vector<Function<double, NDIM>> get_all_active_orbital_updates_old(std::vector<int> orbital_indicies_for_update);
+    double get_c();
+    std::vector<double> get_h_tensor();
+    std::vector<double> get_g_tensor();
+    double highest_error;
     
-    bool has_core_orbitals;
+
     bool refine_core;
 
     // Orthonormalization control
@@ -67,20 +88,10 @@ template <std::size_t NDIM> class Optimization {
     std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
         std::vector<Function<double, NDIM>>& orbitals); // use integrals stuff
 
-    // helper
-    void sort_eigenpairs_descending(madness::Tensor<double>& eigenvectors, madness::Tensor<double>& eigenvalues);
-
-    int nocc = 2; // spatial orbital = 2; spin orbitals = 1
-    double truncation_tol = 1e-6;
-    double coulomb_lo = 0.001;
-    double coulomb_eps = 1e-6;
-    double BSH_lo = 0.001;
-    double BSH_eps = 1e-6;
-
   private:
     MadnessProcess<NDIM>& madness_process;
 
-    Integrals<NDIM>* Integrator;
+    Integrals<NDIM> Integrator;
     // Madness + Molecule
     std::vector<std::vector<double>> atoms;
     double nuclear_repulsion_energy = 0.0;
@@ -107,20 +118,33 @@ template <std::size_t NDIM> class Optimization {
     madness::Tensor<double> core_as_integrals_two_body_akla; // (a,k,l)
     madness::Tensor<double> core_as_integrals_two_body_abak; // (a,b,k), Optimales Integral
     madness::Tensor<double> core_as_integrals_two_body_baak; // (a,b,k), Optimales Integral
+    
+    // Integrals only necessary for core refinement
+    madness::Tensor<double> core_core_integrals_one_body_ab; // (a,b)
+    madness::Tensor<double> core_as_integrals_two_body_baca; // (a,b,c)
+    madness::Tensor<double> core_as_integrals_two_body_baac; // (a,b,c)
+    madness::Tensor<double> core_as_integrals_two_body_akcl; // (a,k,c,l)
+    madness::Tensor<double> core_as_integrals_two_body_aklc; // (a,k,l,c)
 
     // Energies
     double core_total_energy;
 
-    // Refinement
-    double highest_error;
+    // AS Refinement
+    double highest_as_error;
     madness::Tensor<double> LagrangeMultiplier_AS_AS;
     madness::Tensor<double> LagrangeMultiplier_AS_Core;
-    // core ref lm
+    //Core Refinement
+    double highest_core_error;
+    madness::Tensor<double> LagrangeMultiplier_Core_Core;
+    madness::Tensor<double> LagrangeMultiplier_Core_AS;
 
     // Stored AS orbital combinations
     std::vector<Function<double, NDIM>> orbs_kl;      // |kl>
     std::vector<Function<double, NDIM>> coul_orbs_mn; // 1/r|mn>
-    std::vector<Function<double, NDIM>> orbs_aa;
+    
+    // Stored core orbital combinations
+    std::vector<Function<double, NDIM>> orbs_aa; // |aa>
+    std::vector<Function<double, NDIM>> coul_orbs_aa; // 1/r|aa>
 
     // Orthonormalization settings
     std::string orthonormalization_method = "symmetric";

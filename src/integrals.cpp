@@ -46,7 +46,7 @@ void Integrals<NDIM>::update_core_integral_combinations(const std::vector<Functi
 
 template <std::size_t NDIM>
 void Integrals<NDIM>::update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa, std::vector<Function<double, NDIM>> &coul_orbs_aa) {
-    // Precompute orbs_aa and coul_orbs_aa as well (only useful for core orbital refinement)
+    // Precompute orbs_aa and coul_orbs_aa as well
     orbs_aa.clear();
     coul_orbs_aa.clear();
 
@@ -552,10 +552,8 @@ std::array<Tensor<double>, 2> Integrals<NDIM>::compute_core_as_2e_integrals_ener
         std::vector<Function<double, NDIM>> coul_orbs_ak = apply(*(madness_process.world), *coul_op_parallel, orbs_ak);
         coul_orbs_ak = truncate(coul_orbs_ak, num_params.truncation_tol);
 
-        std::vector<Function<double, NDIM>> orbs_ka = orbs_ak;
-
         // <ak|la> = <ka|al>
-        Tensor<double> Inner_prods_akla = matrix_inner(*(madness_process.world), orbs_ka, coul_orbs_ak, false);
+        Tensor<double> Inner_prods_akla = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_ak, false);
         for (int k = 0; k < active_orbitals.size(); k++) {
             for (int l = 0; l < active_orbitals.size(); l++) {
                 core_as_integrals_two_body_akla(a, k, l) = Inner_prods_akla(l, k);
@@ -650,7 +648,7 @@ std::array<Tensor<double>, 4> Integrals<NDIM>::compute_core_as_2e_integrals_core
     Tensor<double> core_as_integrals_two_body_baca(core_orbitals.size(), core_orbitals.size(), core_orbitals.size()); //stored as (a,b,c)
     Tensor<double> core_as_integrals_two_body_baac(core_orbitals.size(), core_orbitals.size(), core_orbitals.size()); //stored as (a,b,c)
     Tensor<double> core_as_integrals_two_body_akcl(core_orbitals.size(), active_orbitals.size(), core_orbitals.size(), active_orbitals.size()); //stored as (a,k,c,l)
-    Tensor<double> core_as_integrals_two_body_aklc(core_orbitals.size(), active_orbitals.size(), core_orbitals.size(), active_orbitals.size()); //stored as (a,k,c,l)
+    Tensor<double> core_as_integrals_two_body_aklc(core_orbitals.size(), active_orbitals.size(), active_orbitals.size(), core_orbitals.size()); //stored as (a,k,l,c)
 
     auto t1 = std::chrono::high_resolution_clock::now();
     
@@ -718,26 +716,6 @@ std::array<Tensor<double>, 4> Integrals<NDIM>::compute_core_as_2e_integrals_core
 
     return std::array<Tensor<double>, 4>{core_as_integrals_two_body_baca, core_as_integrals_two_body_baac, core_as_integrals_two_body_akcl, core_as_integrals_two_body_aklc};
 }
-
-/*integrals.hpp file sollte größtenteils passen, 
-    was ich genau mit der orthonomalisierung mache muss ich mir noch überlegen, da
-    kann der code in optimization eventuell auch noch raus. 
-    nächste schritte:
-
-    -testing mit optimization/ alten versionen, funktioniert alles wies soll?
-        erste tests sagen ja, aber 2e_as_refinement und 2e_core_refinement noch nicht getestet.
-     -optimization anpassen an integrale, evtl noch weitere integral funktionen hinzufügen
-    -integral3d und integrals2d in eine klasse? das gleiche mit anderen?
-
-    */
-
-
-
-
-
-
-
-
 
 template <std::size_t NDIM>
 std::vector<SavedFct<NDIM>> Integrals<NDIM>::normalize(std::vector<SavedFct<NDIM>> all_orbs) {

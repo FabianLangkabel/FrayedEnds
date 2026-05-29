@@ -35,6 +35,12 @@ template <std::size_t NDIM> class Integrals {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, 0.001, 1e-6}; //BSH parameters irrelevant for integrals class
     }
 
+    std::array<std::tuple<std::string, double>, 3> get_numerical_parameters() {
+        return {std::make_tuple("truncation_tol", num_params.truncation_tol),
+                std::make_tuple("coulomb_lo", num_params.coulomb_lo),
+                std::make_tuple("coulomb_eps", num_params.coulomb_eps)};
+    }
+
     // Utility functions
     std::vector<Function<double, NDIM>> read_orbitals(std::vector<SavedFct<NDIM>> orbs);
     void update_as_integral_combinations(const std::vector<Function<double, NDIM>> &orbitals, std::vector<Function<double, NDIM>> &orbs_kl, std::vector<Function<double, NDIM>> &coul_orbs_mn);

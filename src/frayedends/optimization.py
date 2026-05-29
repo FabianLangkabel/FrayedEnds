@@ -76,23 +76,26 @@ class Optimization3D:
     def orbitals(self, *args, **kwargs):
         return self.get_orbitals(*args, **kwargs)
 
-    def __init__(self, madworld: MadWorld3D, Vnuc: SavedFct3D, nuc_repulsion: float, *args, **kwargs):
+    def __init__(self, madworld: MadWorld3D, Vnuc: SavedFct3D, nuc_repulsion: float, **kwargs):
         # setup the numerical environment for orbital refinement.
         self.impl = OptInterface3D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
+        self.override_numerical_parameters(**kwargs)
+
+    def override_numerical_parameters(self, **kwargs):
         for k, v in kwargs.items():
             if k in self.opt_parameters:
                 self.opt_parameters[k] = v
             else:
                 raise ValueError(f"Unknown parameter: {k}")
-
-        self.impl.nocc = self.opt_parameters["nocc"]
-        self.impl.truncation_tol = self.opt_parameters["truncation_tol"]
-        self.impl.coulomb_lo = self.opt_parameters["coulomb_lo"]
-        self.impl.coulomb_eps = self.opt_parameters["coulomb_eps"]
-        self.impl.BSH_lo = self.opt_parameters["BSH_lo"]
-        self.impl.BSH_eps = self.opt_parameters["BSH_eps"]
+        self.impl.override_numerical_parameters(
+            self.opt_parameters["truncation_tol"],
+            self.opt_parameters["coulomb_lo"],
+            self.opt_parameters["coulomb_eps"],
+            self.opt_parameters["BSH_lo"],
+            self.opt_parameters["BSH_eps"],
+        )
 
     def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
@@ -110,6 +113,56 @@ class Optimization3D:
 
     @redirect_output("madopt.log")
     def optimize_orbs(
+        self,
+        orbitals: list,
+        rdm1: np.ndarray,
+        rdm2: np.ndarray,
+        opt_thresh=1.0e-4,
+        occ_thresh=1.0e-5,
+        maxiter=3,
+        refine_core=False,
+        *args,
+        **kwargs,
+    ):
+        r"""
+        this function performs the orbital refinement
+        input:
+         - one body reduced density matrix (rdm1) and two body reduced density matrix (rdm2) as 2 and 4 dimensional numpy arrays, respectively
+           expects ordering of the form:
+              rdm1[i,j] = \sum_\sigma \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
+              rdm2[i,j,k,l] = \sum_{\sigma,\tau} \langle a_{i,\sigma}^\dagger a_{j,\tau}^\dagger a_{l,\tau} a_{k,\sigma} \rangle
+         - orbitals is either a list of SavedFct3D objects (if all orbitals are active) or a list/tuple of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct3D objects.
+         - opt_thresh is the threshold for convergence of the orbital refinement (based on the change of the energy)
+         - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
+         - maxiter is the maximum number of iterations for the orbital refinement
+        output:
+         - list of frozen core orbitals, list of refined active orbitals and convergence flag
+        """
+
+        # Check if orbitals is a list of SavedFct3D or a list of [frozen_core, active] lists
+        if isinstance(orbitals[0], SavedFct3D):
+            frozen_core_orbs = []
+            active_orbs = orbitals
+        else:
+            frozen_core_orbs = orbitals[0]
+            active_orbs = orbitals[1]
+
+        if (len(active_orbs) != np.shape(rdm1)[0]) or (len(active_orbs) != np.shape(rdm2)[0]):
+            raise ValueError(
+                f"Number of active orbitals ({len(active_orbs)}) does not match the rdms dimensions ({np.shape(rdm1)} and {np.shape(rdm2)})."
+            )
+
+        self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
+        self.impl.give_initial_orbitals(frozen_core_orbs, active_orbs)
+        self.impl.give_rdm_and_rotate_orbitals(rdm1, rdm2)
+        self.converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter, refine_core)
+        self.impl.rotate_orbitals_back()
+
+        self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
+        return self._fr_core_orbitals, self._active_orbitals, self.converged
+
+    @redirect_output("madopt.log")
+    def optimize_orbs_old(
         self,
         orbitals: list,
         rdm1: np.ndarray,
@@ -153,11 +206,11 @@ class Optimization3D:
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
         self.impl.give_initial_orbitals(frozen_core_orbs, active_orbs)
         self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
-        self.impl.calculate_all_integrals()
-        self.impl.calculate_core_energy()
-        self.impl.calculate_energies()
+        self.impl.calculate_all_integrals_old()
+        self.impl.calculate_core_energy_old()
+        self.impl.calculate_energies_old()
 
-        self.converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter)
+        self.converged = self.impl.optimize_orbitals_old(opt_thresh, occ_thresh, maxiter)
         self.impl.rotate_orbitals_back()
 
         self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
@@ -180,6 +233,9 @@ class Optimization3D:
         self._h = self.impl.get_h_tensor()
         self._g = self.impl.get_g_tensor()
         return self._c, self._h, self._g
+    
+    def get_effective_hamiltonian(self, *args, **kwargs):
+        return self.impl.get_effective_hamiltonian()
 
     def get_c(
         self, *args, **kwargs
@@ -187,15 +243,12 @@ class Optimization3D:
         self._c = self.impl.get_c()
         return self._c
 
-    def get_opt_parameters(self):
-        return {
-            "nocc": self.impl.nocc,
-            "truncation_tol": self.impl.truncation_tol,
-            "coulomb_lo": self.impl.coulomb_lo,
-            "coulomb_eps": self.impl.coulomb_eps,
-            "BSH_lo": self.impl.BSH_lo,
-            "BSH_eps": self.impl.BSH_eps,
-        }
+    def get_numerical_parameters(self):
+        params = self.impl.get_numerical_parameters()
+        p_dict = {}
+        for i in params:
+            p_dict[i[0]] = i[1]
+        return p_dict
 
 
 class Optimization2D:

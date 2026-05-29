@@ -170,11 +170,12 @@ NB_MODULE(_frayedends_impl, m) {
 
     nb::class_<Optimization<3>>(m, "Optimization3D")
         .def(nb::init<MadnessProcess<3>&>())
+        .def("override_numerical_parameters", &Optimization<3>::override_numerical_parameters)
+        .def("get_numerical_parameters", &Optimization<3>::get_numerical_parameters)
         .def("give_initial_orbitals", &Optimization<3>::give_initial_orbitals)
         .def("give_rdm_and_rotate_orbitals", &Optimization<3>::give_rdm_and_rotate_orbitals)
         .def("give_potential_and_repulsion", &Optimization<3>::give_potential_and_repulsion)
         .def("calculate_all_integrals", &Optimization<3>::calculate_all_integrals)
-        .def("calculate_core_energy", &Optimization<3>::calculate_core_energy)
         .def("calculate_energies", &Optimization<3>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<3>::calculate_lagrange_multiplier)
         .def("calculate_lagrange_multiplier_element_as_as",
@@ -186,15 +187,20 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<3>::rotate_orbitals_back)
         .def("set_orthonormalization_method", &Optimization<3>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<3>::get_orbitals)
+        .def("get_effective_hamiltonian", &Optimization<3>::get_effective_hamiltonian)
+        .def("calculate_all_integrals_old", &Optimization<3>::calculate_all_integrals_old)
+        .def("calculate_energies_old", &Optimization<3>::calculate_energies_old)
+        .def("calculate_lagrange_multiplier_old", &Optimization<3>::calculate_lagrange_multiplier_old)
+        .def("calculate_lagrange_multiplier_element_as_as_old",
+             &Optimization<3>::calculate_lagrange_multiplier_element_as_as_old)
+        .def("calculate_lagrange_multiplier_element_as_core_old",
+             &Optimization<3>::calculate_lagrange_multiplier_element_as_core_old)
+        .def("optimize_orbitals_old", &Optimization<3>::optimize_orbitals_old)
+        .def("get_all_active_orbital_updates_old", &Optimization<3>::get_all_active_orbital_updates_old)
+        .def("calculate_core_energy_old", &Optimization<3>::calculate_core_energy_old)
         .def("get_c", &Optimization<3>::get_c)
         .def("get_h_tensor", &Optimization<3>::get_h_tensor)
-        .def("get_g_tensor", &Optimization<3>::get_g_tensor)
-        .def_rw("nocc", &Optimization<3>::nocc)
-        .def_rw("truncation_tol", &Optimization<3>::truncation_tol)
-        .def_rw("coulomb_lo", &Optimization<3>::coulomb_lo)
-        .def_rw("coulomb_eps", &Optimization<3>::coulomb_eps)
-        .def_rw("BSH_lo", &Optimization<3>::BSH_lo)
-        .def_rw("BSH_eps", &Optimization<3>::BSH_eps);
+        .def("get_g_tensor", &Optimization<3>::get_g_tensor);
 
     nb::class_<Optimization<2>>(m, "Optimization2D")
         .def(nb::init<MadnessProcess<2>&>())
@@ -202,7 +208,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def("give_rdm_and_rotate_orbitals", &Optimization<2>::give_rdm_and_rotate_orbitals)
         .def("give_potential_and_repulsion", &Optimization<2>::give_potential_and_repulsion)
         .def("calculate_all_integrals", &Optimization<2>::calculate_all_integrals)
-        .def("calculate_core_energy", &Optimization<2>::calculate_core_energy)
         .def("calculate_energies", &Optimization<2>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<2>::calculate_lagrange_multiplier)
         .def("calculate_lagrange_multiplier_element_as_as",
@@ -214,15 +219,10 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
+        .def("calculate_core_energy_old", &Optimization<2>::calculate_core_energy_old)
         .def("get_c", &Optimization<2>::get_c)
         .def("get_h_tensor", &Optimization<2>::get_h_tensor)
-        .def("get_g_tensor", &Optimization<2>::get_g_tensor)
-        .def_rw("nocc", &Optimization<2>::nocc)
-        .def_rw("truncation_tol", &Optimization<2>::truncation_tol)
-        .def_rw("coulomb_lo", &Optimization<2>::coulomb_lo)
-        .def_rw("coulomb_eps", &Optimization<2>::coulomb_eps)
-        .def_rw("BSH_lo", &Optimization<2>::BSH_lo)
-        .def_rw("BSH_eps", &Optimization<2>::BSH_eps);
+        .def("get_g_tensor", &Optimization<2>::get_g_tensor);
 
     nb::class_<Optimization_open_shell<3>>(m, "Optimization_open_shell_3D")
         .def(nb::init<MadnessProcess<3>&>())

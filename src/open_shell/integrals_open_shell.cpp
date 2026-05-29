@@ -613,7 +613,7 @@ std::vector<std::vector<madness::Tensor<double>>> Integrals_open_shell<NDIM>::co
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baca; //stored as (a,b,c); 4 tensors: aaaa, bbbb, aabb, bbaa
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baac; //stored as (a,b,c); 2 tensors: aaaa, bbbb
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akcl; //stored as (a,k,c,l); 4 tensors: aaaa, bbbb, aabb, bbaa
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_aklc; //stored as (a,k,c,l); 4 tensors: aaaa, bbbb, aabb, bbaa
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_aklc; //stored as (a,k,l,c); 4 tensors: aaaa, bbbb, aabb, bbaa
 
     auto t1 = std::chrono::high_resolution_clock::now();
     // <ba|ca>

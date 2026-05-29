@@ -507,15 +507,15 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
                 else if (orthonormalization_method == "symmetric") {frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);}
                 frozen_occ_orbs[spin] = truncate(frozen_occ_orbs[spin], num_params.truncation_tol);
             }
+        }
 
-            // Project core orbitals out of active space orbitals
-            for(int spin = 0; spin < 2; spin++)
+        // Project core orbitals out of active space orbitals
+        for(int spin = 0; spin < 2; spin++)
+        {
+            auto Q = QProjector(*(madness_process.world), frozen_occ_orbs[spin]);
+            for (int i = 0; i < as_dims[spin]; i++)
             {
-                auto Q = QProjector(*(madness_process.world), frozen_occ_orbs[spin]);
-                for (int i = 0; i < as_dims[spin]; i++)
-                {
-                    active_orbs[spin][i] = Q(active_orbs[spin][i]);
-                }
+                active_orbs[spin][i] = Q(active_orbs[spin][i]);
             }
         }
 
