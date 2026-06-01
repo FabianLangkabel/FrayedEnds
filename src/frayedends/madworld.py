@@ -43,7 +43,15 @@ def get_function_info(orbitals):
         info = {}
         for kv in x.info.strip().split(" "):
             kv = kv.split("=")
-            info[kv[0]] = eval(kv[1])
+            val = kv[1]
+            try: 
+                parsed_val = int(val)
+            except ValueError: 
+                try: 
+                    parsed_val = float(val)
+                except ValueError:
+                    parsed_val = val
+            info[kv[0]] = parsed_val
         result.append({**info})
     return result
 
