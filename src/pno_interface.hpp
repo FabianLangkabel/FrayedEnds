@@ -126,6 +126,7 @@ class PNOInterface {
     size_t nfreeze;
     double nuclear_repulsion;
     double scf_energy;
+    double pno_thresh;
 
     std::vector<double> occ; // occ of HF + MP2 PNOs
     std::vector<std::pair<size_t, size_t>> ids; // ids of HF + MP2 PNOs

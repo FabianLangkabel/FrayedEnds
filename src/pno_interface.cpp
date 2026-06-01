@@ -153,6 +153,7 @@ void PNOInterface::run(const size_t basis_size) {
     double thresh = parameters.thresh();
 
     thresh = std::min(thresh, 1.e-4);
+    this->pno_thresh = thresh; // store pno threshold for later use in cispd
     if (madness_process.world->rank() == 0)
         std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
     FunctionDefaults<3>::set_thresh(thresh);
@@ -286,7 +287,7 @@ void PNOInterface::compute_cis(const size_t n_excitations) {
     }
 
     // put cis computation into parser so TDHF can read it 
-    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; thresh " + std::to_string(1.0e-5) + "; restart no_restart");
+    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; thresh " + std::to_string(pno_thresh * 10.0) + "; dconv " + std::to_string(pno_thresh * 10.0) + "; restart no_restart");
 
     if (madness_process.world->rank() == 0) {
         std::cout << "--------------------------------------------------\n";
@@ -506,22 +507,23 @@ std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
     std::vector<std::vector<SavedFct<3>>> result;
     for (size_t ex = 0; ex < cis_x_per_root.size(); ++ex) {
         std::vector<SavedFct<3>> roots;
-        for (const auto& func : cis_x_per_root[ex]) {
-            SavedFct<3> pnorb(func);
-            pnorb.info = "type=CIS_X_EX" + std::to_string(ex) + " occ=1.0 pair1=0 pair2=0";
+        size_t func_idx = 0;
+        for (auto const& [idx, cc_func] : cis_roots[ex].functions) {
+            SavedFct<3> pnorb(cis_x_per_root[ex][func_idx]);
+            pnorb.info = "type=CIS_X_EX" + std::to_string(ex) 
+                       + " occ=1.0 pair1=" + std::to_string(idx + nfreeze)
+                       + " pair2=" + std::to_string(idx + nfreeze);
             roots.push_back(pnorb);
+            func_idx++;
         }
 
         if (madness_process.world->rank() == 0) {
             for (const auto& orb : roots) {
-                std::cout << "CIS X for exitation " << ex <<" info: " << orb.info << "\n";
+                std::cout << "CIS X for excitation " << ex << " info: " << orb.info << "\n";
             }
         }
-        
         result.push_back(roots);
     }
-
-    
     return result;
 }
 
