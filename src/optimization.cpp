@@ -768,44 +768,6 @@ double Optimization<NDIM>::get_c() {
     return core_total_energy + nuclear_repulsion_energy;
 }
 
-// information about the shape of the tensor is lost if we pass it to python like this. might be better to give a
-// tuple with the shape and the elements of the tensor, or write a class which has shape and a list of elements as
-// members
-template <std::size_t NDIM>
-std::vector<double> Optimization<NDIM>::get_h_tensor() {
-    std::vector<double> effective_one_body_integrals_elements;
-
-    madness::Tensor<double> effective_one_body_integrals = as_integrals_one_body;
-    for (int k = 0; k < as_dim; k++) {
-        for (int l = 0; l < as_dim; l++) {
-            for (int a = 0; a < core_dim; a++) {
-                effective_one_body_integrals(k, l) +=
-                    0.5 * 2 *
-                    (2 * core_as_integrals_two_body_akal(a, k, l) - core_as_integrals_two_body_akla(a, k, l));
-            }
-            effective_one_body_integrals_elements.push_back(effective_one_body_integrals(k, l));
-        }
-    }
-    return effective_one_body_integrals_elements;
-}
-
-// same issue as in the htensor case
-template <std::size_t NDIM>
-std::vector<double> Optimization<NDIM>::get_g_tensor() {
-    std::vector<double> effective_two_body_integrals_elements;
-
-    for (int k = 0; k < as_dim; k++) {
-        for (int l = 0; l < as_dim; l++) {
-            for (int m = 0; m < as_dim; m++) {
-                for (int n = 0; n < as_dim; n++) {
-                    effective_two_body_integrals_elements.push_back(as_integrals_two_body(k, l, m, n));
-                }
-            }
-        }
-    }
-    return effective_two_body_integrals_elements;
-}
-
 template <std::size_t NDIM>
 void Optimization<NDIM>::set_orthonormalization_method(const std::string& method, double degeneracy_tol) {
     orthonormalization_method = method;

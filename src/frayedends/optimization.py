@@ -58,9 +58,6 @@ def transform_rdms(TransformationMatrix, rdm1, rdm2):
 class Optimization3D:
     _fr_core_orbitals = None
     _active_orbitals = None
-    _h = None  # one-body tensor
-    _g = None  # two-body tensor
-    _c = 0.0  # constant term
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
@@ -162,17 +159,13 @@ class Optimization3D:
             return self._active_orbitals
         else:
             return self._fr_core_orbitals, self._active_orbitals
-
-    def get_integrals(self, *args, **kwargs):
+    
+    def get_effective_hamiltonian(self, g_ordering="phys", *args, **kwargs):
+        # this returns (c, h, g) where c = nuclear repulsion + frozen core energy,
+        # h is the effective one-body tensor (active space one body integrals plus active space - frozen core interaction) and 
+        # g the two-body tensor (active space Coulomb interaction). g is in phys ordering by default, can be reordered to chem or openfermion
         if self._active_orbitals is None:
             self.optimize_orbs(*args, **kwargs)
-        self.impl.calculate_all_integrals()
-        self._c = self.impl.get_c()
-        self._h = self.impl.get_h_tensor()
-        self._g = self.impl.get_g_tensor()
-        return self._c, self._h, self._g
-    
-    def get_effective_hamiltonian(self, g_ordering="phys"):
         H_eff = self.impl.get_effective_hamiltonian()
         g = NBodyTensor(elems=H_eff[2], ordering="phys") #todo: remove tequila here and write custom function
         if g_ordering!="phys":
@@ -311,15 +304,6 @@ class Optimization2D:
             return self._active_orbitals
         else:
             return self._fr_core_orbitals, self._active_orbitals
-
-    def get_integrals(self, *args, **kwargs):
-        if self._active_orbitals is None:
-            self.optimize_orbs(*args, **kwargs)
-        self.impl.calculate_all_integrals()
-        self._c = self.impl.get_c()
-        self._h = self.impl.get_h_tensor()
-        self._g = self.impl.get_g_tensor()
-        return self._c, self._h, self._g
 
     def get_c(
         self, *args, **kwargs

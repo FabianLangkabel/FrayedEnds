@@ -51,8 +51,6 @@ template <std::size_t NDIM> class Optimization {
     // output
     nb::tuple get_effective_hamiltonian(); // returns (core_energy + nuclear repulsion, h_eff_one_body, h_eff_two_body)
     double get_c(); // core_energy + nuclear repulsion
-    std::vector<double> get_h_tensor(); // h_eff_one_body
-    std::vector<double> get_g_tensor(); // h_eff_two_body
     std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);

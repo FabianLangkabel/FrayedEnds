@@ -179,9 +179,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("set_orthonormalization_method", &Optimization<3>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<3>::get_orbitals)
         .def("get_effective_hamiltonian", &Optimization<3>::get_effective_hamiltonian)
-        .def("get_c", &Optimization<3>::get_c)
-        .def("get_h_tensor", &Optimization<3>::get_h_tensor)
-        .def("get_g_tensor", &Optimization<3>::get_g_tensor);
+        .def("get_c", &Optimization<3>::get_c);
 
     nb::class_<Optimization<2>>(m, "Optimization2D")
         .def(nb::init<MadnessProcess<2>&>())
@@ -200,9 +198,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
-        .def("get_c", &Optimization<2>::get_c)
-        .def("get_h_tensor", &Optimization<2>::get_h_tensor)
-        .def("get_g_tensor", &Optimization<2>::get_g_tensor);
+        .def("get_c", &Optimization<2>::get_c);
 
     nb::class_<Optimization_open_shell<3>>(m, "Optimization_open_shell_3D")
         .def(nb::init<MadnessProcess<3>&>())
