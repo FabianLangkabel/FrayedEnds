@@ -1,4 +1,4 @@
-from ._frayedends_impl import CoulombPotentialFromChargeDensity, SavedFct2D, SavedFct3D, NBArraytest
+from ._frayedends_impl import CoulombPotentialFromChargeDensity, SavedFct2D, SavedFct3D
 from .atomicbasisprojector import AtomicBasisProjector
 from .eigensolver import Eigensolver2D, Eigensolver3D
 from .integrals import Integrals2D, Integrals3D, Integrals_open_shell_3D

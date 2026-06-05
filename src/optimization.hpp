@@ -33,7 +33,7 @@ template <std::size_t NDIM> class Optimization {
         Integrator.override_numerical_parameters(num_params);
     }
 
-    std::array<std::tuple<std::string, double>, 8> get_numerical_parameters() {
+    std::vector<std::tuple<std::string, double>> get_numerical_parameters() {
         return {std::make_tuple("truncation_tol", num_params.truncation_tol),
                 std::make_tuple("coulomb_lo", num_params.coulomb_lo),
                 std::make_tuple("coulomb_eps", num_params.coulomb_eps),
@@ -49,7 +49,10 @@ template <std::size_t NDIM> class Optimization {
     void give_rdm_and_rotate_orbitals(Numpy2D& one_rdms, Numpy4D& two_rdms);
 
     // output
-    nb::tuple get_effective_hamiltonian();
+    nb::tuple get_effective_hamiltonian(); // returns (core_energy + nuclear repulsion, h_eff_one_body, h_eff_two_body)
+    double get_c(); // core_energy + nuclear repulsion
+    std::vector<double> get_h_tensor(); // h_eff_one_body
+    std::vector<double> get_g_tensor(); // h_eff_two_body
     std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
@@ -64,22 +67,6 @@ template <std::size_t NDIM> class Optimization {
     std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
     std::vector<Function<double, NDIM>> get_all_core_orbital_updates(); // Core refinement
     void rotate_orbitals_back();
-    // core stuff missing of course
-
-    // Old stuff for testing
-    void calculate_all_integrals_old();
-    void calculate_core_energy_old();
-    void calculate_lagrange_multiplier_old();
-    void calculate_energies_old();
-    double calculate_lagrange_multiplier_element_as_as_old(int z, int i);
-    double calculate_lagrange_multiplier_element_as_core_old(int z, int i);
-    bool optimize_orbitals_old(double optimization_thresh, double NO_occupation_thresh, int maxiter);
-    std::vector<Function<double, NDIM>> get_all_active_orbital_updates_old(std::vector<int> orbital_indicies_for_update);
-    double get_c();
-    std::vector<double> get_h_tensor();
-    std::vector<double> get_g_tensor();
-    double highest_error;
-    
 
     bool refine_core;
 

@@ -35,7 +35,7 @@ template <std::size_t NDIM> class Integrals {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, 0.001, 1e-6}; //BSH parameters irrelevant for integrals class
     }
 
-    std::array<std::tuple<std::string, double>, 3> get_numerical_parameters() {
+    std::vector<std::tuple<std::string, double>> get_numerical_parameters() {
         return {std::make_tuple("truncation_tol", num_params.truncation_tol),
                 std::make_tuple("coulomb_lo", num_params.coulomb_lo),
                 std::make_tuple("coulomb_eps", num_params.coulomb_eps)};
@@ -54,20 +54,6 @@ template <std::size_t NDIM> class Integrals {
     Numpy4D nb_compute_two_body_integrals(const std::vector<SavedFct<NDIM>>& all_orbs);
     Numpy2D nb_compute_frozen_core_interaction(const std::vector<SavedFct<NDIM>>& fr_c_orbs, const std::vector<SavedFct<NDIM>>& a_orbs);
     nb::tuple nb_compute_effective_hamiltonian(const std::vector<SavedFct<NDIM>>& core_orbitals, const std::vector<SavedFct<NDIM>>& active_orbitals, const SavedFct<NDIM>& potential, double energy_offset);
-
-
-    //tempporaries for testing 
-    Numpy2D nb_compute_overlap_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other);
-    Numpy2D nb_compute_potential_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs, const SavedFct<NDIM>& potential);
-    Numpy2D nb_compute_kinetic_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs);
-    Numpy4D nb_compute_two_body_integrals_old(const std::vector<SavedFct<NDIM>>& all_orbs, double truncation_tol, double coulomb_lo, double coulomb_eps, int nocc);
-    Numpy2D nb_compute_frozen_core_interaction_old(const std::vector<SavedFct<NDIM>>& fr_c_orbs, const std::vector<SavedFct<NDIM>>& a_orbs, double truncation_tol, double coulomb_lo, double coulomb_eps, int nocc);
-    madness::Tensor<double> overlap_integrals;
-    madness::Tensor<double> potential_integrals;
-    madness::Tensor<double> kinetic_integrals;
-    madness::Tensor<double> two_body_integrals;
-    madness::Tensor<double> frozen_core_interaction;
-    //
     
     // Integrators
     Tensor<double> compute_potential_integrals(const std::vector<Function<double, NDIM>>& orbitals,const Function<double, NDIM>& V);
@@ -84,7 +70,7 @@ template <std::size_t NDIM> class Integrals {
         const std::vector<Function<double, NDIM>> &orbs_aa
     );
 
-    std::array<Tensor<double>, 3> compute_core_as_2e_integrals_as_refinement(
+    std::array<Tensor<double>, 5> compute_core_as_2e_integrals_as_refinement(
         const std::vector<Function<double, NDIM>> &core_orbitals, 
         const std::vector<Function<double, NDIM>> &active_orbitals, 
         const std::vector<Function<double, NDIM>> &orbs_kl, 

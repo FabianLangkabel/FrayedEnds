@@ -5,6 +5,7 @@ from ._frayedends_impl import Optimization3D as OptInterface3D
 from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
 from ._frayedends_impl import SavedFct2D, SavedFct3D
 from .madworld import MadWorld2D, MadWorld3D, redirect_output
+from tequila.quantumchemistry import NBodyTensor
 
 
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
@@ -81,21 +82,13 @@ class Optimization3D:
         self.impl = OptInterface3D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
-        self.override_numerical_parameters(**kwargs)
+        self.set_numerical_parameters(**kwargs)
 
-    def override_numerical_parameters(self, **kwargs):
-        for k, v in kwargs.items():
-            if k in self.opt_parameters:
-                self.opt_parameters[k] = v
-            else:
-                raise ValueError(f"Unknown parameter: {k}")
-        self.impl.override_numerical_parameters(
-            self.opt_parameters["truncation_tol"],
-            self.opt_parameters["coulomb_lo"],
-            self.opt_parameters["coulomb_eps"],
-            self.opt_parameters["BSH_lo"],
-            self.opt_parameters["BSH_eps"],
-        )
+    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, BHS_lo = 0.001, BSH_eps = 1e-6):
+        # truncation_tol: truncation tolerance for MRA representation of orbitals
+        # coulomb_lo and coulomb_eps govern the accuracy of the representation of the Coulomb kernel
+        # BSH_lo and BSH_eps govern the accuracy of the representation of the BSH kernel
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BHS_lo, BSH_eps)
 
     def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
@@ -161,61 +154,6 @@ class Optimization3D:
         self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
         return self._fr_core_orbitals, self._active_orbitals, self.converged
 
-    @redirect_output("madopt.log")
-    def optimize_orbs_old(
-        self,
-        orbitals: list,
-        rdm1: np.ndarray,
-        rdm2: np.ndarray,
-        opt_thresh=1.0e-4,
-        occ_thresh=1.0e-5,
-        maxiter=3,
-        *args,
-        **kwargs,
-    ):
-        r"""
-        this function performs the orbital refinement
-        input:
-         - one body reduced density matrix (rdm1) and two body reduced density matrix (rdm2) as 2 and 4 dimensional numpy arrays, respectively
-           expects ordering of the form:
-              rdm1[i,j] = \sum_\sigma \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
-              rdm2[i,j,k,l] = \sum_{\sigma,\tau} \langle a_{i,\sigma}^\dagger a_{j,\tau}^\dagger a_{l,\tau} a_{k,\sigma} \rangle
-         - orbitals is either a list of SavedFct3D objects (if all orbitals are active) or a list/tuple of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct3D objects.
-         - opt_thresh is the threshold for convergence of the orbital refinement (based on the change of the energy)
-         - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
-         - maxiter is the maximum number of iterations for the orbital refinement
-        output:
-         - list of frozen core orbitals, list of refined active orbitals and convergence flag
-        """
-
-        # Check if orbitals is a list of SavedFct3D or a list of [frozen_core, active] lists
-        if isinstance(orbitals[0], SavedFct3D):
-            frozen_core_orbs = []
-            active_orbs = orbitals
-        else:
-            frozen_core_orbs = orbitals[0]
-            active_orbs = orbitals[1]
-
-        if (len(active_orbs) != np.shape(rdm1)[0]) or (len(active_orbs) != np.shape(rdm2)[0]):
-            raise ValueError(
-                f"Number of active orbitals ({len(active_orbs)}) does not match the rdms dimensions ({np.shape(rdm1)} and {np.shape(rdm2)})."
-            )
-
-        rdm1_list = rdm1.reshape(-1).tolist()
-        rdm2_list = rdm2.reshape(-1).tolist()
-        self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
-        self.impl.give_initial_orbitals(frozen_core_orbs, active_orbs)
-        self.impl.give_rdm_and_rotate_orbitals(rdm1_list, rdm2_list)
-        self.impl.calculate_all_integrals_old()
-        self.impl.calculate_core_energy_old()
-        self.impl.calculate_energies_old()
-
-        self.converged = self.impl.optimize_orbitals_old(opt_thresh, occ_thresh, maxiter)
-        self.impl.rotate_orbitals_back()
-
-        self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
-        return self._fr_core_orbitals, self._active_orbitals, self.converged
-
     def get_orbitals(self, *args, **kwargs):
         if self._active_orbitals is None:
             self.optimize_orbs(*args, **kwargs)
@@ -234,8 +172,13 @@ class Optimization3D:
         self._g = self.impl.get_g_tensor()
         return self._c, self._h, self._g
     
-    def get_effective_hamiltonian(self, *args, **kwargs):
-        return self.impl.get_effective_hamiltonian()
+    def get_effective_hamiltonian(self, g_ordering="phys"):
+        H_eff = self.impl.get_effective_hamiltonian()
+        g = NBodyTensor(elems=H_eff[2], ordering="phys") #todo: remove tequila here and write custom function
+        if g_ordering!="phys":
+            return H_eff[0], H_eff[1], g.reorder(to=g_ordering).elems
+        else:
+            return H_eff
 
     def get_c(
         self, *args, **kwargs

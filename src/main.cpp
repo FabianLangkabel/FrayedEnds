@@ -15,7 +15,6 @@
 #include "open_shell/nwchem_converter_open_shell.hpp"
 #include "open_shell/optimization_open_shell.hpp"
 #include "open_shell/integrals_open_shell.hpp"
-#include "nbtest.hpp"
 
 namespace nb = nanobind;
 
@@ -122,17 +121,13 @@ NB_MODULE(_frayedends_impl, m) {
     nb::class_<Integrals<3>>(m, "Integrals3D")
         .def(nb::init<MadnessProcess<3>&>())
         .def("override_numerical_parameters", static_cast<void (Integrals<3>::*)(double, double, double)>(&Integrals<3>::override_numerical_parameters))
+        .def("get_numerical_parameters", &Integrals<3>::get_numerical_parameters)
         .def("compute_overlap_integrals", &Integrals<3>::nb_compute_overlap_integrals)
         .def("compute_potential_integrals", &Integrals<3>::nb_compute_potential_integrals)
         .def("compute_kinetic_integrals", &Integrals<3>::nb_compute_kinetic_integrals)
         .def("compute_two_body_integrals", &Integrals<3>::nb_compute_two_body_integrals)
         .def("compute_frozen_core_interaction", &Integrals<3>::nb_compute_frozen_core_interaction)
         .def("compute_effective_hamiltonian", &Integrals<3>::nb_compute_effective_hamiltonian)
-        .def("compute_overlap_integrals_old", &Integrals<3>::nb_compute_overlap_integrals_old)
-        .def("compute_potential_integrals_old", &Integrals<3>::nb_compute_potential_integrals_old)
-        .def("compute_kinetic_integrals_old", &Integrals<3>::nb_compute_kinetic_integrals_old)
-        .def("compute_two_body_integrals_old", &Integrals<3>::nb_compute_two_body_integrals_old)
-        .def("compute_frozen_core_interaction_old", &Integrals<3>::nb_compute_frozen_core_interaction_old)
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
@@ -142,17 +137,13 @@ NB_MODULE(_frayedends_impl, m) {
     nb::class_<Integrals<2>>(m, "Integrals2D")
         .def(nb::init<MadnessProcess<2>&>())
         .def("override_numerical_parameters", static_cast<void (Integrals<2>::*)(double, double, double)>(&Integrals<2>::override_numerical_parameters))
+        .def("get_numerical_parameters", &Integrals<2>::get_numerical_parameters)
         .def("compute_overlap_integrals", &Integrals<2>::nb_compute_overlap_integrals)
         .def("compute_potential_integrals", &Integrals<2>::nb_compute_potential_integrals)
         .def("compute_kinetic_integrals", &Integrals<2>::nb_compute_kinetic_integrals)
         .def("compute_two_body_integrals", &Integrals<2>::nb_compute_two_body_integrals)
         .def("compute_frozen_core_interaction", &Integrals<2>::nb_compute_frozen_core_interaction)
         .def("compute_effective_hamiltonian", &Integrals<2>::nb_compute_effective_hamiltonian)
-        .def("compute_overlap_integrals_old", &Integrals<2>::nb_compute_overlap_integrals_old)
-        .def("compute_potential_integrals_old", &Integrals<2>::nb_compute_potential_integrals_old)
-        .def("compute_kinetic_integrals_old", &Integrals<2>::nb_compute_kinetic_integrals_old)
-        .def("compute_two_body_integrals_old", &Integrals<2>::nb_compute_two_body_integrals_old)
-        .def("compute_frozen_core_interaction_old", &Integrals<2>::nb_compute_frozen_core_interaction_old)
         .def("transform", &Integrals<2>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<2>::project_on, nb::arg("kernel"), nb::arg("target"))
@@ -188,16 +179,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def("set_orthonormalization_method", &Optimization<3>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<3>::get_orbitals)
         .def("get_effective_hamiltonian", &Optimization<3>::get_effective_hamiltonian)
-        .def("calculate_all_integrals_old", &Optimization<3>::calculate_all_integrals_old)
-        .def("calculate_energies_old", &Optimization<3>::calculate_energies_old)
-        .def("calculate_lagrange_multiplier_old", &Optimization<3>::calculate_lagrange_multiplier_old)
-        .def("calculate_lagrange_multiplier_element_as_as_old",
-             &Optimization<3>::calculate_lagrange_multiplier_element_as_as_old)
-        .def("calculate_lagrange_multiplier_element_as_core_old",
-             &Optimization<3>::calculate_lagrange_multiplier_element_as_core_old)
-        .def("optimize_orbitals_old", &Optimization<3>::optimize_orbitals_old)
-        .def("get_all_active_orbital_updates_old", &Optimization<3>::get_all_active_orbital_updates_old)
-        .def("calculate_core_energy_old", &Optimization<3>::calculate_core_energy_old)
         .def("get_c", &Optimization<3>::get_c)
         .def("get_h_tensor", &Optimization<3>::get_h_tensor)
         .def("get_g_tensor", &Optimization<3>::get_g_tensor);
@@ -219,7 +200,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
-        .def("calculate_core_energy_old", &Optimization<2>::calculate_core_energy_old)
         .def("get_c", &Optimization<2>::get_c)
         .def("get_h_tensor", &Optimization<2>::get_h_tensor)
         .def("get_g_tensor", &Optimization<2>::get_g_tensor);
@@ -305,15 +285,4 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_beta_mos", &NWChem_Converter_open_shell::get_beta_mos)
         .def("get_vnuc", &NWChem_Converter_open_shell::get_vnuc)
         .def("get_nuclear_repulsion_energy", &NWChem_Converter_open_shell::get_nuclear_repulsion_energy);
-
-    nb::class_<NBArraytest>(m, "NBArraytest")
-        .def(nb::init<const std::tuple<unsigned int, unsigned int>&>())
-        .def("fill_array", &NBArraytest::fill_array)
-        .def("to_numpy", &NBArraytest::to_numpy)
-        .def("double_all", &NBArraytest::double_all)
-        .def("get_unsafe", &NBArraytest::get_unsafe)
-        .def("get_cast", &NBArraytest::get_cast)
-        .def("get_capsule_simple", &NBArraytest::get_capsule_simpl)
-        .def("get_capsule_convoluded", &NBArraytest::get_capsule_convoluded)
-        .def("explode", &NBArraytest::explode);
 }
