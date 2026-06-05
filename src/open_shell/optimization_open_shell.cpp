@@ -102,7 +102,9 @@ void Optimization_open_shell<NDIM>::calculate_all_integrals() {
 
     // Calculate and cache relevant orbital-combinations
     Integrator->update_as_integral_combinations(active_orbs, orbs_kl, coul_orbs_mn);
-    Integrator->update_core_integral_combinations(frozen_occ_orbs, orbs_aa);
+    if (this->has_core_orbitals) {
+        Integrator->update_core_integral_combinations(frozen_occ_orbs, orbs_aa);
+    }
     auto t1 = std::chrono::high_resolution_clock::now();
 
 

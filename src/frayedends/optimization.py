@@ -84,11 +84,11 @@ class Optimization3D:
         self._nuclear_repulsion = nuc_repulsion
         self.set_numerical_parameters(**kwargs)
 
-    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, BHS_lo = 0.001, BSH_eps = 1e-6):
+    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, BSH_lo = 0.001, BSH_eps = 1e-6):
         # truncation_tol: truncation tolerance for MRA representation of orbitals
         # coulomb_lo and coulomb_eps govern the accuracy of the representation of the Coulomb kernel
         # BSH_lo and BSH_eps govern the accuracy of the representation of the BSH kernel
-        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BHS_lo, BSH_eps)
+        self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
 
     def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
@@ -153,7 +153,7 @@ class Optimization3D:
 
         self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
         return self._fr_core_orbitals, self._active_orbitals, self.converged
-
+    
     def get_orbitals(self, *args, **kwargs):
         if self._active_orbitals is None:
             self.optimize_orbs(*args, **kwargs)

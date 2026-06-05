@@ -75,7 +75,6 @@ void Optimization<NDIM>::calculate_all_integrals() {
 
     // Calculate and cache relevant orbital-combinations
     Integrator.update_as_integral_combinations(active_orbs, orbs_kl, coul_orbs_mn);
-    Integrator.update_core_integral_combinations(frozen_occ_orbs, orbs_aa, coul_orbs_aa);
     
     auto t1 = std::chrono::high_resolution_clock::now();
     // Calculate one electron Integrals
@@ -87,6 +86,7 @@ void Optimization<NDIM>::calculate_all_integrals() {
 
     // Calculate Core-AS interaction integrals
     if (core_dim > 0) {
+        Integrator.update_core_integral_combinations(frozen_occ_orbs, orbs_aa, coul_orbs_aa);
         core_as_integrals_one_body_ak = Integrator.compute_core_as_integrals_one_body(frozen_occ_orbs, active_orbs, Vnuc);
         
         auto core_as_integrals_two_body0 = Integrator.compute_core_as_2e_integrals_as_refinement(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa);
