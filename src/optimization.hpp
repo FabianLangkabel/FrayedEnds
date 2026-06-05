@@ -54,7 +54,7 @@ template <std::size_t NDIM> class Optimization {
     std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> get_orbitals();
 
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
-    void calculate_all_integrals();
+    void calculate_all_integrals(bool update_aa = true);
     void calculate_energies();
     void calculate_lagrange_multiplier();
     double calculate_lagrange_multiplier_element_as_as(int z, int i);

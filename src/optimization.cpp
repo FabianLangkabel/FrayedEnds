@@ -69,7 +69,7 @@ void Optimization<NDIM>::give_rdm_and_rotate_orbitals(Numpy2D& one_rdms, Numpy4D
 }
 
 template <std::size_t NDIM>
-void Optimization<NDIM>::calculate_all_integrals() {
+void Optimization<NDIM>::calculate_all_integrals(bool update_aa) {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -86,7 +86,9 @@ void Optimization<NDIM>::calculate_all_integrals() {
 
     // Calculate Core-AS interaction integrals
     if (core_dim > 0) {
-        Integrator.update_core_integral_combinations(frozen_occ_orbs, orbs_aa, coul_orbs_aa);
+        if (update_aa) {
+            Integrator.update_core_integral_combinations(frozen_occ_orbs, orbs_aa, coul_orbs_aa);
+        }
         core_as_integrals_one_body_ak = Integrator.compute_core_as_integrals_one_body(frozen_occ_orbs, active_orbs, Vnuc);
         
         auto core_as_integrals_two_body0 = Integrator.compute_core_as_2e_integrals_as_refinement(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa);
@@ -455,7 +457,7 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
 
         std::cout << "Update Integrals" << std::endl;
         // Update integrals for new orbitals
-        calculate_all_integrals();
+        calculate_all_integrals(refine_core); 
         if(core_dim>0 && refine_core) {core_total_energy = Integrator.compute_core_energy(frozen_occ_orbs, orbs_aa, coul_orbs_aa, Vnuc, 0);}
         // Calculate new energy
         calculate_energies();

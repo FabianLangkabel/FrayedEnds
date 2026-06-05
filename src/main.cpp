@@ -166,7 +166,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("give_initial_orbitals", &Optimization<3>::give_initial_orbitals)
         .def("give_rdm_and_rotate_orbitals", &Optimization<3>::give_rdm_and_rotate_orbitals)
         .def("give_potential_and_repulsion", &Optimization<3>::give_potential_and_repulsion)
-        .def("calculate_all_integrals", &Optimization<3>::calculate_all_integrals)
+        .def("calculate_all_integrals", &Optimization<3>::calculate_all_integrals, nb::arg("update_aa") = true)
         .def("calculate_energies", &Optimization<3>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<3>::calculate_lagrange_multiplier)
         .def("calculate_lagrange_multiplier_element_as_as",
@@ -186,7 +186,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("give_initial_orbitals", &Optimization<2>::give_initial_orbitals)
         .def("give_rdm_and_rotate_orbitals", &Optimization<2>::give_rdm_and_rotate_orbitals)
         .def("give_potential_and_repulsion", &Optimization<2>::give_potential_and_repulsion)
-        .def("calculate_all_integrals", &Optimization<2>::calculate_all_integrals)
+        .def("calculate_all_integrals", &Optimization<2>::calculate_all_integrals, nb::arg("update_aa") = true)
         .def("calculate_energies", &Optimization<2>::calculate_energies)
         .def("calculate_lagrange_multiplier", &Optimization<2>::calculate_lagrange_multiplier)
         .def("calculate_lagrange_multiplier_element_as_as",

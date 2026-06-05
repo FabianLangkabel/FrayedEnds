@@ -6,7 +6,7 @@ from time import time
 
 def solve(world, geometry, n_act, n_core, name, tt = 1e-6, clo = 0.001, ceps = 1e-6, Blo = 0.001, Beps = 1e-6):
     start=time()
-    print(f"Solving {name} with geometry:\n{geometry}\nActive orbitals: {n_act}, Core orbitals: {n_core}")
+    print(f"\nSolving {name} with geometry:\n{geometry}\nActive orbitals: {n_act}, Core orbitals: {n_core}")
     molgeom = fe.MolecularGeometry(geometry, units="angstrom")
     n_act_electrons = molgeom.n_electrons - molgeom.n_core_electrons
     
@@ -23,8 +23,12 @@ def solve(world, geometry, n_act, n_core, name, tt = 1e-6, clo = 0.001, ceps = 1
     active=orbitals[n_core:]
 
     c, h1, g2 = integrals.get_effective_hamiltonian(core, active, Vnuc, nuc_repulsion, g_ordering="chem")
+    pno_end = time()
+    print(f"PNO generation time: {pno_end - start:.2f} seconds")
 
     for iteration in range(5):
+        print("\n")
+        fci_start = time()
         # FCI calculation
         e, fcivec = fci.direct_spin1.kernel(
             h1, g2, n_act, n_act_electrons
@@ -33,11 +37,14 @@ def solve(world, geometry, n_act, n_core, name, tt = 1e-6, clo = 0.001, ceps = 1
             fcivec, n_act, n_act_electrons
         )  # Computes the 1- and 2- body reduced density matrices
         rdm2 = np.swapaxes(rdm2, 1, 2)
-
+        fci_end = time()
+        print(f"FCI calculation time: {fci_end - fci_start:.2f} seconds")
         print("iteration {} energy {:+2.10f}".format(iteration, e + c))
 
+        opti_start= time()
         opti = fe.Optimization3D(world, Vnuc, nuc_repulsion, truncation_tol=tt, coulomb_eps=ceps, coulomb_lo=clo, BSH_lo=Blo, BSH_eps=Beps)
-        print(opti.get_numerical_parameters())
+        if iteration == 0:
+            print(opti.get_numerical_parameters())
         core, active, converged = opti.optimize_orbs(
             orbitals=[core, active],
             rdm1=rdm1,
@@ -48,6 +55,8 @@ def solve(world, geometry, n_act, n_core, name, tt = 1e-6, clo = 0.001, ceps = 1
         )
 
         c, h1, g2 = opti.get_effective_hamiltonian(g_ordering = "chem")
+        opti_end = time()
+        print(f"Orbital optimization time: {opti_end - opti_start:.2f} seconds")
     end = time()
     print("Total time: ", end - start)
 
