@@ -21,17 +21,23 @@ integrals = fe.Integrals3D(world)
 madpno = fe.MadPNO(world, geom, n_orbitals=4)  # ground state + 2 excited states 
 
 gs_orbs = madpno.get_orbitals()
+hf_orbs = madpno.get_hf_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
 
-cis_x_per_root = madpno.compute_cis(n_excitation=2)
-cis_orbs = madpno.orthonormalize_cis(integrals_obj=integrals)
+for i in range(len(hf_orbs)):
+    world.cube_plot(f"hf_orb{i}", hf_orbs[i], molecule, zoom=4.0)
+ 
+cis_orbs = madpno.compute_cis(n_excitation=2)
+cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
+cis_orbs = integrals.orthonormalize(cis_orbs)
 
 for i in range(len(cis_orbs)):
     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
 cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 
 for i in range(len(cispd_orbs)):
     world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)

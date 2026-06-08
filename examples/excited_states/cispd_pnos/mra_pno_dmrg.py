@@ -42,13 +42,15 @@ pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
 
 gs_orbs = madpno.get_orbitals()
+hf_orbs = madpno.get_hf_orbitals()
 
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
 
 cis_start = time.perf_counter()
-cis_x_per_root = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
-cis_orbs = madpno.orthonormalize_cis(integrals_obj=integrals)
+cis_orbs = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
+cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
+cis_orbs = integrals.orthonormalize(cis_orbs)
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS X Functions took %.2f seconds" % cis_time)
@@ -58,7 +60,7 @@ for i in range(len(cis_orbs)):
 
 cispd_start = time.perf_counter()
 cispd_orbs = madpno.compute_cispd(n_orbitals=4)
-cispd_orbs = madpno.orthonormalize_cispd(integrals_obj=integrals)
+cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD PNOs took %.2f seconds" % cispd_time)
