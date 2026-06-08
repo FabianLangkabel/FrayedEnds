@@ -119,7 +119,7 @@ sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
 )  # Compute the state average 2-body rdm
 print(
     "Energy from SA-pdms = %20.15f"
-    % (np.einsum("ij,ij->", sa_1pdm, T + V) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy)
+    % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuclear_repulsion_energy)
 )
 
 idx_back = np.zeros(len(idx), dtype=int)
@@ -174,7 +174,7 @@ for iter in range(iterations):
     )  # Compute the state average 2-body rdm
     print(
         "Energy from SA-pdms = %20.15f"
-        % (np.einsum("ij,ij->", sa_1pdm, T + V) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy)
+        % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuclear_repulsion_energy)
     )
 
     idx_back = np.zeros(len(idx), dtype=int)
