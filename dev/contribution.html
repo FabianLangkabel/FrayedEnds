@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>FrayedEnds</title>
+<title>FrayedEnds - Contributing to the FrayedEnds Website</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,6 +19,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -36,6 +70,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
@@ -100,7 +135,7 @@ cookieconsent.run({
 
 
 <link rel="stylesheet" href="styles.css">
-<meta property="og:title" content="FrayedEnds">
+<meta property="og:title" content="FrayedEnds - Contributing to the FrayedEnds Website">
 <meta property="og:description" content="Basis-Set-Free Quantum Chemistry">
 <meta property="og:image" content="frayed_ends.png">
 <meta property="og:site_name" content="FrayedEnds">
@@ -109,7 +144,7 @@ cookieconsent.run({
 <body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+  <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
@@ -127,7 +162,7 @@ cookieconsent.run({
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -135,7 +170,7 @@ cookieconsent.run({
 <span class="menu-text">Tutorials</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./contribution.html"> 
+    <a class="nav-link active" href="./contribution.html" aria-current="page"> 
 <span class="menu-text">Contribution</span></a>
   </li>  
 </ul>
@@ -147,54 +182,93 @@ cookieconsent.run({
     </nav>
 </header>
 <!-- content -->
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
-  <div class="quarto-title-banner page-columns page-full">
-    <div class="quarto-title column-page">
-      <h1 class="title">FrayedEnds</h1>
-            <p class="subtitle lead">Basis-Set-Free Quantum Chemistry</p>
-                      </div>
-  </div>
-  <div class="quarto-title-meta column-page">
-    </div>
-  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#quarto-setup" id="toc-quarto-setup" class="nav-link active" data-scroll-target="#quarto-setup">Quarto Setup</a></li>
+  <li><a href="#environment-setup" id="toc-environment-setup" class="nav-link" data-scroll-target="#environment-setup">Environment Setup</a></li>
+  <li><a href="#contributing-tutorials" id="toc-contributing-tutorials" class="nav-link" data-scroll-target="#contributing-tutorials">Contributing Tutorials</a></li>
+  <li><a href="#submitting-a-pull-request" id="toc-submitting-a-pull-request" class="nav-link" data-scroll-target="#submitting-a-pull-request">Submitting a Pull Request</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/contribution.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
 <!-- main -->
-<div class="quarto-about-marquee content column-page">
-  <div class="about-image-container">
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Contributing to the FrayedEnds Website</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">code</div>
   </div>
-  <div class="about-contents">
-     <main class="content quarto-banner-title-block column-page" id="quarto-document-content">
-<br>
-<center>
-<img src="frayed_ends.png" class="img-fluid" width="400">
-</center>
-<p><br></p>
-<p>FrayedEnds is a framework that discretizes continuous quantum systems and transforms their continuous Hamiltonians into an optimal second quantized form through adaptive orbital optimization. Fast and accurate calculations are performed using a Multi-Resolution-Analysis representation (implemented with <a href="https://github.com/m-a-d-n-e-s-s/madness">MADNESS</a>).</p>
-<p>This <a href="index.html">website</a> contains some hands-on examples using FrayedEnds.</p>
-<p>The main sections of this website are:</p>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="quarto-setup" class="level3">
+<h3 class="anchored" data-anchor-id="quarto-setup">Quarto Setup</h3>
+<p>This website is built using Quarto. Please install Quarto by following the instructions on the official website.</p>
 <ul>
-<li>a wide collection of <a href="tutorials.html">tutorials</a> for getting to know FrayedEnds’s basic functionalities and general usage</li>
-<li>a guide on how to <a href="contribution.html">contribute your own tutorials</a> to the FrayedEnds documentation</li>
+<li>Installation: https://quarto.org/docs/get-started/</li>
+<li>Quarto basics: https://quarto.org/docs/get-started/hello/rstudio.html</li>
 </ul>
-<section id="contribute" class="level1">
-<h1>Contribute</h1>
-<p>FrayedEnds is free and open source. You’re welcome to contribute if you have ideas to improve the library. The standard way to contribute is via pull-requests or issues on <a href="https://github.com/FabianLangkabel/FrayedEnds">github</a>. For larger projects it might be useful to let us know in advance what you are planning.</p>
+</section>
+<section id="environment-setup" class="level3">
+<h3 class="anchored" data-anchor-id="environment-setup">Environment Setup</h3>
+<p>The Python environment and all dependencies are defined in the project repository. Please follow the instructions in the repository <code>README.md</code> (section <em>Installation</em>) to set up the environment.</p>
+<p>After setting up the environment, you can run the website locally with:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> preview</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Make sure to run this command from the <code>docs</code> directory.</p>
+</section>
+<section id="contributing-tutorials" class="level3">
+<h3 class="anchored" data-anchor-id="contributing-tutorials">Contributing Tutorials</h3>
+<p>Tutorial pages must be created as <code>.ipynb</code> or Quarto (<code>.qmd</code>) files in a dedicated subfolder within the <code>tutorials</code> directory of the repository. Within the tutorial file, the following HTML parameters can be placed in a separate Markdown cell at the top, before the actual content begins:</p>
+<p>Begin and end this section with three hyphens (—)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Any titel"</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> "Your full name"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> "yyyy-mm-dd"</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [code]</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="an">image:</span><span class="co"> "Preview_Image.png"</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="an">image-width:</span><span class="co"> "1cm"</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="an">image-height:</span><span class="co"> "1cm"</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">    html:</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">        code-fold: false</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">        eval: false</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">        toc: true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="submitting-a-pull-request" class="level3">
+<h3 class="anchored" data-anchor-id="submitting-a-pull-request">Submitting a Pull Request</h3>
+<ul>
+<li>Create a fork of the main FrayedEnds repository on your Github account.</li>
+<li>Before submitting your contribution, make sure your fork is up to date with the main repository.</li>
+<li>Navigate to the <code>tutorials</code> directory and create a new subfolder named after your tutorial (e.g.&nbsp;<code>my_tutorial/</code>). This folder should contain your <code>.ipynb</code> or <code>.qmd</code> file, as well as any additional resources such as images. Please also include a <code>preview.png</code> file, which will be used as the cover image on the tutorials page.</li>
+<li>Once your contribution is ready, open a pull request against the main repository.</li>
+</ul>
+<p>If you plan to introduce major changes to the core library, please contact us in advance to avoid potential conflicts.</p>
+<p>If you have used FrayedEnds in your research, we warmly welcome contributions of new tutorials showcasing your methods or algorithms.</p>
 
 
 </section>
-</main> 
-    <div class="about-footer"><div class="about-links">
-  <a href="https://github.com/FabianLangkabel/FrayedEnds/" class="about-link" rel="" target="">
-    <i class="bi bi-github"></i>
-     <span class="about-link-text">github</span>
-  </a>
-</div>
-</div>
-  </div>
-</div>
- <!-- /main -->
+
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
@@ -359,6 +433,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   } else {
     toggleColorMode(false);
   }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
   const isCodeAnnotation = (el) => {
     for (const clz of el.classList) {
       if (clz.startsWith('code-annotation-')) {                     
@@ -660,25 +741,64 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         }
       };
     }
-      // Attach click handler to the DT
-      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-      for (const annoteDlNode of annoteDls) {
-        annoteDlNode.addEventListener('click', (event) => {
-          const clickedEl = event.target;
-          if (clickedEl !== selectedAnnoteEl) {
-            unselectCodeLines();
-            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-            if (activeEl) {
-              activeEl.classList.remove('code-annotation-active');
-            }
-            selectCodeLines(clickedEl);
-            clickedEl.classList.add('code-annotation-active');
-          } else {
-            // Unselect the line
-            unselectCodeLines();
-            clickedEl.classList.remove('code-annotation-active');
+      const annoteTargets = window.document.querySelectorAll('.code-annotation-anchor');
+      for (let i=0; i<annoteTargets.length; i++) {
+        const annoteTarget = annoteTargets[i];
+        const targetCell = annoteTarget.getAttribute("data-target-cell");
+        const targetAnnotation = annoteTarget.getAttribute("data-target-annotation");
+        const contentFn = () => {
+          const content = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          if (content) {
+            const tipContent = content.cloneNode(true);
+            tipContent.classList.add("code-annotation-tip-content");
+            return tipContent.outerHTML;
           }
-        });
+        }
+        const config = {
+          allowHTML: true,
+          content: contentFn,
+          onShow: (instance) => {
+            selectCodeLines(instance.reference);
+            instance.reference.classList.add('code-annotation-active');
+            window.tippy.hideAll();
+          },
+          onHide: (instance) => {
+            unselectCodeLines();
+            instance.reference.classList.remove('code-annotation-active');
+          },
+          maxWidth: 300,
+          delay: [50, 0],
+          duration: [200, 0],
+          offset: [5, 10],
+          arrow: true,
+          appendTo: function(el) {
+            return el.parentElement.parentElement.parentElement;
+          },
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'quarto',
+          placement: 'right',
+          popperOptions: {
+            modifiers: [
+            {
+              name: 'flip',
+              options: {
+                flipVariations: false, // true by default
+                allowedAutoPlacements: ['right'],
+                fallbackPlacements: ['right', 'top', 'top-start', 'top-end', 'bottom', 'bottom-start', 'bottom-end', 'left'],
+              },
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                mainAxis: false,
+                altAxis: false
+              }
+            }
+            ]        
+          }      
+        };
+        window.tippy(annoteTarget, config); 
       }
   const findCites = (el) => {
     const parentEl = el.parentElement;
@@ -727,7 +847,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 
-<div class="toc-actions"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/contribution.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>

@@ -167,12 +167,12 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../styles.css">
 <meta property="og:title" content="FrayedEnds -">
-<meta property="og:description" content="quantum computing and quantum chemistry">
+<meta property="og:description" content="Basis-Set-Free Quantum Chemistry">
 <meta property="og:image" content="preview.png">
 <meta property="og:site_name" content="FrayedEnds">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -193,8 +193,16 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../../tutorials.html"> 
 <span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../contribution.html"> 
+<span class="menu-text">Contribution</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -208,7 +216,21 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#defining-the-basis" id="toc-defining-the-basis" class="nav-link active" data-scroll-target="#defining-the-basis">Defining the Basis</a></li>
+  <li><a href="#integration" id="toc-integration" class="nav-link" data-scroll-target="#integration">Integration</a></li>
+  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
+  <li><a href="#multiresolution-analysis" id="toc-multiresolution-analysis" class="nav-link" data-scroll-target="#multiresolution-analysis">Multiresolution Analysis</a></li>
+  <li><a href="#wrap-up" id="toc-wrap-up" class="nav-link" data-scroll-target="#wrap-up">Wrap Up</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further Reading</a></li>
+  <li><a href="#dependencies" id="toc-dependencies" class="nav-link" data-scroll-target="#dependencies">Dependencies</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/tutorials/MRA/MRA.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
@@ -266,7 +288,7 @@ window.Quarto = {
 <p>To be consistent with some of the literature listed below, we will rescale the polynomials to the unit interval <span class="math display">\[
 \tilde{P}_k(x) = \sqrt{2k+1} P_k\left(2x-1\right)
 \]</span> where the prefactor ensures normalization. We can define this as small class in python code:</p>
-<div id="6700dbe0" class="cell" data-execution_count="1">
+<div id="9cd5a2b8" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -289,7 +311,7 @@ f \approx \sum_k c_l \tilde{P}_l(x) \quad c_l = \int_0^1 f(x)P_l(x) \operatornam
 <p>When using the polynomials as basis it is convenient to employ Gauss-Legendre <a href="https://en.wikipedia.org/wiki/Gauss%E2%80%93Legendre_quadrature">quadrature</a> for integration <span class="math display">\[
 \langle f \vert g \rangle = \int_0^1 f(x)g(x) \operatorname{d}x  \approx \sum_i wᵢ f(xᵢ)g(xᵢ)
 \]</span> where wᵢ and xᵢ are the points and wheights of the quadrature (we can conveniently import them from scipy). In code this looks like:</p>
-<div id="2bc8cd2c" class="cell" data-execution_count="2">
+<div id="2a9c2fbc" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> integrate(f,order,a<span class="op">=</span><span class="dv">0</span>,b<span class="op">=</span><span class="dv">1</span>, verbose<span class="op">=</span><span class="va">False</span>):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    integrate in interval [a,b] subset to [0,1]</span></span>
@@ -308,7 +330,7 @@ f \approx \sum_k c_l \tilde{P}_l(x) \quad c_l = \int_0^1 f(x)P_l(x) \operatornam
 </div>
 <p>where we already included the quadrature on <a href="https://en.wikipedia.org/wiki/Gaussian_quadrature#Change_of_interval">arbitrary intervals</a> <span class="math inline">\([a,b]\)</span>.</p>
 <p>Let’s test if everything works by checking orthonormality of our basis</p>
-<div id="c1cc0575" class="cell" data-execution_count="3">
+<div id="0af767ff" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>kmax <span class="op">=</span> <span class="dv">5</span></span>
@@ -339,7 +361,7 @@ f \approx \sum_k c_l \tilde{P}_l(x) \quad c_l = \int_0^1 f(x)P_l(x) \operatornam
 <p>Let’s represent some function with the Polynomial basis we have constructed above. We will use the function <span class="math display">\[
 f(x) = \sin\left( e^{-3.0*\left(2x-1\right)} \right)\frac{\sin\left(2x-1\right)}{2x-1}.
 \]</span> It looks like</p>
-<div id="2de3c86d" class="cell" data-execution_count="4">
+<div id="b921c1d1" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> f(x):</span>
@@ -366,7 +388,7 @@ f(x) = \sin\left( e^{-3.0*\left(2x-1\right)} \right)\frac{\sin\left(2x-1\right)}
 f(x) = \sum_{l=1}^{k} c_l \tilde{P}_l(x), \quad c_l = \langle f  \vert \tilde{P}_l \rangle.
 \]</span> and compute the coefficients with our Gauss-Legendre integration function defined above.</p>
 <p>We will do this by defining the class <code>ProjectedFunction</code></p>
-<div id="02e02b22" class="cell" data-execution_count="5">
+<div id="450c0570" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ProjectedFunction:</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, f, k<span class="op">=</span><span class="dv">1</span>):</span>
@@ -388,12 +410,12 @@ f(x) = \sum_{l=1}^{k} c_l \tilde{P}_l(x), \quad c_l = \langle f  \vert \tilde{P}
 \text{span}\left\{ \tilde{P}_l \right\}_{l=1}^{k} \subset {L}^2\left(\left[0,1\right]\right).
 \]</span><br>
 Through the <code>__call__</code> operator we can use initialized objects of <code>ProjectedFunction</code> just like regular functions.</p>
-<div id="928917c2" class="cell" data-execution_count="6">
+<div id="12c93e69" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>F <span class="op">=</span> ProjectedFunction(f, k<span class="op">=</span><span class="dv">5</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> F(<span class="fl">1.0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s see how our example function above looks like on different orders <span class="math inline">\(k\)</span>:</p>
-<div id="9c9e7441" class="cell" data-execution_count="7">
+<div id="780e1f80" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># x and y defined before</span></span>
@@ -427,7 +449,7 @@ V_n = \bigoplus_{l=0}^{2^n-1} V_n^l.
 \]</span> With this construction, we can approximate functions in <span class="math inline">\({L}^2\left(\left[0,1\right]\right)\)</span> with arbitrary accuracy. Or, more formally, <span class="math display">\[
 \overline{\bigcup_{n=0}^{\infty} V_n} = {L}\left(\left[0,1\right]\right).
 \]</span> meaning the closure of the union of all those shited and rescaled polyomials can be identified as the <span class="math inline">\({L}^2\)</span> space. We can implement this with some slight modifications to our <code>ProjectedFunction</code> class from before.</p>
-<div id="83d619cc" class="cell" data-execution_count="8">
+<div id="e4626f10" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ProjectedFunction:</span>
@@ -467,7 +489,7 @@ V_n = \bigoplus_{l=0}^{2^n-1} V_n^l.
 <p>Let’s see how our example function looks when projected against a space assembled from different <span class="math inline">\(V_n^l\)</span> with <span class="math inline">\(k=5\)</span>. Let’s start on level <span class="math inline">\(n=1\)</span> where we have split the interval <span class="math inline">\([0,1]\)</span> into the intervals <span class="math inline">\([0,0.5]\)</span> and <span class="math inline">\([0.5,1.0]\)</span>. Our approximation space is then <span class="math display">\[
 V = V_1^0 \bigoplus V_1^1
 \]</span> and the our example function projected onto <span class="math inline">\(V\)</span> is</p>
-<div id="dc301b43" class="cell" data-execution_count="9">
+<div id="9d84e011" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>L  <span class="op">=</span> ProjectedFunction(f,k<span class="op">=</span><span class="dv">5</span>,n<span class="op">=</span><span class="dv">1</span>,l<span class="op">=</span><span class="dv">0</span>)</span>
@@ -492,7 +514,7 @@ V = V_1^0 \bigoplus V_1^1
 <p>The left part looks like it could benefit from a bit more resolution: So we replace <span class="math inline">\(V_1^0\)</span> by <span class="math inline">\(V_2^0 \bigoplus V_2^1\)</span> <span class="math display">\[
 V = V_2^0 \bigoplus V_2^1 \bigoplus V_1^1.
 \]</span> Projected to <span class="math inline">\(V\)</span> our function know looks like</p>
-<div id="2ff9ba87" class="cell" data-execution_count="10">
+<div id="2de9e527" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>LL  <span class="op">=</span> ProjectedFunction(f,k<span class="op">=</span><span class="dv">5</span>,n<span class="op">=</span><span class="dv">2</span>,l<span class="op">=</span><span class="dv">0</span>)</span>
@@ -519,7 +541,7 @@ V = V_2^0 \bigoplus V_2^1 \bigoplus V_1^1.
 <p><span class="math display">\[
 V = V_4^0 \bigoplus V_4^1 \bigoplus V_3^1 \bigoplus V_2^1 \bigoplus V_1^1
 \]</span> which results in the representation</p>
-<div id="0f00cc83" class="cell" data-execution_count="11">
+<div id="c49ba52c" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>LLLR  <span class="op">=</span> ProjectedFunction(f,k<span class="op">=</span><span class="dv">5</span>,n<span class="op">=</span><span class="dv">4</span>,l<span class="op">=</span><span class="dv">0</span>)</span>
@@ -1116,7 +1138,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 
-<div class="toc-actions"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/tutorials/MRA/MRA.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/tutorials/MRA/MRA.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>
