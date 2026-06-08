@@ -3,12 +3,14 @@ title: "Directly Determined Pair-Natural Orbitals"
 author: "Jakob Kottmann"
 date: "2026-03-29"
 categories: [code]
+image: "preview.gif"
 image-width: "1cm"
 image-height: "1cm"
 format:
     html:
         code-fold: false
         eval: true
+        toc: true
 ---
 
 In the following we will see how to compute pair-natural orbitals (PNOs) at the basis set limit and
