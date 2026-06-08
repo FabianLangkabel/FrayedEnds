@@ -10,6 +10,7 @@ from .moleculargeometry import MolecularGeometry
 
 class MadPNO:
     _orbitals = None # ground state orbitals (HF + MP2 PNOs) 
+    _hf_orbitals = None # HF orbitals
     _cis_per_root = None # CIS X functions per root 
     _cis_orbitals = None # flat list with CIS X functions
     _cispd_orbitals = None # CISPD PNOs for excited states
@@ -24,6 +25,13 @@ class MadPNO:
         Convenience access for ground state orbitals
         """
         return self.get_orbitals(*args, **kwargs)
+    
+    @property
+    def hf_orbitals(self, *args, **kwargs):
+        """
+        Returns HF orbitals 
+        """
+        return self.get_hf_orbitals(*args, *kwargs)
 
     @property
     def cis_per_root(self):
@@ -37,7 +45,7 @@ class MadPNO:
     @property
     def cis_orbitals(self):
         """
-        flat orthonormalized CIS X vector for excited states
+        flat CIS X vector for excited states
         """
         if self._cis_orbitals is not None:
             return self._cis_orbitals
@@ -127,6 +135,7 @@ class MadPNO:
         self.impl.run(n_orbitals)
         # package the orbitals
         self._orbitals = self.impl.get_orbitals()
+        self._hf_orbitals = self.impl.get_hf_orbitals()
         self.cleanup(*args, **kwargs)
 
     @redirect_output("cis.log")
@@ -135,32 +144,14 @@ class MadPNO:
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
         self.impl.compute_cis(n_excitation)
-        self._cis_per_root = self.impl.get_cis_x_per_root()
+        self._cis_per_root = self.impl.get_cis_x_per_root() # cis_per_root is a vector<vector<real_function_3d>>
 
-        return self._cis_per_root
-
-    def orthonormalize_cis(self, integrals_obj, *args, **kwargs):
-        if self._cis_per_root is None: 
-            raise Exception("CIS orbitals not yet computed. Call compute_cis() first")
-        
-        hf_mp2_ref = list(self._orbitals)
-
-        if self._cis_per_root:
-            for ex in range(len(self._cis_per_root)):
-                x_funcs = self._cis_per_root[ex]
-                if not x_funcs:
-                    continue
-                x_funcs = integrals_obj.project_out(hf_mp2_ref, x_funcs)
-                if len(x_funcs) > 1:
-                    x_funcs = integrals_obj.orthonormalize(x_funcs, "symmetric", 1e-7)
-                self._cis_per_root[ex] = x_funcs
-                hf_mp2_ref.extend(x_funcs)
-
-        cis_flat = []
+        cis_flat = [] 
         for root in self._cis_per_root:
-            cis_flat.extend(root)
+            cis_flat.extend(root)   # created flat cis_orbitals (vector<real_function_3d>)
         
         self._cis_orbitals = cis_flat
+
         return self._cis_orbitals
     
     @redirect_output("cispd.log")
@@ -171,26 +162,17 @@ class MadPNO:
         self._cispd_orbitals = self.impl.get_cispd_orbitals()
         self.cleanup(*args, **kwargs)
         return self._cispd_orbitals
-    
-    def orthonormalize_cispd(self, integrals_obj, *args, **kwargs):
-        if self._cispd_orbitals is None:
-            raise Exception("CISPD orbitals not yet computed. Call compute_cispd() first.")
-        if self._cis_orbitals is None:
-            raise Exception("CIS orbitals not yet computed. Call compute_cis() and orthonormalize_cis() first.")
-        
-        reference = list(self._orbitals) + list(self._cis_orbitals)
-        cispd_orbitals_normalized = integrals_obj.project_out(reference, list(self._cispd_orbitals))
-
-        if len(cispd_orbitals_normalized) > 1:
-            cispd_orbitals_normalized = integrals_obj.orthonormalize(cispd_orbitals_normalized,"symmetric", 1e-7)
-
-        self._cispd_orbitals = cispd_orbitals_normalized
-        return self._cispd_orbitals
 
     def get_orbitals(self, *args, **kwargs):
         if self._orbitals is not None:
             return self._orbitals
         else:
+            raise Exception("ground state orbitals not yet computed")
+    
+    def get_hf_orbitals(self, *args, **kwargs):
+        if self._hf_orbitals is not None:
+            return self._hf_orbitals
+        else: 
             raise Exception("ground state orbitals not yet computed")
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
@@ -334,7 +316,7 @@ class MadPNO:
             "L": madworld.get_function_defaults()["cell_width"] / 2,
             "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-6,
-            "dconv": 5.0e-4,
+            "dconv": 1.0e-6,
             "localize": "boys",
         }
         data["nemo"] = {"ncf": "( none , 1.0)"}
