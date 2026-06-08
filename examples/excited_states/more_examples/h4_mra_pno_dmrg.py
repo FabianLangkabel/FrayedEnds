@@ -153,7 +153,7 @@ for d in distance:
 
         driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
         driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-        mpo = driver.get_qc_mpo(h1e=T + V, g2e=G, ecore=nuc_repulsion, iprint=0)
+        mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
         ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
         energies = driver.dmrg(
             mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1

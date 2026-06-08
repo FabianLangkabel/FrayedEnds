@@ -78,6 +78,7 @@ integrals = fe.Integrals3D(world)
 G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
 T = integrals.compute_kinetic_integrals(orbs)
 V = integrals.compute_potential_integrals(orbs, Vnuc)
+h1 = T + V
 S = integrals.compute_overlap_integrals(orbs)
 
 """
@@ -88,7 +89,16 @@ ncas = len(orbs)
 
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
 driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
-mpo = driver.get_qc_mpo(h1e=T + V, g2e=G, ecore=nuclear_repulsion_energy, iprint=0)
+mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuclear_repulsion_energy, iprint=0)
+ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
+energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
+
+idx = driver.orbital_reordering(h1, G)
+h1_new = h1[idx][:, idx]
+g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
+
+driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
+mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuclear_repulsion_energy, iprint=0)
 ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
 energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
 print("State-averaged MPS energies = [%s]" % " ".join("%20.15f" % x for x in energies))
@@ -103,28 +113,44 @@ print(
     "Energy from SA-pdms = %20.15f"
     % (np.einsum("ij,ij->", sa_1pdm, T + V) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy)
 )
+idx_back = np.zeros(len(idx), dtype=int)
+for i in range(len(idx)):
+    idx_back[idx[i]] = i
+
+sa_1pdm = sa_1pdm[idx_back][:, idx_back]
+sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
 sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
 np.savetxt("initial_energies.txt", energies)
 
 for iter in range(iterations):
     """
-  Refine orbitals
-  """
+    Refine orbitals
+    """
     opti = fe.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
 
     """
-  DMRG with refined orbitals
-  """
+    DMRG with refined orbitals
+    """
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
+    h1 = T + V
     S = integrals.compute_overlap_integrals(orbs)
 
     driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
     driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
-    mpo = driver.get_qc_mpo(h1e=T + V, g2e=G, ecore=nuclear_repulsion_energy, iprint=0)
+    mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuclear_repulsion_energy, iprint=0)
+    ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
+    energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
+
+    idx = driver.orbital_reordering(h1, G)
+    h1_new = h1[idx][:, idx]
+    g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
+
+    driver.initialize_system(n_sites=ncas, n_elec=n_elec, spin=0)
+    mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuclear_repulsion_energy, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
     energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
     print("State-averaged MPS energies after refinement = [%s]" % " ".join("%20.15f" % x for x in energies))
@@ -137,6 +163,13 @@ for iter in range(iterations):
         "Energy from SA-pdms = %20.15f"
         % (np.einsum("ij,ij->", sa_1pdm, T + V) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy)
     )
+
+    idx_back = np.zeros(len(idx), dtype=int)
+    for i in range(len(idx)):
+        idx_back[idx[i]] = i
+
+    sa_1pdm = sa_1pdm[idx_back][:, idx_back]
+    sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
 fe.cleanup(globals())
