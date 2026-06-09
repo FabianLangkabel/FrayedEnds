@@ -17,6 +17,8 @@ class NWChem_Converter:
         return self.get_normalized_aos(*args, **kwargs)
 
     def __init__(self, madworld, *args, **kwargs):
+        if madworld.dimensions != 3: 
+            raise ValueError(f"NWChem conversion only possible in 3 dimensions. MadWorld is initialized with {madworld.dimensions} dims.")
         self.impl = converter(madworld.impl)
 
     @redirect_output("read_nwchem_file.log")

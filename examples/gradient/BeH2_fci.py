@@ -6,7 +6,7 @@ from pyscf import fci
 
 import frayedends as fe
 
-world = fe.MadWorld3D(thresh=1e-6)
+world = fe.MadWorld(ndims=3, thresh=1e-6)
 
 distance_list = [1.5 + 1.5 * i for i in range(2)]
 Energy_list = []
@@ -38,7 +38,7 @@ for distance in distance_list:
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     all_orbitals = integrals.orthonormalize(orbitals=orbitals)
 
     frozen_orbitals = []
@@ -53,7 +53,7 @@ for distance in distance_list:
     current = 0.0
     for iteration in range(5):
         print("------------------------------------------------------------------------------")
-        integrals = fe.Integrals3D(world)
+        integrals = fe.Integrals(world)
         if iteration == 0:
             all_orbitals = frozen_orbitals + active_orbitals
             G = integrals.compute_two_body_integrals(all_orbitals)
@@ -112,7 +112,7 @@ for distance in distance_list:
         current = e + c
 
         opti_start = time.time()
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = fe.Optimization(world, Vnuc, nuc_repulsion)
         frozen_orbitals, active_orbitals, converged = opti.optimize_orbs(
             rdm1=rdm1,
             rdm2=rdm2,

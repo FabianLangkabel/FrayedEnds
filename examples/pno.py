@@ -10,7 +10,7 @@ name = "LiH"
 print(name)
 geom = "Li 0.0 0.0 0.0\nH 0.0 0.0 1.25"  # geometry in Angstrom
 molgeom = frayedends.MolecularGeometry(geom, units="angstrom")
-world = frayedends.MadWorld3D()
+world = frayedends.MadWorld(ndims=3)
 
 # initialize the PNO interface
 madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=3)
@@ -18,7 +18,7 @@ orbitals = madpno.get_orbitals()
 
 print("info:", frayedends.get_function_info(orbitals))
 print("pno_groupings:", madpno.get_pno_groupings())
-integrals = frayedends.Integrals3D(world)
+integrals = frayedends.Integrals(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 print(madpno.get_spa_edges(frozen_core=False))
 print(madpno.get_spa_edges(frozen_core=True))
@@ -28,7 +28,7 @@ Vnuc = madpno.get_nuclear_potential()
 
 c = nuc_repulsion
 for iteration in range(30):
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
@@ -52,7 +52,7 @@ for iteration in range(30):
     print("iteration {} energy {:+2.10f}".format(iteration, result.energy))
 
     orbitals = [orbitals[:1], orbitals[1:]]
-    opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
+    opti = frayedends.Optimization(world, Vnuc, nuc_repulsion)
     orbitals = opti.get_orbitals(
         orbitals=orbitals,
         rdm1=rdm1,

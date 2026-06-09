@@ -11,7 +11,7 @@ true_start = time()
 # initialize the PNO interface
 geom = "H 0.0 0.0 0.0\nH 0.0 0.0 3.5\nH 0.0 0.0 7.0\nH 0.0 0.0 10.5"  # geometry in Angstrom
 
-world = frayedends.MadWorld3D()
+world = frayedends.MadWorld(ndims=3)
 madpno = frayedends.MadPNO(world, geom, n_orbitals=4)
 orbitals = madpno.get_orbitals()
 
@@ -21,7 +21,7 @@ Vnuc = madpno.get_nuclear_potential()
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
-integrals = frayedends.Integrals3D(world)
+integrals = frayedends.Integrals(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
 c = nuc_repulsion
@@ -29,7 +29,7 @@ for iteration in range(6):
     for i in range(len(orbitals)):
         world.line_plot(f"orbital_{i}_iteration_{iteration}.dat", orbitals[i])
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     G = integrals.compute_two_body_integrals(orbitals).elems
     T = integrals.compute_kinetic_integrals(orbitals)
     V = integrals.compute_potential_integrals(orbitals, Vnuc)
@@ -39,10 +39,10 @@ for iteration in range(6):
     rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
     print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
-    opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
+    opti = frayedends.Optimization(world, Vnuc, nuc_repulsion)
     new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     S = integrals.compute_overlap_integrals(orbitals, new_orbitals)
     print("overlap new and old")
     print(S)

@@ -183,6 +183,8 @@ NB_MODULE(_frayedends_impl, m) {
 
     nb::class_<Optimization<2>>(m, "Optimization2D")
         .def(nb::init<MadnessProcess<2>&>())
+        .def("override_numerical_parameters", &Optimization<2>::override_numerical_parameters)
+        .def("get_numerical_parameters", &Optimization<2>::get_numerical_parameters)
         .def("give_initial_orbitals", &Optimization<2>::give_initial_orbitals)
         .def("give_rdm_and_rotate_orbitals", &Optimization<2>::give_rdm_and_rotate_orbitals)
         .def("give_potential_and_repulsion", &Optimization<2>::give_potential_and_repulsion)
@@ -198,6 +200,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization<2>::rotate_orbitals_back)
         .def("set_orthonormalization_method", &Optimization<2>::set_orthonormalization_method)
         .def("get_orbitals", &Optimization<2>::get_orbitals)
+        .def("get_effective_hamiltonian", &Optimization<2>::get_effective_hamiltonian)
         .def("get_c", &Optimization<2>::get_c);
 
     nb::class_<Optimization_open_shell<3>>(m, "Optimization_open_shell_3D")

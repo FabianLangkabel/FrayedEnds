@@ -18,6 +18,9 @@ class AtomicBasisProjector:
         *args,
         **kwargs,
     ):
+        if madworld.dimensions != 3: 
+            raise ValueError(f"Atomic basis projection only possible in 3 dimensions. MadWorld is initialized with {madworld.dimensions} dims.")
+        
         self.silent = silent
         # check if geometry is given as a file
         # if not write the file

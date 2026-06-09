@@ -60,7 +60,7 @@ programm = sp.call(
 )
 
 # Initalize world
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
 converter = fe.NWChem_Converter_open_shell(world)

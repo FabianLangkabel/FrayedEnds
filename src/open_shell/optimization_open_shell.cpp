@@ -512,15 +512,17 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         }
 
         // Project core orbitals out of active space orbitals
-        for(int spin = 0; spin < 2; spin++)
-        {
-            auto Q = QProjector(*(madness_process.world), frozen_occ_orbs[spin]);
-            for (int i = 0; i < as_dims[spin]; i++)
+        if (this->has_core_orbitals) {
+            for(int spin = 0; spin < 2; spin++)
             {
-                active_orbs[spin][i] = Q(active_orbs[spin][i]);
+                auto Q = QProjector(*(madness_process.world), frozen_occ_orbs[spin]);
+                for (int i = 0; i < as_dims[spin]; i++)
+                {
+                    active_orbs[spin][i] = Q(active_orbs[spin][i]);
+                }
             }
         }
-
+        
         // Orthonormalize as orbitals
         for(int spin = 0; spin < 2; spin++)
         {

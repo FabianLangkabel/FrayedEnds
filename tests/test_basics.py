@@ -7,7 +7,7 @@ import frayedends
 
 @pytest.mark.parametrize("geom", ["he 0.0 0.0 0.0", "Be 0.0 0.0 0.0"])
 def test_pno_execution(geom):
-    world = frayedends.MadWorld3D()
+    world = frayedends.MadWorld(ndims=3)
 
     madpno = frayedends.MadPNO(world, geom, n_orbitals=2)
     orbitals = madpno.get_orbitals()
@@ -15,7 +15,7 @@ def test_pno_execution(geom):
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
     V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
     S = integrals.compute_overlap_integrals(orbitals)
@@ -38,7 +38,7 @@ def test_pno_execution(geom):
 def test_spa(data):
     geom, test_energy = data
     geom = geom.lower()
-    world = frayedends.MadWorld3D()
+    world = frayedends.MadWorld(ndims=3)
     n = 2
     if "be" in geom:
         n = 3
@@ -51,7 +51,7 @@ def test_spa(data):
 
     energy = 0.0
     for iteration in range(1):
-        integrals = frayedends.Integrals3D(world)
+        integrals = frayedends.Integrals(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         n_orbitals = len(orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
@@ -72,7 +72,7 @@ def test_spa(data):
         active_orbs = orbitals[(len(orbitals)-rdm1.shape[0]):]
 
 
-        opti = frayedends.Optimization3D(world, Vnuc, c)
+        opti = frayedends.Optimization(world, Vnuc, c)
         orbitals = opti.get_orbitals(
             orbitals=[core_orbs, active_orbs], rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
         )
@@ -86,8 +86,8 @@ def test_evaluate_3D():
     def functor(x,y,z):
         r = (x+1.0)**2 + (y+2.0)**2 + (z-3.0)**2
         return 3.0*numpy.exp(-r**2)
-    world = frayedends.MadWorld3D(L=20.0)
-    factory = frayedends.MRAFunctionFactory3D(world, functor)
+    world = frayedends.MadWorld(ndims=3, L=20.0)
+    factory = frayedends.MRAFunctionFactory(world, functor)
     f = factory.get_function()
     del factory
     points = list(numpy.clip(numpy.random.normal(loc=0.0, scale=1.0, size=3*100), a_max=20, a_min=-20))
@@ -101,8 +101,8 @@ def test_evaluate_2D():
     def functor(x,y):
         r = (x+1.0)**2 + (y+2.0)**2
         return 3.0*numpy.exp(-r**2)
-    world = frayedends.MadWorld2D(L=20.0)
-    factory = frayedends.MRAFunctionFactory2D(world, functor)
+    world = frayedends.MadWorld(ndims=2, L=20.0)
+    factory = frayedends.MRAFunctionFactory(world, functor)
     f = factory.get_function()
     del factory
     points = list(numpy.clip(numpy.random.normal(loc=0.0, scale=1.0, size=2*100), a_max=20, a_min=-20))

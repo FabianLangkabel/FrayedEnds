@@ -7,8 +7,7 @@ from scipy.constants import physical_constants
 from tequila import Molecule
 
 from ._frayedends_impl import MolecularGeometry as MolecularGeometryImpl
-from .integrals import Integrals3D
-
+from .integrals import Integrals
 
 class MolecularGeometry:
     impl = None
@@ -118,7 +117,7 @@ class MolecularGeometry:
         if len(act_orbs) != np.shape(rdm1)[0]:
             raise ValueError("Number of active orbitals does not match 1-RDM size.")
 
-        integrals = Integrals3D(madworld)
+        integrals = Integrals(madworld)
         gradV = []
 
         for atom in range(n_atoms):
@@ -151,7 +150,7 @@ class MolecularGeometry:
         if len(act_orbs) != np.shape(rdm1)[0]:
             raise ValueError("Number of active orbitals does not match 1-RDM size.")
 
-        integrals = Integrals3D(madworld)
+        integrals = Integrals(madworld)
         gradV = []
 
         for atom in range(n_atoms):

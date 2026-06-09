@@ -15,7 +15,7 @@ def solve(world, geometry, n_act, n_core, name, tt = 1e-6, clo = 0.001, ceps = 1
     nuc_repulsion = madpno.get_nuclear_repulsion()
     orbitals = madpno.get_orbitals()
 
-    integrals = fe.Integrals3D(world, truncation_tol=tt, coulomb_eps=ceps, coulomb_lo=clo)
+    integrals = fe.Integrals(world, truncation_tol=tt, coulomb_eps=ceps, coulomb_lo=clo)
     print(integrals.get_numerical_parameters())
     orbitals = integrals.orthonormalize(orbitals=orbitals)
 
@@ -42,7 +42,7 @@ def solve(world, geometry, n_act, n_core, name, tt = 1e-6, clo = 0.001, ceps = 1
         print("iteration {} energy {:+2.10f}".format(iteration, e + c))
 
         opti_start= time()
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion, truncation_tol=tt, coulomb_eps=ceps, coulomb_lo=clo, BSH_lo=Blo, BSH_eps=Beps)
+        opti = fe.Optimization(world, Vnuc, nuc_repulsion, truncation_tol=tt, coulomb_eps=ceps, coulomb_lo=clo, BSH_lo=Blo, BSH_eps=Beps)
         if iteration == 0:
             print(opti.get_numerical_parameters())
         core, active, converged = opti.optimize_orbs(
@@ -74,7 +74,7 @@ test_list = [
     {"geometry": "H 0.0 1.0 -1.5\nMg 1.0 0.0 0.0\nH 0.0 1.0 1.5", "n_act": 4, "n_core": 5, "name": "MgH2","Blo": 0.005, "Beps": 3e-6}
 ]
 
-world = fe.MadWorld3D()
+world = fe.MadWorld(ndims=3)
 for test in test_list:
     solve(world, **test)
 
