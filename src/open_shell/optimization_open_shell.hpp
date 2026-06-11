@@ -37,6 +37,17 @@ class Optimization_open_shell {
         }
     }
 
+    std::vector<std::tuple<std::string, double>> get_numerical_parameters() {
+        return {std::make_tuple("truncation_tol", num_params.truncation_tol),
+                std::make_tuple("coulomb_lo", num_params.coulomb_lo),
+                std::make_tuple("coulomb_eps", num_params.coulomb_eps),
+                std::make_tuple("BSH_lo", num_params.BSH_lo),
+                std::make_tuple("BSH_eps", num_params.BSH_eps),
+                std::make_tuple("Integrator truncation_tol", Integrator->num_params.truncation_tol),
+                std::make_tuple("Integrator coulomb_lo", Integrator->num_params.coulomb_lo),
+                std::make_tuple("Integrator coulomb_eps", Integrator->num_params.coulomb_eps)};
+    }
+
     // input
     void give_initial_orbitals(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals);
     void give_rdm_and_rotate_orbitals(std::vector<Numpy2D>& one_rdms, std::vector<Numpy4D>& two_rdms);

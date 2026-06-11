@@ -60,7 +60,7 @@ for d in distance:
     else:
         raise ValueError("Invalid geometry mode selected.")
 
-    world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+    world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
     madpno = fe.MadPNO(world, geom, n_orbitals=8)
     orbs = madpno.get_orbitals()
@@ -68,7 +68,7 @@ for d in distance:
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     orbs = integrals.orthonormalize(orbitals=orbs)
     for i in range(len(orbs)):
         orbs[i].type = "active"
@@ -82,7 +82,7 @@ for d in distance:
     for iteration in range(iterations):
         iter_start = time.perf_counter()
 
-        integrals = fe.Integrals3D(world)
+        integrals = fe.Integrals(world)
         G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
         T = integrals.compute_kinetic_integrals(orbs)
         V = integrals.compute_potential_integrals(orbs, Vnuc)
@@ -98,7 +98,7 @@ for d in distance:
 
         print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = fe.Optimization(world, Vnuc, nuc_repulsion)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
 
         # for i in range(len(orbs)):

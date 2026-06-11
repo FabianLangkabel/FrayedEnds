@@ -193,14 +193,14 @@ void Optimization<NDIM>::calculate_lagrange_multiplier() {
         //Lagrange Multiplier for Core Refinement
         if(refine_core)
         {
-            madness::Tensor<double> LagrangeMultiplier_Core_Core = madness::Tensor<double>(core_dim, core_dim);
+            LagrangeMultiplier_Core_Core = madness::Tensor<double>(core_dim, core_dim);
             for (int z = 0; z < core_dim; z++) {
                 for (int c = 0; c < core_dim; c++) {
                     LagrangeMultiplier_Core_Core(z, c) = calculate_lagrange_multiplier_element_core_core(z, c);
                 }
             }
 
-            madness::Tensor<double> LagrangeMultiplier_Core_AS = madness::Tensor<double>(as_dim, core_dim);
+            LagrangeMultiplier_Core_AS = madness::Tensor<double>(as_dim, core_dim);
             for (int z = 0; z < as_dim; z++) {
                 for (int c = 0; c < core_dim; c++) {
                     LagrangeMultiplier_Core_AS(z, c) = calculate_lagrange_multiplier_element_core_as(z, c);
@@ -310,7 +310,7 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_core_core(int z
 template <std::size_t NDIM>
 double Optimization<NDIM>::calculate_lagrange_multiplier_element_core_as(int z, int c) {
     // lagrange multiplier for the case that z is active and c is a core orbital index, needed for core orbital refinement
-    double element = core_as_integrals_one_body_ak(c, z);
+    double element = 2 * core_as_integrals_one_body_ak(c, z);
 
     // 4<za|ca> - 2<za|ac>
     for (int a = 0; a < core_dim; a++) {
@@ -366,22 +366,6 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         calculate_lagrange_multiplier();
 
         //************************************
-        // Core Orbital Refinement
-        //************************************
-        if (refine_core) {
-            auto start_core_orb_update_time = std::chrono::high_resolution_clock::now();
-            highest_core_error = 0;
-
-            std::vector<Function<double, NDIM>> AllCoreOrbitalUpdates = get_all_core_orbital_updates();
-            for (int c = 0; c < core_dim; c++) {
-                frozen_occ_orbs[c] = frozen_occ_orbs[c] - AllCoreOrbitalUpdates[c];
-            }
-            auto end_core_orb_update_time = std::chrono::high_resolution_clock::now();
-            auto core_duration = std::chrono::duration_cast<std::chrono::seconds>(end_core_orb_update_time - start_core_orb_update_time);
-            std::cout << "Get core orbital updates took " << core_duration.count() << " seconds" << std::endl;
-        }
-
-        //************************************
         // AS Orbital Refinement
         //************************************
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();
@@ -398,17 +382,33 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
             }
         }
 
-        std::vector<Function<double, NDIM>> AllActiveOrbitalUpdates =
-            get_all_active_orbital_updates(as_orbital_indicies_for_update);
+        std::vector<Function<double, NDIM>> AllActiveOrbitalUpdates = get_all_active_orbital_updates(as_orbital_indicies_for_update);
+        
+        auto end_orb_update_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
+        std::cout << "Get as orbital updates took " << duration.count() << " seconds" << std::endl;
 
+        //************************************
+        // Core Orbital Refinement
+        //************************************
+        if (refine_core) {
+            auto start_core_orb_update_time = std::chrono::high_resolution_clock::now();
+            highest_core_error = 0;
+
+            std::vector<Function<double, NDIM>> AllCoreOrbitalUpdates = get_all_core_orbital_updates();
+            for (int c = 0; c < core_dim; c++) {
+                frozen_occ_orbs[c] = frozen_occ_orbs[c] - AllCoreOrbitalUpdates[c];
+            }
+            auto end_core_orb_update_time = std::chrono::high_resolution_clock::now();
+            auto core_duration = std::chrono::duration_cast<std::chrono::seconds>(end_core_orb_update_time - start_core_orb_update_time);
+            std::cout << "Get core orbital updates took " << core_duration.count() << " seconds" << std::endl;
+        }
+
+        // update AS orbitals
         for (int idx = 0; idx < as_orbital_indicies_for_update.size(); idx++) {
             int actIdx = as_orbital_indicies_for_update[idx];
             active_orbs[actIdx] = active_orbs[actIdx] - AllActiveOrbitalUpdates[idx];
         }
-
-        auto end_orb_update_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
-        std::cout << "Get as orbital updates took " << duration.count() << " seconds" << std::endl;
 
         // Orthonormalize orbitals
         if(refine_core)
@@ -563,7 +563,7 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
         int i = orbital_indicies_for_update[idx];
         double en = LagrangeMultiplier_AS_AS(i, i) * rdm_ii_inv[idx];
         if (en > 0) {
-            std::cout << "Warning: Positive Lagrange multiplier for orbital " << i << ": " << en << std::endl;
+            std::cout << "Warning: Positive Lagrange multiplier for active orbital " << i << ": " << en << std::endl;
             en = -1e-3; // Set to small negative value to avoid issues
             std::cout << "Setting it to " << en << "." << std::endl;
         }
@@ -670,13 +670,18 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_core_orbital_upd
             }
         }
         kcl = truncate(kcl, num_params.truncation_tol);
-        AllOrbitalUpdates[c] -= 1/2 * sum(*(madness_process.world), kcl);
+        AllOrbitalUpdates[c] -= 0.5 * sum(*(madness_process.world), kcl);
     }
     
     auto t4 = std::chrono::high_resolution_clock::now();
     // BSH part
     for (int c = 0; c < core_dim; c++) {
         double en = LagrangeMultiplier_Core_Core(c, c);
+        if (en > 0) {
+            std::cout << "Warning: Positive Lagrange multiplier for core orbital " << c << ": " << en << std::endl;
+            en = -1e-3; // Set to small negative value to avoid issues
+            std::cout << "Setting it to " << en << "." << std::endl;
+        }
         SeparatedConvolution<double, NDIM> bsh_op =
             BSHOperator<NDIM>(*(madness_process.world), sqrt(-en), num_params.BSH_lo, num_params.BSH_eps);
         Function<double, NDIM> r = frozen_occ_orbs[c] + 2.0 * bsh_op(AllOrbitalUpdates[c]); // the residual

@@ -107,7 +107,7 @@ for d in distance:
         shell=True,
     )
 
-    world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+    world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
     converter = fe.NWChem_Converter(world)
     converter.read_nwchem_file("nwchem")
@@ -121,7 +121,7 @@ for d in distance:
     # for i in range(len(orbs)):
     #   world.line_plot(f"initial_orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)

@@ -39,6 +39,12 @@ class Integrals_open_shell {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
     }
 
+    std::vector<std::tuple<std::string, double>> get_numerical_parameters() {
+        return {std::make_tuple("truncation_tol", num_params.truncation_tol),
+                std::make_tuple("coulomb_lo", num_params.coulomb_lo),
+                std::make_tuple("coulomb_eps", num_params.coulomb_eps)};
+    }
+
     // Utility Functions
     std::array<std::vector<Function<double, NDIM>>, 2> read_orbitals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
     void update_as_integral_combinations(std::array<std::vector<Function<double, NDIM>>, 2> &orbitals, std::array<std::vector<Function<double, NDIM>>, 2> &orbs_kl, std::array<std::vector<Function<double, NDIM>>, 2> &coul_orbs_mn);

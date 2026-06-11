@@ -111,7 +111,7 @@ for d in distance:
         shell=True,
     )
 
-    world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+    world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
     converter = fe.NWChem_Converter(world)
     converter.read_nwchem_file("nwchem")
@@ -131,7 +131,7 @@ for d in distance:
     for iteration in range(iterations):
         iter_start = time.perf_counter()
 
-        integrals = fe.Integrals3D(world)  # Setup for integrals
+        integrals = fe.Integrals(world)  # Setup for integrals
         G = integrals.compute_two_body_integrals(
             orbs, ordering="chem"
         ).elems  # g-tensor (electron-electron interaction)
@@ -150,7 +150,7 @@ for d in distance:
         print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
         # Orbital optimization
-        opti = fe.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
+        opti = fe.Optimization(world, Vnuc, nuclear_repulsion_energy)
         orbs = opti.get_orbitals(
             orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
         )  # Optimizes the orbitals and returns the new ones

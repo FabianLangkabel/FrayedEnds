@@ -156,9 +156,18 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_kinetic_integrals", &Integrals_open_shell<3>::nb_compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_two_body_integrals", &Integrals_open_shell<3>::nb_compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_effective_hamiltonian", &Integrals_open_shell<3>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
+        .def("get_numerical_parameters", &Integrals_open_shell<3>::get_numerical_parameters)
         .def("override_numerical_parameters", static_cast<void (Integrals_open_shell<3>::*)(double, double, double, double, double)>(&Integrals_open_shell<3>::override_numerical_parameters), nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
         
-
+nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
+        .def(nb::init<MadnessProcess<2>&>())
+        .def("compute_potential_integrals", &Integrals_open_shell<2>::nb_compute_potential_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"), nb::arg("potential"))
+        .def("compute_kinetic_integrals", &Integrals_open_shell<2>::nb_compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
+        .def("compute_two_body_integrals", &Integrals_open_shell<2>::nb_compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
+        .def("compute_effective_hamiltonian", &Integrals_open_shell<2>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
+        .def("get_numerical_parameters", &Integrals_open_shell<2>::get_numerical_parameters)
+        .def("override_numerical_parameters", static_cast<void (Integrals_open_shell<2>::*)(double, double, double, double, double)>(&Integrals_open_shell<2>::override_numerical_parameters), nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
+    
     nb::class_<Optimization<3>>(m, "Optimization3D")
         .def(nb::init<MadnessProcess<3>&>())
         .def("override_numerical_parameters", &Optimization<3>::override_numerical_parameters)
@@ -218,7 +227,26 @@ NB_MODULE(_frayedends_impl, m) {
         .def("rotate_orbitals_back", &Optimization_open_shell<3>::rotate_orbitals_back)
         .def("get_effective_hamiltonian", &Optimization_open_shell<3>::get_effective_hamiltonian)
         .def("get_orbitals", &Optimization_open_shell<3>::get_orbitals)
+        .def("get_numerical_parameters", &Optimization_open_shell<3>::get_numerical_parameters)
         .def("override_numerical_parameters", &Optimization_open_shell<3>::override_numerical_parameters, nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
+
+    nb::class_<Optimization_open_shell<2>>(m, "Optimization_open_shell_2D")
+        .def(nb::init<MadnessProcess<2>&>())
+        .def("give_initial_orbitals", &Optimization_open_shell<2>::give_initial_orbitals)
+        .def("give_rdm_and_rotate_orbitals", &Optimization_open_shell<2>::give_rdm_and_rotate_orbitals)
+        .def("give_potential_and_repulsion", &Optimization_open_shell<2>::give_potential_and_repulsion)
+        .def("calculate_all_integrals", &Optimization_open_shell<2>::calculate_all_integrals)
+        .def("calculate_energies", &Optimization_open_shell<2>::calculate_energies)
+        .def("calculate_lagrange_multiplier", &Optimization_open_shell<2>::calculate_lagrange_multiplier)
+        .def("calculate_lagrange_multiplier_element_as_as", &Optimization_open_shell<2>::calculate_lagrange_multiplier_element_as_as)
+        .def("calculate_lagrange_multiplier_element_as_core", &Optimization_open_shell<2>::calculate_lagrange_multiplier_element_as_core)
+        .def("optimize_orbitals", &Optimization_open_shell<2>::optimize_orbitals)
+        .def("get_all_active_orbital_updates", &Optimization_open_shell<2>::get_all_active_orbital_updates)
+        .def("rotate_orbitals_back", &Optimization_open_shell<2>::rotate_orbitals_back)
+        .def("get_effective_hamiltonian", &Optimization_open_shell<2>::get_effective_hamiltonian)
+        .def("get_orbitals", &Optimization_open_shell<2>::get_orbitals)
+        .def("get_numerical_parameters", &Optimization_open_shell<2>::get_numerical_parameters)
+        .def("override_numerical_parameters", &Optimization_open_shell<2>::override_numerical_parameters, nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
 
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<MadnessProcess<3>&, const std::string&>())

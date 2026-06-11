@@ -3,6 +3,7 @@ import numpy as np
 from ._frayedends_impl import Optimization2D as OptInterface2D
 from ._frayedends_impl import Optimization3D as OptInterface3D
 from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
+from ._frayedends_impl import Optimization_open_shell_2D as OptInterface_open_shell_2D
 from ._frayedends_impl import SavedFct2D, SavedFct3D
 from .madworld import MadWorld, redirect_output
 from tequila.quantumchemistry import NBodyTensor
@@ -78,9 +79,9 @@ class Optimization:
             self.impl = OptInterface2D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
-        self.set_numerical_parameters(**kwargs)
+        self.override_numerical_parameters(**kwargs)
 
-    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, BSH_lo = 0.001, BSH_eps = 1e-6):
+    def override_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, BSH_lo = 0.001, BSH_eps = 1e-6):
         # truncation_tol: truncation tolerance for MRA representation of orbitals
         # coulomb_lo and coulomb_eps govern the accuracy of the representation of the Coulomb kernel
         # BSH_lo and BSH_eps govern the accuracy of the representation of the BSH kernel
@@ -186,21 +187,27 @@ class Optimization:
         return self._c
 
 
-class Optimization_open_shell_3D:
+class Optimization_open_shell:
     _orbitals = None
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
     impl = None
     converged = None  # indicates if the last call converged
-
+    dimensions = None
     # @property
     # def orbitals(self, *args, **kwargs):
     #    return self.get_orbitals(*args, **kwargs)
 
     def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
-        self.impl = OptInterface_open_shell_3D(madworld.impl)
+        if madworld.dimensions == 3:
+            self.dimensions = 3
+            self.impl = OptInterface_open_shell_3D(madworld.impl)
+        if madworld.dimensions == 2:
+            self.dimensions = 2
+            self.impl = OptInterface_open_shell_2D(madworld.impl)
         self._Vnuc = Vnuc
         self._nuclear_repulsion = nuc_repulsion
+        self.override_numerical_parameters(**kwargs)
 
     @redirect_output("madopt.log")
     def optimize_orbs(
@@ -234,3 +241,11 @@ class Optimization_open_shell_3D:
         self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6, *args, **kwargs
     ):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
+        
+    def get_numerical_parameters(self):
+        params = self.impl.get_numerical_parameters()
+        p_dict = {}
+        for i in params:
+            p_dict[i[0]] = i[1]
+        return p_dict
+    

@@ -3,7 +3,8 @@ from tequila.quantumchemistry import NBodyTensor
 
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
-from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D
+from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D 
+from ._frayedends_impl import Integrals_open_shell_2D as IntegralsInterface_open_shell_2D 
 from .madworld import MadWorld
 
 class Integrals:
@@ -17,9 +18,9 @@ class Integrals:
         elif madworld.dimensions == 2:
             self.dimensions = 2
             self.impl = IntegralsInterface2D(madworld.impl)
-        self.set_numerical_parameters(**kwargs)
+        self.override_numerical_parameters(**kwargs)
 
-    def set_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6):
+    def override_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps)
 
     def get_numerical_parameters(self):
@@ -61,7 +62,7 @@ class Integrals:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
     
-    def get_effective_hamiltonian(self, core_orbitals, active_orbitals, V, energy_offset, g_ordering = "phys") -> tuple[float, np.ndarray, np.ndarray]:
+    def compute_effective_hamiltonian(self, core_orbitals, active_orbitals, V, energy_offset, g_ordering = "phys") -> tuple[float, np.ndarray, np.ndarray]:
         H_eff = self.impl.compute_effective_hamiltonian(
             core_orbitals, active_orbitals, V, energy_offset
         )
@@ -123,17 +124,31 @@ class Integrals:
         return self.transform(orbitals, vec), val, vec  # transform the orbitals to the natural orbitals
 
 
-class Integrals_open_shell_3D:
+class Integrals_open_shell:
     impl = None
+    dimensions = None
 
     def __init__(self, madworld, *args, **kwargs):
-        self.impl = IntegralsInterface_open_shell_3D(madworld.impl)
+        if madworld.dimensions == 3:
+            self.dimensions = 3
+            self.impl = IntegralsInterface_open_shell_3D(madworld.impl)
+        elif madworld.dimensions == 2:
+            self.dimensions = 2
+            self.impl = IntegralsInterface_open_shell_2D(madworld.impl)
+        self.override_numerical_parameters(**kwargs)
 
     def override_numerical_parameters(
         self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6, *args, **kwargs
     ):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
 
+    def get_numerical_parameters(self):
+        params = self.impl.get_numerical_parameters()
+        p_dict = {}
+        for i in params:
+            p_dict[i[0]] = i[1]
+        return p_dict
+    
     def compute_two_body_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
         G = self.impl.compute_two_body_integrals(alpha_orbitals, beta_orbitals)
         return G[0], G[1], G[2]

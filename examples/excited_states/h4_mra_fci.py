@@ -70,7 +70,7 @@ programm = sp.call(
 )
 
 # Setting up the numerical environment for the MRA calculations
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Read the molecular orbitals (MOs) from the NWchem calculation and translate them into multiwavelets
 converter = fe.NWChem_Converter(world)
@@ -89,7 +89,7 @@ current = 0.0
 for iteration in range(iterations):
     iter_start = time.perf_counter()
 
-    integrals = fe.Integrals3D(world)  # Setup for integrals
+    integrals = fe.Integrals(world)  # Setup for integrals
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
     T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
     V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
@@ -105,7 +105,7 @@ for iteration in range(iterations):
     print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
     # Orbital Refinement
-    opti = fe.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
+    opti = fe.Optimization(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(
         orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )  # Refines the orbitals and returns the new ones

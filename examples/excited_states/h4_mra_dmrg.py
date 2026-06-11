@@ -71,7 +71,7 @@ programm = sp.call(
 )
 
 # Setting up the numerical environment for the MRA calculations
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Read the molecular orbitals (MOs) from the NWchem calculation and translate them into multiwavelets
 converter = fe.NWChem_Converter(world)
@@ -87,7 +87,7 @@ for i in range(n_orbitals):
     world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot guess orbitals
 
 # Calculate initial integrals
-integrals = fe.Integrals3D(world)
+integrals = fe.Integrals(world)
 G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
 T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
 V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
@@ -120,7 +120,7 @@ for iter in range(iterations):
     iter_start = time.perf_counter()
 
     # Orbital Refinement
-    opti = fe.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
+    opti = fe.Optimization(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
 
     for i in range(len(orbs)):
