@@ -145,8 +145,8 @@ print("Energy from rdms = %20.15f" % rdm_energy)
 
 # Refine orbitals
 
-opti = fe.Optimization_open_shell(world, Vnuc, nuclear_repulsion_energy)
-opti.optimize_orbs(
+opti = fe.OrbitalRefinement_open_shell(world, Vnuc, nuclear_repulsion_energy)
+opti.refine_orbitals(
     orbitals=[[], [], alpha_mos, beta_mos],
     rdm1=rdm_1,
     rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb],

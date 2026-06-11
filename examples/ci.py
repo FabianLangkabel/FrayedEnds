@@ -39,7 +39,7 @@ for iteration in range(6):
     rdm1, rdm2, energy = mol.compute_rdms(method=method, return_energy=True)
     print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
-    opti = frayedends.Optimization(world, Vnuc, nuc_repulsion)
+    opti = frayedends.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
 
     integrals = frayedends.Integrals(world)

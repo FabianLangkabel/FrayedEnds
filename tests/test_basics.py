@@ -72,7 +72,7 @@ def test_spa(data):
         active_orbs = orbitals[(len(orbitals)-rdm1.shape[0]):]
 
 
-        opti = frayedends.Optimization(world, Vnuc, c)
+        opti = frayedends.OrbitalRefinement(world, Vnuc, c)
         orbitals = opti.get_orbitals(
             orbitals=[core_orbs, active_orbs], rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
         )

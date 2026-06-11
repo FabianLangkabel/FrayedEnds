@@ -9,6 +9,7 @@ from tequila import Molecule
 from ._frayedends_impl import MolecularGeometry as MolecularGeometryImpl
 from .integrals import Integrals
 
+
 class MolecularGeometry:
     impl = None
     silent = False

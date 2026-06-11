@@ -87,7 +87,7 @@ def run(R):
         energies["SPA/MRA-NO[it={}]".format(iteration)] = result.energy
         energies["FCI/MRA-NO[it={},wfn=spa]".format(iteration)] = fci
 
-        opti = frayedends.Optimization(world, Vnuc, nuc_repulsion)
+        opti = frayedends.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.01, occ_thresh=0.001)
 
         integrals = frayedends.Integrals(world)

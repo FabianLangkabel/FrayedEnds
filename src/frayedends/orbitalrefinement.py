@@ -1,12 +1,12 @@
 import numpy as np
+from tequila.quantumchemistry import NBodyTensor
 
 from ._frayedends_impl import Optimization2D as OptInterface2D
 from ._frayedends_impl import Optimization3D as OptInterface3D
-from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
 from ._frayedends_impl import Optimization_open_shell_2D as OptInterface_open_shell_2D
+from ._frayedends_impl import Optimization_open_shell_3D as OptInterface_open_shell_3D
 from ._frayedends_impl import SavedFct2D, SavedFct3D
 from .madworld import MadWorld, redirect_output
-from tequila.quantumchemistry import NBodyTensor
 
 
 def transform_rdms(TransformationMatrix, rdm1, rdm2):
@@ -56,7 +56,7 @@ def transform_rdms(TransformationMatrix, rdm1, rdm2):
     return new_rdm1, new_rdm2
 
 
-class Optimization:
+class OrbitalRefinement:
     _fr_core_orbitals = None
     _active_orbitals = None
     _Vnuc = None  # nuclear potential
@@ -81,7 +81,9 @@ class Optimization:
         self._nuclear_repulsion = nuc_repulsion
         self.override_numerical_parameters(**kwargs)
 
-    def override_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6, BSH_lo = 0.001, BSH_eps = 1e-6):
+    def override_numerical_parameters(
+        self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6
+    ):
         # truncation_tol: truncation tolerance for MRA representation of orbitals
         # coulomb_lo and coulomb_eps govern the accuracy of the representation of the Coulomb kernel
         # BSH_lo and BSH_eps govern the accuracy of the representation of the BSH kernel
@@ -93,7 +95,7 @@ class Optimization:
         for i in params:
             p_dict[i[0]] = i[1]
         return p_dict
-    
+
     def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
         Set the orthonormalization method for orbital optimization.
@@ -109,7 +111,7 @@ class Optimization:
         self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     @redirect_output("madopt.log")
-    def optimize_orbs(
+    def refine_orbitals(
         self,
         orbitals: list,
         rdm1: np.ndarray,
@@ -157,25 +159,25 @@ class Optimization:
 
         self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
         return self._fr_core_orbitals, self._active_orbitals, self.converged
-    
+
     def get_orbitals(self, *args, **kwargs):
         if self._active_orbitals is None:
-            self.optimize_orbs(*args, **kwargs)
+            self.refine_orbitals(*args, **kwargs)
             assert self._active_orbitals is not None
         if len(self._fr_core_orbitals) == 0:
             return self._active_orbitals
         else:
             return self._fr_core_orbitals, self._active_orbitals
-    
+
     def get_effective_hamiltonian(self, g_ordering="phys", *args, **kwargs):
         # this returns (c, h, g) where c = nuclear repulsion + frozen core energy,
-        # h is the effective one-body tensor (active space one body integrals plus active space - frozen core interaction) and 
+        # h is the effective one-body tensor (active space one body integrals plus active space - frozen core interaction) and
         # g the two-body tensor (active space Coulomb interaction). g is in phys ordering by default, can be reordered to chem or openfermion
         if self._active_orbitals is None:
-            self.optimize_orbs(*args, **kwargs)
+            self.refine_orbitals(*args, **kwargs)
         H_eff = self.impl.get_effective_hamiltonian()
-        g = NBodyTensor(elems=H_eff[2], ordering="phys") #todo: remove tequila here and write custom function
-        if g_ordering!="phys":
+        g = NBodyTensor(elems=H_eff[2], ordering="phys")  # todo: remove tequila here and write custom function
+        if g_ordering != "phys":
             return H_eff[0], H_eff[1], g.reorder(to=g_ordering).elems
         else:
             return H_eff
@@ -187,7 +189,7 @@ class Optimization:
         return self._c
 
 
-class Optimization_open_shell:
+class OrbitalRefinement_open_shell:
     _orbitals = None
     _Vnuc = None  # nuclear potential
     _nuclear_repulsion = None
@@ -210,7 +212,7 @@ class Optimization_open_shell:
         self.override_numerical_parameters(**kwargs)
 
     @redirect_output("madopt.log")
-    def optimize_orbs(
+    def refine_orbitals(
         self,
         orbitals,
         rdm1,
@@ -241,11 +243,10 @@ class Optimization_open_shell:
         self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6, *args, **kwargs
     ):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps)
-        
+
     def get_numerical_parameters(self):
         params = self.impl.get_numerical_parameters()
         p_dict = {}
         for i in params:
             p_dict[i[0]] = i[1]
         return p_dict
-    

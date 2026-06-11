@@ -56,7 +56,7 @@ for distance in distance_list:
             break
         current = e + c
 
-        opti = fe.Optimization(world, Vnuc, nuc_repulsion)
+        opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
         c = opti.get_c()  # if there are no frozen core electrons, this should always be equal to the nuclear repulsion
 

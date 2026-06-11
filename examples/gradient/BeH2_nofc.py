@@ -77,7 +77,7 @@ for distance in distance_list:
         current = e + c
 
         opti_start = time.time()
-        opti = fe.Optimization(world, Vnuc, nuc_repulsion)
+        opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,

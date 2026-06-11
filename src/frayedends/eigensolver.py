@@ -1,7 +1,6 @@
 from ._frayedends_impl import Eigensolver2D as EigenInterface2D
 from ._frayedends_impl import Eigensolver3D as EigenInterface3D
-from .madworld import redirect_output
-from .madworld import MadWorld
+from .madworld import MadWorld, redirect_output
 
 
 class Eigensolver:

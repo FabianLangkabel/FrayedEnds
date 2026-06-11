@@ -20,8 +20,7 @@ The energy_and_gradient function is wrapped to be compatible with geomeTRIC usin
 """
 
 world = fe.MadWorld(
-    ndims=3,
-    thresh=1e-6
+    ndims=3, thresh=1e-6
 )  # setting up the numerical environment for the MRA calculations. thresh is numerical precision of function representation.
 
 
@@ -83,7 +82,7 @@ def energy_and_gradient(
         # using the rdms we now refine the orbitals, for more details see Theory at https://github.com/FabianLangkabel/FrayedEnds
         # or arXiv:2410.19116
         ref_start = time()
-        orb_refiner = fe.Optimization(world, Vnuc, nuclear_repulsion)
+        orb_refiner = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion)
         orbitals = orb_refiner.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,

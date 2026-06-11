@@ -111,7 +111,7 @@ for iter in range(iterations):
     """
   Refine orbitals
   """
-    opti = fe.Optimization(world, Vnuc, nuclear_repulsion_energy)
+    opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
 
     """

@@ -36,8 +36,10 @@ class MadPNO:
         *args,
         **kwargs,
     ):
-        if madworld.dimensions != 3: 
-            raise ValueError(f"PNO calculation only possible in 3 dimensions. MadWorld is initialized with {madworld.dimensions} dims.")
+        if madworld.dimensions != 3:
+            raise ValueError(
+                f"PNO calculation only possible in 3 dimensions. MadWorld is initialized with {madworld.dimensions} dims."
+            )
         self.silent = silent
         # todo: replace geometry with instance of molecule class (expose to python)
         if not no_compute and n_orbitals is None:

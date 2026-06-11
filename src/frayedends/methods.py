@@ -7,7 +7,7 @@ from .integrals import Integrals
 from .madpno import MadPNO
 from .madworld import MadWorld
 from .moleculargeometry import MolecularGeometry
-from .optimization import Optimization
+from .orbitalrefinement import OrbitalRefinement
 from .pyscf_interface import HAS_PYSCF, PySCFInterface
 from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
 from .tequila_interface import HAS_TEQUILA, TequilaInterface
@@ -37,10 +37,10 @@ def optimize_basis_3D(
     occ_thresh=None,
     *args,
     **kwargs,
-):  
-    if world.dimensions != 3: 
-            raise ValueError(f"MadWorld dimensions need to be 3. MadWorld is initialized with {world.dimensions} dims.")
-        
+):
+    if world.dimensions != 3:
+        raise ValueError(f"MadWorld dimensions need to be 3. MadWorld is initialized with {world.dimensions} dims.")
+
     many_body_method = many_body_method.lower()
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
@@ -162,7 +162,7 @@ def optimize_basis_3D(
             active_orbs = orbitals[molgeom.n_core_electrons // 2 :]
 
             # orbital refinement with frozen core
-            opti = Optimization(world, Vnuc, c)
+            opti = OrbitalRefinement(world, Vnuc, c)
             frozen_core_orbs, active_orbs = opti.get_orbitals(
                 orbitals=[frozen_core_orbs, active_orbs],
                 rdm1=rdm1,
@@ -173,7 +173,7 @@ def optimize_basis_3D(
             orbitals = frozen_core_orbs + active_orbs
         else:
             # orbital refinement without frozen core
-            opti = Optimization(world, Vnuc, c)
+            opti = OrbitalRefinement(world, Vnuc, c)
             orbitals = opti.get_orbitals(
                 orbitals=orbitals,
                 rdm1=rdm1,
@@ -207,9 +207,9 @@ def optimize_basis_2D(
     *args,
     **kwargs,
 ):
-    if world.dimensions != 2: 
-            raise ValueError(f"MadWorld dimensions need to be 2. MadWorld is initialized with {world.dimensions} dims.")
-        
+    if world.dimensions != 2:
+        raise ValueError(f"MadWorld dimensions need to be 2. MadWorld is initialized with {world.dimensions} dims.")
+
     many_body_method = many_body_method.lower()
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
@@ -271,7 +271,7 @@ def optimize_basis_2D(
             dconv = 10 * econv
         if occ_thresh is None:
             occ_thresh = econv
-        opti = Optimization(world, Vnuc, c)
+        opti = OrbitalRefinement(world, Vnuc, c)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,

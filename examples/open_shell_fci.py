@@ -1,9 +1,9 @@
 from time import time
-from pyscf import fci
+
 import numpy as np
+from pyscf import fci
 
 import frayedends
-
 
 true_start = time()
 
@@ -47,23 +47,18 @@ for iteration in range(10):
     g2[2] = g2[2].transpose(0, 2, 1, 3)
 
     # FCI calculation on active space
-    e, fcivec = fci.direct_uhf.kernel(
-        h1, g2, n_act_orbitals, (1, 1)
-    )
-    rdm1, rdm2 = fci.direct_uhf.make_rdm12s(
-        fcivec, n_act_orbitals, (1, 1)
-    )
+    e, fcivec = fci.direct_uhf.kernel(h1, g2, n_act_orbitals, (1, 1))
+    rdm1, rdm2 = fci.direct_uhf.make_rdm12s(fcivec, n_act_orbitals, (1, 1))
     rdm2 = np.swapaxes(rdm2, 1, 2)
     rdm_2_phys_aa = rdm2[0].transpose(0, 2, 1, 3)
     rdm_2_phys_ab = rdm2[1].transpose(0, 2, 1, 3)
     rdm_2_phys_bb = rdm2[2].transpose(0, 2, 1, 3)
 
-
     print(f"Iteration {iteration} - FCI energy: {e + c:+2.10f} and core energy: {c:+2.10f}")
 
     # Orbital refinement with core orbital refinement enabled
-    opti = frayedends.Optimization_open_shell(world, Vnuc, nuc_repulsion)
-    core, active, converged = opti.optimize_orbs(
+    opti = frayedends.OrbitalRefinement_open_shell(world, Vnuc, nuc_repulsion)
+    core, active, converged = opti.refine_orbitals(
         orbitals=[core[0], core[1], active[0], active[1]],
         rdm1=rdm1,
         rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb],
@@ -73,7 +68,6 @@ for iteration in range(10):
         refine_core=True,  # Enable core orbital refinement
         redirect_filename=f"compli2_madopt{iteration}.log",
     )
-
 
 
 orbitals = core[0] + active[0]

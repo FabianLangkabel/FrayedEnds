@@ -89,7 +89,7 @@ for iter in range(iterations):
     iter_start = time.perf_counter()
 
     # Orbital Refinement
-    opti = fe.Optimization(world, Vnuc, nuc_repulsion)
+    opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
     for i in range(len(orbs)):
         world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals

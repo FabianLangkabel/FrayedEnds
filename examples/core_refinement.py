@@ -1,9 +1,9 @@
 from time import time
-from pyscf import fci
+
 import numpy as np
+from pyscf import fci
 
 import frayedends
-
 
 true_start = time()
 
@@ -44,20 +44,16 @@ print(f"Initial core energy: {c:+2.10f}")
 # SCF-like loop with orbital refinement and core refinement
 for iteration in range(10):
     # FCI calculation on active space
-    e, fcivec = fci.direct_spin1.kernel(
-        h1, g2, n_act_orbitals, n_act_electrons
-    )
-    rdm1, rdm2 = fci.direct_spin1.make_rdm12(
-        fcivec, n_act_orbitals, n_act_electrons
-    )
+    e, fcivec = fci.direct_spin1.kernel(h1, g2, n_act_orbitals, n_act_electrons)
+    rdm1, rdm2 = fci.direct_spin1.make_rdm12(fcivec, n_act_orbitals, n_act_electrons)
     rdm2 = np.swapaxes(rdm2, 1, 2)
 
     print(f"Iteration {iteration} - FCI energy: {e + c:+2.10f} and core energy: {c:+2.10f}")
 
     # Orbital refinement with core orbital refinement enabled
-    opti = frayedends.Optimization(world, Vnuc, nuc_repulsion)
+    opti = frayedends.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     opti.set_orthonormalization_method("mixed", 0.00001)
-    core, active, converged = opti.optimize_orbs(
+    core, active, converged = opti.refine_orbitals(
         orbitals=[core, active],
         rdm1=rdm1,
         rdm2=rdm2,

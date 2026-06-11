@@ -149,8 +149,8 @@ task scf  """
     current = e + c
     for iteration in range(401):
         opti_start = time.time()
-        opti = fe.Optimization(world, Vnuc, nuc_repulsion)
-        frozen_orbitals, active_orbitals, converged = opti.optimize_orbs(
+        opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
+        frozen_orbitals, active_orbitals, converged = opti.refine_orbitals(
             rdm1=rdm1,
             rdm2=rdm2,
             orbitals=[frozen_orbitals, active_orbitals],

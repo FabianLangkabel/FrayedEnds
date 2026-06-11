@@ -3,9 +3,10 @@ from tequila.quantumchemistry import NBodyTensor
 
 from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
-from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D 
-from ._frayedends_impl import Integrals_open_shell_2D as IntegralsInterface_open_shell_2D 
+from ._frayedends_impl import Integrals_open_shell_2D as IntegralsInterface_open_shell_2D
+from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D
 from .madworld import MadWorld
+
 
 class Integrals:
     impl = None
@@ -20,7 +21,7 @@ class Integrals:
             self.impl = IntegralsInterface2D(madworld.impl)
         self.override_numerical_parameters(**kwargs)
 
-    def override_numerical_parameters(self, truncation_tol = 1e-6, coulomb_lo = 0.001, coulomb_eps = 1e-6):
+    def override_numerical_parameters(self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6):
         self.impl.override_numerical_parameters(truncation_tol, coulomb_lo, coulomb_eps)
 
     def get_numerical_parameters(self):
@@ -29,7 +30,7 @@ class Integrals:
         for i in params:
             p_dict[i[0]] = i[1]
         return p_dict
-    
+
     # computes the g-tensor: the coulomb interaction between the provided orbitals
     def compute_two_body_integrals(
         self,
@@ -61,13 +62,13 @@ class Integrals:
         if other is None:
             other = orbitals
         return self.impl.compute_overlap_integrals(orbitals, other)
-    
-    def compute_effective_hamiltonian(self, core_orbitals, active_orbitals, V, energy_offset, g_ordering = "phys") -> tuple[float, np.ndarray, np.ndarray]:
-        H_eff = self.impl.compute_effective_hamiltonian(
-            core_orbitals, active_orbitals, V, energy_offset
-        )
-        g=NBodyTensor(elems=H_eff[2], ordering="phys") #todo: remove tequila here and write custom function
-        if g_ordering!="phys":
+
+    def compute_effective_hamiltonian(
+        self, core_orbitals, active_orbitals, V, energy_offset, g_ordering="phys"
+    ) -> tuple[float, np.ndarray, np.ndarray]:
+        H_eff = self.impl.compute_effective_hamiltonian(core_orbitals, active_orbitals, V, energy_offset)
+        g = NBodyTensor(elems=H_eff[2], ordering="phys")  # todo: remove tequila here and write custom function
+        if g_ordering != "phys":
             return H_eff[0], H_eff[1], g.reorder(to=g_ordering).elems
         else:
             return H_eff
@@ -148,7 +149,7 @@ class Integrals_open_shell:
         for i in params:
             p_dict[i[0]] = i[1]
         return p_dict
-    
+
     def compute_two_body_integrals(self, alpha_orbitals, beta_orbitals, *args, **kwargs):
         G = self.impl.compute_two_body_integrals(alpha_orbitals, beta_orbitals)
         return G[0], G[1], G[2]

@@ -105,7 +105,7 @@ for iteration in range(iterations):
     print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
     # Orbital Refinement
-    opti = fe.Optimization(world, Vnuc, nuclear_repulsion_energy)
+    opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(
         orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )  # Refines the orbitals and returns the new ones

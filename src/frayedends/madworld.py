@@ -47,6 +47,7 @@ def get_function_info(orbitals):
         result.append({**info})
     return result
 
+
 # python wrapper of the MADNESS numerical simulation environment
 # needs to be passed to any process that is using MADNESS
 # creating a MadWorld object creates a box with dimensions (2*L)**ndims as the simulation environment
@@ -65,7 +66,7 @@ class MadWorld:
         "n_threads": -1,  # default is all available threads
     }
 
-    def __init__(self, ndims, **kwargs): 
+    def __init__(self, ndims, **kwargs):
 
         self.madness_parameters = dict(self.madness_parameters)
         self.dimensions = ndims
@@ -96,8 +97,10 @@ class MadWorld:
                 self.madness_parameters["refine"],
                 self.madness_parameters["n_threads"],
             )
-        else: 
-            raise ValueError(f"Currently only calculations in 2 and 3 dimensions are implemented (you set ndims to {ndims}).")
+        else:
+            raise ValueError(
+                f"Currently only calculations in 2 and 3 dimensions are implemented (you set ndims to {ndims})."
+            )
 
     def get_params(self):
         return dict(self.madness_parameters)
@@ -160,10 +163,12 @@ class MadWorld:
         zoom=1.0,
         datapoints=81,
         origin=[0.0, 0.0, 0.0],
-    ):  
+    ):
         if self.dimensions != 3:
-            print(f"Cube plot only defined for 3 dimensional functions. World initialized with {self.dimensions} dimensions.")
-            return 
+            print(
+                f"Cube plot only defined for 3 dimensional functions. World initialized with {self.dimensions} dimensions."
+            )
+            return
         if hasattr(mra_function, "data"):
             self.impl.cube_plot(filename, mra_function.data, molecule.impl, zoom, datapoints, origin)
         else:
