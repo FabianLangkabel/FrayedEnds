@@ -1,6 +1,6 @@
 ---
 title: "Tutorials"
-subtitle: "FrayedEnds: Basis-Set-Free Quantum Chemistry"
+subtitle: "Basis-Set-Free Quantum Chemistry"
 image: "frayed_ends.png"
 listing:
     contents: tutorials
