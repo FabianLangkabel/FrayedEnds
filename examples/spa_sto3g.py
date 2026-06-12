@@ -13,7 +13,7 @@ def run(R):
     geom = "H 0.0 0.0 0.0\nH 0.0 0.0 {}\nH 0.0 0.0 {}\nH 0.0 0.0 {}".format(R, 2 * R, 3 * R)  # geometry in Angstrom
     print(geom)
 
-    world = frayedends.MadWorld3D()
+    world = frayedends.MadWorld(ndims=3)
 
     madpno = frayedends.MadPNO(world, geom, n_orbitals=4, maxrank=1)
     orbitals = madpno.get_orbitals()
@@ -24,7 +24,7 @@ def run(R):
 
     world.plot_lines(atomics, "atomics")
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     orbitals = integrals.orthonormalize(orbitals=atomics)
     G = integrals.compute_two_body_integrals(orbitals)
     T = integrals.compute_kinetic_integrals(orbitals)
@@ -60,7 +60,7 @@ def run(R):
         print(u)
         energies["SPA/sto-3g"] = result.energy
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     orbitals = integrals.transform(orbitals, u)
 
     c = nuc_repulsion
@@ -69,7 +69,7 @@ def run(R):
     for iteration in range(3):
         world.plot_lines(orbitals, f"orbitals-iteration-{iteration}")
 
-        integrals = frayedends.Integrals3D(world)
+        integrals = frayedends.Integrals(world)
         G = integrals.compute_two_body_integrals(orbitals)
         T = integrals.compute_kinetic_integrals(orbitals)
         V = integrals.compute_potential_integrals(orbitals, Vnuc)
@@ -87,10 +87,10 @@ def run(R):
         energies["SPA/MRA-NO[it={}]".format(iteration)] = result.energy
         energies["FCI/MRA-NO[it={},wfn=spa]".format(iteration)] = fci
 
-        opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = frayedends.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         new_orbitals = opti.get_orbitals(orbitals=orbitals, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.01, occ_thresh=0.001)
 
-        integrals = frayedends.Integrals3D(world)
+        integrals = frayedends.Integrals(world)
         S = integrals.compute_overlap_integrals(orbitals, new_orbitals)
         print("overlap new and old")
         print(S)

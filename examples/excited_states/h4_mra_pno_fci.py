@@ -37,7 +37,7 @@ total_start = time.perf_counter()
 geom = "H 0.0 0.0 -1.5\nH 0.0 0.0 -0.5\nH 0.0 0.0 0.5\nH 0.0 0.0 1.5\n"
 
 # Setting up the numerical environment for the MRA calculations
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Get 8 Pair Natural Orbitals (PNOs)
 madpno = fe.MadPNO(world, geom, n_orbitals=8)
@@ -46,7 +46,7 @@ orbs = madpno.get_orbitals()
 nuc_repulsion = madpno.get_nuclear_repulsion()  # Compute nuclear repulsion energy
 Vnuc = madpno.get_nuclear_potential()  # Compute nuclear potential
 
-integrals = fe.Integrals3D(world)
+integrals = fe.Integrals(world)
 orbs = integrals.orthonormalize(orbitals=orbs)  # Orthonormalize orbitals
 
 n_orbitals = len(orbs)
@@ -60,7 +60,7 @@ for iteration in range(iterations):
     iter_start = time.perf_counter()
 
     # Calculate initial integrals
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
@@ -78,7 +78,7 @@ for iteration in range(iterations):
     print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
     # Orbital Refinement
-    opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+    opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     orbs = opti.get_orbitals(
         orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )  # Refines the orbitals and returns the new ones

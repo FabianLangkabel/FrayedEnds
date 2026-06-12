@@ -10,7 +10,7 @@ H 0.0 0.0 5.0
 
 # initialize madness
 thresh = 1.0e-4
-world = frayedends.MadWorld3D(thresh=thresh)
+world = frayedends.MadWorld(ndims=3, thresh=thresh)
 
 # the many-body method to determine the RDMs
 print("supported are: ", frayedends.methods.SUPPORTED_RDM_METHODS)

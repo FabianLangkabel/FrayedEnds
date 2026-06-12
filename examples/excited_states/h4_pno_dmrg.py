@@ -32,7 +32,7 @@ total_start = time.perf_counter()
 geom = "H 0.0 0.0 -1.5 \nH 0.0 0.0 -0.5 \nH 0.0 0.0 0.5 \nH 0.0 0.0 1.5 \n"
 
 # Setting up the numerical environment for the MRA calculations
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Get 8 Pair Natural Orbitals (PNOs)
 madpno = fe.MadPNO(world, geom, n_orbitals=8)
@@ -41,7 +41,7 @@ orbs = madpno.get_orbitals()
 nuc_repulsion = madpno.get_nuclear_repulsion()  # Compute nuclear repulsion energy
 Vnuc = madpno.get_nuclear_potential()  # Compute nuclear potential
 
-integrals = fe.Integrals3D(world)
+integrals = fe.Integrals(world)
 orbs = integrals.orthonormalize(orbitals=orbs)  # Orthonormalize orbitals
 
 n_orbitals = len(orbs)
@@ -51,7 +51,7 @@ for i in range(n_orbitals):
     world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot PNOs
 
 # Calculate initial integrals
-integrals = fe.Integrals3D(world)
+integrals = fe.Integrals(world)
 G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
 T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
 V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy

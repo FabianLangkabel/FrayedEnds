@@ -60,7 +60,7 @@ for d in distance:
     else:
         raise ValueError("Invalid geometry mode selected.")
 
-    world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+    world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
     madpno = fe.MadPNO(world, geom, n_orbitals=12)
     orbs = madpno.get_orbitals()
@@ -68,7 +68,7 @@ for d in distance:
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     orbs = integrals.orthonormalize(orbitals=orbs)
 
     for i in range(len(orbs)):
@@ -80,7 +80,7 @@ for d in distance:
     """
     Calculate initial integrals
     """
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
@@ -137,7 +137,7 @@ for d in distance:
         """
         Refine orbitals
         """
-        opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+        opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
         # for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001))

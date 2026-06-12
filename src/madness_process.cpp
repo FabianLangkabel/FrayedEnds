@@ -64,12 +64,26 @@ template <std::size_t NDIM> Function<double, NDIM> MadnessProcess<NDIM>::loadfct
     return deserialize_function_from_string<NDIM>(*world, Sf.saved_str);
 }
 
-// load a function from a binary file
+// load a function from a binary madness file
 template <std::size_t NDIM>
-Function<double, NDIM> MadnessProcess<NDIM>::loadfct_from_file(const std::string& filename) {
+Function<double, NDIM> MadnessProcess<NDIM>::loadfct_from_m_file(const std::string& filename) {
     Function<double, NDIM> f1 = FunctionFactory<double, NDIM>(*world);
     load(f1, filename);
     return f1;
+}
+
+// load a SavedFct from a madness file (created by madness::save())
+template <std::size_t NDIM>
+SavedFct<NDIM> MadnessProcess<NDIM>::load_savedfct_from_m_file(const std::string& filename) {
+    Function<double, NDIM> f = this->loadfct_from_m_file(filename);
+    return SavedFct<NDIM>(f);
+}
+
+// save a SavedFct to a binary madness file (compatible with madness::load())
+template<std::size_t NDIM>
+void MadnessProcess<NDIM>::save_to_m_file(const std::string& filename, const SavedFct<NDIM>& Sf) {
+    Function<double, NDIM> f = this->loadfct(Sf);
+    save(f, filename);
 }
 
 template <std::size_t NDIM>

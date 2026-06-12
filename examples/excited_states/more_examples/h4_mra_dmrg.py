@@ -125,7 +125,7 @@ for d in distance:
     Read the atomic orbitals (AOs) and molecular orbitals (MOs) from a NWChem calculation and translate them into multiwavelets.
     """
 
-    world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+    world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
     converter = fe.NWChem_Converter(world)
     converter.read_nwchem_file("nwchem")
@@ -142,7 +142,7 @@ for d in distance:
     """
     Calculate initial integrals
     """
-    integrals = fe.Integrals3D(world)
+    integrals = fe.Integrals(world)
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
@@ -198,7 +198,7 @@ for d in distance:
         """
         Refine orbitals
         """
-        opti = fe.Optimization3D(world, Vnuc, nuclear_repulsion_energy)
+        opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
 
         # for i in range(len(orbs)):

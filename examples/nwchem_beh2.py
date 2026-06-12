@@ -48,7 +48,7 @@ programm = sp.call(
 )
 
 # Initalize world
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
 converter = fe.NWChem_Converter(world)
@@ -58,11 +58,11 @@ mos = converter.get_mos()
 del converter
 
 # Visualization of orbitals
-molecule = fe.MadMolecule()
+molecule = fe.MolecularGeometry()
 molecule.add_atom(0, 0, 0, "Be")
 molecule.add_atom(0, 0, distance, "H")
 molecule.add_atom(0, 0, -distance, "H")
-world.cube_plot("orbital", mos[5], molecule.impl, 1.0, 81, [0.0, 0.0, 0.0])
+world.cube_plot("orbital", mos[5], molecule, 1.0, 81, [0.0, 0.0, 0.0])
 
 orbdata = open("orbital.cube", "r").read()
 v = py3Dmol.view()

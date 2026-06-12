@@ -2,12 +2,12 @@ import numpy
 
 from ._frayedends_impl import SavedFct2D, SavedFct3D
 from .atomicbasisprojector import AtomicBasisProjector
-from .eigensolver import Eigensolver2D, Eigensolver3D
-from .integrals import Integrals2D, Integrals3D
+from .eigensolver import Eigensolver
+from .integrals import Integrals
 from .madpno import MadPNO
-from .madworld import MadWorld2D, MadWorld3D
+from .madworld import MadWorld
 from .moleculargeometry import MolecularGeometry
-from .optimization import Optimization2D, Optimization3D
+from .orbitalrefinement import OrbitalRefinement
 from .pyscf_interface import HAS_PYSCF, PySCFInterface
 from .pyscf_interface import SUPPORTED_RDM_METHODS as PYSCF_METHODS
 from .tequila_interface import HAS_TEQUILA, TequilaInterface
@@ -23,7 +23,7 @@ if HAS_PYSCF:
 
 
 def optimize_basis_3D(
-    world: MadWorld3D,
+    world: MadWorld,
     Vnuc: SavedFct3D = None,
     n_electrons: int = None,
     nuclear_repulsion=0.0,
@@ -38,6 +38,9 @@ def optimize_basis_3D(
     *args,
     **kwargs,
 ):
+    if world.dimensions != 3:
+        raise ValueError(f"MadWorld dimensions need to be 3. MadWorld is initialized with {world.dimensions} dims.")
+
     many_body_method = many_body_method.lower()
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
@@ -75,7 +78,7 @@ def optimize_basis_3D(
         if molgeom.n_core_electrons > 0:
             hf = minbas.solve_scf()
             core = [hf[k] for k in range(molgeom.n_core_electrons // 2)]
-            integrals = Integrals3D(world)
+            integrals = Integrals(world)
             orbitals = integrals.orthonormalize(orbitals, method="symmetric")
             orbitals = integrals.project_out(kernel=core, target=orbitals)
             orbitals = integrals.normalize(orbitals)
@@ -87,13 +90,13 @@ def optimize_basis_3D(
     elif "eigen" in orbitals:
         if Vnuc is None:
             raise Exception("If you want to use the eigensolver you need to provide a potential.")
-        eigen = Eigensolver3D(world, Vnuc)
+        eigen = Eigensolver(world, Vnuc)
         orbitals = eigen.get_orbitals(n_orbitals=n_orbitals, n_guess_orbs=n_orbitals + 5)
         del eigen
 
     current = 0.0
     for iteration in range(maxiter):
-        integrals = Integrals3D(world)
+        integrals = Integrals(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
         T = integrals.compute_kinetic_integrals(orbitals)
@@ -140,7 +143,7 @@ def optimize_basis_3D(
             raise Exception(
                 f"many_body_method={str(many_body_method)} is neither a string that encodes a supported method nor callable\nsupported methods are: {SUPPORTED_RDM_METHODS}"
             )
-
+        print(energy)
         print("iteration {} energy {:+2.5f}".format(iteration, energy))
 
         if numpy.isclose(
@@ -159,7 +162,7 @@ def optimize_basis_3D(
             active_orbs = orbitals[molgeom.n_core_electrons // 2 :]
 
             # orbital refinement with frozen core
-            opti = Optimization3D(world, Vnuc, c)
+            opti = OrbitalRefinement(world, Vnuc, c)
             frozen_core_orbs, active_orbs = opti.get_orbitals(
                 orbitals=[frozen_core_orbs, active_orbs],
                 rdm1=rdm1,
@@ -170,7 +173,7 @@ def optimize_basis_3D(
             orbitals = frozen_core_orbs + active_orbs
         else:
             # orbital refinement without frozen core
-            opti = Optimization3D(world, Vnuc, c)
+            opti = OrbitalRefinement(world, Vnuc, c)
             orbitals = opti.get_orbitals(
                 orbitals=orbitals,
                 rdm1=rdm1,
@@ -190,7 +193,7 @@ SUPPORTED_RDM_METHODS_2D = TEQUILA_METHODS_2D + PYSCF_METHODS_2D
 
 
 def optimize_basis_2D(
-    world: MadWorld2D,
+    world: MadWorld,
     Vnuc: SavedFct2D,
     n_electrons: int,
     nuclear_repulsion=0.0,
@@ -204,6 +207,9 @@ def optimize_basis_2D(
     *args,
     **kwargs,
 ):
+    if world.dimensions != 2:
+        raise ValueError(f"MadWorld dimensions need to be 2. MadWorld is initialized with {world.dimensions} dims.")
+
     many_body_method = many_body_method.lower()
     if hasattr(orbitals, "lower"):
         orbitals = orbitals.lower()
@@ -215,13 +221,13 @@ def optimize_basis_2D(
         )
 
     if orbitals is None or "eigen" in orbitals:
-        eigen = Eigensolver2D(world, Vnuc)
+        eigen = Eigensolver(world, Vnuc)
         orbitals = eigen.get_orbitals(n_orbitals=n_orbitals, n_guess_orbs=n_orbitals + 5)
         del eigen
 
     current = 0.0
     for iteration in range(maxiter):
-        integrals = Integrals2D(world)
+        integrals = Integrals(world)
         orbitals = integrals.orthonormalize(orbitals=orbitals)
         V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
         T = integrals.compute_kinetic_integrals(orbitals)
@@ -265,7 +271,7 @@ def optimize_basis_2D(
             dconv = 10 * econv
         if occ_thresh is None:
             occ_thresh = econv
-        opti = Optimization2D(world, Vnuc, c)
+        opti = OrbitalRefinement(world, Vnuc, c)
         orbitals = opti.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,

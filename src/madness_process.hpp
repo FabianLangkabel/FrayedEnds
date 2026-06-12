@@ -53,8 +53,14 @@ template <std::size_t NDIM> class MadnessProcess {
     // load a function from a SavedFct object
     Function<double, NDIM> loadfct(const SavedFct<NDIM>& Sf);
 
-    // load a function from a binary file
-    Function<double, NDIM> loadfct_from_file(const std::string& filename);
+    // load a function from a binary madness file
+    Function<double, NDIM> loadfct_from_m_file(const std::string& filename);
+
+    // load a SavedFct from a madness file (created by madness::save())
+    SavedFct<NDIM> load_savedfct_from_m_file(const std::string& filename);
+    
+    // save a SavedFct to a binary madness file (compatible with madness::load())
+    void save_to_m_file(const std::string& filename, const SavedFct<NDIM>& Sf);
 
     std::tuple<double, long, double, int, int, bool, int> get_function_defaults();
 
