@@ -168,7 +168,7 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../styles.css">
 <meta property="og:title" content="FrayedEnds - Orthogonalization Methods in Pair Natural Orbital Optimization: A Comparative Study">
-<meta property="og:description" content="quantum computing and quantum chemistry">
+<meta property="og:description" content="Basis-Set-Free Quantum Chemistry">
 <meta property="og:image" content="preview_ortho.png">
 <meta property="og:site_name" content="FrayedEnds">
 </head>
@@ -194,8 +194,16 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../../tutorials.html"> 
 <span class="menu-text">Tutorials</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../contribution.html"> 
+<span class="menu-text">Contribution</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -233,7 +241,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/tutorials/Orthonormailzation/orthonormalization_tutorial.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/tutorials/Orthonormailzation/orthonormalization_tutorial.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -359,7 +367,7 @@ window.Quarto = {
 <span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    n_electrons <span class="op">=</span> tq.quantumchemistry.ParametersQC(geometry<span class="op">=</span>geom, units<span class="op">=</span>units).total_n_electrons</span>
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    world <span class="op">=</span> frayedends.MadWorld3D()</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    world <span class="op">=</span> frayedends.MadWorld(ndims<span class="op">=</span><span class="dv">3</span>)</span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    madpno <span class="op">=</span> frayedends.MadPNO(world, geom, units<span class="op">=</span>units, n_orbitals<span class="op">=</span>n_orbitals)</span>
 <span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    orbitals <span class="op">=</span> madpno.get_orbitals()</span>
@@ -368,7 +376,7 @@ window.Quarto = {
 <span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    Vnuc <span class="op">=</span> madpno.get_nuclear_potential()</span>
 <span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    nuc_repulsion <span class="op">=</span> madpno.get_nuclear_repulsion()</span>
 <span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    integrals <span class="op">=</span> frayedends.Integrals3D(world)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    integrals <span class="op">=</span> frayedends.Integrals(world)</span>
 <span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ortho_method <span class="op">==</span> <span class="st">"mixed"</span>:</span>
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        info <span class="op">=</span> frayedends.get_function_info(orbitals)</span>
@@ -382,7 +390,7 @@ window.Quarto = {
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(orbitals)):</span>
 <span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        world.line_plot(<span class="ss">f"pnoorb</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>ortho_method<span class="sc">}</span><span class="ss">.dat"</span>, orbitals[i])</span>
 <span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    integrals <span class="op">=</span> frayedends.Integrals3D(world)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    integrals <span class="op">=</span> frayedends.Integrals(world)</span>
 <span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    S <span class="op">=</span> integrals.compute_overlap_integrals(orbitals)</span>
 <span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    G <span class="op">=</span> integrals.compute_two_body_integrals(orbitals, ordering<span class="op">=</span><span class="st">"chem"</span>)</span>
 <span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    T <span class="op">=</span> integrals.compute_kinetic_integrals(orbitals)</span>
@@ -517,7 +525,7 @@ Cholesky            : -2.21511968 Ha
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    n_electrons <span class="op">=</span> tq.quantumchemistry.ParametersQC(geometry<span class="op">=</span>geom, units<span class="op">=</span>units).total_n_electrons</span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    world <span class="op">=</span> frayedends.MadWorld3D()</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    world <span class="op">=</span> frayedends.MadWorld(ndims<span class="op">=</span><span class="dv">3</span>)</span>
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    madpno <span class="op">=</span> frayedends.MadPNO(world, geom, units<span class="op">=</span>units, n_orbitals<span class="op">=</span>n_orbitals_config)</span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    all_orbitals <span class="op">=</span> madpno.get_orbitals()</span>
@@ -525,7 +533,7 @@ Cholesky            : -2.21511968 Ha
 <span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    nuc_repulsion <span class="op">=</span> madpno.get_nuclear_repulsion()</span>
 <span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    Vnuc <span class="op">=</span> madpno.get_nuclear_potential()</span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    integrals <span class="op">=</span> frayedends.Integrals3D(world)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    integrals <span class="op">=</span> frayedends.Integrals(world)</span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    energies <span class="op">=</span> []</span>
 <span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    current <span class="op">=</span> <span class="fl">0.0</span></span>
@@ -554,7 +562,7 @@ Cholesky            : -2.21511968 Ha
 <span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
 <span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> iteration <span class="kw">in</span> <span class="bu">range</span>(max_iterations):</span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>            integrals <span class="op">=</span> frayedends.Integrals3D(world)</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>            integrals <span class="op">=</span> frayedends.Integrals(world)</span>
 <span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>            S <span class="op">=</span> integrals.compute_overlap_integrals(current_orbitals)</span>
 <span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>            G <span class="op">=</span> integrals.compute_two_body_integrals(current_orbitals, ordering<span class="op">=</span><span class="st">"chem"</span>)</span>
 <span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>            T <span class="op">=</span> integrals.compute_kinetic_integrals(current_orbitals)</span>
@@ -583,7 +591,7 @@ Cholesky            : -2.21511968 Ha
 <span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>            rdm1, rdm2 <span class="op">=</span> mol.compute_rdms(U<span class="op">=</span>U, variables<span class="op">=</span>result.variables)</span>
 <span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>            opti <span class="op">=</span> frayedends.Optimization3D(world, Vnuc, nuc_repulsion<span class="op">=</span>nuc_repulsion)</span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>            opti <span class="op">=</span> frayedends.OrbitalRefinement(world, Vnuc, nuc_repulsion<span class="op">=</span>nuc_repulsion)</span>
 <span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a>            opti.set_orthonormalization_method(ortho_method, degeneracy_tol<span class="op">=</span>degeneracy_tol)</span>
 <span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a>            current_orbitals <span class="op">=</span> opti.get_orbitals(</span>
 <span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>                orbitals<span class="op">=</span>current_orbitals, rdm1<span class="op">=</span>rdm1, rdm2<span class="op">=</span>rdm2, opt_thresh<span class="op">=</span><span class="fl">0.001</span>, occ_thresh<span class="op">=</span><span class="fl">0.001</span></span>
@@ -1469,7 +1477,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 
-<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/tutorials/Orthonormailzation/orthonormalization_tutorial.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/FabianLangkabel/FrayedEnds/blob/main/docs/tutorials/Orthonormailzation/orthonormalization_tutorial.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/FabianLangkabel/FrayedEnds/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div><div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>
