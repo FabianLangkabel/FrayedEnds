@@ -60,7 +60,7 @@ programm = sp.call(
 )
 
 # Initalize world
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
 converter = fe.NWChem_Converter_open_shell(world)
@@ -121,7 +121,7 @@ for i in range(len(alpha_mos)):
         active_beta_orbitals.append(beta_mos[i])
 
 
-integrals = fe.Integrals_open_shell_3D(world)
+integrals = fe.Integrals_open_shell(world)
 c, h1, g2 = integrals.compute_effective_hamiltonian(
     core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy
 )
@@ -160,8 +160,8 @@ rdm_energy = one_body_en + two_body_en + c
 print("Energy from rdms = %20.15f" % rdm_energy)
 
 
-opti = fe.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-new_core_orbs, new_as_orbs, converged = opti.optimize_orbs(
+opti = fe.OrbitalRefinement_open_shell(world, Vnuc, nuclear_repulsion_energy)
+new_core_orbs, new_as_orbs, converged = opti.refine_orbitals(
     orbitals=[core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals],
     rdm1=rdm_1,
     rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb],

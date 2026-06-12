@@ -12,6 +12,7 @@ format:
         code-fold: false
         eval: true
         freeze: false
+        toc: true
 jupyter: python3
 ---
 

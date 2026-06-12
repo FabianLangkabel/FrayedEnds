@@ -54,7 +54,7 @@ programm = sp.call(
 )
 
 # Initalize world
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
 converter = fe.NWChem_Converter_open_shell(world)
@@ -100,7 +100,7 @@ display(HTML(f"<div style='display:flex; gap:10px'>{alpha_0_plot}{beta_0_plot}{a
 '''
 
 # Calculate Integrals
-integrals = fe.Integrals_open_shell_3D(world)
+integrals = fe.Integrals_open_shell(world)
 c, h1, g2 = integrals.compute_effective_hamiltonian([], [], alpha_mos, beta_mos, Vnuc, nuclear_repulsion_energy)
 g2[0] = g2[0].transpose(0, 2, 1, 3)
 g2[1] = g2[1].transpose(0, 2, 1, 3)
@@ -145,8 +145,8 @@ print("Energy from rdms = %20.15f" % rdm_energy)
 
 # Refine orbitals
 
-opti = fe.Optimization_open_shell_3D(world, Vnuc, nuclear_repulsion_energy)
-opti.optimize_orbs(
+opti = fe.OrbitalRefinement_open_shell(world, Vnuc, nuclear_repulsion_energy)
+opti.refine_orbitals(
     orbitals=[[], [], alpha_mos, beta_mos],
     rdm1=rdm_1,
     rdm2=[rdm_2_phys_aa, rdm_2_phys_ab, rdm_2_phys_bb],

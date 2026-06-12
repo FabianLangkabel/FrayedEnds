@@ -17,9 +17,9 @@ class open_shell_integral_storage {
       std::array<std::vector<Function<double, NDIM>>, 2> &coul_orbs_mn, 
       std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa,
       Function<double, NDIM> &V,
-      bool caclulate_core_as_for_eff_ham,
-      bool caclulate_core_as_for_as_refinement,
-      bool caclulate_core_as_for_core_refinement
+      bool calculate_core_as_for_eff_ham,
+      bool calculate_core_as_for_as_refinement,
+      bool calculate_core_as_for_core_refinement
     )
     {
         // Calculate one electron Integrals
@@ -38,7 +38,7 @@ class open_shell_integral_storage {
         // Calculate Core-AS interaction integrals
         if((core_orbitals[0].size() + core_orbitals[1].size()) > 0)
         {
-            if(caclulate_core_as_for_eff_ham)
+            if(calculate_core_as_for_eff_ham)
             {
               core_as_integrals_one_body_ak = Integrator.compute_core_as_integrals_one_body(core_orbitals, active_orbitals, V);
               std::vector<std::vector<madness::Tensor<double>>> core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_energy(core_orbitals, active_orbitals, orbs_kl, coul_orbs_mn, orbs_aa);
@@ -46,7 +46,7 @@ class open_shell_integral_storage {
               core_as_integrals_two_body_akla = core_as_integrals_two_body[1];
             }
 
-            if(caclulate_core_as_for_as_refinement)
+            if(calculate_core_as_for_as_refinement)
             {
               std::vector<std::vector<madness::Tensor<double>>> core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_as_refinement(core_orbitals, active_orbitals, orbs_kl, coul_orbs_mn, orbs_aa);
               core_as_integrals_two_body_akln = core_as_integrals_two_body[0];
@@ -54,7 +54,7 @@ class open_shell_integral_storage {
               core_as_integrals_two_body_baak = core_as_integrals_two_body[2];
             }
 
-            if(caclulate_core_as_for_core_refinement)
+            if(calculate_core_as_for_core_refinement)
             {
               core_core_integrals_one_body_ab = Integrator.compute_potential_integrals(core_orbitals, V);
               {

@@ -8,7 +8,7 @@ true_start = time()
 # initialize the PNO interface
 geom = "Li 0.0 0.0 0.0\nH 0.0 0.0 3.0"  # geometry in Angstrom
 
-world = frayedends.MadWorld3D()
+world = frayedends.MadWorld(ndims=3)
 
 madpno = frayedends.MadPNO(world, geom, n_orbitals=3)
 orbitals = madpno.get_orbitals()
@@ -21,7 +21,7 @@ Vnuc = madpno.get_nuclear_potential()
 for i in range(len(orbitals)):
     world.line_plot(f"pnoorb{i}.dat", orbitals[i])
 
-integrals = frayedends.Integrals3D(world)
+integrals = frayedends.Integrals(world)
 orbitals = integrals.orthonormalize(orbitals=orbitals)
 
 for i in range(len(atomics)):
@@ -42,7 +42,7 @@ e_rep = integrals.compute_two_body_integrals(frozen_orbitals).elems[0, 0, 0, 0]
 c += kin + pot + e_rep
 u = None
 for iteration in range(6):
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     G = integrals.compute_two_body_integrals(active_orbitals)
     FC_int = integrals.compute_frozen_core_interaction(frozen_orbitals, active_orbitals)
     T = integrals.compute_kinetic_integrals(active_orbitals)
@@ -80,7 +80,7 @@ for iteration in range(6):
 
     print("iteration {} energy {:+2.5f}".format(iteration, result.energy))
 
-    opti = frayedends.Optimization3D(world, Vnuc, nuc_repulsion)
+    opti = frayedends.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     frozen_orbitals, active_orbitals = opti.get_orbitals(
         orbitals=[frozen_orbitals, active_orbitals], rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
     )

@@ -45,8 +45,6 @@ void Integrals_open_shell<NDIM>::update_as_integral_combinations(std::array<std:
 template <std::size_t NDIM>
 void Integrals_open_shell<NDIM>::update_core_integral_combinations(std::array<std::vector<Function<double, NDIM>>, 2> &core_orbitals, std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa)
 {
-    auto coul_op_parallel = std::shared_ptr<SeparatedConvolution<double, NDIM>>(CoulombOperatorNDPtr<NDIM>(*(madness_process.world), num_params.coulomb_lo, num_params.coulomb_eps));
-
     for (int spin = 0; spin < 2; spin++)
     {
         orbs_aa[spin].clear();
@@ -615,7 +613,7 @@ std::vector<std::vector<madness::Tensor<double>>> Integrals_open_shell<NDIM>::co
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baca; //stored as (a,b,c); 4 tensors: aaaa, bbbb, aabb, bbaa
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_baac; //stored as (a,b,c); 2 tensors: aaaa, bbbb
     std::vector<madness::Tensor<double>> core_as_integrals_two_body_akcl; //stored as (a,k,c,l); 4 tensors: aaaa, bbbb, aabb, bbaa
-    std::vector<madness::Tensor<double>> core_as_integrals_two_body_aklc; //stored as (a,k,c,l); 4 tensors: aaaa, bbbb, aabb, bbaa
+    std::vector<madness::Tensor<double>> core_as_integrals_two_body_aklc; //stored as (a,k,l,c); 4 tensors: aaaa, bbbb, aabb, bbaa
 
     auto t1 = std::chrono::high_resolution_clock::now();
     // <ba|ca>

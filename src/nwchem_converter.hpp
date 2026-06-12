@@ -14,7 +14,6 @@
 #include <madness/chem/NWChem.h>
 #include <madness/chem/correlationfactor.h>
 #include <madness/chem/potentialmanager.h>
-#include "npy.hpp"
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 
