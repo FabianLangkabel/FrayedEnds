@@ -1,8 +1,9 @@
 import time
-import frayedends as fe
 
 import numpy as np
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
+
+import frayedends as fe
 
 molecule_name = "h2"
 n_electrons = 2
@@ -11,7 +12,7 @@ iterations = 6
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
-econv = 1.0e-4
+econv = 1.0e-6
 prev_energies = None
 
 iteration_results = []
@@ -32,8 +33,8 @@ molecule.add_atom(0.0, 0.0, -0.5, "H")
 molecule.add_atom(0.0, 0.0, 0.5, "H")
 geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
-integrals = fe.Integrals3D(world)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
+integrals = fe.Integrals(world)
 
 pno_start = time.perf_counter()
 madpno = fe.MadPNO(world, geom, n_orbitals=4)  
@@ -131,7 +132,7 @@ for iter in range(iterations):
         world.cube_plot(f"nat_orb_{iter}_orb{i}", natural_orbs[i], molecule, zoom=4.0)
 
     # Orbital Refinement
-    opti = fe.Optimization3D(world, Vnuc, nuc_repulsion)
+    opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=1.0e-5, occ_thresh=1.0e-5)
     
     for i in range(n_orbitals):

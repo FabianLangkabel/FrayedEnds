@@ -1,5 +1,6 @@
 import numpy as np
 from pyscf import fci
+
 import frayedends as fe
 
 molecule_name = "h2"
@@ -15,8 +16,8 @@ molecule.add_atom(0.0, 0.0, -0.5, "H")
 molecule.add_atom(0.0, 0.0, 0.5, "H")
 geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 
-world = fe.MadWorld3D(L=box_size, k=wavelet_order, thresh=madness_thresh)
-integrals = fe.Integrals3D(world)
+world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
+integrals = fe.Integrals(world)
 
 madpno = fe.MadPNO(world, geom, n_orbitals=4)  # ground state + 2 excited states 
 
