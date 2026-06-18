@@ -181,6 +181,7 @@ class MadPNO:
 
     def get_pno_groupings(self, diagonal=True, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
+        use_diagonal = diagonal
         orbitals = self.get_orbitals(*args, **kwargs)
         info = get_function_info(orbitals)
         nhf = len([x for x in info if numpy.isclose(float(x["occ"]), 2.0)])
@@ -194,10 +195,11 @@ class MadPNO:
             else:
                 off_diagonal[(x, y)].append(k)
 
-        if diagonal:
+        if use_diagonal:
             return diagonal
         return {**diagonal, **off_diagonal}
-    
+
+    # TODO: Need to update this method
     def get_ex_pno_groupings(self, diagonal=True, *args, **kwargs):
         if self._cis_orbitals is None or self._cispd_orbitals is None:
             raise Exception("No excited state orbitals computed yet.")
@@ -271,7 +273,8 @@ class MadPNO:
             # correct edges with offset
             edges = [tuple([y - nof for y in x]) for x in edges]
         return edges
-    
+
+    # TODO: Need to update this method
     def get_ex_spa_edges(self, excitation, frozen_core=True):
         all_groupings = self.get_ex_pno_groupings(diagonal=True)
         pno_grouping_ex = all_groupings.get(excitation, {}) # get pno_grouping per excitation
