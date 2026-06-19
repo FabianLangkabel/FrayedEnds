@@ -149,9 +149,6 @@ for d in distance:
         # for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001))
 
-        """
-        DMRG with refined orbitals
-        """
         G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
         T = integrals.compute_kinetic_integrals(orbs)
         V = integrals.compute_potential_integrals(orbs, Vnuc)
