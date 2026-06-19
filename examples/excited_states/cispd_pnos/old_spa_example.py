@@ -114,7 +114,7 @@ constants = [2.0]
 E = expectation_value_orthogonality_constraint(
     H=H_ex,
     U=ansatz,
-    circuit_list=circuit_list, 
+    circuit_list=circuit_list,
     constant_list=constants
 )
 
