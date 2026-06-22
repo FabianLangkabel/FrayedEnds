@@ -1,9 +1,9 @@
+from math import pi
+
 import numpy as np
 import tequila as tq
+
 import frayedends as fe
-import sunrise as sun
-from math import pi
-from copy import deepcopy
 
 n_electrons = 4
 number_roots = 3
@@ -46,8 +46,7 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 madpno = fe.MadPNO(world, geom, n_orbitals=2)
 integrals = fe.Integrals(world)
 orbitals = madpno.get_orbitals()
-
-# print(madpno.get_pno_groupings())
+#print(madpno.get_pno_groupings())
 # print(madpno.get_spa_edges())
 
 cis_orbs = madpno.compute_cis(n_excitation=1)
@@ -55,25 +54,21 @@ cis_orbs = integrals.project_out(orbitals, cis_orbs)
 cis_orbs = integrals.orthonormalize(cis_orbs)
 
 cispd_orbs = madpno.compute_cispd(n_orbitals=2)
-cispd_orbs = integrals.project_out(orbitals, cispd_orbs) # test 3: cispd only project out GS and not CIS
+cispd_orbs = integrals.project_out(orbitals + cis_orbs, cispd_orbs)
+cispd_orbs = integrals.orthonormalize(cispd_orbs)
 
-# orbitals = orbitals[:1] + cis_orbs + cispd_orbs + orbitals[1:] # 0: HF, 1: CIS, 2: CISPD, 3: MP2 PNO
-orbitals_gs = orbitals + cis_orbs + cispd_orbs
-
-for i in range(len(orbitals_gs)):
-    world.cube_plot(f"orb{i}", orbitals_gs[i], molecule, zoom=4.0)
-
-# orbitals = integrals.orthonormalize(orbitals, method="cholesky")
-orbitals_gs = integrals.orthonormalize(orbitals_gs)
-T = integrals.compute_kinetic_integrals(orbitals_gs)
-V = integrals.compute_potential_integrals(orbitals_gs, V=madpno.get_nuclear_potential())
-G = integrals.compute_two_body_integrals(orbitals_gs)
+orbitals = orbitals[:1] + cis_orbs + cispd_orbs  + orbitals[1:]
+# orbitals = orbitals + cis_orbs + cispd_orbs
+orbitals = integrals.orthonormalize(orbitals, method="cholesky")
+T = integrals.compute_kinetic_integrals(orbitals)
+V = integrals.compute_potential_integrals(orbitals, V=madpno.get_nuclear_potential())
+G = integrals.compute_two_body_integrals(orbitals)
 c = madpno.get_nuclear_repulsion()
 
 mol = tq.Molecule(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c)
-H_gs = mol.make_hamiltonian()
+H = mol.make_hamiltonian()
 
-energies, eivect = np.linalg.eigh(H_gs.to_matrix())
+energies, eivect = np.linalg.eigh(H.to_matrix())
 for i in range(len(eivect)):
     w = tq.QubitWaveFunction.from_array(eivect[:,i])
     t = [i for i in w.items()]
@@ -82,37 +77,33 @@ for i in range(len(eivect)):
 print(energies)
 
 # SPA Groundstate for projection
-# spa_edges = madpno.get_spa_edges() # (0,1,2,3) 0: HF, 1: MP2 PNO, 2: CIS X, 3: CISPD
+spa_edges = madpno.get_spa_edges() # (0,1,2,3) 0: HF, 1: MP2 PNO, 2: CIS X, 3: CISPD
 
 U = mol.make_ansatz(name="spa", edges=[(0,1)])
-E = tq.ExpectationValue(U=U, H=H_gs)
+E = tq.ExpectationValue(U=U, H=H)
 result = tq.minimize(E, silent=True)
+# print(f"FCI Ground state: {energies[0]}")
+# print(f"SPA GS energy: {result.energy}")
+gs_circuit = U.map_variables(result.variables)
 print(f"FCI Ground state: {energies[0]}")
 print(f"SPA GS energy: {result.energy}")
-gs_circuit = U.map_variables(result.variables)
 
 print("--------------- SPA Calculation EX -----------------")
 
-orbitals_ex = orbitals[:1] + cis_orbs + cispd_orbs + orbitals[1:] # 0: HF, 1: CIS, 2: CISPD, 3: MP2 PNO
-orbitals_ex = integrals.orthonormalize(orbitals_ex, method="cholesky")
+U = mol.make_ansatz(name="spa", edges=[(0,1,2)])#spa_edges)
 
-U_orb = integrals.compute_overlap_integrals(orbitals_gs, orbitals_ex)
-mol_ex = mol.transform_orbitals(U_orb)
-H_ex = mol_ex.make_hamiltonian()
-
-U_ex = mol.make_ansatz(name="spa", edges=[(0,1,2)])#spa_edges)
-# UR = mol.UR(0, 1, (tq.Variable('a') + 0.25) * pi)
-# #UR+= mol.UR(3, 1, (tq.Variable("b") + 0.25) *pi)
-# UR+= mol.UR(1, 2, (tq.Variable("c") + 0.25) *pi)
+UR = mol.UR(0, 1, (tq.Variable('a') + 0.25) * pi)
+# UR+= mol.UR(3,1, (tq.Variable("b") + 0.25) *pi)
+UR+= mol.UR(1,2, (tq.Variable("c") + 0.1) *pi)
 
 
-ansatz = U_ex  #+ UR
+ansatz = U + UR
 
 circuit_list = [gs_circuit]
 constants = [2.0]
 
 E = expectation_value_orthogonality_constraint(
-    H=H_ex,
+    H=H,
     U=ansatz,
     circuit_list=circuit_list,
     constant_list=constants
@@ -132,5 +123,6 @@ print(f"Circuit: {circuit}")
 # rot = sun.measurement.gates_to_orb_rot(mUR,len(mol.integral_manager.orbital_coefficients),core=core)
 # r0mol = r0mol.transform_orbitals(rot.T,ignore_active_space=True)
 # sun.plot_MO(r0mol,filename='post')
+
 
 fe.cleanup(globals())
