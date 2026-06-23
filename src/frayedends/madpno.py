@@ -322,8 +322,8 @@ class MadPNO:
             "xc": "hf",
             "L": madworld.get_function_defaults()["cell_width"] / 2,
             "k": madworld.get_function_defaults()["k"],
-            "econv": 1.0e-6,
-            "dconv": 1.0e-6,
+            "econv": 1.0e-4,
+            "dconv": 5.0e-4,
             "localize": "boys",
         }
         data["nemo"] = {"ncf": "( none , 1.0)"}

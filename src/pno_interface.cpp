@@ -153,7 +153,6 @@ void PNOInterface::run(const size_t basis_size) {
     double thresh = parameters.thresh();
 
     thresh = std::min(thresh, 1.e-4);
-    this->pno_thresh = thresh; // store pno threshold for later use in cispd
     if (madness_process.world->rank() == 0)
         std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
     FunctionDefaults<3>::set_thresh(thresh);
@@ -287,7 +286,7 @@ void PNOInterface::compute_cis(const size_t n_excitations) {
     }
 
     // put cis computation into parser so TDHF can read it 
-    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; thresh " + std::to_string(pno_thresh * 10.0) + "; dconv " + std::to_string(pno_thresh * 10.0) + "; restart no_restart");
+    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; restart no_restart");
 
     if (madness_process.world->rank() == 0) {
         std::cout << "--------------------------------------------------\n";
