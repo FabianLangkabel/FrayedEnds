@@ -128,12 +128,12 @@ for d in distance:
         all_2pdms.append(rdm2_state)
 
     sa_1pdm = np.mean(all_1pdms, axis=0)
-    sa_2pdm_phys = np.mean(all_2pdms, axis=0)
-    sa_2pdm_chem = sa_2pdm_phys.swapaxes(1, 2)  #chem notation
+    sa_2pdm = np.mean(all_2pdms, axis=0)
     print(
         "Energy from SA-pdms = %20.15f"
-        % (np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ikjl->", sa_2pdm_chem, G) + nuc_repulsion)
+        % (np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ikjl->", sa_2pdm, G) + nuc_repulsion)
     )
+    sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
 
     with open("iteration_pno_dmrg_oo.dat", "a") as f:
         f.write(f"{reported_distance:.3f} {-1} {0.00} " + " ".join(f"{(x + nuc_repulsion):.15f}" for x in e_roots) + "\n")
@@ -166,12 +166,12 @@ for d in distance:
             all_2pdms.append(rdm2_state)
 
         sa_1pdm = np.mean(all_1pdms, axis=0)
-        sa_2pdm_phys = np.mean(all_2pdms, axis=0)
-        sa_2pdm_chem = sa_2pdm_phys.swapaxes(1, 2)  # chem notation
+        sa_2pdm = np.mean(all_2pdms, axis=0)
         print(
             "Energy from SA-pdms = %20.15f"
-            % (np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ikjl->", sa_2pdm_chem, G) + nuc_repulsion)
+            % (np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ikjl->", sa_2pdm, G) + nuc_repulsion)
         )
+        sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
 
         iter_end = time.perf_counter()
         iter_time = iter_end - iter_start
