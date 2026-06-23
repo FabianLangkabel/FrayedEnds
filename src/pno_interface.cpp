@@ -286,7 +286,7 @@ void PNOInterface::compute_cis(const size_t n_excitations) {
     }
 
     // put cis computation into parser so TDHF can read it 
-    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; restart no_restart");
+    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; maxiter 50" + "; restart no_restart");
 
     if (madness_process.world->rank() == 0) {
         std::cout << "--------------------------------------------------\n";
