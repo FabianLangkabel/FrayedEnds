@@ -29,7 +29,7 @@ number_roots = 3
 iterations = 6
 box_size = 50.0
 wavelet_order = 7
-madness_thresh = 0.0001
+madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 def expectation_value_orthogonality_constraint(H,U, circuit_list, constant_list):
