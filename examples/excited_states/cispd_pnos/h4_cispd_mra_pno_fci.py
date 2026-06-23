@@ -131,7 +131,7 @@ for d in distance:
     sa_2pdm = np.mean(all_2pdms, axis=0)
     print(
         "Energy from SA-pdms = %20.15f"
-        % (np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ikjl->", sa_2pdm, G) + nuc_repulsion)
+        % (np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuc_repulsion)
     )
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
 
