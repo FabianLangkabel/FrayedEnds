@@ -19,7 +19,7 @@ geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
-madpno = fe.MadPNO(world, geom, n_orbitals=2)  # ground state + 2 excited states 
+madpno = fe.MadPNO(world, geom, n_orbitals=2)
 
 gs_orbs = madpno.get_orbitals()
 hf_orbs = madpno.get_hf_orbitals()

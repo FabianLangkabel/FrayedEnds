@@ -147,7 +147,7 @@ for d in distance:
         opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
         # for i in range(len(orbs)):
-        #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001))
+        #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
         G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
         T = integrals.compute_kinetic_integrals(orbs)
