@@ -83,6 +83,7 @@ print("Generating CISPD took %.2f seconds" % cispd_time)
 cis_orbs = integrals.project_out(gs_orbs_original, cis_orbs_original)
 cis_orbs = integrals.orthonormalize(cis_orbs)
 cispd_orbs = integrals.project_out(gs_orbs_original + cis_orbs, cispd_orbs_original) # Cispd only project out the ground state orbitals
+cispd_orbs = integrals.orthonormalize(cispd_orbs)
 
 orbitals_sym = gs_orbs_original + cis_orbs + cispd_orbs
 orbitals_sym = integrals.orthonormalize(orbitals_sym)
@@ -111,9 +112,19 @@ print(energies)
 
 # ----------- SPA ground state with symmetric orthonormalized orbital set for projection -----------
 print("--------------- SPA Calculation GS -----------------")
-U = mol.make_ansatz(name="spa", edges=[(0,1)])
+U = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])
+
+U += mol.UR(0, 1, (tq.Variable('a') + 0.25) * pi)
+U += mol.UR(1, 2, (tq.Variable("b") + 0.25) *pi)
+U += mol.UR(2, 3, (tq.Variable("c") + 0.25) *pi)
+
 E = tq.ExpectationValue(U=U, H=H_gs)
 result = tq.minimize(E, silent=True)
+# for _ in range(100):
+#     opt = tq.quantumchemistry.optimize_orbitals(molecule=mol, circuit=U, initial_guess="random",silent=True)
+#     if not np.isclose(opt.energy, result.energy, atol=1.e-3):
+#         print("opt.energy = ", opt.energy)
+#         print(opt.mo_coeff)
 print(f"FCI Ground state: {energies[0]}")
 print(f"SPA GS energy: {result.energy}")
 gs_circuit = U.map_variables(result.variables)
@@ -128,19 +139,20 @@ for i in range(len(orbitals_ch)):
 
 # ---------- rotate the circuit into excited state orbitals basis (cholesky orthonormalized set) ----------
 S = integrals.compute_overlap_integrals(orbitals_sym, orbitals_ch)
+print(S)
 rotation = mol.get_givens_circuit(S)
 
 # ----------- SPA excited state with cholesky orthonormalized orbital set-----------
 print("--------------- SPA Calculation EX -----------------")
 
 U_ex = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])#spa_edges)
-U_ex = U_ex + rotation
 
-UR = mol.UR(0, 3, (tq.Variable('a') + 0.25) * pi)
-UR+= mol.UR(3, 1, (tq.Variable("b") + 0.25) *pi)
-UR+= mol.UR(1, 2, (tq.Variable("c") + 0.25) *pi)
+UR = mol.UR(0, 1, (tq.Variable('d') + 0.5) * pi)
+UR += mol.UR(1, 2, (tq.Variable('e') + 0.5) * pi)
+UR += mol.UR(2, 3, (tq.Variable('f') + 0.5) * pi)
+UR += mol.UR(3, 0, (tq.Variable('g') + 0.5) * pi) 
 
-ansatz = U_ex + UR
+ansatz = rotation + U_ex + UR
 
 circuit_list = [gs_circuit]
 constants = [2.0]
@@ -152,7 +164,7 @@ E2 = tq.ExpectationValue(H=H_gs, U=U + rotation)
 f1 = tq.compile(E1)
 f2 = tq.compile(E2)
 variables = {k:1.0 for k in U.extract_variables()}
-print("difference: ", f1(variables) - f2(variables))
+print("Consistency Test difference: ", f1(variables) - f2(variables))
 
 E = expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
@@ -162,17 +174,22 @@ E = expectation_value_orthogonality_constraint(
 )
 
 result = tq.minimize(E, silent=True)
-print(f"FCI Singlet excited state energy: {energies[11]}")
+print(f"FCI Singlet excited state energy: {energies[9]}")
 print(f"SPA singlet excited state energy: {result.energy}")
 circuit = tq.simulate(ansatz, result.variables)
 print(f"Circuit: {circuit}")
 
-E = expectation_value_orthogonality_constraint(H_check, U=U_ex + UR, circuit_list=circuit_list, constant_list=constants)
+E = expectation_value_orthogonality_constraint(
+    H_check, 
+    U=U_ex + UR, 
+    circuit_list=circuit_list, 
+    constant_list=constants
+)
 result = tq.minimize(E, silent=True)
-print(f"FCI Singlet excited state energy: {energies[11]}")
+print(f"FCI Singlet excited state energy: {energies[9]}")
 print(f"SPA singlet excited state energy: {result.energy}")
 
-circuit = tq.simulate(ansatz, result.variables)
+circuit = tq.simulate(U_ex + UR, result.variables)
 print(f"Circuit: {circuit}")
 
 
