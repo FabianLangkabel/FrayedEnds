@@ -127,12 +127,6 @@ class MadWorld:
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)
 
-    def save_to_m_file(self, filename, fct):
-        self.impl.save_to_m_file(filename, fct)
-
-    def load_savedfct_from_m_file(self, filename):
-        self.impl.load_savedfct_from_m_file(filename)
-
     def line_plot(self, filename, mra_function, axis="x", datapoints=2001):
         if hasattr(mra_function, "data"):
             self.impl.plot(filename, mra_function.data, axis, datapoints)
