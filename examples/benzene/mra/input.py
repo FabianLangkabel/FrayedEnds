@@ -22,6 +22,7 @@ madness_thresh = 1e-7
 # Aktivraum-Konfiguration
 # ---------------------------------------------------------------------------
 input_orb_path = "initial_orbitals"
+translated_orb_path = "translated"
 output_orb_path = "it_1"
 
 n_total_occupied = 21                                       # 42 / 2
@@ -60,26 +61,18 @@ nuclear_repulsion_energy = mol.get_nuclear_repulsion()
 # Orbitale laden
 # ---------------------------------------------------------------------------
 def load(path):
-    return world.load_savedfct_from_m_file(path)
-
+    return fe.SavedFct3D(path)
 
 core_orbs = []
-for i in core_occupied_indices:
+for i in range(0, 18):
     print(f"Core  occupied_{i}")
-    orb = load(os.path.join(input_orb_path, f"occupied_{i}.00000"))
-    orb.type = "frozen_occ"
+    orb = load(os.path.join(translated_orb_path, f"core_{i}.fe"))
     core_orbs.append(orb)
 
 active_orbs = []
-for i in active_occupied_indices:
+for i in range(0,6):
     print(f"Active occupied_{i}")
-    orb = load(os.path.join(input_orb_path, f"occupied_{i}.00000"))
-    orb.type = "active"
-    active_orbs.append(orb)
-for i in active_virtual_indices:
-    print(f"Active virtual_{i}")
-    orb = load(os.path.join(input_orb_path, f"virtual_{i}.00000"))
-    orb.type = "active"
+    orb = load(os.path.join(translated_orb_path, f"active_{i}.fe"))
     active_orbs.append(orb)
 
 # ---------------------------------------------------------------------------
