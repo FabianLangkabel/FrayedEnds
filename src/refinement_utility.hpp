@@ -7,13 +7,14 @@
 #include <cstring>
 #include <stdexcept>
 
+// utility functions for open shell and closed shell Optimization and Integrals classes
+
 using namespace madness;
 namespace nb = nanobind;
 using Numpy2D = nb::ndarray<nb::numpy, double, nb::ndim<2>>;
 using Numpy4D = nb::ndarray<nb::numpy, double, nb::ndim<4>>;
 
-namespace open_shell_utils {
-
+namespace refinement_utils {
     struct NumericalParameters {
         double truncation_tol = 1e-6;
         double coulomb_lo = 0.001;
@@ -89,33 +90,12 @@ namespace open_shell_utils {
         eigenvectors = sorted_eigenvectors;
     }
 
-
-    inline madness::Tensor<double> matmul_mxm(
-        const madness::Tensor<double>& A,
-        const madness::Tensor<double>& B,
-        std::size_t n)
-    {
-        madness::Tensor<double> C(n, n);
-
-        for (std::size_t i = 0; i < n; ++i) {
-            for (std::size_t j = 0; j < n; ++j) {
-                double sum = 0.0;
-                for (std::size_t k = 0; k < n; ++k)
-                    sum += A(i, k) * B(k, j);
-                C(i, j) = sum;
-            }
-        }
-
-        return C;
-    }
-
     inline void TransformMatrix(
         madness::Tensor<double>* ObjectMatrix,
         madness::Tensor<double>& TransformationMatrix)
     {
-        const int n = TransformationMatrix.dim(0);
-        madness::Tensor<double> temp = matmul_mxm(*ObjectMatrix, TransformationMatrix, n);
-        *ObjectMatrix = matmul_mxm(transpose(TransformationMatrix), temp, n);
+        madness::Tensor<double> temp = inner(*ObjectMatrix, TransformationMatrix);
+        *ObjectMatrix = inner(transpose(TransformationMatrix), temp);
     }
 
     inline void TransformTensor(

@@ -9,7 +9,7 @@ import frayedends
 @pytest.mark.parametrize("geom", ["h 0.0 0.0 0.0\nh 0.0 0.0 0.75", "Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods(geom, method):
     geom = geom.lower()
-    world = frayedends.MadWorld3D()
+    world = frayedends.MadWorld(ndims=3)
     minbas = frayedends.AtomicBasisProjector(world, geom)
     orbitals = minbas.orbitals
     print(len(orbitals))
@@ -17,7 +17,7 @@ def test_pyscf_methods(geom, method):
     Vnuc = minbas.get_nuclear_potential()
     del minbas
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     orbitals = integrals.orthonormalize(orbitals=orbitals)
     V = integrals.compute_potential_integrals(orbitals, V=Vnuc)
     T = integrals.compute_kinetic_integrals(orbitals)
@@ -49,7 +49,7 @@ def test_pyscf_methods(geom, method):
 @pytest.mark.parametrize("geom", ["Li 0.0 0.0 0.0\nH 0.0 0.0 1.5"])
 def test_pyscf_methods_with_frozen_core(geom, method="fci"):
     geom = geom.lower()
-    world = frayedends.MadWorld3D(thresh=1.0e-7)
+    world = frayedends.MadWorld(ndims=3, thresh=1.0e-7)
     minbas = frayedends.AtomicBasisProjector(world, geom)
     sto3g = minbas.orbitals
     hf_orbitals = minbas.solve_scf()
@@ -58,7 +58,7 @@ def test_pyscf_methods_with_frozen_core(geom, method="fci"):
     Vnuc = minbas.get_nuclear_potential()
     del minbas
 
-    integrals = frayedends.Integrals3D(world)
+    integrals = frayedends.Integrals(world)
     sto3g = integrals.orthonormalize(orbitals=sto3g)
     # the core orbital is currently at the CBS (so it will be better than sto-3g)
     # need to project back, so that we can compare to sto-3g

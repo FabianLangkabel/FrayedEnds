@@ -8,7 +8,7 @@ import frayedends as fe
 
 true_start = time()
 n_electrons = 2  # Number of electrons
-n_orbitals = 6  # Number of orbitals (all active in this example)
+n_orbitals = 4  # Number of orbitals (all active in this example)
 
 
 def potential(x: float, y: float) -> float:  # Qdot potential
@@ -16,11 +16,11 @@ def potential(x: float, y: float) -> float:  # Qdot potential
     return -2 / np.linalg.norm(r)
 
 
-world = fe.MadWorld2D(
-    L=100, thresh=1e-4
+world = fe.MadWorld(
+    ndims=2, L=100, thresh=1e-4
 )  # This is required for any MADNESS calculation as it initializes the required environment
 
-factory = fe.MRAFunctionFactory2D(
+factory = fe.MRAFunctionFactory(
     world, potential
 )  # This transform a python function into a MRA function which can be read by MADNESS
 mra_pot = factory.get_function()  # Potential as MRA function

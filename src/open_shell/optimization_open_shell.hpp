@@ -11,12 +11,11 @@
 #include <algorithm>
 #include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
-#include "../npy.hpp"
 #include "../functionsaver.hpp"
 #include "../madness_process.hpp"
 #include "../coulomboperator_nd.hpp"
 #include "integrals_open_shell.hpp"
-#include "utility_open_shell.hpp"
+#include "../refinement_utility.hpp"
 #include "open_shell_integral_storage.hpp"
 
 using namespace madness;
@@ -30,12 +29,23 @@ class Optimization_open_shell {
     Optimization_open_shell(MadnessProcess<NDIM>& mp);
     ~Optimization_open_shell();
 
-    open_shell_utils::NumericalParameters num_params;
+    refinement_utils::NumericalParameters num_params;
     void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
         if (Integrator) {
             Integrator->override_numerical_parameters(num_params);
         }
+    }
+
+    std::vector<std::tuple<std::string, double>> get_numerical_parameters() {
+        return {std::make_tuple("truncation_tol", num_params.truncation_tol),
+                std::make_tuple("coulomb_lo", num_params.coulomb_lo),
+                std::make_tuple("coulomb_eps", num_params.coulomb_eps),
+                std::make_tuple("BSH_lo", num_params.BSH_lo),
+                std::make_tuple("BSH_eps", num_params.BSH_eps),
+                std::make_tuple("Integrator truncation_tol", Integrator->num_params.truncation_tol),
+                std::make_tuple("Integrator coulomb_lo", Integrator->num_params.coulomb_lo),
+                std::make_tuple("Integrator coulomb_eps", Integrator->num_params.coulomb_eps)};
     }
 
     // input

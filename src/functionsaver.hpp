@@ -62,15 +62,16 @@ template <std::size_t NDIM> class SavedFct {
     std::string saved_str = ""; // should this be private?
     std::string info = "";
 
-    SavedFct(Function<double, NDIM> f) : info("None") { saved_str = serialize_function_to_string(f); }
+    SavedFct(const Function<double, NDIM>& f) : info("None") { saved_str = serialize_function_to_string(f); }
 
-    SavedFct(Function<double, NDIM> f, const std::string info) : info(info) {
+    SavedFct(const Function<double, NDIM>& f, const std::string& info) : info(info) {
         saved_str = serialize_function_to_string(f);
     }
 
-    SavedFct(const std::string& filepath) { load_from_file(filepath); }
-
+    SavedFct(const std::string& filepath) { load_from_file(filepath); } // constructor if loading from file created by save_to_file
+    
     void save_to_file(const std::string& filepath) const {
+        // saves saved_str and info to a binary file
         std::ofstream out(filepath, std::ios::binary);
         if (!out)
             throw std::runtime_error("Cannot open file for writing");
@@ -87,6 +88,7 @@ template <std::size_t NDIM> class SavedFct {
     }
 
     void load_from_file(const std::string& filepath) {
+        // loads saved_str and info from a binary file
         std::ifstream in(filepath, std::ios::binary);
         if (!in)
             throw std::runtime_error("Cannot open file for reading");

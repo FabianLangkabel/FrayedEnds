@@ -1,13 +1,13 @@
 from ._frayedends_impl import CoulombPotentialFromChargeDensity, SavedFct2D, SavedFct3D
 from .atomicbasisprojector import AtomicBasisProjector
-from .eigensolver import Eigensolver2D, Eigensolver3D
-from .integrals import Integrals2D, Integrals3D, Integrals_open_shell_3D
+from .eigensolver import Eigensolver
+from .integrals import Integrals, Integrals_open_shell
 from .madpno import MadPNO
-from .madworld import MadWorld2D, MadWorld3D, cleanup, get_function_info
+from .madworld import MadWorld, cleanup, get_function_info
 from .methods import optimize_basis_2D, optimize_basis_3D
 from .moleculargeometry import MolecularGeometry
-from .mrafunctionfactory import MRAFunctionFactory2D, MRAFunctionFactory3D
+from .mrafunctionfactory import MRAFunctionFactory
 from .nwchem_converter import NWChem_Converter, NWChem_Converter_open_shell
-from .optimization import Optimization2D, Optimization3D, Optimization_open_shell_3D, transform_rdms
+from .orbitalrefinement import OrbitalRefinement, OrbitalRefinement_open_shell, transform_rdms
 from .pyscf_interface import PySCFInterface
 from .tequila_interface import TequilaInterface

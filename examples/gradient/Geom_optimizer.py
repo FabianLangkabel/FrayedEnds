@@ -19,13 +19,13 @@ we can use the Hellmann-Feynman theorem when computing the energy gradient.
 The energy_and_gradient function is wrapped to be compatible with geomeTRIC using the geomeTRIC interface by pyscf.
 """
 
-world = fe.MadWorld3D(
-    thresh=1e-6
+world = fe.MadWorld(
+    ndims=3, thresh=1e-6
 )  # setting up the numerical environment for the MRA calculations. thresh is numerical precision of function representation.
 
 
 def energy_and_gradient(
-    world: fe.MadWorld3D,
+    world: fe.MadWorld,
     molgeom: fe.MolecularGeometry,
     n_orbitals: int,
     maxiter_whole_alg=30,
@@ -47,7 +47,7 @@ def energy_and_gradient(
     nuclear_repulsion = molgeom.get_nuclear_repulsion()  # nuclear repulsion energy
     Vnuc = molgeom.get_vnuc(world)  # nuclear potential as MRA function
 
-    integrals = fe.Integrals3D(world)  # class to compute different types of integrals
+    integrals = fe.Integrals(world)  # class to compute different types of integrals
     orbitals = integrals.orthonormalize(orbitals=orbitals)  # orthonormalize pnos
 
     current_energy = 0.0
@@ -82,7 +82,7 @@ def energy_and_gradient(
         # using the rdms we now refine the orbitals, for more details see Theory at https://github.com/FabianLangkabel/FrayedEnds
         # or arXiv:2410.19116
         ref_start = time()
-        orb_refiner = fe.Optimization3D(world, Vnuc, nuclear_repulsion)
+        orb_refiner = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion)
         orbitals = orb_refiner.get_orbitals(
             orbitals=orbitals,
             rdm1=rdm1,

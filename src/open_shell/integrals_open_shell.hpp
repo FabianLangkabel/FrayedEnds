@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <memory>
 #include <nanobind/nanobind.h>
-#include "utility_open_shell.hpp"
+#include "../refinement_utility.hpp"
 
 using namespace madness;
 namespace nb = nanobind;
@@ -31,12 +31,18 @@ class Integrals_open_shell {
     ~Integrals_open_shell() {};
 
     //Numerical parameters
-    open_shell_utils::NumericalParameters num_params;
-    void override_numerical_parameters(open_shell_utils::NumericalParameters params) {
+    refinement_utils::NumericalParameters num_params;
+    void override_numerical_parameters(refinement_utils::NumericalParameters params) {
         num_params = params;
     }
     void override_numerical_parameters(double truncation_tol, double coulomb_lo, double coulomb_eps, double BSH_lo, double BSH_eps) {
         num_params = {truncation_tol, coulomb_lo, coulomb_eps, BSH_lo, BSH_eps};
+    }
+
+    std::vector<std::tuple<std::string, double>> get_numerical_parameters() {
+        return {std::make_tuple("truncation_tol", num_params.truncation_tol),
+                std::make_tuple("coulomb_lo", num_params.coulomb_lo),
+                std::make_tuple("coulomb_eps", num_params.coulomb_eps)};
     }
 
     // Utility Functions
