@@ -154,6 +154,17 @@ for d in distance:
     fci_energy_1 = energies[9] 
     spa_energy_1 = result.energy
 
+    # ----------- Consistency Test for rotation -----------
+    print("\n=============== Consistency Test for rotation ===============")
+    H_check = mol.transform_orbitals(S).make_hamiltonian()
+    E1 = tq.ExpectationValue(H=H_check, U=U_ex)
+    E2 = tq.ExpectationValue(H=H_gs, U=U_ex + rotation)
+    f1 = tq.compile(E1)
+    f2 = tq.compile(E2)
+    variables = {k:1.0 for k in U_ex.extract_variables()}
+    print("Consistency Test difference: ", f1(variables) - f2(variables))
+    print("\n")
+
     dist_end = time.perf_counter()
     dist_time = dist_end - dist_start
     print(f"Distance {reported_distance:.3f} took {dist_time:.2f} s")
