@@ -1,11 +1,11 @@
 import numpy as np
 import tequila as tq
 import frayedends as fe
+from pyscf import fci
 from math import pi
 import time
 
-n_electrons = 4
-number_roots = 3
+n_electrons = 2
 iterations = 6
 box_size = 50.0
 wavelet_order = 7
@@ -80,6 +80,7 @@ for d in distance:
     V = integrals.compute_potential_integrals(orbitals_sym, V=madpno.get_nuclear_potential())
     G = integrals.compute_two_body_integrals(orbitals_sym)
     c = madpno.get_nuclear_repulsion()
+    h1 = T + V
 
     mol = tq.Molecule(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c)
     H_gs = mol.make_hamiltonian()
@@ -91,6 +92,7 @@ for d in distance:
         t = [i for i in w.items()]
         if [i for i in w.items()][0][0].binary.count('1') == mol.n_electrons:
             print(energies[i],'-->',w)
+    print(energies)
 
     print("\n=============== SPA Calculation GS ===============\n")
     U = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])
@@ -119,6 +121,7 @@ for d in distance:
 
     orbitals_ch = gs_orbs_original[:1] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[1:] # 0: HF, 1: CIS, 2: CISPD, 3: MP2 PNO
     orbitals_ch = integrals.orthonormalize(orbitals_ch, method="cholesky")
+    n_orbitals = len(orbitals_ch)
 
     S = integrals.compute_overlap_integrals(orbitals_sym, orbitals_ch)
     rotation = mol.get_givens_circuit(S)
@@ -145,13 +148,16 @@ for d in distance:
     result = tq.minimize(E, silent=True)
     circuit_ex = tq.simulate(U_ex + UR + rotation, result.variables)
 
-    print(f"FCI Singlet excited state energy: {energies[9]}")
+    e_roots, fcivecs = fci.direct_spin0.kernel(h1, G, n_orbitals, n_electrons, nroots=3)
+    e_excited_tot = e_roots[1] + c
+
+    print(f"FCI Singlet excited state energy: {e_excited_tot}")
     print(f"SPA Singlet excited state energy: {result.energy}")
-    print("SPA/FCI error: {:+2.5f}".format(result.energy-energies[9]))
+    print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
     print(result.variables)
     print(f"Excited State Circuit: {circuit_ex}")
 
-    fci_energy_1 = energies[9] 
+    fci_energy_1 = e_excited_tot 
     spa_energy_1 = result.energy
 
     # ----------- Consistency Test for rotation -----------
