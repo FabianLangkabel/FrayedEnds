@@ -148,7 +148,8 @@ for d in distance:
     result = tq.minimize(E, silent=True)
     circuit_ex = tq.simulate(U_ex + UR + rotation, result.variables)
 
-    e_roots, fcivecs = fci.direct_spin0.kernel(h1, G, n_orbitals, n_electrons, nroots=3)
+    G_chem = integrals.compute_two_body_integrals(orbitals_sym, ordering="chem").elems
+    e_roots, fcivecs = fci.direct_spin0.kernel(h1, G_chem, n_orbitals, n_electrons, nroots=3)
     e_excited_tot = e_roots[1] + c
 
     print(f"FCI Singlet excited state energy: {e_excited_tot}")
