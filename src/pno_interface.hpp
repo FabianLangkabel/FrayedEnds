@@ -112,6 +112,7 @@ class PNOInterface {
 
     std::vector<CC_vecfunction> cis_roots;
     std::vector<std::vector<real_function_3d>> cis_x_per_root; // cis_x_per_root to store x vectors for each root
+    std::vector<std::vector<double>> cis_x_norms; // cis_x_norms to store norms for each root
     bool cis_computed = false; // flag to indicate if CIS X vectors were computed 
 
     std::vector<real_function_3d> cispd_pnos;

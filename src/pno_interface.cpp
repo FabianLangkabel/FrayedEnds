@@ -305,11 +305,18 @@ void PNOInterface::compute_cis(const size_t n_excitations) {
 
     cis_roots = tdhf.solve_cis();
     cis_x_per_root.resize(cis_roots.size()); 
+    cis_x_norms.resize(cis_roots.size());
     const double time_cis_end = wall_time();
 
     if (madness_process.world->rank() == 0) {
-        std::cout << "Total CIS roots found: " << cis_roots.size() << "\n";
+        std::cout << "Total CIS roots found: " << cis_roots.size() << "\n\n";
     }
+    
+    tdhf.analyze(cis_roots);
+
+    std::cout << "\n\n";
+
+    const real_function_3d R = nemo->ncf->function();
 
     for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
         const auto& xvec = cis_roots[ex].functions;
@@ -319,10 +326,32 @@ void PNOInterface::compute_cis(const size_t n_excitations) {
                         << " (contains " << xvec.size() << " functions)" << std::endl;
         }
 
+        vector_real_function_3d xfuncs;
         for (auto const& [idx, cc_func] : xvec) {
             std::string filename = std::to_string(ex) + "_x" + std::to_string(idx);
             save(cc_func.function, filename);
             cis_x_per_root[ex].push_back(cc_func.function); // store x vector functions for each root
+            xfuncs.push_back(cc_func.function);
+        }
+        
+        std::vector<real_function_3d> Rx = R * xfuncs;
+        std::vector<double> norms = norm2s(*(madness_process.world), Rx);
+
+        if (madness_process.world->rank() == 0) {
+            std::cout << "  Dominant contributions for excitation " << ex
+                       << " (omega = " << cis_roots[ex].omega << "):\n";
+        }
+
+        size_t k = 0;
+        for (auto const& [idx, cc_func] : xvec) {
+            double n2 = norms[k] * norms[k]; // quadrierte Norm
+            cis_x_norms[ex].push_back(n2);
+
+            if (madness_process.world->rank() == 0) {
+                std::cout << "    orbital " << idx
+                           << " : ||x||^2 = " << n2 << "\n";
+            }
+            ++k;
         }
     }
 
@@ -509,9 +538,14 @@ std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
         size_t func_idx = 0;
         for (auto const& [idx, cc_func] : cis_roots[ex].functions) {
             SavedFct<3> pnorb(cis_x_per_root[ex][func_idx]);
-            pnorb.info = "type=CIS_X_EX" + std::to_string(ex) 
+            double norm2 = (func_idx < cis_x_norms[ex].size()) ? cis_x_norms[ex][func_idx] : 0.0;   
+
+            char norm_buf[32];
+            snprintf(norm_buf, sizeof(norm_buf), "%.6e", norm2);
+            pnorb.info = "type=CIS_X_EX" + std::to_string(ex) + "_X" + std::to_string(idx)
                        + " occ=1.0 pair1=" + std::to_string(idx + nfreeze)
-                       + " pair2=" + std::to_string(idx + nfreeze);
+                       + " pair2=" + std::to_string(idx + nfreeze)
+                       + " norm2=" + std::string(norm_buf);
             roots.push_back(pnorb);
             func_idx++;
         }
