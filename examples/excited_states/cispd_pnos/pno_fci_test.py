@@ -2,6 +2,7 @@ import numpy as np
 from pyscf import fci
 
 import frayedends as fe
+import time
 
 molecule_name = "h2"
 n_electrons = 2
@@ -12,36 +13,50 @@ econv = 1.0e-6
 
 
 molecule = fe.MolecularGeometry(units="angstrom")
+molecule.add_atom(0.0, 0.0, -1.5, "H")
 molecule.add_atom(0.0, 0.0, -0.5, "H")
 molecule.add_atom(0.0, 0.0, 0.5, "H")
-geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
+molecule.add_atom(0.0, 0.0, 1.5, "H")
+geom = "H 0.0 0.0 -1.5\nH 0.0 0.0 -0.5\nH 0.0 0.0 0.5\nH 0.0 0.0 1.5"
 
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
-madpno = fe.MadPNO(world, geom, n_orbitals=2)
+pno_start = time.perf_counter()
+madpno = fe.MadPNO(world, geom, n_orbitals=4)
+pno_end = time.perf_counter()
+pno_time = pno_end - pno_start
+print("Generating PNOs took %.2f seconds" % pno_time)
 
 gs_orbs = madpno.get_orbitals()
 hf_orbs = madpno.get_hf_orbitals()
 
-for i in range(len(gs_orbs)):
-    world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
-
-for i in range(len(hf_orbs)):
-    world.cube_plot(f"hf_orb{i}", hf_orbs[i], molecule, zoom=4.0)
+# for i in range(len(gs_orbs)):
+#     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
+# 
+# for i in range(len(hf_orbs)):
+#     world.cube_plot(f"hf_orb{i}", hf_orbs[i], molecule, zoom=4.0)
  
-cis_orbs = madpno.compute_cis(n_excitation=1)
+cis_start = time.perf_counter() 
+cis_orbs = madpno.compute_cis(n_excitation=2)
 cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
 cis_orbs = integrals.orthonormalize(cis_orbs)
+cis_end = time.perf_counter()
+cis_time = cis_end - cis_start
+print("Generating CIS took %.2f seconds" % cis_time)
 
-for i in range(len(cis_orbs)):
-    world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
+# for i in range(len(cis_orbs)):
+#     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
-cispd_orbs = madpno.compute_cispd(n_orbitals=2)
+cispd_start = time.perf_counter()
+cispd_orbs = madpno.compute_cispd(n_orbitals=4)
 cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
+cispd_end = time.perf_counter()
+cispd_time = cispd_end - cispd_start
+print("Generating CISPD took %.2f seconds" % cispd_time)
 
-for i in range(len(cispd_orbs)):
-    world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)
+# for i in range(len(cispd_orbs)):
+#     world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)
     
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
@@ -49,8 +64,8 @@ Vnuc = madpno.get_nuclear_potential()
 orbs = gs_orbs + cis_orbs + cispd_orbs
 orbs = integrals.orthonormalize(orbitals=orbs)
 
-for i in range(len(orbs)):
-    world.cube_plot(f"orb{i}", orbs[i], molecule, zoom=4.0)
+# for i in range(len(orbs)):
+#     world.cube_plot(f"orb{i}", orbs[i], molecule, zoom=4.0)
 
 T = integrals.compute_kinetic_integrals(orbs)
 V = integrals.compute_potential_integrals(orbs, Vnuc)

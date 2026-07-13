@@ -40,7 +40,7 @@ total_start = time.perf_counter()
 
 for d in distance:
     dist_start = time.perf_counter()
-    reported_distance = d
+    reported_distance = d*2
     geom = (
             "H 0.0 0.0 " + (-d).__str__() + "\n"
             "H 0.0 0.0 " + d.__str__() + "\n"
