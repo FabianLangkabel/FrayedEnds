@@ -12,23 +12,6 @@ wavelet_order = 7
 madness_thresh = 1.0e-6
 econv = 1.0e-6
 
-def expectation_value_orthogonality_constraint(H,U, circuit_list, constant_list):
-    E = tq.ExpectationValue(H=H, U=U)
-    if (len(circuit_list) != len(constant_list)):
-        raise ValueError(f"Circuit_list and constant_list have different lengths. len(circuit_list): '{len(circuit_list)}', len(constant_list): '{len(constant_list)}'")
-    list_length = len(circuit_list)
-    for l in range(list_length):
-        if (circuit_list[l].extract_variables() == None):
-            raise ValueError(f"Circuit_list contains unparametrized elements")
-    U_list = []
-    for i in range(0, list_length):
-        U_k = U + circuit_list[i].dagger()
-        P_k = 1
-        for k in U_k.qubits:
-            P_k*= tq.paulis.Qp(k)
-        E_k = tq.ExpectationValue(H=P_k, U=U_k)
-        U_list.append(constant_list[i]*E_k)
-    return E + sum(U_list)
 
 distance = np.arange(1.5, 0.25, -0.05).tolist()
 
@@ -139,7 +122,8 @@ for d in distance:
     # UR += mol.UR(1, 3, (tq.Variable("y") + 0.5) * pi)
     UR += mol.UR(0, 2, (tq.Variable("z") + 0.5) * pi)
 
-    E = expectation_value_orthogonality_constraint(
+    ti = fe.TequilaInterface(mol=mol)
+    E = ti.expectation_value_orthogonality_constraint(
         H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
         U=U_ex + UR + rotation,
         circuit_list=circuit_list, 
@@ -181,4 +165,5 @@ for d in distance:
 
     del integrals
     del madpno
+    del ti
     del world

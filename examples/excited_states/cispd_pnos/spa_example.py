@@ -36,23 +36,6 @@ wavelet_order = 7
 madness_thresh = 1.0e-6
 econv = 1.0e-6
 
-def expectation_value_orthogonality_constraint(H,U, circuit_list, constant_list):
-    E = tq.ExpectationValue(H=H, U=U)
-    if (len(circuit_list) != len(constant_list)):
-        raise ValueError(f"Circuit_list and constant_list have different lengths. len(circuit_list): '{len(circuit_list)}', len(constant_list): '{len(constant_list)}'")
-    list_length = len(circuit_list)
-    for l in range(list_length):
-        if (circuit_list[l].extract_variables() == None):
-            raise ValueError(f"Circuit_list contains unparametrized elements")
-    U_list = []
-    for i in range(0, list_length):
-        U_k = U + circuit_list[i].dagger()
-        P_k = 1
-        for k in U_k.qubits:
-            P_k*= tq.paulis.Qp(k)
-        E_k = tq.ExpectationValue(H=P_k, U=U_k)
-        U_list.append(constant_list[i]*E_k)
-    return E + sum(U_list)
 
 molecule = fe.MolecularGeometry(units="angstrom")
 molecule.add_atom(0.0, 0.0, -0.5, "H")
@@ -96,8 +79,8 @@ for i in range(2):
 cis_orbs_original = []
 cispd_orbs_original = []
 for i in range(1):
-    cis_orbs_original.append(fe.SavedFct3D(f"cis_orbs_original{i}.data"))
-    cispd_orbs_original.append(fe.SavedFct3D(f"cispd_orbs_original{i}.data"))
+   cis_orbs_original.append(fe.SavedFct3D(f"cis_orbs_original{i}.data"))
+   cispd_orbs_original.append(fe.SavedFct3D(f"cispd_orbs_original{i}.data"))
 
 print("Orbitals loaded!")
 
@@ -185,7 +168,8 @@ constants = [5.0]
 
 U_ex = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])
 
-E = expectation_value_orthogonality_constraint(
+ti = fe.TequilaInterface(mol=mol)
+E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list, 
@@ -208,7 +192,7 @@ UR = mol.UR(0, 1, (tq.Variable('u') + 0.5) * pi)
 # UR += mol.UR(1, 3, (tq.Variable("y") + 0.5) * pi)
 UR += mol.UR(0, 2, (tq.Variable("z") + 0.5) * pi)
 
-E = expectation_value_orthogonality_constraint(
+E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + UR + rotation,
     circuit_list=circuit_list, 
@@ -234,7 +218,7 @@ variables = {k:1.0 for k in U_ex.extract_variables()}
 print("Consistency Test difference: ", f1(variables) - f2(variables))
 
 print("\n--------------- SPA H_gs & U_ex + UR + rotation:  ES -----------------")
-E = expectation_value_orthogonality_constraint(
+E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + UR + rotation,
     circuit_list=circuit_list, 
@@ -249,7 +233,7 @@ print(f"Circuit: {circuit}")
 
 print("--------------- SPA H_check & U_ex + UR:  ES -----------------")
 gs_circuit_ch = gs_circuit + rotation # add rotation to groundstate circuit 
-E = expectation_value_orthogonality_constraint(
+E = ti.expectation_value_orthogonality_constraint(
     H=H_check, 
     U=U_ex + UR, 
     circuit_list=[gs_circuit_ch], 
