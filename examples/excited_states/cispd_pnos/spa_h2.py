@@ -6,14 +6,13 @@ from math import pi
 import time
 
 n_electrons = 2
-iterations = 6
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 
-distance = np.arange(1.5, 0.25, -0.05).tolist()
+distance = np.arange(1.5, 0.15, -0.05).tolist()
 
 with open("spa_h2.dat", "w") as f:
     header = "distance dist_time_s fci_energy_0 spa_energy_0 fci_energy_1 spa_energy_1"
@@ -81,11 +80,11 @@ for d in distance:
     U = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])
 
     # U += mol.UR(0, 1, (tq.Variable('a') + 0.5) * pi)
-    U += mol.UR(1, 2, (tq.Variable("b") + 0.5) * pi)
-    U += mol.UR(2, 3, (tq.Variable("c") + 0.5) * pi)
-    # U += mol.UR(0, 3, (tq.Variable("d") + 0.5) * pi)
-    U += mol.UR(1, 3, (tq.Variable("e") + 0.5) * pi)
-    # U += mol.UR(0, 2, (tq.Variable("f") + 0.5) * pi)
+    U += mol.UR(1, 2, (tq.Variable('b') + 0.5) * pi)
+    U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
+    # U += mol.UR(0, 3, (tq.Variable('d') + 0.5) * pi)
+    U += mol.UR(1, 3, (tq.Variable('e') + 0.5) * pi)
+    # U += mol.UR(0, 2, (tq.Variable('f') + 0.5) * pi)
 
     E = tq.ExpectationValue(U=U, H=H_gs)
     result = tq.minimize(E, silent=True)
@@ -119,8 +118,8 @@ for d in distance:
     # UR += mol.UR(1, 2, (tq.Variable('v') + 0.5) * pi)
     # UR += mol.UR(2, 3, (tq.Variable('w') + 0.5) * pi)
     # UR += mol.UR(0, 3, (tq.Variable('x') + 0.5) * pi)
-    # UR += mol.UR(1, 3, (tq.Variable("y") + 0.5) * pi)
-    UR += mol.UR(0, 2, (tq.Variable("z") + 0.5) * pi)
+    # UR += mol.UR(1, 3, (tq.Variable('y') + 0.5) * pi)
+    UR += mol.UR(0, 2, (tq.Variable('z') + 0.5) * pi)
 
     ti = fe.TequilaInterface(mol=mol)
     E = ti.expectation_value_orthogonality_constraint(
