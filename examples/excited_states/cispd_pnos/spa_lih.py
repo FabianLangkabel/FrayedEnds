@@ -144,9 +144,17 @@ constants = [5.0]
 
 U_ex = mol.make_ansatz(name="spa", edges=[(0,1,2,3,4,5)])
 
-UR = mol.UR(0, 1, (tq.Variable('x') + 0.5) * pi)
+UR = mol.UR(3, 4, (tq.Variable('q') + 0.5) * pi)
+UR += mol.UR(3, 4, (tq.Variable('r') + 0.5) * pi)
+UR += mol.UR(2, 5, (tq.Variable('s') + 0.5) * pi)
+UR += mol.UR(0, 1, (tq.Variable('t') + 0.5) * pi)
+UR += mol.UR(1, 2, (tq.Variable('u') + 0.5) * pi)
+UR += mol.UR(2, 3, (tq.Variable('v') + 0.5) * pi)
+UR += mol.UR(0, 3, (tq.Variable('w') + 0.5) * pi)
+UR += mol.UR(1, 3, (tq.Variable("x") + 0.5) * pi)
 UR += mol.UR(0, 2, (tq.Variable('y') + 0.5) * pi)
-UR += mol.UR(0, 3, (tq.Variable('z') + 0.5) * pi)
+UR += mol.UR(2, 4, (tq.Variable('z') + 0.5) * pi)
+
 
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
