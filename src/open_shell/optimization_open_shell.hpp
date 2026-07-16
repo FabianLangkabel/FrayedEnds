@@ -10,7 +10,7 @@
 #include <chrono>
 #include <algorithm>
 #include <utility>
-#include <madness/external/nlohmann_json/json.hpp>
+#include <nlohmann/json.hpp>
 #include "../functionsaver.hpp"
 #include "../madness_process.hpp"
 #include "../coulomboperator_nd.hpp"
