@@ -9,7 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <algorithm>
-#include <madness/external/nlohmann_json/json.hpp>
+#include <nlohmann/json.hpp>
 #include <madness/chem/molecular_functors.h>
 #include <madness/chem/NWChem.h>
 #include <madness/chem/correlationfactor.h>
