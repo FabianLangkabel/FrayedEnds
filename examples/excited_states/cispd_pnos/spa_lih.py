@@ -130,11 +130,16 @@ print(f"Ground State Circuit: {circuit_gs}")
 gs_circuit = U.map_variables(result.variables)
 
 # ----------- cholesky orthonormalized orbital set ------------------
-orbitals_ch = gs_orbs_original[:2] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[2:] # 0: HF, 1: CIS, 2: CISPD, 3: MP2 PNO
+orbitals_ch = gs_orbs_original[:2] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[2:] # f,0: HF, 1: CIS, 2,3: CISPD, 4,5: MP2 PNO
 orbitals_ch = integrals.orthonormalize(orbitals_ch, method="cholesky")
+
+overlap_frozen = integrals.compute_overlap_integrals([orbitals_sym[0]], [orbitals_ch[0]])
+# print("frozen orbital overlap:", overlap_frozen)
+
+orbitals_ch_active = orbitals_ch[1:]
  
 # ---------- rotate the circuit into excited state orbitals basis (cholesky orthonormalized set) ----------
-S = integrals.compute_overlap_integrals(orbitals_sym, orbitals_ch)
+S = integrals.compute_overlap_integrals(orbitals_sym_active, orbitals_ch_active)
 rotation = mol.get_givens_circuit(S)
 
 # ----------- SPA excited state with cholesky orthonormalized orbital set-----------
@@ -144,16 +149,10 @@ constants = [5.0]
 
 U_ex = mol.make_ansatz(name="spa", edges=[(0,1,2,3,4,5)])
 
-UR = mol.UR(3, 4, (tq.Variable('q') + 0.5) * pi)
-UR += mol.UR(3, 4, (tq.Variable('r') + 0.5) * pi)
-UR += mol.UR(2, 5, (tq.Variable('s') + 0.5) * pi)
-UR += mol.UR(0, 1, (tq.Variable('t') + 0.5) * pi)
-UR += mol.UR(1, 2, (tq.Variable('u') + 0.5) * pi)
-UR += mol.UR(2, 3, (tq.Variable('v') + 0.5) * pi)
-UR += mol.UR(0, 3, (tq.Variable('w') + 0.5) * pi)
-UR += mol.UR(1, 3, (tq.Variable("x") + 0.5) * pi)
-UR += mol.UR(0, 2, (tq.Variable('y') + 0.5) * pi)
-UR += mol.UR(2, 4, (tq.Variable('z') + 0.5) * pi)
+UR = mol.UR(0, 1, (tq.Variable('w') + 0.5) * pi)
+UR += mol.UR(0, 2, (tq.Variable('x') + 0.5) * pi)
+UR += mol.UR(0, 3, (tq.Variable('y') + 0.5) * pi)
+UR += mol.UR(2, 3, (tq.Variable('z') + 0.5) * pi)
 
 
 ti = fe.TequilaInterface(mol=mol)
@@ -168,7 +167,7 @@ minimize_start = time.perf_counter()
 result = tq.minimize(E, silent=True)
 circuit_ex = tq.simulate(U_ex + UR + rotation, result.variables)
 minimize_end = time.perf_counter()
-print(f"minimize & simulate time: {minimize_end - minimize_start}")
+# print(f"minimize & simulate time: {minimize_end - minimize_start}")
 
 print(f"FCI Singlet excited state energy: {e_excited_tot}")
 print(f"SPA Singlet excited state energy: {result.energy}")
