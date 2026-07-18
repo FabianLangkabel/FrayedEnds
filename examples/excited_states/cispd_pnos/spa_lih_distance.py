@@ -170,4 +170,8 @@ for d in distance:
     with open("spa_lih.dat", "a") as f:
             f.write(f"{reported_distance:.3f} {dist_time:.2f} {fci_energy_0: .15f} {spa_energy_0: .15f} {fci_energy_1: .15f} {spa_energy_1: .15f}" + "\n")
 
-    fe.cleanup(globals())
+    del integrals
+    del madpno
+    del ti
+    del world
+    del molecule
