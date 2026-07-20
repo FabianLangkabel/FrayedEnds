@@ -18,8 +18,6 @@ with open("spa_h2.dat", "w") as f:
     header = "distance dist_time_s fci_energy_0 spa_energy_0 fci_energy_1 spa_energy_1"
     f.write(header + "\n")
 
-total_start = time.perf_counter()
-
 for d in distance:
     dist_start = time.perf_counter()
     reported_distance = d*2
