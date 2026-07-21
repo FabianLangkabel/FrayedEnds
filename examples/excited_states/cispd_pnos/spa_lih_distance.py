@@ -90,7 +90,7 @@ for d in distance:
 
     # U += mol.UR(1, 2, (tq.Variable('a') + 0.5) * pi)
     U += mol.UR(1, 3, (tq.Variable('b') + 0.5) * pi)
-    # U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
+    U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
     # U += mol.UR(1, 4, (tq.Variable('d') + 0.5) * pi)
     # U += mol.UR(1, 5, (tq.Variable('e') + 0.5) * pi)
     # U += mol.UR(2, 4, (tq.Variable('f') + 0.5) * pi)
