@@ -543,8 +543,8 @@ std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
             char norm_buf[32];
             snprintf(norm_buf, sizeof(norm_buf), "%.6e", norm2);
             pnorb.info = "type=CIS_X_EX" + std::to_string(ex) + "_X" + std::to_string(idx)
-                       + " occ=1.0 pair1=" + std::to_string(idx + nfreeze)
-                       + " pair2=" + std::to_string(idx + nfreeze)
+                       + " occ=1.0 pair1=" + std::to_string(idx)
+                       + " pair2=" + std::to_string(idx)
                        + " norm2=" + std::string(norm_buf);
             roots.push_back(pnorb);
             func_idx++;

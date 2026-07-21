@@ -195,57 +195,64 @@ class MadPNO:
             else:
                 off_diagonal[(x, y)].append(k)
 
+        if self._cis_orbitals is not None and self._cispd_orbitals is not None:
+            offset = len(orbitals)
+            ex_orbitals = self._cis_orbitals + self._cispd_orbitals
+            ex_info = get_function_info(ex_orbitals)
+
+            def parse_label(label):
+                # CIS_X_EX{ex}_X{idx}  oder  CISPD_EX{ex}
+                if label.startswith("CIS_X_EX"):
+                    return int(label.split("_")[2][2:]), "cis"
+                elif label.startswith("CISPD_EX"):
+                    return int(label.split("_")[-1][2:]), "cispd"
+                return None, None
+            
+            cis_per_k = {}
+            for k_ex, x in enumerate(ex_info):
+                ex, type = parse_label(x["type"])
+                if type != "cis":
+                    continue
+                k_orb = int(x["pair1"]) 
+                norm2 = float(x.get("norm2", 0.0))
+                cis_per_k.setdefault(k_orb, []).append((ex, norm2, k_ex))
+                print(f'cis_per_k: {cis_per_k}')
+            
+            best_exs_per_k = {} 
+            for k_orb, entries in cis_per_k.items():
+                max_norm2 = max(e[1] for e in entries)
+                best_entries = [e for e in entries if numpy.isclose(e[1], max_norm2)]
+                best_exs_per_k[k_orb] = {e[0] for e in best_entries}
+                print(f'best_entries: {best_entries}')
+
+                if k_orb in diagonal:
+                    for ex, norm2, k_ex in best_entries:
+                        diagonal[k_orb].append(k_ex + offset)
+                print(f'best_exs_per_k: {best_exs_per_k}')
+
+            for k_ex, x in enumerate(ex_info):
+                ex, type = parse_label(x["type"])
+                if type != "cispd":
+                    continue
+                xi, yi = int(x["pair1"]), int(x["pair2"])
+
+                if xi == yi:
+                    best_exs = best_exs_per_k.get(xi)
+                    if best_exs is not None and ex in best_exs:
+                        diagonal[xi].append(k_ex + offset)
+                else:
+                    best_exs_x = best_exs_per_k.get(xi, set())
+                    best_exs_y = best_exs_per_k.get(yi, set())
+                    if ex in best_exs_x or ex in best_exs_y:
+                        key = (min(xi, yi), max(xi, yi))
+                        if key in off_diagonal:
+                            off_diagonal[key].append(k_ex + offset)
+
+            print(f'diagonal: {diagonal}')
+
         if use_diagonal:
             return diagonal
         return {**diagonal, **off_diagonal}
-
-    # TODO: Need to update this method
-    def get_ex_pno_groupings(self, diagonal=True, *args, **kwargs):
-        if self._cis_orbitals is None or self._cispd_orbitals is None:
-            raise Exception("No excited state orbitals computed yet.")
-        
-        offset = len(self._orbitals) 
-        diagonal_group = {}
-        off_diagonal_group = {}
-        ex_orbitals = self._cis_orbitals + self._cispd_orbitals
-        info = get_function_info(ex_orbitals)
-    
-        for k, x in enumerate(info):
-            label = x["type"] 
-            if "EX" not in label:
-                continue
-            ex = int(label.split("EX")[-1])
-
-            x = int(info[k]["pair1"])
-            y = int(info[k]["pair2"])
-
-            if x == y:
-                if ex not in diagonal_group:
-                    diagonal_group[ex] = {}
-                if x not in diagonal_group[ex]:
-                    diagonal_group[ex][x] = []
-                
-                diagonal_group[ex][x].append(k + offset)
-            else: 
-                if ex not in off_diagonal_group:
-                    off_diagonal_group[ex] = {}
-                if (x,y) not in off_diagonal_group[ex]:
-                    off_diagonal_group[ex][(x,y)] = []
-                
-                off_diagonal_group[ex][(x,y)].append(k + offset)
-
-        if diagonal:
-            return diagonal_group
-        
-        combined = {}
-        all_excitations = set(diagonal_group.keys()).union(off_diagonal_group.keys())
-
-        for ex in all_excitations:
-            ex_diagonal = diagonal_group.get(ex, {})
-            ex_off_diagonal = off_diagonal_group.get(ex, {})
-            combined[ex] = {**ex_diagonal, **ex_off_diagonal}
-        
-        return combined
 
     def get_spa_edges(self, frozen_core=True):
         pno_groupings = self.get_pno_groupings(diagonal=True)
@@ -272,18 +279,6 @@ class MadPNO:
             edges = [edge for edge in edges if len(edge) != 0 and edge[0] not in occf]
             # correct edges with offset
             edges = [tuple([y - nof for y in x]) for x in edges]
-        return edges
-
-    # TODO: Need to update this method
-    def get_ex_spa_edges(self, excitation, frozen_core=True):
-        all_groupings = self.get_ex_pno_groupings(diagonal=True)
-        pno_grouping_ex = all_groupings.get(excitation, {}) # get pno_grouping per excitation
-        edges = [tuple(sorted(x)) for x in pno_grouping_ex.values() if len(x) > 0]
-        nfreeze = self.impl.get_frozen_core_dim()
-
-        if frozen_core:
-            edges = [tuple([y - nfreeze for y in edge]) for edge in edges]
-
         return edges
 
     def get_nuclear_potential(self, *args, **kwargs):
