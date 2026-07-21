@@ -90,7 +90,7 @@ for d in distance:
 
     # U += mol.UR(1, 2, (tq.Variable('a') + 0.5) * pi)
     U += mol.UR(1, 3, (tq.Variable('b') + 0.5) * pi)
-    U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
+    # U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
     # U += mol.UR(1, 4, (tq.Variable('d') + 0.5) * pi)
     # U += mol.UR(1, 5, (tq.Variable('e') + 0.5) * pi)
     # U += mol.UR(2, 4, (tq.Variable('f') + 0.5) * pi)
@@ -99,6 +99,7 @@ for d in distance:
     U += mol.UR(3, 5, (tq.Variable('i') + 0.5) * pi)
     # U += mol.UR(4, 5, (tq.Variable('j') + 0.5) * pi)
     U += mol.UR(0, 1, (tq.Variable('k') + 0.5) * pi)
+    U += mol.UR(0, 2, (tq.Variable('l') + 0.5) * pi)
 
     E = tq.ExpectationValue(U=U, H=H_gs)
     result = tq.minimize(E, silent=True)
