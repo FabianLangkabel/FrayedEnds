@@ -12,9 +12,9 @@ madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 
-distance = np.arange(1.5, 0.15, -0.05).tolist()
+distance = np.round(np.arange(1.5, 0.15, -0.05, dtype=np.float64), 3).tolist()
 
-with open("fci_h2_ccpVTZ.dat", "w") as f:
+with open("fci_h2_ccpVQZ.dat", "w") as f:
     header = "distance dist_time_s fci_energy_0 fci_energy_1"
     f.write(header + "\n")
 
@@ -26,7 +26,7 @@ for d in distance:
             "H 0.0 0.0 " + d.__str__() + "\n"
     )
 
-    mol = tq.Molecule(geometry=geom, basis_set='aug-cc-pvtz', units='a')
+    mol = tq.Molecule(geometry=geom, basis_set='aug-cc-pvqz', units='a')
     print(f"n_electrons: {mol.n_electrons}")
     print(f"n_orbitals: {mol.n_orbitals}")
     c, h, g_chem = mol.get_integrals(ordering='chem')
@@ -42,5 +42,5 @@ for d in distance:
     dist_time = dist_end - dist_start
     print(f"Distance {reported_distance:.3f} took {dist_time:.2f} s")
     
-    with open("fci_h2_ccpVTZ.dat", "a") as f:
+    with open("fci_h2_ccpVQZ.dat", "a") as f:
             f.write(f"{reported_distance:.3f} {dist_time:.2f} {fci_energy_0: .15f} {fci_energy_1: .15f}" + "\n")
