@@ -12,7 +12,7 @@ madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 
-distance = np.arange(3.5, 1.05, -0.05).tolist()
+distance = np.round(np.arange(3.5, 1.05, -0.05, dtype=np.float64), 3).tolist()
 
 with open("spa_lih.dat", "w") as f:
     header = "distance dist_time_s fci_energy_0 spa_energy_0 fci_energy_1 spa_energy_1"
@@ -99,7 +99,7 @@ for d in distance:
     U += mol.UR(3, 5, (tq.Variable('i') + 0.5) * pi)
     # U += mol.UR(4, 5, (tq.Variable('j') + 0.5) * pi)
     U += mol.UR(0, 1, (tq.Variable('k') + 0.5) * pi)
-    U += mol.UR(0, 2, (tq.Variable('l') + 0.5) * pi)
+    # U += mol.UR(0, 2, (tq.Variable('l') + 0.5) * pi)
 
     E = tq.ExpectationValue(U=U, H=H_gs)
     result = tq.minimize(E, silent=True)

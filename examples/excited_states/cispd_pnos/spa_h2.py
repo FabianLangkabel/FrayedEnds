@@ -12,7 +12,7 @@ madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 
-distance = np.arange(1.5, 0.15, -0.05).tolist()
+distance = np.round(np.arange(1.5, 0.15, -0.05, dtype=np.float64), 3).tolist()
 
 with open("spa_h2.dat", "w") as f:
     header = "distance dist_time_s fci_energy_0 spa_energy_0 fci_energy_1 spa_energy_1"
