@@ -5,8 +5,6 @@ from pyscf import fci
 from math import pi
 import time
 
-from pyscf import mcscf
-
 n_electrons = 4
 box_size = 50.0
 wavelet_order = 7
