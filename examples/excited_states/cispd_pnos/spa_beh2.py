@@ -123,7 +123,7 @@ print(f"Ground State Circuit: {circuit_gs}")
 gs_circuit = U.map_variables(result.variables)
 
 # ----------- cholesky orthonormalized orbital set ------------------
-orbitals_ch = gs_orbs_original[:3] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[2:] # f,0,1: HF, 2,3: CIS, 4,5: CISPD, 6,7: MP2 PNO
+orbitals_ch = gs_orbs_original[:3] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[3:] # f,0,1: HF, 2,3: CIS, 4,5: CISPD, 6,7: MP2 PNO
 orbitals_ch = integrals.orthonormalize(orbitals_ch, method="cholesky")
 
 overlap_frozen = integrals.compute_overlap_integrals([orbitals_sym[0]], [orbitals_ch[0]])
