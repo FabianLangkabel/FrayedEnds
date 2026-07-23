@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
+#include <madness/mra/nonlinsol.h>
 #include "../functionsaver.hpp"
 #include "../madness_process.hpp"
 #include "../coulomboperator_nd.hpp"
@@ -65,10 +66,12 @@ class Optimization_open_shell {
     double calculate_lagrange_multiplier_element_as_core(int z, int i, int spin); // AS refinement
     double calculate_lagrange_multiplier_element_core_core(int z, int c, int spin); // Core refinement
     double calculate_lagrange_multiplier_element_core_as(int z, int c, int spin); // Core refinement
-    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, std::string orthonormalization_method, bool refine_core);
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_core,
+                           bool use_nonlinear_solver = false);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_core_orbital_updates();
     void rotate_orbitals_back();
+    void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-3);
 
     bool has_core_orbitals;
     bool refine_core;
@@ -104,6 +107,10 @@ class Optimization_open_shell {
 
     // Energies
     double core_total_energy;
+
+    // Orthonormalization settings
+    std::string orthonormalization_method = "symmetric";
+    double degeneracy_tolerance = 1e-3;
 
     // Refinement
     double highest_core_error;

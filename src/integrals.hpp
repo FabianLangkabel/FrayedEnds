@@ -47,6 +47,9 @@ template <std::size_t NDIM> class Integrals {
     void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa);
     void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa, std::vector<Function<double, NDIM>> &coul_orbs_aa);
     
+    // Different one and two body operators
+    Numpy2D nb_one_body_op_integrals(std::string op_name, const std::vector<SavedFct<NDIM>>& all_orbs);
+
     // Nanobind bindings for Integrators
     Numpy2D nb_compute_overlap_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other);
     Numpy2D nb_compute_potential_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const SavedFct<NDIM>& potential);
@@ -97,12 +100,12 @@ template <std::size_t NDIM> class Integrals {
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals, Numpy2D matrix);
 
-  private:
     // Helper method for mixed orthonormalization using occupations
     std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
         std::vector<Function<double, NDIM>>& orbitals,
         const std::vector<double>& occupations,
         double degeneracy_tol);
 
+  private:
     MadnessProcess<NDIM>& madness_process;
 };

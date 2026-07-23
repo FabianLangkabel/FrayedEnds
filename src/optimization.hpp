@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <utility>
 #include <madness/external/nlohmann_json/json.hpp>
+#include <madness/mra/nonlinsol.h>
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 #include "coulomboperator_nd.hpp"
@@ -61,7 +62,8 @@ template <std::size_t NDIM> class Optimization {
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
     double calculate_lagrange_multiplier_element_core_core(int z, int c); // Core refinement
     double calculate_lagrange_multiplier_element_core_as(int z, int c); // Core refinement
-    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c);
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c,
+                            bool use_nonlinear_solver = false);
     std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
     std::vector<Function<double, NDIM>> get_all_core_orbital_updates(); // Core refinement
     void rotate_orbitals_back();
@@ -70,8 +72,6 @@ template <std::size_t NDIM> class Optimization {
 
     // Orthonormalization control
     void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-3);
-    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
-        std::vector<Function<double, NDIM>>& orbitals); // use integrals stuff
 
   private:
     MadnessProcess<NDIM>& madness_process;

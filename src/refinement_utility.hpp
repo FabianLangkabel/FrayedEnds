@@ -206,6 +206,101 @@ namespace refinement_utils {
         ObjectTensor = temp4;
     }
 
+    template <std::size_t NDIM>
+    inline std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
+        madness::World& world,
+        std::vector<Function<double, NDIM>>& orbitals,
+        const std::vector<double>& occupations,
+        double degeneracy_tol)
+    {
+        std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
+
+        const int n_orb = static_cast<int>(occupations.size());
+        for (int i = 0; i < n_orb; ++i) {
+            std::cout << "Orbital " << i << " occupation: " << occupations[i] << std::endl;
+        }
+
+        std::vector<std::pair<int, int>> groups;
+        int i = 0;
+        while (i < n_orb) {
+            int start = i;
+            double current_occ = occupations[i];
+
+            int j = i + 1;
+            while (j < n_orb && std::abs(occupations[j] - current_occ) < degeneracy_tol) {
+                ++j;
+            }
+
+            groups.emplace_back(start, j);
+            i = j;
+        }
+
+        std::cout << "Found " << groups.size() << " degeneracy groups:" << std::endl;
+
+        std::vector<Function<double, NDIM>> result_orbitals;
+        for (size_t g = 0; g < groups.size(); ++g) {
+            int start = groups[g].first;
+            int end = groups[g].second;
+            int group_size = end - start;
+
+            std::vector<Function<double, NDIM>> group_orbitals;
+            for (int k = start; k < end; ++k) {
+                group_orbitals.push_back(orbitals[k]);
+            }
+
+            std::vector<Function<double, NDIM>> ortho_group_orbitals;
+            if (group_size == 1) {
+                std::cout << "  Group " << g << " (orbital " << start << "): "
+                          << "occupation=" << occupations[start] << ", method=Cholesky" << std::endl;
+
+                if (result_orbitals.size() > 0) {
+                    auto current_orb = group_orbitals[0];
+                    for (const auto& prev_orb : result_orbitals) {
+                        double overlap = madness::inner(current_orb, prev_orb);
+                        current_orb = current_orb - overlap * prev_orb;
+                    }
+
+                    double norm = current_orb.norm2();
+                    if (norm > 1e-12) {
+                        current_orb.scale(1.0 / norm);
+                    }
+                    ortho_group_orbitals.push_back(current_orb);
+                } else {
+                    double norm = group_orbitals[0].norm2();
+                    group_orbitals[0].scale(1.0 / norm);
+                    ortho_group_orbitals = group_orbitals;
+                }
+            } else {
+                std::cout << "  Group " << g << " (orbitals " << start << "-" << (end - 1) << "): "
+                          << "occupations=[";
+                for (int k = start; k < end; ++k) {
+                    std::cout << occupations[k];
+                    if (k < end - 1) std::cout << ", ";
+                }
+                std::cout << "], method=Symmetric (within group)" << std::endl;
+
+                if (result_orbitals.size() > 0) {
+                    for (auto& group_orb : group_orbitals) {
+                        for (const auto& prev_orb : result_orbitals) {
+                            double overlap = madness::inner(group_orb, prev_orb);
+                            group_orb = group_orb - overlap * prev_orb;
+                        }
+                    }
+                }
+
+                auto S = madness::matrix_inner(world, group_orbitals, group_orbitals, true);
+                ortho_group_orbitals = madness::orthonormalize_symmetric(group_orbitals, S);
+            }
+
+            for (auto& orb : ortho_group_orbitals) {
+                result_orbitals.push_back(orb);
+            }
+        }
+
+        std::cout << "=== Mixed Orthonormalization Complete ===\n" << std::endl;
+        return result_orbitals;
+    }
+
     // ============================================================
     // Generic contraction utilities
     // ============================================================
