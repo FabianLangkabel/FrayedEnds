@@ -339,7 +339,8 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_core_as(int z, 
 }
 
 template <std::size_t NDIM>
-bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c) {
+bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c,
+                                            bool use_nonlinear_solver) {
 
     refine_core = refine_c;
     if(refine_core && core_dim==0)
@@ -354,6 +355,21 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         core_total_energy = Integrator.compute_core_energy(frozen_occ_orbs, orbs_aa, coul_orbs_aa, Vnuc, 0);}
     else { core_total_energy = 0;}
     calculate_energies();
+
+    std::vector<int> as_orbital_indices_for_update;
+    as_orbital_indices_for_update.reserve(active_orbs.size());
+    for (int idx = 0; idx < active_orbs.size(); idx++) {
+        if (std::abs(as_one_rdm(idx, idx)) >= NO_occupation_thresh) {
+            as_orbital_indices_for_update.push_back(idx);
+        } else {
+            std::cout << "Skip refinement of active space orbital " << idx
+                      << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")"
+                      << std::endl;
+        }
+    }
+
+    auto active_block_solver = nonlinear_vector_solver<double, NDIM>(
+        *(madness_process.world), as_orbital_indices_for_update.size());
 
     bool converged = false;
     int iterstep = 0;
@@ -371,19 +387,9 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         auto start_orb_update_time = std::chrono::high_resolution_clock::now();
         highest_as_error = 0;
 
-        std::vector<int> as_orbital_indicies_for_update;
-        for (int idx = 0; idx < active_orbs.size(); idx++) {
-            if (abs(as_one_rdm(idx, idx)) >= NO_occupation_thresh) {
-                as_orbital_indicies_for_update.push_back(idx);
-            } else {
-                std::cout << "Skip refinement of active space orbital " << idx
-                          << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")"
-                          << std::endl;
-            }
-        }
+        std::vector<Function<double, NDIM>> AllActiveOrbitalUpdates =
+            get_all_active_orbital_updates(as_orbital_indices_for_update);
 
-        std::vector<Function<double, NDIM>> AllActiveOrbitalUpdates = get_all_active_orbital_updates(as_orbital_indicies_for_update);
-        
         auto end_orb_update_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
         std::cout << "Get as orbital updates took " << duration.count() << " seconds" << std::endl;
@@ -405,16 +411,30 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         }
 
         // update AS orbitals
-        for (int idx = 0; idx < as_orbital_indicies_for_update.size(); idx++) {
-            int actIdx = as_orbital_indicies_for_update[idx];
-            active_orbs[actIdx] = active_orbs[actIdx] - AllActiveOrbitalUpdates[idx];
+        if (use_nonlinear_solver && !as_orbital_indices_for_update.empty()) {
+            std::vector<Function<double, NDIM>> current_active_orbital_block;
+            current_active_orbital_block.reserve(as_orbital_indices_for_update.size());
+            for (const int act_idx : as_orbital_indices_for_update) {
+                current_active_orbital_block.push_back(active_orbs[act_idx]);
+            }
+
+            auto updated_active_orbital_block =
+                active_block_solver.update(current_active_orbital_block, AllActiveOrbitalUpdates);
+            for (std::size_t idx = 0; idx < as_orbital_indices_for_update.size(); idx++) {
+                active_orbs[as_orbital_indices_for_update[idx]] = updated_active_orbital_block[idx];
+            }
+        } else {
+            for (std::size_t idx = 0; idx < as_orbital_indices_for_update.size(); idx++) {
+                const int act_idx = as_orbital_indices_for_update[idx];
+                active_orbs[act_idx] = active_orbs[act_idx] - AllActiveOrbitalUpdates[idx];
+            }
         }
 
         // Orthonormalize orbitals
         if(refine_core)
         {
             // Orthonormalize core orbitals
-            if (orthonormalization_method == "cd") {frozen_occ_orbs = orthonormalize_cd(frozen_occ_orbs);}
+            if (orthonormalization_method == "cd" or orthonormalization_method == "cholesky") {frozen_occ_orbs = orthonormalize_cd(frozen_occ_orbs);}
             else {frozen_occ_orbs = orthonormalize_symmetric(frozen_occ_orbs);}
             frozen_occ_orbs = truncate(frozen_occ_orbs, num_params.truncation_tol);
         }
@@ -430,10 +450,12 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
             active_orbs = orthonormalize_symmetric(active_orbs);
             std::cout << "=== Symmetric Orthonormalization Complete ===" << std::endl;
         } else if (orthonormalization_method == "mixed") {
-            std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
-            active_orbs = orthonormalize_mixed_by_degeneracy(active_orbs);
-            std::cout << "=== Mixed Orthonormalization Complete ===" << std::endl;
-        } else if (orthonormalization_method == "cd") {
+            std::vector<double> occupations;
+            for (int i = 0; i < as_dim; i++) {
+                occupations.push_back(as_one_rdm(i, i));
+            }
+            active_orbs = Integrator.orthonormalize_mixed_by_degeneracy(active_orbs, occupations, degeneracy_tolerance);
+        } else if (orthonormalization_method == "cd" or orthonormalization_method == "cholesky") {
             std::cout << "\n=== Cholesky Orthonormalization ===" << std::endl;
             active_orbs = orthonormalize_cd(active_orbs);
             std::cout << "=== Cholesky Orthonormalization Complete ===" << std::endl;
@@ -466,7 +488,7 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
 }
 
 template <std::size_t NDIM>
-std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update) {
+std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_updates(std::vector<int> orbital_indices_for_update) {
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<Function<double, NDIM>> AllOrbitalUpdates;
 
@@ -474,15 +496,15 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
 
     // Calculate rdm_ii_inv values
     std::vector<double> rdm_ii_inv;
-    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
-        int i = orbital_indicies_for_update[idx];
+    for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+        int i = orbital_indices_for_update[idx];
         rdm_ii_inv.push_back(1 / as_one_rdm(i, i));
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
     // 1e Part
-    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
-        int i = orbital_indicies_for_update[idx];
+    for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+        int i = orbital_indices_for_update[idx];
 
         Function<double, NDIM> rhs;
         rhs = Vnuc * active_orbs[i];
@@ -503,8 +525,8 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     for (int k = 0; k < as_dim; k++) {
         std::vector<Function<double, NDIM>> lnk = coul_orbs_mn * active_orbs[k];
         lnk = truncate(lnk, num_params.truncation_tol);
-        for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
-            int i = orbital_indicies_for_update[idx];
+        for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+            int i = orbital_indices_for_update[idx];
             std::vector<Function<double, NDIM>> lnk_copy = copy(*(madness_process.world), lnk, false);
             for (int l = 0; l < as_dim; l++) {
                 for (int n = 0; n < as_dim; n++) {
@@ -526,8 +548,8 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
         for (int k = 0; k < as_dim; k++) {
             std::vector<Function<double, NDIM>> aak = coul_orbs_aa * active_orbs[k];
             aak = truncate(aak, num_params.truncation_tol);
-            for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
-                int i = orbital_indicies_for_update[idx];
+            for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+                int i = orbital_indices_for_update[idx];
                 std::vector<Function<double, NDIM>> aak_copy = copy(*(madness_process.world), aak, false);
                 for (int a = 0; a < core_dim; a++) {
                     aak_copy[a] *= as_one_rdm(k, i) * rdm_ii_inv[idx];
@@ -546,8 +568,8 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
             std::vector<Function<double, NDIM>> aka = coul_orbs_ak * frozen_occ_orbs[a];
             aka = truncate(aka, num_params.truncation_tol);
 
-            for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
-                int i = orbital_indicies_for_update[idx];
+            for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+                int i = orbital_indices_for_update[idx];
                 std::vector<Function<double, NDIM>> aka_copy = copy(*(madness_process.world), aka, false);
                 for (int k = 0; k < as_dim; k++) {
                     aka_copy[k] *= as_one_rdm(k, i) * rdm_ii_inv[idx];
@@ -559,8 +581,8 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     auto t5 = std::chrono::high_resolution_clock::now();
 
     // BSH part
-    for (int idx = 0; idx < orbital_indicies_for_update.size(); idx++) {
-        int i = orbital_indicies_for_update[idx];
+    for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+        int i = orbital_indices_for_update[idx];
         double en = LagrangeMultiplier_AS_AS(i, i) * rdm_ii_inv[idx];
         if (en > 0) {
             std::cout << "Warning: Positive Lagrange multiplier for active orbital " << i << ": " << en << std::endl;
@@ -779,119 +801,6 @@ template <std::size_t NDIM>
 void Optimization<NDIM>::set_orthonormalization_method(const std::string& method, double degeneracy_tol) {
     orthonormalization_method = method;
     degeneracy_tolerance = degeneracy_tol;
-}
-
-template <std::size_t NDIM>
-std::vector<Function<double, NDIM>> Optimization<NDIM>::orthonormalize_mixed_by_degeneracy(
-    std::vector<Function<double, NDIM>>& orbitals) {
-
-    std::cout << "\n=== Mixed Orthonormalization ===" << std::endl;
-
-    // Get orbital occupations from diagonal of 1-RDM
-    std::vector<double> occupations;
-    for (int i = 0; i < as_dim; i++) {
-        occupations.push_back(as_one_rdm(i, i));
-        std::cout << "Orbital " << i << " occupation: " << as_one_rdm(i, i) << std::endl;
-    }
-
-    // Identify degenerate groups
-    std::vector<std::pair<int, int>> groups; // (start, end) for each group
-    int i = 0;
-    while (i < as_dim) {
-        int start = i;
-        double current_occ = occupations[i];
-
-        // Find all consecutive orbitals with similar occupation
-        int j = i + 1;
-        while (j < as_dim && std::abs(occupations[j] - current_occ) < degeneracy_tolerance) {
-            j++;
-        }
-
-        groups.push_back(std::make_pair(start, j));
-        i = j;
-    }
-
-    std::cout << "Found " << groups.size() << " degeneracy groups:" << std::endl;
-
-    // Process each group: use symmetric within, orthogonalize between groups
-    std::vector<Function<double, NDIM>> result_orbitals;
-
-    for (size_t g = 0; g < groups.size(); g++) {
-        int start = groups[g].first;
-        int end = groups[g].second;
-        int group_size = end - start;
-
-        // Extract orbitals for this group
-        std::vector<Function<double, NDIM>> group_orbitals;
-        for (int k = start; k < end; k++) {
-            group_orbitals.push_back(orbitals[k]);
-        }
-
-        std::vector<Function<double, NDIM>> ortho_group_orbitals;
-
-        if (group_size == 1) {
-            // Non-degenerate single orbital
-            std::cout << "  Group " << g << " (orbital " << start << "): "
-                      << "occupation=" << occupations[start] << ", method=Cholesky" << std::endl;
-
-            // Orthogonalize against all previous orbitals using Cholesky-like procedure
-            if (result_orbitals.size() > 0) {
-                auto current_orb = group_orbitals[0];
-
-                // Project out components of previous orbitals
-                for (const auto& prev_orb : result_orbitals) {
-                    double overlap = madness::inner(current_orb, prev_orb);
-                    current_orb = current_orb - overlap * prev_orb;
-                }
-
-                // Normalize
-                double norm = current_orb.norm2();
-                if (norm > 1e-12) {
-                    current_orb.scale(1.0 / norm);
-                }
-
-                ortho_group_orbitals.push_back(current_orb);
-            } else {
-                // First orbital, just normalize
-                double norm = group_orbitals[0].norm2();
-                group_orbitals[0].scale(1.0 / norm);
-                ortho_group_orbitals = group_orbitals;
-            }
-        } else {
-            // Degenerate group: use Symmetric within manifold to preserve symmetry
-            std::cout << "  Group " << g << " (orbitals " << start << "-" << (end-1) << "): "
-                      << "occupations=[";
-            for (int k = start; k < end; k++) {
-                std::cout << occupations[k];
-                if (k < end - 1) std::cout << ", ";
-            }
-            std::cout << "], method=Symmetric (within group)" << std::endl;
-
-            // First, orthogonalize against all previous orbitals (Cholesky-like)
-            if (result_orbitals.size() > 0) {
-                for (auto& group_orb : group_orbitals) {
-                    for (const auto& prev_orb : result_orbitals) {
-                        double overlap = madness::inner(group_orb, prev_orb);
-                        group_orb = group_orb - overlap * prev_orb;
-                    }
-                }
-            }
-
-            // Then apply symmetric within the group to preserve symmetry
-            auto S = madness::matrix_inner(*(madness_process.world), group_orbitals, group_orbitals, true);
-            ortho_group_orbitals = madness::orthonormalize_symmetric(group_orbitals, S);
-        }
-
-        // Add to result
-        for (auto& orb : ortho_group_orbitals) {
-            result_orbitals.push_back(orb);
-        }
-    }
-
-
-    std::cout << "=== Mixed Orthonormalization Complete ===\n" << std::endl;
-
-    return result_orbitals;
 }
 
 template class Optimization<2>;

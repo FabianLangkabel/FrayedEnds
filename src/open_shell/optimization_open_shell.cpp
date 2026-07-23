@@ -24,6 +24,12 @@ Optimization_open_shell<NDIM>::~Optimization_open_shell() {
 }
 
 template <std::size_t NDIM>
+void Optimization_open_shell<NDIM>::set_orthonormalization_method(const std::string& method, double degeneracy_tol) {
+    orthonormalization_method = method;
+    degeneracy_tolerance = degeneracy_tol;
+}
+
+template <std::size_t NDIM>
 void Optimization_open_shell<NDIM>::give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion) {
     Vnuc = madness_process.loadfct(potential);
     nuclear_repulsion_energy = nuclear_repulsion;
@@ -405,7 +411,8 @@ double Optimization_open_shell<NDIM>::calculate_lagrange_multiplier_element_core
 }
 
 template <std::size_t NDIM>
-bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, std::string orthonormalization_method, bool refine_core) {
+bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter,
+                                                       bool refine_core, bool use_nonlinear_solver) {
 
     this->has_core_orbitals = (core_dims[0] + core_dims[1]) > 0;
     this->refine_core = refine_core;
@@ -415,9 +422,9 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         this->refine_core = false;
     }
 
-    if(orthonormalization_method != "cd" && orthonormalization_method != "symmetric") {
-        std::cout << "Warning: Orthonormalization method: "<< orthonormalization_method << " not found (Currently available: cd, symmetric). Symmetric orthonormalization is used." << std::endl;
-        orthonormalization_method = "symmetric";
+    if(this->orthonormalization_method != "cd" && this->orthonormalization_method != "cholesky" && this->orthonormalization_method != "symmetric" && this->orthonormalization_method != "mixed") {
+        std::cout << "Warning: Orthonormalization method: "<< this->orthonormalization_method << " not found (Currently available: cd/cholesky, symmetric, mixed). Symmetric orthonormalization is used." << std::endl;
+        this->orthonormalization_method = "symmetric";
     }
 
 
@@ -430,6 +437,24 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         core_total_energy = Integrator->compute_core_energy(frozen_occ_orbs, Vnuc, 0);}
     else { core_total_energy = 0;}
     calculate_energies();
+
+    std::array<std::vector<int>, 2> as_orbital_indices_for_update;
+    for (int spin = 0; spin < 2; spin++) {
+        as_orbital_indices_for_update[spin].reserve(as_dims[spin]);
+        for (int idx = 0; idx < as_dims[spin]; idx++) {
+            if (std::abs(as_one_rdm[spin](idx, idx)) >= NO_occupation_thresh) {
+                as_orbital_indices_for_update[spin].push_back(idx);
+            } else {
+                std::cout << "Skip refinement of spin " << spin << " active space orbital " << idx
+                          << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")"
+                          << std::endl;
+            }
+        }
+    }
+
+    auto active_block_solvers = std::array{
+        nonlinear_vector_solver<double, NDIM>(*(madness_process.world), as_orbital_indices_for_update[0].size()),
+        nonlinear_vector_solver<double, NDIM>(*(madness_process.world), as_orbital_indices_for_update[1].size())};
 
     bool converged = false;
     int iterstep = 0;
@@ -447,21 +472,8 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         auto start_as_orb_update_time = std::chrono::high_resolution_clock::now();
         highest_as_error = 0;
 
-        std::array<std::vector<int>, 2> as_orbital_indicies_for_update;
-        for (int spin = 0; spin < 2; spin++)
-        {
-            for (int idx = 0; idx < as_dims[spin]; idx++) {
-                if (abs(as_one_rdm[spin](idx, idx)) >= NO_occupation_thresh) {
-                    as_orbital_indicies_for_update[spin].push_back(idx);
-                } else {
-                    std::cout << "Skip refinement of spin" << spin << "active space orbital " << idx
-                            << ", since the occupation is less than NO_occupation_thresh (" << NO_occupation_thresh << ")"
-                            << std::endl;
-                }
-            }
-        }
-
-        std::array<std::vector<Function<double, NDIM>>, 2> AllActiveOrbitalUpdates = get_all_active_orbital_updates(as_orbital_indicies_for_update);
+        std::array<std::vector<Function<double, NDIM>>, 2> AllActiveOrbitalUpdates =
+            get_all_active_orbital_updates(as_orbital_indices_for_update);
 
         auto end_as_orb_update_time = std::chrono::high_resolution_clock::now();
         auto as_duration = std::chrono::duration_cast<std::chrono::seconds>(end_as_orb_update_time - start_as_orb_update_time);
@@ -488,11 +500,24 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         }
 
         // update AS orbitals
-        for (int spin = 0; spin < 2; spin++)
-        {
-            for (int idx = 0; idx < as_orbital_indicies_for_update[spin].size(); idx++) {
-                int actIdx = as_orbital_indicies_for_update[spin][idx];
-                active_orbs[spin][actIdx] = active_orbs[spin][actIdx] - AllActiveOrbitalUpdates[spin][idx];
+        for (int spin = 0; spin < 2; spin++) {
+            if (use_nonlinear_solver && !as_orbital_indices_for_update[spin].empty()) {
+                std::vector<Function<double, NDIM>> current_active_orbital_block;
+                current_active_orbital_block.reserve(as_orbital_indices_for_update[spin].size());
+                for (const int act_idx : as_orbital_indices_for_update[spin]) {
+                    current_active_orbital_block.push_back(active_orbs[spin][act_idx]);
+                }
+
+                auto updated_active_orbital_block = active_block_solvers[spin].update(
+                    current_active_orbital_block, AllActiveOrbitalUpdates[spin]);
+                for (std::size_t idx = 0; idx < as_orbital_indices_for_update[spin].size(); idx++) {
+                    active_orbs[spin][as_orbital_indices_for_update[spin][idx]] = updated_active_orbital_block[idx];
+                }
+            } else {
+                for (std::size_t idx = 0; idx < as_orbital_indices_for_update[spin].size(); idx++) {
+                    const int actIdx = as_orbital_indices_for_update[spin][idx];
+                    active_orbs[spin][actIdx] = active_orbs[spin][actIdx] - AllActiveOrbitalUpdates[spin][idx];
+                }
             }
         }
 
@@ -505,8 +530,8 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
             // Orthonormalize core orbitals
             for(int spin = 0; spin < 2; spin++)
             {
-                if(orthonormalization_method == "cd") {frozen_occ_orbs[spin] = orthonormalize_cd(frozen_occ_orbs[spin]);}
-                else if (orthonormalization_method == "symmetric") {frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);}
+                if(this->orthonormalization_method == "cd" or this->orthonormalization_method == "cholesky") {frozen_occ_orbs[spin] = orthonormalize_cd(frozen_occ_orbs[spin]);}
+                else {frozen_occ_orbs[spin] = orthonormalize_symmetric(frozen_occ_orbs[spin]);}
                 frozen_occ_orbs[spin] = truncate(frozen_occ_orbs[spin], num_params.truncation_tol);
             }
         }
@@ -526,8 +551,20 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
         // Orthonormalize as orbitals
         for(int spin = 0; spin < 2; spin++)
         {
-            if(orthonormalization_method == "cd") {active_orbs[spin] = orthonormalize_cd(active_orbs[spin]);}
-            else if (orthonormalization_method == "symmetric") {active_orbs[spin] = orthonormalize_symmetric(active_orbs[spin]);}
+            if(this->orthonormalization_method == "cd" or this->orthonormalization_method == "cholesky") {
+                std::cout << "\n=== Cholesky Orthonormalization ===" << std::endl;
+                active_orbs[spin] = orthonormalize_cd(active_orbs[spin]);}
+            else if (this->orthonormalization_method == "symmetric") {
+                std::cout << "\n=== Symmetric Orthonormalization ===" << std::endl;
+                active_orbs[spin] = orthonormalize_symmetric(active_orbs[spin]);}
+            else if (this->orthonormalization_method == "mixed") {
+                std::vector<double> occupations;
+                for (int idx = 0; idx < as_dims[spin]; ++idx) {
+                    occupations.push_back(as_one_rdm[spin](idx, idx));
+                }
+                active_orbs[spin] = refinement_utils::orthonormalize_mixed_by_degeneracy(
+                    *(madness_process.world), active_orbs[spin], occupations, degeneracy_tolerance);
+            }
             active_orbs[spin] = truncate(active_orbs[spin], num_params.truncation_tol);
         }
 
@@ -566,7 +603,7 @@ bool Optimization_open_shell<NDIM>::optimize_orbitals(double optimization_thresh
 }
 
 template <std::size_t NDIM>
-std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>::get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update) {
+std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>::get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indices_for_update) {
     
     auto start = std::chrono::high_resolution_clock::now();
     std::array<std::vector<Function<double, NDIM>>, 2> AllOrbitalUpdates;
@@ -577,8 +614,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
     std::array<std::vector<double>, 2> rdm_ii_inv;
     for (int spin = 0; spin < 2; spin++)
     {
-        for (int idx = 0; idx < orbital_indicies_for_update[spin].size(); idx++) {
-            int i = orbital_indicies_for_update[spin][idx];
+        for (int idx = 0; idx < orbital_indices_for_update[spin].size(); idx++) {
+            int i = orbital_indices_for_update[spin][idx];
             rdm_ii_inv[spin].push_back(1 / as_one_rdm[spin](i, i));
         }
     }
@@ -587,8 +624,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
     // 1e Part
     for (int spin = 0; spin < 2; spin++)
     {
-        for (int idx = 0; idx < orbital_indicies_for_update[spin].size(); idx++) {
-            int i = orbital_indicies_for_update[spin][idx];
+        for (int idx = 0; idx < orbital_indices_for_update[spin].size(); idx++) {
+            int i = orbital_indices_for_update[spin][idx];
 
             Function<double, NDIM> rhs;
             rhs = Vnuc * active_orbs[spin][i];
@@ -614,8 +651,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
             for (int k = 0; k < as_dims[spin]; k++) {
                 std::vector<Function<double, NDIM>> lnk = coul_orbs_mn[s] * active_orbs[spin][k];
                 lnk = truncate(lnk, num_params.truncation_tol);
-                for (int idx = 0; idx < orbital_indicies_for_update[spin].size(); idx++) {
-                    int i = orbital_indicies_for_update[spin][idx];
+                for (int idx = 0; idx < orbital_indices_for_update[spin].size(); idx++) {
+                    int i = orbital_indices_for_update[spin][idx];
                     std::vector<Function<double, NDIM>> lnk_copy = copy(*(madness_process.world), lnk, false);
                     for (int l = 0; l < as_dims[s]; l++) {
                         for (int n = 0; n < as_dims[s]; n++) {
@@ -649,8 +686,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
             for (int k = 0; k < as_dims[spin]; k++) {
                 std::vector<Function<double, NDIM>> aak = coul_all_orbs_aa * active_orbs[spin][k];
                 aak = truncate(aak, num_params.truncation_tol);
-                for (int idx = 0; idx < orbital_indicies_for_update[spin].size(); idx++) {
-                    int i = orbital_indicies_for_update[spin][idx];
+                for (int idx = 0; idx < orbital_indices_for_update[spin].size(); idx++) {
+                    int i = orbital_indices_for_update[spin][idx];
                     std::vector<Function<double, NDIM>> aak_copy = copy(*(madness_process.world), aak, false);
                     for (int a = 0; a < coul_all_orbs_aa.size(); a++) {
                         aak_copy[a] *= as_one_rdm[spin](k, i) * rdm_ii_inv[spin][idx];
@@ -671,8 +708,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
                 std::vector<Function<double, NDIM>> aka = coul_orbs_ak * frozen_occ_orbs[spin][a];
                 aka = truncate(aka, num_params.truncation_tol);
 
-                for (int idx = 0; idx < orbital_indicies_for_update[spin].size(); idx++) {
-                    int i = orbital_indicies_for_update[spin][idx];
+                for (int idx = 0; idx < orbital_indices_for_update[spin].size(); idx++) {
+                    int i = orbital_indices_for_update[spin][idx];
                     std::vector<Function<double, NDIM>> aka_copy = copy(*(madness_process.world), aka, false);
                     for (int k = 0; k < as_dims[spin]; k++) {
                         aka_copy[k] *= -1 *  as_one_rdm[spin](k, i) * rdm_ii_inv[spin][idx];
@@ -687,8 +724,8 @@ std::array<std::vector<Function<double, NDIM>>, 2> Optimization_open_shell<NDIM>
     // BSH part
     for (int spin = 0; spin < 2; spin++)
     {
-        for (int idx = 0; idx < orbital_indicies_for_update[spin].size(); idx++) {
-            int i = orbital_indicies_for_update[spin][idx];
+        for (int idx = 0; idx < orbital_indices_for_update[spin].size(); idx++) {
+            int i = orbital_indices_for_update[spin][idx];
             double en = LagrangeMultiplier_AS_AS[spin](i, i) * rdm_ii_inv[spin][idx];
             if (en > 0) {
                 std::cout << "Warning: Positive Lagrange multiplier for spin " << spin <<" active orbital " << i << ": " << en << std::endl;

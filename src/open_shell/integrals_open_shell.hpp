@@ -90,6 +90,11 @@ class Integrals_open_shell {
       std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa
     );
 
+    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
+        std::vector<Function<double, NDIM>>& orbitals,
+        const std::vector<double>& occupations,
+        double degeneracy_tol);
+
   private:
     MadnessProcess<NDIM>& madness_process;
 };
