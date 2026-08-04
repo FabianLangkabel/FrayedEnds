@@ -183,7 +183,7 @@ class MadPNO:
         info = get_function_info(orbitals)
         gs_orbitals = []
         ex_orbitals = []
-        for i, orb in zip(orbitals):
+        for i, orb in enumerate(orbitals):
             label = info[i]["type"]
             if label.startswith("CIS_X_EX") or label.startswith("CISPD_EX"):
                 ex_orbitals.append(orb)
