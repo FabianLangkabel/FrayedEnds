@@ -179,10 +179,32 @@ class MadPNO:
         else: 
             raise Exception("ground state orbitals not yet computed")
 
-    def get_pno_groupings(self, diagonal=True, *args, **kwargs):
+    def split_orbitals(self, orbitals):
+        info = get_function_info(orbitals)
+        gs_orbitals = []
+        ex_orbitals = []
+        for orb, inf in zip(orbitals, info):
+            label = info["type"]
+            if label.startswith("CIS_X_EX") or label.startswith("CISPD_EX"):
+                ex_orbitals.append(orb)
+            else:
+                gs_orbitals.append(orb)
+        return gs_orbitals, ex_orbitals
+
+    def get_pno_groupings(self, diagonal=True, orbitals=None, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
         use_diagonal = diagonal
-        orbitals = self.get_orbitals(*args, **kwargs)
+
+        if orbitals is None:
+            orbitals = self.get_orbitals(*args, **kwargs)
+            ex_orbitals = []
+            if self._cis_orbitals is not None and self._cispd_orbitals is not None:
+                ex_orbitals = self._cis_orbitals + self._cispd_orbitals
+        else:
+            # orbitals were passed, split them into ground state and excited state orbitals
+            orbitals, ex_orbitals = self._split_orbitals(orbitals)
+
+        # ground state orbitals (HF + MP2 PNOs)
         info = get_function_info(orbitals)
         nhf = len([x for x in info if numpy.isclose(float(x["occ"]), 2.0)])
         diagonal = {k: [] for k in range(nhf)}
@@ -195,9 +217,9 @@ class MadPNO:
             else:
                 off_diagonal[(x, y)].append(k)
 
-        if self._cis_orbitals is not None and self._cispd_orbitals is not None:
+        if ex_orbitals:
+            # excited state orbitals (CIS X functions and CISPD PNOs)
             offset = len(orbitals)
-            ex_orbitals = self._cis_orbitals + self._cispd_orbitals
             ex_info = get_function_info(ex_orbitals)
 
             def parse_label(label):
@@ -254,8 +276,8 @@ class MadPNO:
             return diagonal
         return {**diagonal, **off_diagonal}
 
-    def get_spa_edges(self, frozen_core=True):
-        pno_groupings = self.get_pno_groupings(diagonal=True)
+    def get_spa_edges(self, frozen_core=True, orbitals=None):
+        pno_groupings = self.get_pno_groupings(diagonal=True, orbitals=orbitals)
         edges = [tuple(sorted(x)) for x in pno_groupings.values()]
         nfreeze = self.impl.get_frozen_core_dim()
         if frozen_core:
