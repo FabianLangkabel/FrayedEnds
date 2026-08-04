@@ -202,7 +202,7 @@ class MadPNO:
                 ex_orbitals = self._cis_orbitals + self._cispd_orbitals
         else:
             # orbitals were passed, split them into ground state and excited state orbitals
-            orbitals, ex_orbitals = self._split_orbitals(orbitals)
+            orbitals, ex_orbitals = self.split_orbitals(orbitals)
 
         # ground state orbitals (HF + MP2 PNOs)
         info = get_function_info(orbitals)
