@@ -174,6 +174,9 @@ class MadWorld:
         else:
             self.impl.cube_plot(filename, mra_function, molecule.impl, zoom, datapoints, origin)
 
+    def load_savedfct_from_m_file(self, filename):
+        return self.impl.load_savedfct_from_m_file(filename)
+
     def evaluate(self, functions, points, units=None, silent=False, *args, **kwargs):
         # convenience
         nolist = not isinstance(functions, list)

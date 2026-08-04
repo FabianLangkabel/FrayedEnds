@@ -5,11 +5,11 @@ import frayedends as fe
 # ---------------------------------------------------------------------------
 # Parallelisierung
 # ---------------------------------------------------------------------------
-# os.environ["MAD_NUM_THREADS"] = "28"
-# os.environ["MKL_NUM_THREADS"] = "1"
-# os.environ["OMP_NUM_THREADS"] = "28"
-# DMRG_THREADS = 28
-# DMRG_STACK_MEM = int(30 * 1024**3)   # 30 GB
+os.environ["MAD_NUM_THREADS"] = "28"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "28"
+DMRG_THREADS = 28
+DMRG_STACK_MEM = int(30 * 1024**3)   # 30 GB
 
 # ---------------------------------------------------------------------------
 # MRA-Parameter
@@ -61,18 +61,24 @@ nuclear_repulsion_energy = mol.get_nuclear_repulsion()
 # Orbitale laden
 # ---------------------------------------------------------------------------
 def load(path):
-    return fe.SavedFct3D(path)
+    return world.load_savedfct_from_m_file(path)
 
 core_orbs = []
-for i in range(0, 18):
+
+for i in core_occupied_indices:
     print(f"Core  occupied_{i}")
-    orb = load(os.path.join(translated_orb_path, f"core_{i}.fe"))
+    orb = load(os.path.join(input_orb_path, f"occupied_{i}"))
     core_orbs.append(orb)
 
 active_orbs = []
-for i in range(0,6):
+for i in active_occupied_indices:
     print(f"Active occupied_{i}")
-    orb = load(os.path.join(translated_orb_path, f"active_{i}.fe"))
+    orb = load(os.path.join(input_orb_path, f"occupied_{i}"))
+    active_orbs.append(orb)
+
+for i in active_virtual_indices:
+    print(f"Active virtual_{i}")
+    orb = load(os.path.join(input_orb_path, f"virtual_{i}"))
     active_orbs.append(orb)
 
 # ---------------------------------------------------------------------------
@@ -101,7 +107,7 @@ rdm2_HF = (np.einsum("ik,jl->ijkl", rdm1_HF, rdm1_HF)
 
 opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
 _, _ = opti.refine_orbitals(
-    orbitals=core_orbs + active_orbs,
+    orbitals=[core_orbs, active_orbs],
     rdm1=rdm1_HF,
     rdm2=rdm2_HF,
     opt_thresh=1.0,
