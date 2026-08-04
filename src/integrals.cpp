@@ -65,6 +65,33 @@ void Integrals<NDIM>::update_core_integral_combinations(const std::vector<Functi
 //
 
 template <std::size_t NDIM>
+Numpy2D Integrals<NDIM>::nb_one_body_op_integrals(std::string op_name, const std::vector<SavedFct<NDIM>>& orbs) {
+    if (op_name == "p_x"){
+        auto orbitals = read_orbitals(orbs);
+        madness::Tensor<double> p_ints = madness::Tensor<double>(orbitals.size(), orbitals.size());
+        for (int k = 0; k < orbitals.size(); k++) {
+            for (int l = 0; l < orbitals.size(); l++) {
+                Derivative<double, NDIM> D = free_space_derivative<double, NDIM>(*(madness_process.world), 0);
+                Function<double, NDIM> d_orb_l = D(orbitals[l]);
+                p_ints(k, l) += inner(orbitals[k], d_orb_l);
+            }
+        }
+        Tensor<double>* integrals_pointer = new Tensor<double>(p_ints);
+
+        nb::capsule ints_capsule(
+            integrals_pointer,
+            [](void *p) noexcept {
+                delete reinterpret_cast<Tensor<double>*>(p);
+            }
+        );
+
+        return Numpy2D(integrals_pointer->ptr(), {orbitals.size(), orbitals.size()}, ints_capsule);
+    } else {
+        throw std::invalid_argument("Unsupported operator name: " + op_name);
+    }
+}
+
+template <std::size_t NDIM>
 Numpy2D Integrals<NDIM>::nb_compute_overlap_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other) {
     std::vector<Function<double, NDIM>> orbitals1 = read_orbitals(all_orbs);
     std::vector<Function<double, NDIM>> orbitals2 = read_orbitals(other);
@@ -676,6 +703,28 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::transform(std::vector<SavedFct<NDIM
         for (size_t k = 0; k < matrix.shape(1); k++)
             result.push_back(SavedFct<NDIM>(y[k], orbitals[k].info + " transformed "));
         return result;
+}
+
+template <std::size_t NDIM>
+SavedFct<NDIM> Integrals<NDIM>::compute_electron_density(std::vector<SavedFct<NDIM>> core_orbitals, std::vector<SavedFct<NDIM>> active_orbitals, Numpy2D rdm1){
+    // compute electron density from core and active orbitals and 1-RDM of active space
+    std::vector<Function<double, NDIM>> core = read_orbitals(core_orbitals);
+    std::vector<Function<double, NDIM>> active = read_orbitals(active_orbitals);
+    auto rdm1_tensor = refinement_utils::to_madness(rdm1);
+
+    int core_dim = core.size();
+    int as_dim = active.size();
+
+    auto ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
+    madness::Tensor<double> evals(as_dim);
+    madness::syev(rdm1_tensor, ActiveSpaceRotationMatrix, evals);
+    active = madness::transform(*(madness_process.world), active, ActiveSpaceRotationMatrix);
+
+    Function<double, NDIM> density = madness::FunctionFactory<double, NDIM>(*(madness_process.world));
+    for (int i = 0; i < as_dim; i++) density += evals[i] * active[i] * active[i];
+    for (int i = 0; i < core_dim; i++) density += 2 * core[i] * core[i];
+
+    return SavedFct<NDIM>(density);
 }
 
 template <std::size_t NDIM>

@@ -48,7 +48,7 @@ template <std::size_t NDIM> class Integrals {
     void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa, std::vector<Function<double, NDIM>> &coul_orbs_aa);
     
     // Different one and two body operators
-    Numpy2D nb_one_body_op_integrals(std::string op_name, const std::vector<SavedFct<NDIM>>& all_orbs);
+    Numpy2D nb_one_body_op_integrals(std::string op_name, const std::vector<SavedFct<NDIM>>& orbitals);
 
     // Nanobind bindings for Integrators
     Numpy2D nb_compute_overlap_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other);
@@ -99,6 +99,7 @@ template <std::size_t NDIM> class Integrals {
     std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals, Numpy2D matrix);
+    SavedFct<NDIM> compute_electron_density(std::vector<SavedFct<NDIM>> core_orbitals, std::vector<SavedFct<NDIM>> active_orbitals, Numpy2D rdm1);
 
     // Helper method for mixed orthonormalization using occupations
     std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(

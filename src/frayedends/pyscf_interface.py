@@ -128,7 +128,6 @@ class PySCFInterface:
             else:
                 energy, fcivec = solver.kernel(h1, h2.elems, self.n_orbitals, self.n_electrons)
 
-            print(energy)
             energy = energy + c
             rdm1, rdm2 = solver.make_rdm12(fcivec, self.n_orbitals, self.n_electrons)
             rdm2 = numpy.swapaxes(rdm2, 1, 2)

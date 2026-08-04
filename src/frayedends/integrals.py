@@ -5,6 +5,7 @@ from ._frayedends_impl import Integrals2D as IntegralsInterface2D
 from ._frayedends_impl import Integrals3D as IntegralsInterface3D
 from ._frayedends_impl import Integrals_open_shell_2D as IntegralsInterface_open_shell_2D
 from ._frayedends_impl import Integrals_open_shell_3D as IntegralsInterface_open_shell_3D
+from ._frayedends_impl import SavedFct2D, SavedFct3D
 from .madworld import MadWorld
 
 
@@ -50,7 +51,11 @@ class Integrals:
         frozen_core_orbs,
         active_orbs,
     ) -> np.ndarray:
-        return self.impl.compute_frozen_core_interaction(frozen_core_orbs, active_orbs)
+        if len(frozen_core_orbs) == 0:
+            print("Warning: No frozen core orbitals provided for frozen core interaction.")
+            return np.zeros((len(active_orbs), len(active_orbs)))
+        else:
+            return self.impl.compute_frozen_core_interaction(frozen_core_orbs, active_orbs)
 
     def compute_kinetic_integrals(self, orbitals) -> np.ndarray:
         return self.impl.compute_kinetic_integrals(orbitals)
@@ -124,6 +129,12 @@ class Integrals:
         vec = vectors[:, ::-1]  # reverse the order of eigenvectors accordingly
         return self.transform(orbitals, vec), val, vec  # transform the orbitals to the natural orbitals
 
+    def compute_electron_density(self, core_orbitals: list[SavedFct2D] | list[SavedFct3D], active_orbitals: list[SavedFct2D] | list[SavedFct3D], rdm1: np.ndarray) -> SavedFct2D | SavedFct3D:
+        if len(active_orbitals) != rdm1.shape[0] or len(active_orbitals) != rdm1.shape[1]:
+            raise ValueError(
+                f"Number of active orbitals ({len(active_orbitals)}) does not match the shape of the 1-RDM ({rdm1.shape})."
+            )
+        return self.impl.compute_electron_density(core_orbitals, active_orbitals, rdm1)
 
 class Integrals_open_shell:
     impl = None
@@ -177,3 +188,41 @@ class Integrals_open_shell:
             core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, V, energy_offset
         )
         return H_eff
+
+    def compute_electron_density(
+        self,
+        core_alpha_orbitals: list[SavedFct2D] | list[SavedFct3D],
+        core_beta_orbitals: list[SavedFct2D] | list[SavedFct3D],
+        active_alpha_orbitals: list[SavedFct2D] | list[SavedFct3D],
+        active_beta_orbitals: list[SavedFct2D] | list[SavedFct3D],
+        rdm1: list[np.ndarray],
+    ) -> list[SavedFct2D] | list[SavedFct3D]:
+        r"""input:
+                - orbitals as 4 individual lists of MRA functions
+                - rdm1 = [rdm1_alpha, rdm1_beta] with:
+                  rdm1_\sigma[i,j] = \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
+            output:
+                - [rho_\alpha, rho_beta, rho_alpha + rho_beta] as 3 MRA functions
+              """
+        spin_data = (
+            ("alpha", active_alpha_orbitals, rdm1[0]),
+            ("beta", active_beta_orbitals, rdm1[1]),
+        )
+        for spin, active_orbitals, rdm in spin_data:
+            if (
+                rdm.ndim != 2
+                or len(active_orbitals) != rdm.shape[0]
+                or len(active_orbitals) != rdm.shape[1]
+            ):
+                raise ValueError(
+                    f"Number of active {spin} orbitals ({len(active_orbitals)}) "
+                    f"does not match the shape of the {spin} 1-RDM ({rdm.shape})."
+                )
+
+        return self.impl.compute_electron_density(
+            core_alpha_orbitals,
+            core_beta_orbitals,
+            active_alpha_orbitals,
+            active_beta_orbitals,
+            rdm1
+        )
