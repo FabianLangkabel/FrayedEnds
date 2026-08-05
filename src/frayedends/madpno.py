@@ -181,15 +181,17 @@ class MadPNO:
 
     def _split_orbitals(self, orbitals):
         info = get_function_info(orbitals)
-        gs_orbitals = []
-        ex_orbitals = []
+        gs_orbitals, ex_orbitals = [], []
+        gs_indices, ex_indices = [], []
         for i, orb in enumerate(orbitals):
             label = info[i]["type"]
             if label.startswith("CIS_X_EX") or label.startswith("CISPD_EX"):
                 ex_orbitals.append(orb)
+                ex_indices.append(i)
             else:
                 gs_orbitals.append(orb)
-        return gs_orbitals, ex_orbitals
+                gs_indices.append(i)
+        return gs_orbitals, ex_orbitals, gs_indices, ex_indices
 
     def get_pno_groupings(self, diagonal=True, orbitals=None, *args, **kwargs):
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
@@ -200,9 +202,11 @@ class MadPNO:
             ex_orbitals = []
             if self._cis_orbitals is not None and self._cispd_orbitals is not None:
                 ex_orbitals = self._cis_orbitals + self._cispd_orbitals
+            gs_indices = list(range(len(orbitals)))   
+            ex_indices = None                       
         else:
             # orbitals were passed, split them into ground state and excited state orbitals
-            orbitals, ex_orbitals = self._split_orbitals(orbitals)
+            orbitals, ex_orbitals, gs_indices, ex_indices = self._split_orbitals(orbitals)
 
         # ground state orbitals (HF + MP2 PNOs)
         info = get_function_info(orbitals)
@@ -212,10 +216,11 @@ class MadPNO:
         for k in range(len(orbitals)):
             x = info[k]["pair1"]
             y = info[k]["pair2"]
+            orig_k = gs_indices[k]  
             if x == y:
-                diagonal[x].append(k)
+                diagonal[x].append(orig_k)
             else:
-                off_diagonal[(x, y)].append(k)
+                off_diagonal[(x, y)].append(orig_k)
 
         if ex_orbitals:
             # excited state orbitals (CIS X functions and CISPD PNOs)
@@ -229,6 +234,9 @@ class MadPNO:
                 elif label.startswith("CISPD_EX"):
                     return int(label.split("_")[-1][2:]), "cispd"
                 return None, None
+
+            def map_ex(k_ex):
+                return ex_indices[k_ex] if ex_indices is not None else k_ex + offset
             
             cis_per_k = {}
             for k_ex, x in enumerate(ex_info):
@@ -249,7 +257,7 @@ class MadPNO:
 
                 if k_orb in diagonal:
                     for ex, norm2, k_ex in best_entries:
-                        diagonal[k_orb].append(k_ex + offset)
+                        diagonal[k_orb].append(map_ex(k_ex))
                 print(f'best_exs_per_k: {best_exs_per_k}')
 
             for k_ex, x in enumerate(ex_info):
@@ -261,14 +269,14 @@ class MadPNO:
                 if xi == yi:
                     best_exs = best_exs_per_k.get(xi)
                     if best_exs is not None and ex in best_exs:
-                        diagonal[xi].append(k_ex + offset)
+                        diagonal[xi].append(map_ex(k_ex))
                 else:
                     best_exs_x = best_exs_per_k.get(xi, set())
                     best_exs_y = best_exs_per_k.get(yi, set())
                     if ex in best_exs_x or ex in best_exs_y:
                         key = (min(xi, yi), max(xi, yi))
                         if key in off_diagonal:
-                            off_diagonal[key].append(k_ex + offset)
+                            off_diagonal[key].append(map_ex(k_ex))
 
             print(f'diagonal: {diagonal}')
 
