@@ -103,12 +103,34 @@ print("SPA edges: ", spa_edges)
 print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=spa_edges) # SPA edges:  [(0, 2, 4, 7), (1, 3, 5, 6)]
 
-# U += mol.UR(0, 2, (tq.Variable('a') + 0.5) * pi)
-U += mol.UR(2, 4, (tq.Variable('b') + 0.5) * pi)
-U += mol.UR(2, 7, (tq.Variable('c') + 0.5) * pi)
-# U += mol.UR(1, 3, (tq.Variable('d') + 0.5) * pi)
-U += mol.UR(3, 5, (tq.Variable('e') + 0.5) * pi)
-U += mol.UR(3, 6, (tq.Variable('f') + 0.5) * pi)
+E = tq.ExpectationValue(U=U, H=H_gs)
+result = tq.minimize(E, silent=True)
+circuit_gs = tq.simulate(U, result.variables)
+
+print(f"FCI Ground state: {e_ground_tot}")
+print(f"SPA GS energy: {result.energy}")
+print("SPA/FCI error: {:+2.5f}".format(result.energy-e_ground_tot))
+print(result.variables)
+print(f"Ground State Circuit: {circuit_gs}")
+
+first_edge = spa_edges[0]
+second_edge = spa_edges[1]
+
+for i in range(len(first_edge)):
+    print(f"first edge i: {first_edge[i]} ")
+
+for i in range(len(second_edge)):
+    print(f"second edge i: {second_edge[i]} ")
+
+# U += mol.UR(first_edge[0], first_edge[1], (tq.Variable('a') + 0.5) * pi)
+U += mol.UR(first_edge[1], first_edge[2], (tq.Variable('b') + 0.5) * pi)
+U += mol.UR(first_edge[1], first_edge[3], (tq.Variable('c') + 0.5) * pi)
+U += mol.UR(first_edge[2], first_edge[3], (tq.Variable('d') + 0.5) * pi)
+# U += mol.UR(second_edge[0], second_edge[1], (tq.Variable('e') + 0.5) * pi)
+U += mol.UR(second_edge[1], second_edge[2], (tq.Variable('f') + 0.5) * pi)
+U += mol.UR(second_edge[1], second_edge[3], (tq.Variable('g') + 0.5) * pi)
+U += mol.UR(second_edge[2], second_edge[3], (tq.Variable('h') + 0.5) * pi)
+
 
 E = tq.ExpectationValue(U=U, H=H_gs)
 result = tq.minimize(E, silent=True)
@@ -121,6 +143,7 @@ print(result.variables)
 print(f"Ground State Circuit: {circuit_gs}")
 
 gs_circuit = U.map_variables(result.variables)
+
 
 # ----------- cholesky orthonormalized orbital set ------------------
 orbitals_ch = gs_orbs_original[:3] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[3:] # f,0,1: HF, 2,3: CIS, 4,5: CISPD, 6,7: MP2 PNO
@@ -136,12 +159,16 @@ orbitals_ch_active = orbitals_ch[1:]
 S = integrals.compute_overlap_integrals(orbitals_sym_active, orbitals_ch_active)
 rotation = mol.get_givens_circuit(S)
 
+print(fe.get_function_info(orbitals_ch))
+
+
 # ----------- SPA excited state with cholesky orthonormalized orbital set-----------
 print("\n=============== SPA Calculation ES ===============\n")
 circuit_list = [gs_circuit]
 constants = [5.0]
 
-print("SPA edges: ", spa_edges)
+ex_spa_edges = madpno.get_spa_edges(orbitals=orbitals_ch)
+print("SPA edges: ", ex_spa_edges)
 
 U_ex = mol.make_ansatz(name="spa", edges=spa_edges)
 
@@ -167,6 +194,41 @@ print(f"minimize & simulate time: {minimize_end - minimize_start}")
 
 print(f"FCI Singlet excited state energy: {e_excited_tot}")
 print(f"SPA Singlet excited state energy: {result.energy}")
+print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
+print(result.variables)
+print(f"Excited State Circuit: {circuit_ex}")
+
+ex_first_edge = ex_spa_edges[0]
+ex_second_edge = ex_spa_edges[1]
+
+for i in range(len(ex_first_edge)):
+    print(f"ex first edge i: {ex_first_edge[i]} ")
+
+for i in range(len(ex_second_edge)):
+    print(f"ex_second edge i: {ex_second_edge[i]} ")
+
+UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('s') + 0.5) * pi)
+UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('t') + 0.5) * pi)
+UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable('w') + 0.5) * pi)
+UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable('x') + 0.5) * pi)
+
+
+E = ti.expectation_value_orthogonality_constraint(
+    H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
+    U=U_ex + UR + rotation,
+    circuit_list=circuit_list, 
+    constant_list=constants
+)
+print("done with orthogonality constraint")
+
+minimize_start = time.perf_counter()
+result = tq.minimize(E, silent=True)
+circuit_ex = tq.simulate(U_ex + UR + rotation, result.variables)
+minimize_end = time.perf_counter()
+print(f"minimize & simulate time: {minimize_end - minimize_start}")
+
+print(f"FCI Singlet excited state energy: {e_excited_tot}")
+print(f"SPA + UR Singlet excited state energy: {result.energy}")
 print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
 print(result.variables)
 print(f"Excited State Circuit: {circuit_ex}")
