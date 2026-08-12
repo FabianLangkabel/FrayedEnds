@@ -24,7 +24,7 @@ for d in distance:
     geom = (
         "Be 0.0 0.0 0.0\n"
         "H 0.0 0.0 " + d.__str__() + "\n"
-        "H 0.0 0.0 " - d.__str__() + "\n"
+        "H 0.0 0.0 " + (-d).__str__() + "\n"
     )
 
     molecule = fe.MolecularGeometry(geometry=geom, units='angstrom')
