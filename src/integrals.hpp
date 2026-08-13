@@ -47,9 +47,6 @@ template <std::size_t NDIM> class Integrals {
     void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa);
     void update_core_integral_combinations(const std::vector<Function<double, NDIM>> &core_orbitals, std::vector<Function<double, NDIM>> &orbs_aa, std::vector<Function<double, NDIM>> &coul_orbs_aa);
     
-    // Different one and two body operators
-    Numpy2D nb_one_body_op_integrals(std::string op_name, const std::vector<SavedFct<NDIM>>& orbitals);
-
     // Nanobind bindings for Integrators
     Numpy2D nb_compute_overlap_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other);
     Numpy2D nb_compute_potential_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const SavedFct<NDIM>& potential);

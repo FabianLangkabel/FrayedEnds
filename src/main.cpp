@@ -128,7 +128,6 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_two_body_integrals", &Integrals<3>::nb_compute_two_body_integrals)
         .def("compute_frozen_core_interaction", &Integrals<3>::nb_compute_frozen_core_interaction)
         .def("compute_effective_hamiltonian", &Integrals<3>::nb_compute_effective_hamiltonian)
-        .def("one_body_op_integrals", &Integrals<3>::nb_one_body_op_integrals)
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))

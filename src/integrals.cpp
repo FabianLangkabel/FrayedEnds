@@ -65,33 +65,6 @@ void Integrals<NDIM>::update_core_integral_combinations(const std::vector<Functi
 //
 
 template <std::size_t NDIM>
-Numpy2D Integrals<NDIM>::nb_one_body_op_integrals(std::string op_name, const std::vector<SavedFct<NDIM>>& orbs) {
-    if (op_name == "p_x"){
-        auto orbitals = read_orbitals(orbs);
-        madness::Tensor<double> p_ints = madness::Tensor<double>(orbitals.size(), orbitals.size());
-        for (int k = 0; k < orbitals.size(); k++) {
-            for (int l = 0; l < orbitals.size(); l++) {
-                Derivative<double, NDIM> D = free_space_derivative<double, NDIM>(*(madness_process.world), 0);
-                Function<double, NDIM> d_orb_l = D(orbitals[l]);
-                p_ints(k, l) += inner(orbitals[k], d_orb_l);
-            }
-        }
-        Tensor<double>* integrals_pointer = new Tensor<double>(p_ints);
-
-        nb::capsule ints_capsule(
-            integrals_pointer,
-            [](void *p) noexcept {
-                delete reinterpret_cast<Tensor<double>*>(p);
-            }
-        );
-
-        return Numpy2D(integrals_pointer->ptr(), {orbitals.size(), orbitals.size()}, ints_capsule);
-    } else {
-        throw std::invalid_argument("Unsupported operator name: " + op_name);
-    }
-}
-
-template <std::size_t NDIM>
 Numpy2D Integrals<NDIM>::nb_compute_overlap_integrals(const std::vector<SavedFct<NDIM>>& all_orbs, const std::vector<SavedFct<NDIM>>& other) {
     std::vector<Function<double, NDIM>> orbitals1 = read_orbitals(all_orbs);
     std::vector<Function<double, NDIM>> orbitals2 = read_orbitals(other);
