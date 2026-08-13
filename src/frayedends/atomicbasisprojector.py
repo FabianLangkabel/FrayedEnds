@@ -9,9 +9,10 @@ class AtomicBasisProjector:
     A class for projecting atomic basis functions of different standard basis sets into MRA form.
     The standard ordering of the basis functions for each atom is:
     1s
-    2s 2px 2py 2pz
-    3s 3px 3py 3pz 3dxx 3dxy 3dxz 3dyy 3dyz 3dzz
-    4s 4px 4py 4pz ...
+    2s  2px 2py 2pz
+    3s  3px 3py 3pz  3dxx 3dxy 3dxz 3dyy 3dyz 3dzz
+    4s  4px 4py 4pz  4dxx 4dxy 4dxz 4dyy 4dyz 4dzz  4fxxx 4fxxy 4fxxz 4fxyy 4fxyz 4fxzz 4fyyy 4fyyz 4fyzz 4fzzz
+    ...
     """
 
     impl = None

@@ -112,7 +112,7 @@ class MolecularGeometry:
     def compute_dR_dE(self, madworld, rdm1, act_orbs, fr_core_orbs=[], nocc=2):
         # function to compute the energy gradient w.r.t. nuclear coordinates
         # this function assumes that the Hellmann-Feynmann theorem holds,
-        # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
+        # i. e. that the partial derivate of the energy functional w. r. t. the orbitals and many-body wave function is zero
         n_atoms = len(self.to_json()["symbols"])
 
         if len(act_orbs) != np.shape(rdm1)[0]:
@@ -145,7 +145,7 @@ class MolecularGeometry:
     def compute_dZ_dE(self, madworld, rdm1, act_orbs, fr_core_orbs=[], nocc=2):
         # function to compute the energy gradient w.r.t. nuclear charges
         # this function assumes that the Hellmann-Feynmann theorem holds,
-        # i. e. that the partial derivate of the energy functional w. r. t. the orbitals or many-body wave function is zero
+        # i. e. that the partial derivate of the energy functional w. r. t. the orbitals and many-body wave function is zero
         n_atoms = len(self.to_json()["symbols"])
 
         if len(act_orbs) != np.shape(rdm1)[0]:

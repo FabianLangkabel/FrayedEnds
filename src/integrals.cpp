@@ -679,6 +679,28 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::transform(std::vector<SavedFct<NDIM
 }
 
 template <std::size_t NDIM>
+SavedFct<NDIM> Integrals<NDIM>::compute_electron_density(std::vector<SavedFct<NDIM>> core_orbitals, std::vector<SavedFct<NDIM>> active_orbitals, Numpy2D rdm1){
+    // compute electron density from core and active orbitals and 1-RDM of active space
+    std::vector<Function<double, NDIM>> core = read_orbitals(core_orbitals);
+    std::vector<Function<double, NDIM>> active = read_orbitals(active_orbitals);
+    auto rdm1_tensor = refinement_utils::to_madness(rdm1);
+
+    int core_dim = core.size();
+    int as_dim = active.size();
+
+    auto ActiveSpaceRotationMatrix = madness::Tensor<double>(as_dim, as_dim);
+    madness::Tensor<double> evals(as_dim);
+    madness::syev(rdm1_tensor, ActiveSpaceRotationMatrix, evals);
+    active = madness::transform(*(madness_process.world), active, ActiveSpaceRotationMatrix);
+
+    Function<double, NDIM> density = madness::FunctionFactory<double, NDIM>(*(madness_process.world));
+    for (int i = 0; i < as_dim; i++) density += evals[i] * active[i] * active[i];
+    for (int i = 0; i < core_dim; i++) density += 2 * core[i] * core[i];
+
+    return SavedFct<NDIM>(density);
+}
+
+template <std::size_t NDIM>
 std::vector<Function<double, NDIM>> Integrals<NDIM>::orthonormalize_mixed_by_degeneracy(
     std::vector<Function<double, NDIM>>& orbitals,
     const std::vector<double>& occupations,
