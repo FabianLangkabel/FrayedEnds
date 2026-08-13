@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -14,10 +14,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -79,14 +82,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-d481b51c455843ad3799c67936c423de.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-75470e9af1c6b86f03ed6aa7511e3fa8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-d481b51c455843ad3799c67936c423de.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-ac1a118ae272785051ffd4336d48b573.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-c29ae751f00683c876baf572130016f3.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-ac1a118ae272785051ffd4336d48b573.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -143,7 +146,7 @@ cookieconsent.run({
   
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -463,7 +466,7 @@ window.Quarto = {
 <p>To be consistent with some of the literature listed below, we will rescale the polynomials to the unit interval <span class="math display">\[
 \tilde{P}_k(x) = \sqrt{2k+1} P_k\left(2x-1\right)
 \]</span> where the prefactor ensures normalization. We can define this as small class in python code:</p>
-<div id="84fe907c" class="cell" data-execution_count="1">
+<div id="7d6948c2" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -486,7 +489,7 @@ f \approx \sum_k c_l \tilde{P}_l(x) \quad c_l = \int_0^1 f(x)P_l(x) \operatornam
 <p>When using the polynomials as basis it is convenient to employ Gauss-Legendre <a href="https://en.wikipedia.org/wiki/Gauss%E2%80%93Legendre_quadrature">quadrature</a> for integration <span class="math display">\[
 \langle f \vert g \rangle = \int_0^1 f(x)g(x) \operatorname{d}x  \approx \sum_i wᵢ f(xᵢ)g(xᵢ)
 \]</span> where wᵢ and xᵢ are the points and wheights of the quadrature (we can conveniently import them from scipy). In code this looks like:</p>
-<div id="dd2345eb" class="cell" data-execution_count="2">
+<div id="2663cc41" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> integrate(f,order,a<span class="op">=</span><span class="dv">0</span>,b<span class="op">=</span><span class="dv">1</span>, verbose<span class="op">=</span><span class="va">False</span>):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    integrate in interval [a,b] subset to [0,1]</span></span>
@@ -505,7 +508,7 @@ f \approx \sum_k c_l \tilde{P}_l(x) \quad c_l = \int_0^1 f(x)P_l(x) \operatornam
 </div>
 <p>where we already included the quadrature on <a href="https://en.wikipedia.org/wiki/Gaussian_quadrature#Change_of_interval">arbitrary intervals</a> <span class="math inline">\([a,b]\)</span>.</p>
 <p>Let’s test if everything works by checking orthonormality of our basis</p>
-<div id="2e2acfee" class="cell" data-execution_count="3">
+<div id="08e5e0d9" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>kmax <span class="op">=</span> <span class="dv">5</span></span>
@@ -536,7 +539,7 @@ f \approx \sum_k c_l \tilde{P}_l(x) \quad c_l = \int_0^1 f(x)P_l(x) \operatornam
 <p>Let’s represent some function with the Polynomial basis we have constructed above. We will use the function <span class="math display">\[
 f(x) = \sin\left( e^{-3.0*\left(2x-1\right)} \right)\frac{\sin\left(2x-1\right)}{2x-1}.
 \]</span> It looks like</p>
-<div id="3e89d9d7" class="cell" data-execution_count="4">
+<div id="d4b2f26e" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> f(x):</span>
@@ -563,7 +566,7 @@ f(x) = \sin\left( e^{-3.0*\left(2x-1\right)} \right)\frac{\sin\left(2x-1\right)}
 f(x) = \sum_{l=1}^{k} c_l \tilde{P}_l(x), \quad c_l = \langle f  \vert \tilde{P}_l \rangle.
 \]</span> and compute the coefficients with our Gauss-Legendre integration function defined above.</p>
 <p>We will do this by defining the class <code>ProjectedFunction</code></p>
-<div id="6b26eb44" class="cell" data-execution_count="5">
+<div id="4dc79d77" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ProjectedFunction:</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, f, k<span class="op">=</span><span class="dv">1</span>):</span>
@@ -585,12 +588,12 @@ f(x) = \sum_{l=1}^{k} c_l \tilde{P}_l(x), \quad c_l = \langle f  \vert \tilde{P}
 \text{span}\left\{ \tilde{P}_l \right\}_{l=1}^{k} \subset {L}^2\left(\left[0,1\right]\right).
 \]</span><br>
 Through the <code>__call__</code> operator we can use initialized objects of <code>ProjectedFunction</code> just like regular functions.</p>
-<div id="ad0f9fa8" class="cell" data-execution_count="6">
+<div id="38bd5363" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>F <span class="op">=</span> ProjectedFunction(f, k<span class="op">=</span><span class="dv">5</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> F(<span class="fl">1.0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Let’s see how our example function above looks like on different orders <span class="math inline">\(k\)</span>:</p>
-<div id="067315db" class="cell" data-execution_count="7">
+<div id="497e9cfc" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># x and y defined before</span></span>
@@ -625,7 +628,7 @@ V_n = \bigoplus_{l=0}^{2^n-1} V_n^l.
 \]</span> With this construction, we can approximate functions in <span class="math inline">\({L}^2\left(\left[0,1\right]\right)\)</span> with arbitrary accuracy. Or, more formally, <span class="math display">\[
 \overline{\bigcup_{n=0}^{\infty} V_n} = {L}\left(\left[0,1\right]\right).
 \]</span> meaning the closure of the union of all those shited and rescaled polyomials can be identified as the <span class="math inline">\({L}^2\)</span> space. We can implement this with some slight modifications to our <code>ProjectedFunction</code> class from before.</p>
-<div id="9f20bd6c" class="cell" data-execution_count="8">
+<div id="ce18f4b1" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ProjectedFunction:</span>
@@ -665,7 +668,7 @@ V_n = \bigoplus_{l=0}^{2^n-1} V_n^l.
 <p>Let’s see how our example function looks when projected against a space assembled from different <span class="math inline">\(V_n^l\)</span> with <span class="math inline">\(k=5\)</span>. Let’s start on level <span class="math inline">\(n=1\)</span> where we have split the interval <span class="math inline">\([0,1]\)</span> into the intervals <span class="math inline">\([0,0.5]\)</span> and <span class="math inline">\([0.5,1.0]\)</span>. Our approximation space is then <span class="math display">\[
 V = V_1^0 \bigoplus V_1^1
 \]</span> and the our example function projected onto <span class="math inline">\(V\)</span> is</p>
-<div id="8ba8142f" class="cell" data-execution_count="9">
+<div id="0cec8c57" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>L  <span class="op">=</span> ProjectedFunction(f,k<span class="op">=</span><span class="dv">5</span>,n<span class="op">=</span><span class="dv">1</span>,l<span class="op">=</span><span class="dv">0</span>)</span>
@@ -690,7 +693,7 @@ V = V_1^0 \bigoplus V_1^1
 <p>The left part looks like it could benefit from a bit more resolution: So we replace <span class="math inline">\(V_1^0\)</span> by <span class="math inline">\(V_2^0 \bigoplus V_2^1\)</span> <span class="math display">\[
 V = V_2^0 \bigoplus V_2^1 \bigoplus V_1^1.
 \]</span> Projected to <span class="math inline">\(V\)</span> our function know looks like</p>
-<div id="162b1b90" class="cell" data-execution_count="10">
+<div id="45840361" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>LL  <span class="op">=</span> ProjectedFunction(f,k<span class="op">=</span><span class="dv">5</span>,n<span class="op">=</span><span class="dv">2</span>,l<span class="op">=</span><span class="dv">0</span>)</span>
@@ -717,7 +720,7 @@ V = V_2^0 \bigoplus V_2^1 \bigoplus V_1^1.
 <p><span class="math display">\[
 V = V_4^0 \bigoplus V_4^1 \bigoplus V_3^1 \bigoplus V_2^1 \bigoplus V_1^1
 \]</span> which results in the representation</p>
-<div id="809947b7" class="cell" data-execution_count="11">
+<div id="8bfb37dd" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>LLLR  <span class="op">=</span> ProjectedFunction(f,k<span class="op">=</span><span class="dv">5</span>,n<span class="op">=</span><span class="dv">4</span>,l<span class="op">=</span><span class="dv">0</span>)</span>
