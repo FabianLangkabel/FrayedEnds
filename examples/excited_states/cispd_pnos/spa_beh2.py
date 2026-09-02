@@ -170,7 +170,7 @@ constants = [5.0]
 ex_spa_edges = madpno.get_spa_edges(orbitals=orbitals_ch)
 print("SPA edges: ", ex_spa_edges)
 
-U_ex = mol.make_ansatz(name="spa", edges=spa_edges)
+U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
 # UR = mol.UR(0, 1, (tq.Variable('w') + 0.5) * pi)
 # UR += mol.UR(0, 2, (tq.Variable('x') + 0.5) * pi)
