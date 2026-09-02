@@ -918,8 +918,8 @@ void Optimization_open_shell<NDIM>::rotate_orbitals_back() {
         active_orbs[spin] = transform(*(madness_process.world), active_orbs[spin], RotationMatrixBack);
     }
     refinement_utils::Transform_ab_mixed_Tensor(as_two_rdm[2], RotationMatricesBack[0], RotationMatricesBack[1]);
-    calculate_all_integrals();
-    calculate_energies();
+    //calculate_all_integrals();
+    //calculate_energies();
 }
 
 template <std::size_t NDIM>

@@ -75,16 +75,19 @@ template <std::size_t NDIM> class Integrals {
         const std::vector<Function<double, NDIM>> &active_orbitals, 
         const std::vector<Function<double, NDIM>> &orbs_kl, 
         const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
-        const std::vector<Function<double, NDIM>> &orbs_aa
+        const std::vector<Function<double, NDIM>> &orbs_aa,
+        std::vector<Function<double, NDIM>> &sum_a_aka
     );
 
+    // Returns sum_a(baca)(b,c), sum_a(baac)(b,c), akcl(a,k,c,l), and aklc(a,k,l,c).
     std::array<Tensor<double>, 4> compute_core_as_2e_integrals_core_refinement(
         const std::vector<Function<double, NDIM>> &core_orbitals, 
         const std::vector<Function<double, NDIM>> &active_orbitals, 
         const std::vector<Function<double, NDIM>> &orbs_kl, 
         const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
         const std::vector<Function<double, NDIM>> &orbs_aa,
-        const std::vector<Function<double, NDIM>> &coul_orbs_aa
+        const std::vector<Function<double, NDIM>> &coul_orbs_aa,
+        std::vector<Function<double, NDIM>> &sum_a_aca
     );
 
     // Orthonormalization and related utilities
