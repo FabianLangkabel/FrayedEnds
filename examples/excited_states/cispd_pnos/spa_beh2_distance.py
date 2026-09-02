@@ -111,7 +111,6 @@ for d in distance:
     U += mol.UR(second_edge[1], second_edge[3], (tq.Variable('g') + 0.5) * pi)
     U += mol.UR(second_edge[2], second_edge[3], (tq.Variable('h') + 0.5) * pi)
 
-
     E = tq.ExpectationValue(U=U, H=H_gs)
     result = tq.minimize(E, silent=True)
     circuit_gs = tq.simulate(U, result.variables)
@@ -149,8 +148,6 @@ for d in distance:
     ex_spa_edges = madpno.get_spa_edges(orbitals=orbitals_ch)
     print("SPA edges: ", ex_spa_edges)
 
-    U_ex = mol.make_ansatz(name="spa", edges=spa_edges)
-
     ex_first_edge = ex_spa_edges[0]
     ex_second_edge = ex_spa_edges[1]
 
@@ -159,6 +156,8 @@ for d in distance:
 
     for i in range(len(ex_second_edge)):
         print(f"ex_second edge i: {ex_second_edge[i]} ")
+
+    U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
     UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('w') + 0.5) * pi)
     UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('x') + 0.5) * pi)
