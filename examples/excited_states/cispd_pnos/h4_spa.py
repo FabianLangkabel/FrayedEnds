@@ -156,10 +156,12 @@ U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
 UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('s') + 0.5) * pi)
 UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('t') + 0.5) * pi)
-#UR += mol.UR(ex_first_edge[2], ex_first_edge[3], (tq.Variable('u') + 0.5) * pi)
+UR += mol.UR(ex_first_edge[2], ex_first_edge[3], (tq.Variable('u') + 0.5) * pi)
+UR += mol.UR(ex_first_edge[1], ex_first_edge[3], (tq.Variable('v') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable('w') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable('x') + 0.5) * pi)
-#UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
+UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
+UR += mol.UR(ex_second_edge[1], ex_second_edge[3], (tq.Variable('z') + 0.5) * pi)
 
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
@@ -190,33 +192,5 @@ f2 = tq.compile(E2)
 variables = {k:1.0 for k in U_ex.extract_variables()}
 print("Consistency Test difference: ", f1(variables) - f2(variables))
 
-print("\n--------------- SPA H_gs & U_ex + UR + rotation:  ES -----------------")
-E = ti.expectation_value_orthogonality_constraint(
-    H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
-    U=U_ex + UR + rotation,
-    circuit_list=circuit_list, 
-    constant_list=constants
-)
-
-result = tq.minimize(E, silent=True)
-print(f"FCI Singlet EX: {fci_energy_1}")
-print(f"SPA Singlet EX: {result.energy}")
-circuit = tq.simulate(U_ex + UR + rotation, result.variables)
-print(f"Circuit: {circuit}")
-
-print("--------------- SPA H_check & U_ex + UR:  ES -----------------")
-gs_circuit_ch = gs_circuit + rotation # add rotation to groundstate circuit 
-E = ti.expectation_value_orthogonality_constraint(
-    H=H_check, 
-    U=U_ex + UR, 
-    circuit_list=[gs_circuit_ch], 
-    constant_list=constants
-)
-result = tq.minimize(E, silent=True)
-print(f"FCI Singlet EX: {fci_energy_1}")
-print(f"SPA Singlet EX: {result.energy}")
-
-circuit = tq.simulate(U_ex + UR, result.variables)
-print(f"Circuit: {circuit}")
 
 fe.cleanup(globals())
