@@ -140,7 +140,7 @@ print("\n=============== SPA Calculation ES ===============\n")
 circuit_list = [gs_circuit]
 constants = [5.0]
 
-ex_spa_edges = madpno.get_spa_edges()
+ex_spa_edges = madpno.get_spa_edges(orbitals=orbitals_ch)
 print("SPA edges: ", ex_spa_edges)
 
 ex_first_edge = ex_spa_edges[0]
@@ -156,10 +156,10 @@ U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
 UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('s') + 0.5) * pi)
 UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('t') + 0.5) * pi)
-UR += mol.UR(ex_first_edge[2], ex_first_edge[3], (tq.Variable('u') + 0.5) * pi)
+#UR += mol.UR(ex_first_edge[2], ex_first_edge[3], (tq.Variable('u') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable('w') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable('x') + 0.5) * pi)
-UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
+#UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
 
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
