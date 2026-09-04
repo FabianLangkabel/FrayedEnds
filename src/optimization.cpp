@@ -17,6 +17,8 @@ Optimization<NDIM>::~Optimization() {
     coul_orbs_mn.clear();
     orbs_aa.clear();
     coul_orbs_aa.clear();
+    sum_a_aka.clear();
+    sum_a_aca.clear();
 }
 
 template <std::size_t NDIM>
@@ -28,6 +30,14 @@ void Optimization<NDIM>::give_potential_and_repulsion(SavedFct<NDIM> potential, 
 template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    frozen_occ_orbs.clear();
+    active_orbs.clear();
+    orbs_kl.clear();
+    coul_orbs_mn.clear();
+    orbs_aa.clear();
+    coul_orbs_aa.clear();
+    sum_a_aka.clear();
+    sum_a_aca.clear();
     for (SavedFct<NDIM> orb : fr_core_orbs) {
             frozen_occ_orbs.push_back(madness_process.loadfct(orb));
     }
@@ -38,7 +48,7 @@ template <std::size_t NDIM> void Optimization<NDIM>::give_initial_orbitals(std::
     as_dim = active_orbs.size();
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto duration = std::chrono::duration<double>(end_time - start_time);
     std::cout << "GiveInitialOrbitals took " << duration.count() << " seconds" << std::endl;
 }
 
@@ -64,7 +74,7 @@ void Optimization<NDIM>::give_rdm_and_rotate_orbitals(Numpy2D& one_rdms, Numpy4D
     active_orbs = transform(*(madness_process.world), active_orbs, ActiveSpaceRotationMatrix);
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto duration = std::chrono::duration<double>(end_time - start_time);
     std::cout << "GiveRDMs took " << duration.count() << " seconds" << std::endl;
 }
 
@@ -75,7 +85,7 @@ void Optimization<NDIM>::calculate_all_integrals(bool update_aa) {
 
     // Calculate and cache relevant orbital-combinations
     Integrator.update_as_integral_combinations(active_orbs, orbs_kl, coul_orbs_mn);
-    
+
     auto t1 = std::chrono::high_resolution_clock::now();
     // Calculate one electron Integrals
     as_integrals_one_body = Integrator.compute_potential_integrals(active_orbs, Vnuc);
@@ -83,15 +93,16 @@ void Optimization<NDIM>::calculate_all_integrals(bool update_aa) {
 
     // Calculate two electron Integrals
     as_integrals_two_body = Integrator.compute_two_body_integrals(active_orbs, orbs_kl, coul_orbs_mn);
+    const bool refresh_core_combinations = core_dim > 0 && (update_aa || orbs_aa.empty() || coul_orbs_aa.empty());
 
     // Calculate Core-AS interaction integrals
     if (core_dim > 0) {
-        if (update_aa) {
+        if (refresh_core_combinations) {
             Integrator.update_core_integral_combinations(frozen_occ_orbs, orbs_aa, coul_orbs_aa);
         }
         core_as_integrals_one_body_ak = Integrator.compute_core_as_integrals_one_body(frozen_occ_orbs, active_orbs, Vnuc);
         
-        auto core_as_integrals_two_body0 = Integrator.compute_core_as_2e_integrals_as_refinement(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa);
+        auto core_as_integrals_two_body0 = Integrator.compute_core_as_2e_integrals_as_refinement(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa, sum_a_aka);
         core_as_integrals_two_body_akal = core_as_integrals_two_body0[0];
         core_as_integrals_two_body_akla = core_as_integrals_two_body0[1];
         core_as_integrals_two_body_akln = core_as_integrals_two_body0[2];
@@ -101,19 +112,29 @@ void Optimization<NDIM>::calculate_all_integrals(bool update_aa) {
         if (refine_core) {
             core_core_integrals_one_body_ab = Integrator.compute_potential_integrals(frozen_occ_orbs, Vnuc);
             core_core_integrals_one_body_ab += Integrator.compute_kinetic_integrals(frozen_occ_orbs);
-            auto core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_core_refinement(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa, coul_orbs_aa);
-            core_as_integrals_two_body_baca = core_as_integrals_two_body[0];
-            core_as_integrals_two_body_baac = core_as_integrals_two_body[1];
+            auto core_as_integrals_two_body = Integrator.compute_core_as_2e_integrals_core_refinement(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa, coul_orbs_aa, sum_a_aca);
+            sum_a_core_as_integrals_two_body_baca = core_as_integrals_two_body[0];
+            sum_a_core_as_integrals_two_body_baac = core_as_integrals_two_body[1];
             core_as_integrals_two_body_akcl = core_as_integrals_two_body[2];
             core_as_integrals_two_body_aklc = core_as_integrals_two_body[3];
         }
     }
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::cout << "Calculate all integrals: " << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count()
-            << " seconds" << std::endl;
+    effective_integrals_one_body = madness::copy(as_integrals_one_body);
+    for (int a = 0; a < core_dim; a++) {
+        effective_integrals_one_body += 2 * core_as_integrals_two_body_akal(a, _, _) - core_as_integrals_two_body_akla(a, _, _);
+    }
+    if (core_dim == 0) {
+        core_total_energy = 0.0;
+    }
+    else if (refresh_core_combinations) {
+        core_total_energy = Integrator.compute_core_energy(frozen_occ_orbs, orbs_aa, coul_orbs_aa, Vnuc, 0);
+    }
 
-    std::cout << "Orbital Multiplication: " << std::chrono::duration_cast<std::chrono::seconds>(t1 - start_time).count() << " seconds" << std::endl;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::cout << "Calculate all integrals: " << std::chrono::duration<double>(end_time - start_time).count() << " seconds" << std::endl;
+
+    std::cout << "Orbital Multiplication: " << std::chrono::duration<double>(t1 - start_time).count() << " seconds" << std::endl;
 }
 
 
@@ -166,7 +187,7 @@ void Optimization<NDIM>::calculate_energies() {
     print("                            Total energy ", total_energy);
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto duration = std::chrono::duration<double>(end_time - start_time);
     std::cout << "CalculateEnergies took " << duration.count() << " seconds" << std::endl;
 }
 
@@ -210,7 +231,7 @@ void Optimization<NDIM>::calculate_lagrange_multiplier() {
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto duration = std::chrono::duration<double>(end_time - start_time);
     std::cout << "CalculateLagrangeMultiplier took " << duration.count() << " seconds" << std::endl;
 }
 
@@ -281,13 +302,9 @@ double Optimization<NDIM>::calculate_lagrange_multiplier_element_core_core(int z
     // lagrange multiplier for the case that z and c are both core orbital indizes, needed for core orbital refinement
     double element = 2 * core_core_integrals_one_body_ab(z, c);
     
-    // 4<za|ca> - 2<za|ac>
-    for (int a = 0; a < core_dim; a++) {
-        element += 4 * core_as_integrals_two_body_baca(a, z, c); // (a,b=z,c) -> <za|ca>
-    }
-    for (int a = 0; a < core_dim; a++) {
-        element -= 2 * core_as_integrals_two_body_baac(a, z, c); // (a,b=z,c) -> <za|ac>
-    }
+    // 4 sum_a <za|ca> - 2 sum_a <za|ac>
+    element += 4 * sum_a_core_as_integrals_two_body_baca(z, c);
+    element -= 2 * sum_a_core_as_integrals_two_body_baac(z, c);
 
     //eta_kl(2<zk|cl> - <zk|lc>)
     element += 2 * refinement_utils::contract<2>(
@@ -351,9 +368,6 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
 
     // Calculate initial energy
     calculate_all_integrals();
-    if(core_dim > 0){
-        core_total_energy = Integrator.compute_core_energy(frozen_occ_orbs, orbs_aa, coul_orbs_aa, Vnuc, 0);}
-    else { core_total_energy = 0;}
     calculate_energies();
 
     std::vector<int> as_orbital_indices_for_update;
@@ -391,7 +405,7 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
             get_all_active_orbital_updates(as_orbital_indices_for_update);
 
         auto end_orb_update_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_orb_update_time - start_orb_update_time);
+        auto duration = std::chrono::duration<double>(end_orb_update_time - start_orb_update_time);
         std::cout << "Get as orbital updates took " << duration.count() << " seconds" << std::endl;
 
         //************************************
@@ -406,7 +420,7 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
                 frozen_occ_orbs[c] = frozen_occ_orbs[c] - AllCoreOrbitalUpdates[c];
             }
             auto end_core_orb_update_time = std::chrono::high_resolution_clock::now();
-            auto core_duration = std::chrono::duration_cast<std::chrono::seconds>(end_core_orb_update_time - start_core_orb_update_time);
+            auto core_duration = std::chrono::duration<double>(end_core_orb_update_time - start_core_orb_update_time);
             std::cout << "Get core orbital updates took " << core_duration.count() << " seconds" << std::endl;
         }
 
@@ -480,7 +494,6 @@ bool Optimization<NDIM>::optimize_orbitals(double optimization_thresh, double NO
         std::cout << "Update Integrals" << std::endl;
         // Update integrals for new orbitals
         calculate_all_integrals(refine_core); 
-        if(core_dim>0 && refine_core) {core_total_energy = Integrator.compute_core_energy(frozen_occ_orbs, orbs_aa, coul_orbs_aa, Vnuc, 0);}
         // Calculate new energy
         calculate_energies();
     }
@@ -525,58 +538,46 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     for (int k = 0; k < as_dim; k++) {
         std::vector<Function<double, NDIM>> lnk = coul_orbs_mn * active_orbs[k];
         lnk = truncate(lnk, num_params.truncation_tol);
+        Tensor<double> coefficients(lnk.size(), orbital_indices_for_update.size());
         for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
             int i = orbital_indices_for_update[idx];
-            std::vector<Function<double, NDIM>> lnk_copy = copy(*(madness_process.world), lnk, false);
+            std::size_t pair_index = 0;
             for (int l = 0; l < as_dim; l++) {
-                for (int n = 0; n < as_dim; n++) {
-                    lnk_copy[l * as_dim + n] *= as_two_rdm(k, l, i, n) * rdm_ii_inv[idx];
+                for (int n = 0; n <= l; n++, pair_index++) {
+                    double coefficient = as_two_rdm(k, l, i, n);
+                    if (l != n) {
+                        coefficient += as_two_rdm(k, n, i, l);
+                    }
+                    coefficients(pair_index, idx) = coefficient * rdm_ii_inv[idx];
                 }
             }
-            AllOrbitalUpdates[idx] += sum(*(madness_process.world), lnk_copy);
         }
+        std::vector<Function<double, NDIM>> contributions = transform(*(madness_process.world), lnk, coefficients);
+        AllOrbitalUpdates += contributions;
     }
     auto t4 = std::chrono::high_resolution_clock::now();
 
     // Core - AS interaction
-    auto coul_op_parallel =
-        std::shared_ptr<SeparatedConvolution<double, NDIM>>(CoulombOperatorNDPtr<NDIM>(*(madness_process.world), num_params.coulomb_lo, num_params.coulomb_eps));
-    
     if(core_dim>0)
     {
+        Tensor<double> one_rdm_coefficients(as_dim, orbital_indices_for_update.size());
+        for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
+            const int i = orbital_indices_for_update[idx];
+            for (int k = 0; k < as_dim; k++) {
+                one_rdm_coefficients(k, idx) = as_one_rdm(k, i) * rdm_ii_inv[idx];
+            }
+        }
+
         // Part 1
-        for (int k = 0; k < as_dim; k++) {
-            std::vector<Function<double, NDIM>> aak = coul_orbs_aa * active_orbs[k];
-            aak = truncate(aak, num_params.truncation_tol);
-            for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
-                int i = orbital_indices_for_update[idx];
-                std::vector<Function<double, NDIM>> aak_copy = copy(*(madness_process.world), aak, false);
-                for (int a = 0; a < core_dim; a++) {
-                    aak_copy[a] *= as_one_rdm(k, i) * rdm_ii_inv[idx];
-                }
-                AllOrbitalUpdates[idx] += 2 * sum(*(madness_process.world), aak_copy);
-            }
-        }
+        Function<double, NDIM> sum_a_aa = sum(*(madness_process.world), coul_orbs_aa);
+        std::vector<Function<double, NDIM>> sum_a_aak = sum_a_aa * active_orbs;
+        sum_a_aak = truncate(sum_a_aak, num_params.truncation_tol);
+        std::vector<Function<double, NDIM>> aak_contributions = transform(*(madness_process.world), sum_a_aak, one_rdm_coefficients);
+        AllOrbitalUpdates += 2.0 * aak_contributions;
         
-        //Part 2
-        for (int a = 0; a < core_dim; a++) {
-            std::vector<Function<double, NDIM>> orbs_ak = frozen_occ_orbs[a] * active_orbs;
-            orbs_ak = truncate(orbs_ak, num_params.truncation_tol);
-            std::vector<Function<double, NDIM>> coul_orbs_ak = apply(*(madness_process.world), *coul_op_parallel, orbs_ak);
-            coul_orbs_ak = truncate(coul_orbs_ak, num_params.truncation_tol);
-
-            std::vector<Function<double, NDIM>> aka = coul_orbs_ak * frozen_occ_orbs[a];
-            aka = truncate(aka, num_params.truncation_tol);
-
-            for (int idx = 0; idx < orbital_indices_for_update.size(); idx++) {
-                int i = orbital_indices_for_update[idx];
-                std::vector<Function<double, NDIM>> aka_copy = copy(*(madness_process.world), aka, false);
-                for (int k = 0; k < as_dim; k++) {
-                    aka_copy[k] *= as_one_rdm(k, i) * rdm_ii_inv[idx];
-                }
-                AllOrbitalUpdates[idx] -= sum(*(madness_process.world), aka_copy);
-            }
-        }
+        // Part 2
+        std::vector<Function<double, NDIM>> exchange_contributions = transform(*(madness_process.world), sum_a_aka, one_rdm_coefficients);
+        AllOrbitalUpdates += -1.0 * exchange_contributions;
     }
     auto t5 = std::chrono::high_resolution_clock::now();
 
@@ -603,17 +604,17 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_active_orbital_u
     auto end = std::chrono::high_resolution_clock::now();
 
     std::cout << "Refinement timings:" << std::endl;
-    std::cout << "rdm_ii_inv calculation: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+    std::cout << "rdm_ii_inv calculation: " << std::chrono::duration<double>(t2 - t1).count()
               << " seconds" << std::endl;
-    std::cout << "one electron part: " << std::chrono::duration_cast<std::chrono::seconds>(t3 - t2).count()
+    std::cout << "one electron part: " << std::chrono::duration<double>(t3 - t2).count()
               << " seconds" << std::endl;
-    std::cout << "AS two electron part: " << std::chrono::duration_cast<std::chrono::seconds>(t4 - t3).count()
+    std::cout << "AS two electron part: " << std::chrono::duration<double>(t4 - t3).count()
               << " seconds" << std::endl;
-    std::cout << "Core-AS part: " << std::chrono::duration_cast<std::chrono::seconds>(t5 - t4).count()
+    std::cout << "Core-AS part: " << std::chrono::duration<double>(t5 - t4).count()
               << " seconds" << std::endl;          
-    std::cout << "BSH part: " << std::chrono::duration_cast<std::chrono::seconds>(t6 - t5).count() 
+    std::cout << "BSH part: " << std::chrono::duration<double>(t6 - t5).count()
               << " seconds" << std::endl;   
-    std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
+    std::cout << "Full function: " << std::chrono::duration<double>(end - start).count()
               << " seconds" << std::endl;
     return AllOrbitalUpdates;
 }
@@ -654,33 +655,30 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_core_orbital_upd
         aac = truncate(aac, num_params.truncation_tol);
         AllOrbitalUpdates[c] += 2 * sum(*(madness_process.world), aac);
 
-        // - \sum_a g_a^c \phi_a
-        std::vector<Function<double, NDIM>> ac = frozen_occ_orbs * frozen_occ_orbs[c];
-        std::vector<Function<double, NDIM>> coul_ac = apply(*(madness_process.world), *coul_op_parallel, ac);
-        coul_ac = truncate(coul_ac, num_params.truncation_tol);
-        //This loop could be executed in parallel to get aca
-        for (int a = 0; a < core_dim; a++) {
-            coul_ac[a] = coul_ac[a] * frozen_occ_orbs[a];
-        }
-        std::vector<Function<double, NDIM>> aca = truncate(coul_ac, num_params.truncation_tol);
-        AllOrbitalUpdates[c] -= sum(*(madness_process.world), aca);
     }
+    MADNESS_ASSERT(sum_a_aca.size() == core_dim);
+    AllOrbitalUpdates += -1.0 * sum_a_aca;
     
     
     auto t3 = std::chrono::high_resolution_clock::now();
     // 1/2 * \sum_kl \eta_k^l 2g_k^l \phi_c - 1/2 * \sum_kl \eta_k^l g_k^c \phi_l
-    for (int c = 0; c < core_dim; c++) {
-        // 1/2 * \sum_kl \eta_k^l 2g_k^l \phi_c
-        std::vector<Function<double, NDIM>> klc = coul_orbs_mn * frozen_occ_orbs[c];
-        klc = truncate(klc, num_params.truncation_tol);
-        for (int k = 0; k < as_dim; k++) {
-            for (int l = 0; l < as_dim; l++) {
-                klc[k * as_dim + l] *= as_one_rdm(k, l);
+    
+    //Part 1: (\sum_kl \eta_k^l g_k^l) * \phi_c
+    Tensor<double> coefficients(coul_orbs_mn.size(), 1);
+    std::size_t pair_index = 0;
+    for (int k = 0; k < as_dim; k++) {
+        for (int l = 0; l <= k; l++, pair_index++) {
+            double coefficient = as_one_rdm(k, l);
+            if (k != l) {
+                coefficient += as_one_rdm(l, k);
             }
+            coefficients(pair_index, 0) = coefficient;
         }
-        AllOrbitalUpdates[c] += sum(*(madness_process.world), klc);
-        
-
+    }
+    Function<double, NDIM> sum_kl_eta_g = transform(*(madness_process.world), coul_orbs_mn, coefficients)[0];
+    AllOrbitalUpdates += sum_kl_eta_g * frozen_occ_orbs;
+    
+    for (int c = 0; c < core_dim; c++) {
         // - 1/2 * \sum_kl \eta_k^l g_k^c \phi_l
         std::vector<Function<double, NDIM>> kc = active_orbs * frozen_occ_orbs[c];
         std::vector<Function<double, NDIM>> coul_kc = apply(*(madness_process.world), *coul_op_parallel, kc);
@@ -711,7 +709,7 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_core_orbital_upd
         
         if (err > highest_core_error) {
             highest_core_error = err;
-        }
+    }
         AllOrbitalUpdates[c] = r;
     }
 
@@ -719,15 +717,15 @@ std::vector<Function<double, NDIM>> Optimization<NDIM>::get_all_core_orbital_upd
     auto end = std::chrono::high_resolution_clock::now();
 
     std::cout << "Core refinement timings:" << std::endl;
-    std::cout << "one electron part: " << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+    std::cout << "one electron part: " << std::chrono::duration<double>(t2 - t1).count()
               << " seconds" << std::endl;
-    std::cout << "2e part 1: " << std::chrono::duration_cast<std::chrono::seconds>(t3 - t2).count()
+    std::cout << "2e part 1: " << std::chrono::duration<double>(t3 - t2).count()
               << " seconds" << std::endl;
-    std::cout << "2e part 2: " << std::chrono::duration_cast<std::chrono::seconds>(t4 - t3).count()
+    std::cout << "2e part 2: " << std::chrono::duration<double>(t4 - t3).count()
               << " seconds" << std::endl;   
-    std::cout << "BSH part: " << std::chrono::duration_cast<std::chrono::seconds>(t5 - t4).count() 
+    std::cout << "BSH part: " << std::chrono::duration<double>(t5 - t4).count()
               << " seconds" << std::endl;   
-    std::cout << "Full function: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
+    std::cout << "Full function: " << std::chrono::duration<double>(end - start).count()
               << " seconds" << std::endl;
 
     return AllOrbitalUpdates;
@@ -745,7 +743,15 @@ void Optimization<NDIM>::rotate_orbitals_back() {
     refinement_utils::TransformMatrix(&as_one_rdm, RotationMatrixBack);
     refinement_utils::TransformTensor(as_two_rdm, RotationMatrixBack);
     active_orbs = transform(*(madness_process.world), active_orbs, RotationMatrixBack);
-    calculate_all_integrals();
+    if (as_integrals_one_body.size() != 0) {
+        refinement_utils::TransformMatrix(&as_integrals_one_body, RotationMatrixBack);
+    }
+    if (effective_integrals_one_body.size() != 0) {
+        refinement_utils::TransformMatrix(&effective_integrals_one_body, RotationMatrixBack);
+    }
+    if (as_integrals_two_body.size() != 0) {
+        refinement_utils::TransformTensor(as_integrals_two_body, RotationMatrixBack);
+    }
 }
 
 template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<SavedFct<NDIM>>> Optimization<NDIM>::get_orbitals() {
@@ -764,32 +770,32 @@ template <std::size_t NDIM> std::tuple<std::vector<SavedFct<NDIM>>, std::vector<
 
 template <std::size_t NDIM>
 nb::tuple Optimization<NDIM>::get_effective_hamiltonian() {
-    
-    Integrator.update_as_integral_combinations(active_orbs, orbs_kl, coul_orbs_mn);
-
-    // Active space integrals
-    Tensor<double> one_e_integrals = Integrator.compute_potential_integrals(active_orbs, Vnuc);
-    one_e_integrals += Integrator.compute_kinetic_integrals(active_orbs);
-
-    Tensor<double> two_e_integrals = Integrator.compute_two_body_integrals(active_orbs, orbs_kl, coul_orbs_mn);
-
-    // Core interactions
-    double effective_hamiltonian_core_energy = nuclear_repulsion_energy;
-    if(core_dim > 0) 
-    {
-        Integrator.update_core_integral_combinations(frozen_occ_orbs, orbs_aa, coul_orbs_aa);
-
-        // Core energy
-        effective_hamiltonian_core_energy = Integrator.compute_core_energy(frozen_occ_orbs, orbs_aa, coul_orbs_aa, Vnuc, nuclear_repulsion_energy);
-
-        // Core-AS interaction
-        auto [core_as_integrals_two_body_akal, core_as_integrals_two_body_akla] = Integrator.compute_core_as_2e_integrals_energy(frozen_occ_orbs, active_orbs, orbs_kl, coul_orbs_mn, orbs_aa);
-        for (int a = 0; a < core_dim; a++) {
-            one_e_integrals += 2*core_as_integrals_two_body_akal(a, _, _) - core_as_integrals_two_body_akla(a, _, _);
-        }
+    if (active_orbs.empty()) {
+        throw std::runtime_error(
+            "Cannot compute the effective Hamiltonian without active orbitals.");
     }
 
-    return nb::make_tuple(effective_hamiltonian_core_energy, Numpy2D(one_e_integrals.ptr(),{static_cast<unsigned long>(as_dim), static_cast<unsigned long>(as_dim)}), Numpy4D(two_e_integrals.ptr(), {static_cast<unsigned long>(as_dim), static_cast<unsigned long>(as_dim), static_cast<unsigned long>(as_dim), static_cast<unsigned long>(as_dim)}));
+    if (effective_integrals_one_body.size() == 0 || as_integrals_two_body.size() == 0) {
+        calculate_all_integrals();
+    }
+
+    Tensor<double> one_e_integrals = madness::copy(effective_integrals_one_body);
+    Tensor<double> two_e_integrals = madness::copy(as_integrals_two_body);
+
+    Tensor<double>* one_e_pointer = new Tensor<double>(std::move(one_e_integrals));
+    Tensor<double>* two_e_pointer = new Tensor<double>(std::move(two_e_integrals));
+    nb::capsule one_e_capsule(one_e_pointer, [](void *p) noexcept {
+        delete reinterpret_cast<Tensor<double>*>(p);
+    });
+    nb::capsule two_e_capsule(two_e_pointer, [](void *p) noexcept {
+        delete reinterpret_cast<Tensor<double>*>(p);
+    });
+
+    const unsigned long dim = static_cast<unsigned long>(as_dim);
+    return nb::make_tuple(
+        core_total_energy + nuclear_repulsion_energy,
+        Numpy2D(one_e_pointer->ptr(), {dim, dim}, one_e_capsule),
+        Numpy4D(two_e_pointer->ptr(), {dim, dim, dim, dim}, two_e_capsule));
 }
 
 template <std::size_t NDIM>
