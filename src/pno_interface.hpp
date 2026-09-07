@@ -86,7 +86,7 @@ class PNOInterface {
     SavedFct<3> get_nuclear_potential(); 
     void run(const size_t basis_size);
     void compute_scf();
-    void compute_cis(const size_t n_excitations);
+    void compute_cis(const size_t n_excitations, const long freeze = -1);
     void compute_cispd(const size_t basis_size);
 
     double get_nuclear_repulsion() const { return nuclear_repulsion; };

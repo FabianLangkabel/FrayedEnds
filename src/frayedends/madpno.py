@@ -143,11 +143,11 @@ class MadPNO:
         self.cleanup(*args, **kwargs)
 
     @redirect_output("cis.log")
-    def compute_cis(self, n_excitation, *args, **kwargs):
+    def compute_cis(self, n_excitation, freeze=-1, *args, **kwargs):
         # Compute cis x functions 
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
-        self.impl.compute_cis(n_excitation)
+        self.impl.compute_cis(n_excitation, freeze)
         self._cis_per_root = self.impl.get_cis_x_per_root() # cis_per_root is a vector<vector<real_function_3d>>
 
         cis_flat = [] 
