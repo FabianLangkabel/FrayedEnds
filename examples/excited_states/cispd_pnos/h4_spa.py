@@ -154,15 +154,33 @@ for i in range(len(ex_second_edge)):
 
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
+ti = fe.TequilaInterface(mol=mol)
+E = ti.expectation_value_orthogonality_constraint(
+    H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
+    U=U_ex + rotation,
+    circuit_list=circuit_list, 
+    constant_list=constants
+)
+print("done with orthogonality constraint")
+
+minimize_start = time.perf_counter()
+result = tq.minimize(E, silent=True)
+circuit_ex = tq.simulate(U_ex + rotation, result.variables)
+minimize_end = time.perf_counter()
+print(f"minimize & simulate time: {minimize_end - minimize_start}")
+
+print(f"FCI Singlet excited state energy: {fci_energy_1}")
+print(f"SPA Singlet excited state energy: {result.energy}")
+print("SPA/FCI error without rotation: {:+2.5f}".format(result.energy-fci_energy_1))
+print(result.variables)
+print(f"Excited State Circuit: {circuit_ex}")
+
 UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('s') + 0.5) * pi)
 UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('t') + 0.5) * pi)
-
-UR += mol.UR(ex_first_edge[0], ex_second_edge[0], (tq.Variable('u') + 0.5) * pi)
 
 UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable('w') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable('x') + 0.5) * pi)
 
-UR += mol.UR(ex_first_edge[1], ex_second_edge[1], (tq.Variable('x') + 0.5) * pi)
 
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
