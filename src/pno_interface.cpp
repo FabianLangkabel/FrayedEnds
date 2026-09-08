@@ -272,7 +272,7 @@ void PNOInterface::run(const size_t basis_size) {
     this->mp2_computed = true; // flag if mp2 pnos were computed and stored successfully
 }
 
-void PNOInterface::compute_cis(const size_t n_excitations, const long freeze) {
+void PNOInterface::compute_cis(const size_t n_excitations) {
     if (!nemo) {
         MADNESS_EXCEPTION("Error: compute_cis() called before run(). Nemo not initialized. Run compute_scf() or run() first.", 1);
     }
@@ -286,7 +286,7 @@ void PNOInterface::compute_cis(const size_t n_excitations, const long freeze) {
     }
 
     // put cis computation into parser so TDHF can read it 
-    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; maxiter 50" + "; restart no_restart" + "; freeze " + std::to_string(freeze));
+    parser.set_keyval("tdhf", "nexcitations " + std::to_string(n_excitations) + "; maxiter 50" + "; restart no_restart");
 
     if (madness_process.world->rank() == 0) {
         std::cout << "--------------------------------------------------\n";
