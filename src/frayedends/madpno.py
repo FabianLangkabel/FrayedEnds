@@ -195,22 +195,23 @@ class MadPNO:
 
         if dominant_contribution and self._cis_orbitals is not None:
             active_cis_info = get_function_info(self._cis_orbitals)
-            active_excitations = []
-
-            active_cis_info = get_function_info(self._cis_orbitals)
-            active_excitations = []
+            active_pairs = []
             for x in active_cis_info:
                 if x["type"].startswith("CIS_X_EX"):
                     ex_id = int(x["type"].split("_")[2][2:])
-                    if ex_id not in active_excitations:
-                        active_excitations.append(ex_id)
+                    orb_id = int(x["pair1"])
+                    pair = (ex_id, orb_id)
+                    if pair not in active_pairs:
+                        active_pairs.append(pair)
 
             cispd_info = get_function_info(raw_cispd)
             filtered_cispd = []
             for orb, x in zip(raw_cispd, cispd_info):
                 if x["type"].startswith("CISPD_EX"):
                     ex_id = int(x["type"].split("_")[-1][2:])
-                    if ex_id in active_excitations:
+                    p1, p2 = int(x["pair1"]), int(x["pair2"])
+                    
+                    if (ex_id, p1) in active_pairs or (ex_id, p2) in active_pairs:
                         filtered_cispd.append(orb)
             self._cispd_orbitals = filtered_cispd
             print(f"CISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
@@ -221,7 +222,7 @@ class MadPNO:
         for info in get_function_info(self._cispd_orbitals):
             print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']}")
         print()
-        
+
         self.cleanup(*args, **kwargs)
         return self._cispd_orbitals
 
