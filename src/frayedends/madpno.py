@@ -182,11 +182,35 @@ class MadPNO:
         return self._cis_orbitals
     
     @redirect_output("cispd.log")
-    def compute_cispd(self, n_orbitals, *args, **kwargs):
+    def compute_cispd(self, n_orbitals, dominant_contribution=False, *args, **kwargs):
         if self._cis_per_root is None:
             raise Exception("compute_cis() must be called before compute_cispd()")
         self.impl.compute_cispd(n_orbitals)
-        self._cispd_orbitals = self.impl.get_cispd_orbitals()
+        raw_cispd = self.impl.get_cispd_orbitals()
+
+        if dominant_contribution and self._cis_orbitals is not None:
+            active_cis_info = get_function_info(self._cis_orbitals)
+            active_excitations = []
+
+            active_cis_info = get_function_info(self._cis_orbitals)
+            active_excitations = []
+            for x in active_cis_info:
+                if x["type"].startswith("CIS_X_EX"):
+                    ex_id = int(x["type"].split("_")[2][2:])
+                    if ex_id not in active_excitations:
+                        active_excitations.append(ex_id)
+
+            cispd_info = get_function_info(raw_cispd)
+            filtered_cispd = []
+            for orb, x in zip(raw_cispd, cispd_info):
+                if x["type"].startswith("CISPD_EX"):
+                    ex_id = int(x["type"].split("_")[-1][2:])
+                    if ex_id in active_excitations:
+                        filtered_cispd.append(orb)
+            self._cispd_orbitals = filtered_cispd
+            print(f"CISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
+        else:
+            self._cispd_orbitals = raw_cispd
         self.cleanup(*args, **kwargs)
         return self._cispd_orbitals
 
