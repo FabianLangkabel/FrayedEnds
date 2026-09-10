@@ -142,13 +142,36 @@ class MadPNO:
         self._hf_orbitals = self.impl.get_hf_orbitals()
         self.cleanup(*args, **kwargs)
 
+    def _filter_best_contributions(self, cis_per_root, rtol=1e-2, atol=1e-8):
+        # Filter CIS functions per excitation, keeping only those with largest contribution
+        filtered = []
+        for root in cis_per_root:
+            if not root:
+                filtered.append([])
+                continue
+            info = get_function_info(root)
+            norms = [float(x.get("norm2", 0.0)) for x in info]
+            max_norm2 = max(norms)
+            best = [fct for fct, n in zip(root, norms) if numpy.isclose(n, max_norm2, rtol=rtol, atol=atol)]
+            filtered.append(best)
+        return filtered
+
     @redirect_output("cis.log")
-    def compute_cis(self, n_excitation, *args, **kwargs):
+    def compute_cis(self, n_excitation, dominant_contribution=False, *args, **kwargs):
         # Compute cis x functions 
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
         self.impl.compute_cis(n_excitation)
         self._cis_per_root = self.impl.get_cis_x_per_root() # cis_per_root is a vector<vector<real_function_3d>>
+
+        total_before = sum(len(root) for root in self._cis_per_root)
+
+        if dominant_contribution:
+            self._cis_per_root = self._filter_best_contributions(self._cis_per_root)
+            total_after = sum(len(root) for root in self._cis_per_root)
+            print(f"\n \n Dominant CIS functions kept: {total_after}/{total_before}")
+            for ex, root in enumerate(self._cis_per_root):
+                print(f"  Excitation {ex}: {len(root)} dominant function(s)\n ")
 
         cis_flat = [] 
         for root in self._cis_per_root:
@@ -238,27 +261,17 @@ class MadPNO:
             def map_ex(k_ex):
                 return ex_indices[k_ex] if ex_indices is not None else k_ex + offset
             
-            cis_per_k = {}
+            ex_per_orb = {}
             for k_ex, x in enumerate(ex_info):
                 ex, type = parse_label(x["type"])
                 if type != "cis":
                     continue
                 k_orb = int(x["pair1"]) 
-                norm2 = float(x.get("norm2", 0.0))
-                cis_per_k.setdefault(k_orb, []).append((ex, norm2, k_ex))
-                print(f'cis_per_k: {cis_per_k}')
-            
-            best_exs_per_k = {} 
-            for k_orb, entries in cis_per_k.items():
-                max_norm2 = max(e[1] for e in entries)
-                best_entries = [e for e in entries if numpy.isclose(e[1], max_norm2)]
-                best_exs_per_k[k_orb] = {e[0] for e in best_entries}
-                print(f'best_entries: {best_entries}')
+                ex_per_orb.setdefault(k_orb, []).append(ex)
 
                 if k_orb in diagonal:
-                    for ex, norm2, k_ex in best_entries:
-                        diagonal[k_orb].append(map_ex(k_ex))
-                print(f'best_exs_per_k: {best_exs_per_k}')
+                    diagonal[k_orb].append(map_ex(k_ex))
+                print(f'excitations per orbital: {ex_per_orb}')
 
             for k_ex, x in enumerate(ex_info):
                 ex, type = parse_label(x["type"])
@@ -267,13 +280,13 @@ class MadPNO:
                 xi, yi = int(x["pair1"]), int(x["pair2"])
 
                 if xi == yi:
-                    best_exs = best_exs_per_k.get(xi)
-                    if best_exs is not None and ex in best_exs:
+                    orb_excitations = ex_per_orb.get(xi)
+                    if orb_excitations is not None and ex in orb_excitations:
                         diagonal[xi].append(map_ex(k_ex))
                 else:
-                    best_exs_x = best_exs_per_k.get(xi, set())
-                    best_exs_y = best_exs_per_k.get(yi, set())
-                    if ex in best_exs_x or ex in best_exs_y:
+                    orb_excitations_x = ex_per_orb.get(xi, [])
+                    orb_excitations_y = ex_per_orb.get(yi, [])
+                    if ex in orb_excitations_x or ex in orb_excitations_y:
                         key = (min(xi, yi), max(xi, yi))
                         if key in off_diagonal:
                             off_diagonal[key].append(map_ex(k_ex))
