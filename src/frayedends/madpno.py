@@ -214,7 +214,7 @@ class MadPNO:
                     if (ex_id, p1) in active_pairs or (ex_id, p2) in active_pairs:
                         filtered_cispd.append(orb)
             self._cispd_orbitals = filtered_cispd
-            print(f"CISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
+            print(f"\nCISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
         else:
             self._cispd_orbitals = raw_cispd
 
