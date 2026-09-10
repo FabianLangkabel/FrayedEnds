@@ -169,7 +169,7 @@ class MadPNO:
         if dominant_contribution:
             self._cis_per_root = self._filter_best_contributions(self._cis_per_root)
             total_after = sum(len(root) for root in self._cis_per_root)
-            print(f"\n \n Dominant CIS functions kept: {total_after}/{total_before}")
+            print(f"\n \nDominant CIS functions kept: {total_after}/{total_before}")
             for ex, root in enumerate(self._cis_per_root):
                 print(f"  Excitation {ex}: {len(root)} dominant function(s)\n ")
 
