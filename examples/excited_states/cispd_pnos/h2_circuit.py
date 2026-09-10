@@ -63,7 +63,7 @@ V = integrals.compute_potential_integrals(orbitals_sym, V=madpno.get_nuclear_pot
 G = integrals.compute_two_body_integrals(orbitals_sym)
 c = madpno.get_nuclear_repulsion()
 
-mol = tq.Molecule(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c)
+mol = tq.Molecule(geometry=geom, one_body_integrals=T+V, two_body_integrals=G, nuclear_repulsion=c, transformation="ReorderedJordanWigner")
 H_gs = mol.make_hamiltonian()
 
 print("--- FCI Ground State with H_gs----")
@@ -77,12 +77,12 @@ for i in range(20):#range(len(eivect)):
 print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])
 
-U += mol.UR(0, 1, (tq.Variable('a') + 0.5) * pi)
+# U += mol.UR(0, 1, (tq.Variable('a') + 0.5) * pi)
 U += mol.UR(1, 2, (tq.Variable("b") + 0.5) * pi)
 U += mol.UR(2, 3, (tq.Variable("c") + 0.5) * pi)
-U += mol.UR(0, 3, (tq.Variable("d") + 0.5) * pi)
+# U += mol.UR(0, 3, (tq.Variable("d") + 0.5) * pi)
 U += mol.UR(1, 3, (tq.Variable("e") + 0.5) * pi)
-U += mol.UR(0, 2, (tq.Variable("f") + 0.5) * pi)
+# U += mol.UR(0, 2, (tq.Variable("f") + 0.5) * pi)
 
 E = tq.ExpectationValue(U=U, H=H_gs)
 result_gs = tq.minimize(E, silent=True)
@@ -114,10 +114,10 @@ U_ex = mol.make_ansatz(name="spa", edges=[(0,1,2,3)])
 ti = fe.TequilaInterface(mol=mol)
 
 UR = mol.UR(0, 1, (tq.Variable('u') + 0.5) * pi)
-UR += mol.UR(1, 2, (tq.Variable('v') + 0.5) * pi)
-UR += mol.UR(2, 3, (tq.Variable('w') + 0.5) * pi)
-UR += mol.UR(0, 3, (tq.Variable('x') + 0.5) * pi)
-UR += mol.UR(1, 3, (tq.Variable("y") + 0.5) * pi)
+# UR += mol.UR(1, 2, (tq.Variable('v') + 0.5) * pi)
+# UR += mol.UR(2, 3, (tq.Variable('w') + 0.5) * pi)
+# UR += mol.UR(0, 3, (tq.Variable('x') + 0.5) * pi)
+# UR += mol.UR(1, 3, (tq.Variable("y") + 0.5) * pi)
 UR += mol.UR(0, 2, (tq.Variable("z") + 0.5) * pi)
 
 
@@ -138,20 +138,7 @@ print(f"Excited State Circuit: {circuit_ex}")
 
 ex_circuit = (U_ex + UR + rotation).map_variables(result_ex.variables)
 
-tq.circuit.export_to(gs_circuit, filename="tq_gs_spa_ur_rotation.pdf")
-visual_circuit = sun.graphical.GraphicalCircuit.from_circuit(U=gs_circuit, n_qubits_is_double=True)
-visual_circuit.export_to("gs_spa_ur_rotation.pdf")
-visual_circuit.export_qpic("gs_spa_ur_rotation") 
-tq.circuit.export_to(ex_circuit, filename="tq_ex_spa_ur_rotation.pdf")
-visual_circuit = sun.graphical.GraphicalCircuit.from_circuit(U=ex_circuit, n_qubits_is_double=True)
-visual_circuit.export_to("ex_spa_ur_rotation.pdf")
-visual_circuit.export_qpic("ex_spa_ur") 
-
-combined_circuit = gs_circuit + ex_circuit
-
-tq.circuit.export_to(combined_circuit, filename="tq_gs_and_ex_spa_ur_rotation.pdf")
-visual_circuit = sun.graphical.GraphicalCircuit.from_circuit(U=combined_circuit, n_qubits_is_double=True)
-visual_circuit.export_to("gs_and_ex_spa_ur_rotation.pdf")
-visual_circuit.export_qpic("gs_and_ex_spa_ur_rotation") 
+tq.circuit.export_to(gs_circuit, filename="tq_gs_spa_ur_rotation_opt.pdf")
+tq.circuit.export_to(ex_circuit, filename="tq_ex_spa_ur_rotation_opt.pdf")
 
 fe.cleanup(globals())

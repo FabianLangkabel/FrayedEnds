@@ -1,4 +1,5 @@
 import numpy
+import sunrise as sun
 
 HAS_TEQUILA = True
 try:
@@ -129,3 +130,22 @@ class TequilaInterface:
             E_k = tq.ExpectationValue(H=P_k, U=U_k)
             U_list.append(constant_list[i]*E_k)
         return E + sum(U_list)
+
+    def fastSPA_expectation_value_orthogonality_constraint(self, H, U, circuit_list, constant_list):
+            E = sun.SPAFP.decompose(H=H, U=U) # Using SPA from Sunrise
+            if (len(circuit_list) != len(constant_list)):
+                raise ValueError(f"Circuit_list and constant_list have different lengths. len(circuit_list): '{len(circuit_list)}', len(constant_list): '{len(constant_list)}'")
+            list_length = len(circuit_list)
+            for l in range(list_length):
+                if (circuit_list[l].extract_variables() == None):
+                    raise ValueError(f"Circuit_list contains unparametrized elements")
+            U_list = []
+            for i in range(0, list_length):
+                U_k = U + circuit_list[i].dagger()
+                P_k = 1
+                for k in U_k.qubits:
+                    P_k*= tq.paulis.Qp(k)
+                E_k = tq.ExpectationValue(H=P_k, U=U_k)
+                U_list.append(constant_list[i]*E_k)
+            return E + sum(U_list)
+    

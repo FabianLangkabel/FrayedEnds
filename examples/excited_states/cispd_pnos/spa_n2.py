@@ -20,7 +20,7 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
 pno_start = time.perf_counter()
-madpno = fe.MadPNO(world, geom, n_orbitals=14, dft={"econv": 1.0e-6, "dconv": 1.0e-6})
+madpno = fe.MadPNO(world, geom, n_orbitals=12, dft={"econv": 1.0e-5, "dconv": 1.0e-5})
 pno_end = time.perf_counter()
 pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
@@ -41,7 +41,7 @@ cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
-cispd_orbs_original = madpno.compute_cispd(n_orbitals=14) # CISPD PNO
+cispd_orbs_original = madpno.compute_cispd(n_orbitals=10) # CISPD PNO
 for i in range(len(cispd_orbs_original)):
     # world.cube_plot(f"cispd_orbs{i}", cispd_orbs_original[i], molecule, zoom=4.0)
     cispd_orbs_original[i].save_to_file(f"cispd_orbs_original{i}.data")
@@ -82,7 +82,7 @@ h = H_eff[1]
 g = H_eff[2]
 print("c: ", c)
 mol = tq.Molecule(geometry=geom, one_body_integrals=h, two_body_integrals=g, nuclear_repulsion=c, n_electrons= n_electrons_active, units='a', frozen_core=False)
-H_gs = mol.make_hamiltonian()
+H_gs = mol.make_hardcore_boson_hamiltonian()
 
 print("len(active orbitals):", len(orbitals_sym_active))
 print("h shape:", h.shape) 
@@ -106,8 +106,9 @@ exit()
 print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=spa_edges) # SPA edges:  [(0, 2, 4, 7), (1, 3, 5, 6)]
 
-E = tq.ExpectationValue(U=U, H=H_gs)
-result = tq.minimize(E, silent=True)
+grouping = sun.SPAFP.make_decomposed_clusters(U)
+vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping,silent=True)
+result = vqe_solver(H=H, circuit=U, molecule=mol)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
@@ -138,8 +139,9 @@ U += mol.UR(second_edge[1], second_edge[3], (tq.Variable('g') + 0.5) * pi)
 U += mol.UR(second_edge[2], second_edge[3], (tq.Variable('h') + 0.5) * pi)
 
 
-E = tq.ExpectationValue(U=U, H=H_gs)
-result = tq.minimize(E, silent=True)
+grouping = sun.SPAFP.make_decomposed_clusters(U)
+vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping,silent=True)
+result = vqe_solver(H=H, circuit=U, molecule=mol)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
@@ -184,7 +186,7 @@ U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 # UR += mol.UR(2, 3, (tq.Variable('z') + 0.5) * pi)
 
 ti = fe.TequilaInterface(mol=mol)
-E = ti.expectation_value_orthogonality_constraint(
+E = ti.fastSPA_expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list, 
@@ -193,7 +195,7 @@ E = ti.expectation_value_orthogonality_constraint(
 print("done with orthogonality constraint")
 
 minimize_start = time.perf_counter()
-result = tq.minimize(E, silent=True)
+result = tq.minimize(E, silent=True, gradient="2-point",method_options={"finite_diff_rel_step":1.e-4})
 circuit_ex = tq.simulate(U_ex + rotation, result.variables)
 minimize_end = time.perf_counter()
 print(f"minimize & simulate time: {minimize_end - minimize_start}")
@@ -230,7 +232,7 @@ E = ti.expectation_value_orthogonality_constraint(
 print("done with orthogonality constraint")
 
 minimize_start = time.perf_counter()
-result = tq.minimize(E, silent=True)
+result = tq.minimize(E, silent=True, gradient="2-point",method_options={"finite_diff_rel_step":1.e-4})
 circuit_ex = tq.simulate(U_ex + UR + rotation, result.variables)
 minimize_end = time.perf_counter()
 print(f"minimize & simulate time: {minimize_end - minimize_start}")
