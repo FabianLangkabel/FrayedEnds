@@ -12,7 +12,7 @@ madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 
-distance = np.round(np.arange(1.5, 0.2, -0.03, dtype=np.float64), 3).tolist()
+distance = np.round(np.arange(3.0, 0.55, -0.05, dtype=np.float64), 3).tolist()
 
 with open("spa_h4.dat", "w") as f:
     header = "distance dist_time_s fci_energy_0 spa_energy_0 fci_energy_1 spa_energy_1"
@@ -20,12 +20,12 @@ with open("spa_h4.dat", "w") as f:
 
 for d in distance:
     dist_start = time.perf_counter()
-    reported_distance = 2*d
+    reported_distance = d
     geom = (
-                "H 0.0 0.0 " + (-d - 1.5).__str__() + "\n"
-                "H 0.0 0.0 " + (-d).__str__() + "\n"
-                "H 0.0 0.0 " + d.__str__() + "\n"
-                "H 0.0 0.0 " + (d + 1.5).__str__() + "\n"
+                "H 0.0 0.0 0.0\n"
+                "H 0.0 0.0 " + (d).__str__() + "\n"
+                "H 0.0 0.0 " + (2*d).__str__() + "\n"
+                "H 0.0 0.0 " + (3*d).__str__() + "\n"
     )
     molecule = fe.MolecularGeometry(geometry=geom, units='angstrom')
 
