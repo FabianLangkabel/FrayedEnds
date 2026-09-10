@@ -552,7 +552,7 @@ std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
 
         if (madness_process.world->rank() == 0) {
             for (const auto& orb : roots) {
-                std::cout << "CIS X for excitation " << ex << " info: " << orb.info << "\n";
+                std::cout << "CIS X for excitation " << ex << " info: " << orb.info << std::endl;
             }
         }
         result.push_back(roots);
@@ -573,7 +573,7 @@ std::vector<SavedFct<3>> PNOInterface::get_cispd_orbitals() const {
 
     if (madness_process.world->rank() == 0) {
         for (const auto& orb : cispd_orbs) {
-            std::cout << "CISPD info: " << orb.info << "\n";
+            std::cout << "CISPD info: " << orb.info << std::endl;
         }
     }
     return cispd_orbs;

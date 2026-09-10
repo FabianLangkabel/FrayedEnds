@@ -178,7 +178,11 @@ class MadPNO:
             cis_flat.extend(root)   # created flat cis_orbitals (vector<real_function_3d>)
         
         self._cis_orbitals = cis_flat
-        print(get_function_info(self._cis_orbitals))
+
+        print("\nSelected dominant CIS functions info:")
+        for info in get_function_info(self._cis_orbitals):
+            print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']} norm2={info['norm2']:.6e}")
+        print()
 
         return self._cis_orbitals
     
@@ -210,7 +214,10 @@ class MadPNO:
                         filtered_cispd.append(orb)
             self._cispd_orbitals = filtered_cispd
             print(f"CISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
-            print(get_function_info(self.cispd_orbitals))
+            print("\nSelected CISPD PNOs info:")
+            for info in get_function_info(self._cispd_orbitals):
+                print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']}")
+            print()
         else:
             self._cispd_orbitals = raw_cispd
         self.cleanup(*args, **kwargs)
