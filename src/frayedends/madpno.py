@@ -169,7 +169,7 @@ class MadPNO:
         if dominant_contribution:
             self._cis_per_root = self._filter_best_contributions(self._cis_per_root)
             total_after = sum(len(root) for root in self._cis_per_root)
-            print(f"\n \nDominant CIS functions kept: {total_after}/{total_before}")
+            print(f"\n \n Dominant CIS functions kept: {total_after}/{total_before}")
             for ex, root in enumerate(self._cis_per_root):
                 print(f"  Excitation {ex}: {len(root)} dominant function(s)\n ")
 
@@ -178,8 +178,8 @@ class MadPNO:
             cis_flat.extend(root)   # created flat cis_orbitals (vector<real_function_3d>)
         
         self._cis_orbitals = cis_flat
-
-        print("\nSelected dominant CIS functions info:")
+        
+        print("\nSelected CIS functions info:")
         for info in get_function_info(self._cis_orbitals):
             print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']} norm2={info['norm2']:.6e}")
         print()
@@ -214,12 +214,14 @@ class MadPNO:
                         filtered_cispd.append(orb)
             self._cispd_orbitals = filtered_cispd
             print(f"CISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
-            print("\nSelected CISPD PNOs info:")
-            for info in get_function_info(self._cispd_orbitals):
-                print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']}")
-            print()
         else:
             self._cispd_orbitals = raw_cispd
+
+        print("\nSelected CISPD PNOs info:")
+        for info in get_function_info(self._cispd_orbitals):
+            print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']}")
+        print()
+        
         self.cleanup(*args, **kwargs)
         return self._cispd_orbitals
 

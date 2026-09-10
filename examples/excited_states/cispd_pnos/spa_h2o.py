@@ -42,7 +42,7 @@ cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
-cispd_orbs_original = madpno.compute_cispd(n_orbitals=8) # CISPD PNO
+cispd_orbs_original = madpno.compute_cispd(n_orbitals=8, dominant_contribution=True) # CISPD PNO
 # for i in range(len(cispd_orbs_original)):
 #     # world.cube_plot(f"cispd_orbs{i}", cispd_orbs_original[i], molecule, zoom=4.0)
 #     cispd_orbs_original[i].save_to_file(f"cispd_orbs_original{i}.data")
