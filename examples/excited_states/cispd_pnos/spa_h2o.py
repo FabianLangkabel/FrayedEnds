@@ -5,6 +5,9 @@ from pyscf import fci
 from math import pi
 import time
 import sunrise as sun
+import sys
+
+sys.setrecursionlimit(1000000)
 
 n_electrons = 10
 box_size = 50.0
