@@ -126,6 +126,17 @@ U += mol.UR(edge4[1], edge4[2], (tq.Variable('d') + 0.5) * pi)
 U += mol.UR(edge4[2], edge4[3], (tq.Variable('e') + 0.5) * pi)
 U += mol.UR(edge4[1], edge4[3], (tq.Variable('f') + 0.5) * pi)
 
+E = sun.SPAFP.decompose(H=H_gs, U=U)
+result = tq.minimize(E, silent=True, gradient="2-point", method_options={"finite_diff_rel_step":1.e-4})
+
+circuit_gs = tq.simulate(U, result.variables)
+
+print(f"FCI Ground state: {e_ground_tot}")
+print(f"SPA + UR GS energy: {result.energy}")
+print("SPA/FCI error: {:+2.5f}".format(result.energy-e_ground_tot))
+print(result.variables)
+print(f"Ground State Circuit: {circuit_gs}")
+
 # ----------- cholesky orthonormalized orbital set ------------------
 orbitals_ch = gs_orbs_original[:5] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[5:] 
 orbitals_ch = integrals.orthonormalize(orbitals_ch, method="cholesky")
