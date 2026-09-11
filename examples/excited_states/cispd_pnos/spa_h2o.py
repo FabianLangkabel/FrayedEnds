@@ -4,6 +4,7 @@ import frayedends as fe
 from pyscf import fci
 from math import pi
 import time
+import sunrise as sun
 
 n_electrons = 10
 box_size = 50.0
@@ -66,7 +67,7 @@ h = H_eff[1]
 g = H_eff[2]
 print("c: ", c)
 mol = tq.Molecule(geometry=geom, one_body_integrals=h, two_body_integrals=g, nuclear_repulsion=c, n_electrons= n_electrons_active, units='a', frozen_core=False)
-H_gs = mol.make_hamiltonian()
+H_gs = mol.make_hardcore_boson_hamiltonian()
 
 print("len(active orbitals):", len(orbitals_sym_active))
 print("h shape:", h.shape) 
@@ -85,23 +86,11 @@ spa_edges = madpno.get_spa_edges()
 print("SPA edges: ", spa_edges)
 
 print("\n=============== SPA Calculation GS ===============\n")
-U = mol.make_ansatz(name="spa", edges=[(0,1,2,3,4,5)])
+U = mol.make_ansatz(name="spa", edges=spa_edges)
 
-# U += mol.UR(1, 2, (tq.Variable('a') + 0.5) * pi)
-# U += mol.UR(1, 3, (tq.Variable('b') + 0.5) * pi)
-# U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
-# U += mol.UR(1, 4, (tq.Variable('d') + 0.5) * pi)
-# U += mol.UR(1, 5, (tq.Variable('e') + 0.5) * pi)
-# U += mol.UR(2, 4, (tq.Variable('f') + 0.5) * pi)
-# U += mol.UR(2, 5, (tq.Variable('g') + 0.5) * pi)
-# U += mol.UR(3, 4, (tq.Variable('h') + 0.5) * pi)
-# U += mol.UR(3, 5, (tq.Variable('i') + 0.5) * pi)
-# U += mol.UR(4, 5, (tq.Variable('j') + 0.5) * pi)
-# U += mol.UR(0, 1, (tq.Variable('k') + 0.5) * pi)
-# U += mol.UR(0, 2, (tq.Variable('l') + 0.5) * pi)
-
-E = tq.ExpectationValue(U=U, H=H_gs)
-result = tq.minimize(E, silent=True)
+grouping = sun.SPAFP.make_decomposed_clusters(U)
+vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping)
+result = vqe_solver(H=H_gs, circuit=U, molecule=mol)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
