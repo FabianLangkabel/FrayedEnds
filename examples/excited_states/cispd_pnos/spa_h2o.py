@@ -28,43 +28,23 @@ print("Generating PNOs took %.2f seconds" % pno_time)
 
 # ---------- original orbital set ------------
 gs_orbs_original = madpno.get_orbitals() # HF + MP2
-# for i in range(len(gs_orbs_original)):
-#     # world.cube_plot(f"gs_orbs{i}", gs_orbs_original[i], molecule, zoom=4.0)
-#     gs_orbs_original[i].save_to_file(f"gs_orbs_original{i}.data")
 
 cis_start = time.perf_counter()
 cis_orbs_original = madpno.compute_cis(n_excitation=1, dominant_contribution=True) # CIS X Functions
-# for i in range(len(cis_orbs_original)):
-#     # world.cube_plot(f"cis_orbs{i}", cis_orbs_original[i], molecule, zoom=4.0)
-#     cis_orbs_original[i].save_to_file(f"cis_orbs_original{i}.data")
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
 cispd_orbs_original = madpno.compute_cispd(n_orbitals=8, dominant_contribution=True) # CISPD PNO
-# for i in range(len(cispd_orbs_original)):
-#     # world.cube_plot(f"cispd_orbs{i}", cispd_orbs_original[i], molecule, zoom=4.0)
-#     cispd_orbs_original[i].save_to_file(f"cispd_orbs_original{i}.data")
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
 
-# gs_orbs_original = []
-# for i in range(4):
-#     gs_orbs_original.append(fe.SavedFct3D(f"gs_orbs_original{i}.data"))
-# 
-# cis_orbs_original = []
-# cispd_orbs_original = []
-# for i in range(1):
-#    cis_orbs_original.append(fe.SavedFct3D(f"cis_orbs_original{i}.data"))
-# for i in range(2):   
-#    cispd_orbs_original.append(fe.SavedFct3D(f"cispd_orbs_original{i}.data"))
-# 
-# print("Orbitals loaded!")
+print(f"PNO basis: {len(gs_orbs_original)}")
+print(f"CIS basis: {len(cis_orbs_original)}")
+print(f"CISPD basis: {len(cispd_orbs_original)}")
 
-fe.cleanup(globals())
-exit()
 
 # ----------- symmetric orthonormalized orbital set -----------
 cis_orbs = integrals.project_out(gs_orbs_original, cis_orbs_original)
@@ -108,17 +88,17 @@ print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=[(0,1,2,3,4,5)])
 
 # U += mol.UR(1, 2, (tq.Variable('a') + 0.5) * pi)
-U += mol.UR(1, 3, (tq.Variable('b') + 0.5) * pi)
+# U += mol.UR(1, 3, (tq.Variable('b') + 0.5) * pi)
 # U += mol.UR(2, 3, (tq.Variable('c') + 0.5) * pi)
 # U += mol.UR(1, 4, (tq.Variable('d') + 0.5) * pi)
 # U += mol.UR(1, 5, (tq.Variable('e') + 0.5) * pi)
 # U += mol.UR(2, 4, (tq.Variable('f') + 0.5) * pi)
 # U += mol.UR(2, 5, (tq.Variable('g') + 0.5) * pi)
-U += mol.UR(3, 4, (tq.Variable('h') + 0.5) * pi)
-U += mol.UR(3, 5, (tq.Variable('i') + 0.5) * pi)
+# U += mol.UR(3, 4, (tq.Variable('h') + 0.5) * pi)
+# U += mol.UR(3, 5, (tq.Variable('i') + 0.5) * pi)
 # U += mol.UR(4, 5, (tq.Variable('j') + 0.5) * pi)
-U += mol.UR(0, 1, (tq.Variable('k') + 0.5) * pi)
-U += mol.UR(0, 2, (tq.Variable('l') + 0.5) * pi)
+# U += mol.UR(0, 1, (tq.Variable('k') + 0.5) * pi)
+# U += mol.UR(0, 2, (tq.Variable('l') + 0.5) * pi)
 
 E = tq.ExpectationValue(U=U, H=H_gs)
 result = tq.minimize(E, silent=True)
@@ -131,6 +111,9 @@ print(result.variables)
 print(f"Ground State Circuit: {circuit_gs}")
 
 gs_circuit = U.map_variables(result.variables)
+
+fe.cleanup(globals())
+exit()
 
 # ----------- cholesky orthonormalized orbital set ------------------
 orbitals_ch = gs_orbs_original[:2] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[2:] # f,0: HF, 1: CIS, 2,3: CISPD, 4,5: MP2 PNO
