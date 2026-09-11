@@ -86,11 +86,11 @@ spa_edges = madpno.get_spa_edges()
 print("SPA edges: ", spa_edges)
 
 print("\n=============== SPA Calculation GS ===============\n")
-U = mol.make_ansatz(name="spa", edges=spa_edges)
+U = mol.make_ansatz(name="hbc-spa", edges=spa_edges)
 
-grouping = sun.SPAFP.make_decomposed_clusters(U)
-vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping)
-result = vqe_solver(H=H_gs, circuit=U, molecule=mol)
+E = sun.SPAFP.decompose(H=H_gs, U=U)
+result = tq.minimize(E, silent=True, gradient="2-point", method_options={"finite_diff_rel_step":1.e-4})
+
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
