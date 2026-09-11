@@ -142,7 +142,7 @@ class MadPNO:
         self._hf_orbitals = self.impl.get_hf_orbitals()
         self.cleanup(*args, **kwargs)
 
-    def _filter_best_contributions(self, cis_per_root, rtol=1e-2, atol=1e-8):
+    def _filter_best_contributions(self, cis_per_root, rtol=2e-2, atol=1e-8):
         # Filter CIS functions per excitation, keeping only those with largest contribution
         filtered = []
         for root in cis_per_root:

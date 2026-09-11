@@ -4,6 +4,7 @@ import frayedends as fe
 from pyscf import fci
 from math import pi
 import time
+import sunrise as sun
 
 n_electrons = 14
 box_size = 50.0
@@ -27,40 +28,22 @@ print("Generating PNOs took %.2f seconds" % pno_time)
 
 # ---------- original orbital set ------------
 gs_orbs_original = madpno.get_orbitals() # HF + MP2
-for i in range(len(gs_orbs_original)):
-    # world.cube_plot(f"gs_orbs{i}", gs_orbs_original[i], molecule, zoom=4.0)
-    gs_orbs_original[i].save_to_file(f"gs_orbs_original{i}.data")
+print(f"PNO orbs: {len(gs_orbs_original)}")
 
 cis_start = time.perf_counter()
 cis_orbs_original = madpno.compute_cis(n_excitation=1) # CIS X Functions
-for i in range(len(cis_orbs_original)):
-    # world.cube_plot(f"cis_orbs{i}", cis_orbs_original[i], molecule, zoom=4.0)
-    cis_orbs_original[i].save_to_file(f"cis_orbs_original{i}.data")
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
+print(f"CIS orbs: {len(cis_orbs_original)}")
+
 
 cispd_start = time.perf_counter()
 cispd_orbs_original = madpno.compute_cispd(n_orbitals=10) # CISPD PNO
-for i in range(len(cispd_orbs_original)):
-    # world.cube_plot(f"cispd_orbs{i}", cispd_orbs_original[i], molecule, zoom=4.0)
-    cispd_orbs_original[i].save_to_file(f"cispd_orbs_original{i}.data")
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
-
-# gs_orbs_original = []
-# for i in range(5):
-#     gs_orbs_original.append(fe.SavedFct3D(f"gs_orbs_original{i}.data"))
-# 
-# cis_orbs_original = []
-# cispd_orbs_original = []
-# for i in range(1):
-#    cis_orbs_original.append(fe.SavedFct3D(f"cis_orbs_original{i}.data"))
-# for i in range(3):   
-#    cispd_orbs_original.append(fe.SavedFct3D(f"cispd_orbs_original{i}.data"))
-# 
-# print("Orbitals loaded!")
+print(f"CISPD orbs: {len(cispd_orbs_original)}")
 
 # ----------- symmetric orthonormalized orbital set -----------
 cis_orbs = integrals.project_out(gs_orbs_original, cis_orbs_original)
@@ -70,8 +53,8 @@ cispd_orbs = integrals.project_out(gs_orbs_original + cis_orbs, cispd_orbs_origi
 orbitals_sym = gs_orbs_original + cis_orbs_original + cispd_orbs_original
 orbitals_sym = integrals.orthonormalize(orbitals_sym)
 
-orbitals_sym_active = orbitals_sym[2:]
-frozen = orbitals_sym[:2]
+orbitals_sym_active = orbitals_sym[3:]
+frozen = orbitals_sym[:3]
 n_orbitals_active = len(orbitals_sym_active)
 print("number of active orbitals: ", n_orbitals_active)
 print("nuclear repulsion: ", madpno.get_nuclear_repulsion())
@@ -99,9 +82,6 @@ e_excited_tot = e_roots[1] + c
 
 spa_edges = madpno.get_spa_edges()
 print("SPA edges: ", spa_edges)
-
-fe.cleanup(globals())
-exit()
 
 print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=spa_edges) # SPA edges:  [(0, 2, 4, 7), (1, 3, 5, 6)]
