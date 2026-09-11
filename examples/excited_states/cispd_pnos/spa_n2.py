@@ -53,8 +53,8 @@ cispd_orbs = integrals.project_out(gs_orbs_original + cis_orbs, cispd_orbs_origi
 orbitals_sym = gs_orbs_original + cis_orbs_original + cispd_orbs_original
 orbitals_sym = integrals.orthonormalize(orbitals_sym)
 
-orbitals_sym_active = orbitals_sym[3:]
-frozen = orbitals_sym[:3]
+orbitals_sym_active = orbitals_sym[2:]
+frozen = orbitals_sym[:2]
 n_orbitals_active = len(orbitals_sym_active)
 print("number of active orbitals: ", n_orbitals_active)
 print("nuclear repulsion: ", madpno.get_nuclear_repulsion())
