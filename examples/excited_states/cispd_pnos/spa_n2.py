@@ -31,7 +31,7 @@ gs_orbs_original = madpno.get_orbitals() # HF + MP2
 print(f"PNO orbs: {len(gs_orbs_original)}")
 
 cis_start = time.perf_counter()
-cis_orbs_original = madpno.compute_cis(n_excitation=1) # CIS X Functions
+cis_orbs_original = madpno.compute_cis(n_excitation=1, dominant_contribution=True) # CIS X Functions
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
@@ -39,7 +39,7 @@ print(f"CIS orbs: {len(cis_orbs_original)}")
 
 
 cispd_start = time.perf_counter()
-cispd_orbs_original = madpno.compute_cispd(n_orbitals=10) # CISPD PNO
+cispd_orbs_original = madpno.compute_cispd(n_orbitals=10, dominant_contribution=True) # CISPD PNO
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
@@ -88,7 +88,7 @@ U = mol.make_ansatz(name="spa", edges=spa_edges) # SPA edges:  [(0, 2, 4, 7), (1
 
 grouping = sun.SPAFP.make_decomposed_clusters(U)
 vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping,silent=True)
-result = vqe_solver(H=H, circuit=U, molecule=mol)
+result = vqe_solver(H=H_gs, circuit=U, molecule=mol)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
