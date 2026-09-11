@@ -87,7 +87,7 @@ print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=spa_edges) # SPA edges:  [(0, 2, 4, 7), (1, 3, 5, 6)]
 
 grouping = sun.SPAFP.make_decomposed_clusters(U)
-vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping,silent=True)
+vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping)
 result = vqe_solver(H=H_gs, circuit=U, molecule=mol)
 circuit_gs = tq.simulate(U, result.variables)
 
@@ -120,7 +120,7 @@ U += mol.UR(second_edge[2], second_edge[3], (tq.Variable('h') + 0.5) * pi)
 
 
 grouping = sun.SPAFP.make_decomposed_clusters(U)
-vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping,silent=True)
+vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping)
 result = vqe_solver(H=H, circuit=U, molecule=mol)
 circuit_gs = tq.simulate(U, result.variables)
 
