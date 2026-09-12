@@ -28,7 +28,7 @@ for d in distance:
     reported_distance = d
     # H(d) = O + (H-O)*d = \vec{O} + d \vec(OH)
     geom = (    "O 0.0 0.0 0.1173\n"
-                + "H 0.0 "(0.7572*d).__str__() + " "+ (0.1173+(-0.4692-0.1173)*d).__str__() + "\n"
+                + "H 0.0 " + (0.7572*d).__str__() + " " + (0.1173+(-0.4692-0.1173)*d).__str__() + "\n"
                 + "H 0.0 " + (-0.7572*d).__str__() + " " + (0.1173+(-0.4692-0.1173)*d).__str__() + "\n"
     )
     molecule = fe.MolecularGeometry(geometry=geom, units='angstrom')
