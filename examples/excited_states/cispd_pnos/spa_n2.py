@@ -65,7 +65,7 @@ h = H_eff[1]
 g = H_eff[2]
 print("c: ", c)
 mol = tq.Molecule(geometry=geom, one_body_integrals=h, two_body_integrals=g, nuclear_repulsion=c, n_electrons= n_electrons_active, units='a', frozen_core=False)
-H_gs = mol.make_hardcore_boson_hamiltonian()
+H_gs = mol.make_hamiltonian()
 
 print("len(active orbitals):", len(orbitals_sym_active))
 print("h shape:", h.shape) 
@@ -84,44 +84,46 @@ spa_edges = madpno.get_spa_edges()
 print("SPA edges: ", spa_edges)
 
 print("\n=============== SPA Calculation GS ===============\n")
-U = mol.make_ansatz(name="spa", edges=spa_edges) # SPA edges:  [(0, 2, 4, 7), (1, 3, 5, 6)]
+U = mol.make_ansatz(name="spa", edges=spa_edges) 
 
-E = sun.SPAFP.decompose(H=H_gs, U=U)
-result = tq.minimize(E, silent=True, gradient="2-point", method_options={"finite_diff_rel_step":1.e-4})
-
-circuit_gs = tq.simulate(U, result.variables)
-
-print(f"FCI Ground state: {e_ground_tot}")
-print(f"SPA GS energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_ground_tot))
-print(result.variables)
-print(f"Ground State Circuit: {circuit_gs}")
-
-fe.cleanup(globals())
-exit()
-
-first_edge = spa_edges[0]
-second_edge = spa_edges[1]
-
-for i in range(len(first_edge)):
-    print(f"first edge i: {first_edge[i]} ")
-
-for i in range(len(second_edge)):
-    print(f"second edge i: {second_edge[i]} ")
-
-# U += mol.UR(first_edge[0], first_edge[1], (tq.Variable('a') + 0.5) * pi)
-U += mol.UR(first_edge[1], first_edge[2], (tq.Variable('b') + 0.5) * pi)
-U += mol.UR(first_edge[1], first_edge[3], (tq.Variable('c') + 0.5) * pi)
-U += mol.UR(first_edge[2], first_edge[3], (tq.Variable('d') + 0.5) * pi)
-# U += mol.UR(second_edge[0], second_edge[1], (tq.Variable('e') + 0.5) * pi)
-U += mol.UR(second_edge[1], second_edge[2], (tq.Variable('f') + 0.5) * pi)
-U += mol.UR(second_edge[1], second_edge[3], (tq.Variable('g') + 0.5) * pi)
-U += mol.UR(second_edge[2], second_edge[3], (tq.Variable('h') + 0.5) * pi)
+edge1 = spa_edges[0]
+edge2 = spa_edges[1]
+edge3 = spa_edges[2]
+edge4 = spa_edges[3]
+edge5 = spa_edges[4]
 
 
-grouping = sun.SPAFP.make_decomposed_clusters(U)
-vqe_solver = sun.SPAFP.SPASolver(decompose=True,grouping=grouping)
-result = vqe_solver(H=H, circuit=U, molecule=mol)
+for i in range(len(edge1)):
+    print(f"first edge i: {edge1[i]} ")
+
+for i in range(len(edge2)):
+    print(f"second edge i: {edge2[i]} ")
+
+for i in range(len(edge3)):
+    print(f"third edge i: {edge3[i]} ")
+
+for i in range(len(edge4)):
+    print(f"fourth edge i: {edge4[i]} ")
+
+for i in range(len(edge5)):
+    print(f"fifth edge i: {edge5[i]} ")
+
+
+U += mol.UR(edge1[1], edge1[2], (tq.Variable('a') + 0.5) * pi)
+U += mol.UR(edge1[2], edge1[3], (tq.Variable('b') + 0.5) * pi)
+U += mol.UR(edge1[1], edge1[3], (tq.Variable('c') + 0.5) * pi)
+
+U += mol.UR(edge3[1], edge3[2], (tq.Variable('d') + 0.5) * pi)
+U += mol.UR(edge3[2], edge3[3], (tq.Variable('e') + 0.5) * pi)
+U += mol.UR(edge3[1], edge3[3], (tq.Variable('f') + 0.5) * pi)
+
+U += mol.UR(edge4[1], edge4[2], (tq.Variable('g') + 0.5) * pi)
+U += mol.UR(edge4[2], edge4[3], (tq.Variable('h') + 0.5) * pi)
+U += mol.UR(edge4[1], edge4[3], (tq.Variable('i') + 0.5) * pi)
+
+
+E = tq.ExpectationValue(U=U, H=H_gs)
+result = tq.minimize(E, silent=True)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
@@ -131,16 +133,16 @@ print(result.variables)
 print(f"Ground State Circuit: {circuit_gs}")
 
 gs_circuit = U.map_variables(result.variables)
-
+spa_energy_0 = result.energy
 
 # ----------- cholesky orthonormalized orbital set ------------------
-orbitals_ch = gs_orbs_original[:3] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[3:] # f,0,1: HF, 2,3: CIS, 4,5: CISPD, 6,7: MP2 PNO
+orbitals_ch = gs_orbs_original[:7] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[7:]
 orbitals_ch = integrals.orthonormalize(orbitals_ch, method="cholesky")
 
 overlap_frozen = integrals.compute_overlap_integrals([orbitals_sym[0]], [orbitals_ch[0]])
 print("frozen orbital overlap:", overlap_frozen)
 
-orbitals_ch_active = orbitals_ch[1:]
+orbitals_ch_active = orbitals_ch[2:]
 
 
 # ---------- rotate the circuit into excited state orbitals basis (cholesky orthonormalized set) ----------
@@ -160,13 +162,31 @@ print("SPA edges: ", ex_spa_edges)
 
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
-# UR = mol.UR(0, 1, (tq.Variable('w') + 0.5) * pi)
-# UR += mol.UR(0, 2, (tq.Variable('x') + 0.5) * pi)
-# UR += mol.UR(0, 3, (tq.Variable('y') + 0.5) * pi)
-# UR += mol.UR(2, 3, (tq.Variable('z') + 0.5) * pi)
+edge1 = spa_edges[0]
+edge2 = spa_edges[1]
+edge3 = spa_edges[2]
+edge4 = spa_edges[3]
+edge5 = spa_edges[4]
+
+
+for i in range(len(edge1)):
+    print(f"first edge i: {edge1[i]} ")
+
+for i in range(len(edge2)):
+    print(f"second edge i: {edge2[i]} ")
+
+for i in range(len(edge3)):
+    print(f"third edge i: {edge3[i]} ")
+
+for i in range(len(edge4)):
+    print(f"fourth edge i: {edge4[i]} ")
+
+for i in range(len(edge5)):
+    print(f"fifth edge i: {edge5[i]} ")
+
 
 ti = fe.TequilaInterface(mol=mol)
-E = ti.fastSPA_expectation_value_orthogonality_constraint(
+E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list, 
@@ -175,45 +195,8 @@ E = ti.fastSPA_expectation_value_orthogonality_constraint(
 print("done with orthogonality constraint")
 
 minimize_start = time.perf_counter()
-result = tq.minimize(E, silent=True, gradient="2-point",method_options={"finite_diff_rel_step":1.e-4})
+result = tq.minimize(E, silent=True)
 circuit_ex = tq.simulate(U_ex + rotation, result.variables)
-minimize_end = time.perf_counter()
-print(f"minimize & simulate time: {minimize_end - minimize_start}")
-
-print(f"FCI Singlet excited state energy: {e_excited_tot}")
-print(f"SPA Singlet excited state energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
-print(result.variables)
-print(f"Excited State Circuit: {circuit_ex}")
-
-ex_first_edge = ex_spa_edges[0]
-ex_second_edge = ex_spa_edges[1]
-
-for i in range(len(ex_first_edge)):
-    print(f"ex first edge i: {ex_first_edge[i]} ")
-
-for i in range(len(ex_second_edge)):
-    print(f"ex_second edge i: {ex_second_edge[i]} ")
-
-UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('s') + 0.5) * pi)
-UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('t') + 0.5) * pi)
-# UR += mol.UR(ex_first_edge[2], ex_first_edge[3], (tq.Variable('u') + 0.5) * pi)
-UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable('w') + 0.5) * pi)
-UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable('x') + 0.5) * pi)
-# UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
-
-
-E = ti.expectation_value_orthogonality_constraint(
-    H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
-    U=U_ex + UR + rotation,
-    circuit_list=circuit_list, 
-    constant_list=constants
-)
-print("done with orthogonality constraint")
-
-minimize_start = time.perf_counter()
-result = tq.minimize(E, silent=True, gradient="2-point",method_options={"finite_diff_rel_step":1.e-4})
-circuit_ex = tq.simulate(U_ex + UR + rotation, result.variables)
 minimize_end = time.perf_counter()
 print(f"minimize & simulate time: {minimize_end - minimize_start}")
 

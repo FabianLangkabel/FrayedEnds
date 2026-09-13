@@ -91,9 +91,8 @@ print("SPA edges: ", spa_edges)
 print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=spa_edges)
 
-E = sun.SPAFP.decompose(H=H_gs, U=U)
-result = tq.minimize(E, silent=True, gradient="2-point", method_options={"finite_diff_rel_step":1.e-4})
-
+E = tq.ExpectationValue(U=U, H=H_gs)
+result = tq.minimize(E, silent=True)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
@@ -129,9 +128,8 @@ U += mol.UR(edge4[1], edge4[2], (tq.Variable('d') + 0.5) * pi)
 U += mol.UR(edge4[2], edge4[3], (tq.Variable('e') + 0.5) * pi)
 U += mol.UR(edge4[1], edge4[3], (tq.Variable('f') + 0.5) * pi)
 
-E = sun.SPAFP.decompose(H=H_gs, U=U)
-result = tq.minimize(E, silent=True, gradient="2-point", method_options={"finite_diff_rel_step":1.e-4})
-
+E = tq.ExpectationValue(U=U, H=H_gs)
+result = tq.minimize(E, silent=True)
 circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
@@ -139,6 +137,9 @@ print(f"SPA + UR GS energy: {result.energy}")
 print("SPA/FCI error: {:+2.5f}".format(result.energy-e_ground_tot))
 print(result.variables)
 print(f"Ground State Circuit: {circuit_gs}")
+
+gs_circuit = U.map_variables(result.variables)
+spa_energy_0 = result.energy
 
 # ----------- cholesky orthonormalized orbital set ------------------
 orbitals_ch = gs_orbs_original[:5] + cis_orbs_original + cispd_orbs_original + gs_orbs_original[5:] 
@@ -167,7 +168,8 @@ print("SPA edges: ", ex_spa_edges)
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
 ti = fe.TequilaInterface(mol=mol)
-E = ti.fastSPA_expectation_value_orthogonality_constraint(
+
+E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list, 
@@ -209,7 +211,9 @@ U_ex += mol.UR(edge3[0], edge3[2], (tq.Variable('x') + 0.5) * pi)
 U_ex += mol.UR(edge4[0], edge4[1], (tq.Variable('y') + 0.5) * pi)
 U_ex += mol.UR(edge4[0], edge4[2], (tq.Variable('z') + 0.5) * pi)
 
-E = ti.fastSPA_expectation_value_orthogonality_constraint(
+ti = fe.TequilaInterface(mol=mol)
+
+E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list, 
