@@ -142,7 +142,7 @@ class MadPNO:
         self._hf_orbitals = self.impl.get_hf_orbitals()
         self.cleanup(*args, **kwargs)
 
-    def _filter_best_contributions(self, cis_per_root, rtol=2e-2, atol=1e-8):
+    def _filter_best_contributions(self, cis_per_root, rtol, atol=1e-8):
         # Filter CIS functions per excitation, keeping only those with largest contribution
         filtered = []
         for root in cis_per_root:
@@ -157,7 +157,7 @@ class MadPNO:
         return filtered
 
     @redirect_output("cis.log")
-    def compute_cis(self, n_excitation, dominant_contribution=False, *args, **kwargs):
+    def compute_cis(self, n_excitation, dominant_contribution=False, rtol = 2e-2, *args, **kwargs):
         # Compute cis x functions 
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
@@ -167,7 +167,7 @@ class MadPNO:
         total_before = sum(len(root) for root in self._cis_per_root)
 
         if dominant_contribution:
-            self._cis_per_root = self._filter_best_contributions(self._cis_per_root)
+            self._cis_per_root = self._filter_best_contributions(self._cis_per_root, rtol)
             total_after = sum(len(root) for root in self._cis_per_root)
             print(f"\n \n Dominant CIS functions kept: {total_after}/{total_before}")
             for ex, root in enumerate(self._cis_per_root):

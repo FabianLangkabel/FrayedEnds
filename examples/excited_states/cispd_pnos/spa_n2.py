@@ -31,7 +31,7 @@ gs_orbs_original = madpno.get_orbitals() # HF + MP2
 print(f"PNO orbs: {len(gs_orbs_original)}")
 
 cis_start = time.perf_counter()
-cis_orbs_original = madpno.compute_cis(n_excitation=1, dominant_contribution=True) # CIS X Functions
+cis_orbs_original = madpno.compute_cis(n_excitation=1, dominant_contribution=True, rtol=0.1) # CIS X Functions
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
