@@ -23,7 +23,7 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
 pno_start = time.perf_counter()
-madpno = fe.MadPNO(world, geom, n_orbitals=11, dft={"econv": 1.0e-5, "dconv": 1.0e-5})
+madpno = fe.MadPNO(world, geom, n_orbitals=9, dft={"econv": 1.0e-5, "dconv": 1.0e-5})
 pno_end = time.perf_counter()
 pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
@@ -39,7 +39,7 @@ cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
-cispd_orbs_original = madpno.compute_cispd(n_orbitals=11, dominant_contribution=True) # CISPD PNO
+cispd_orbs_original = madpno.compute_cispd(n_orbitals=8, dominant_contribution=True) # CISPD PNO
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
@@ -87,8 +87,6 @@ fci_energy_1 = e_roots[1] + c
 spa_edges = madpno.get_spa_edges()
 print("SPA edges: ", spa_edges)
 
-fe.cleanup(globals())
-exit()
 
 print("\n=============== SPA Calculation GS ===============\n")
 U = mol.make_ansatz(name="spa", edges=spa_edges)
@@ -121,10 +119,6 @@ for i in range(len(edge3)):
 
 for i in range(len(edge4)):
     print(f"fourth edge i: {edge4[i]} ")
-
-U += mol.UR(edge3[1], edge3[2], (tq.Variable('a') + 0.5) * pi)
-U += mol.UR(edge3[2], edge3[3], (tq.Variable('b') + 0.5) * pi)
-U += mol.UR(edge3[1], edge3[3], (tq.Variable('c') + 0.5) * pi)
 
 U += mol.UR(edge4[1], edge4[2], (tq.Variable('d') + 0.5) * pi)
 U += mol.UR(edge4[2], edge4[3], (tq.Variable('e') + 0.5) * pi)
@@ -166,6 +160,10 @@ constants = [5.0]
 
 ex_spa_edges = madpno.get_spa_edges(orbitals=orbitals_ch)
 print("SPA edges: ", ex_spa_edges)
+
+
+fe.cleanup(globals())
+exit()
 
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
