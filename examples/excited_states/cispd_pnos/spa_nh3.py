@@ -128,9 +128,9 @@ E = tq.ExpectationValue(U=U, H=H_gs)
 result = tq.minimize(E, silent=True)
 circuit_gs = tq.simulate(U, result.variables)
 
-print(f"FCI Ground state: {e_ground_tot}")
+print(f"FCI Ground state: {fci_energy_0}")
 print(f"SPA + UR GS energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_ground_tot))
+print("SPA/FCI error: {:+2.5f}".format(result.energy-fci_energy_0))
 print(result.variables)
 print(f"Ground State Circuit: {circuit_gs}")
 
@@ -161,10 +161,6 @@ constants = [5.0]
 ex_spa_edges = madpno.get_spa_edges(orbitals=orbitals_ch)
 print("SPA edges: ", ex_spa_edges)
 
-
-fe.cleanup(globals())
-exit()
-
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
 ti = fe.TequilaInterface(mol=mol)
@@ -182,9 +178,9 @@ circuit_ex = tq.simulate(U_ex + rotation, result.variables)
 minimize_end = time.perf_counter()
 # print(f"minimize & simulate time: {minimize_end - minimize_start}")
 
-print(f"FCI Singlet excited state energy: {e_excited_tot}")
+print(f"FCI Singlet excited state energy: {fci_energy_1}")
 print(f"SPA Singlet excited state energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
+print("SPA/FCI error: {:+2.5f}".format(result.energy-fci_energy_1))
 print(result.variables)
 print(f"Excited State Circuit: {circuit_ex}")
 
@@ -205,9 +201,6 @@ for i in range(len(ex_edge3)):
 for i in range(len(ex_edge4)):
     print(f"fourth edge i: {ex_edge4[i]} ")
 
-U_ex += mol.UR(edge3[0], edge3[1], (tq.Variable('w') + 0.5) * pi)
-U_ex += mol.UR(edge3[0], edge3[2], (tq.Variable('x') + 0.5) * pi)
-
 U_ex += mol.UR(edge4[0], edge4[1], (tq.Variable('y') + 0.5) * pi)
 U_ex += mol.UR(edge4[0], edge4[2], (tq.Variable('z') + 0.5) * pi)
 
@@ -226,9 +219,9 @@ circuit_ex = tq.simulate(U_ex + rotation, result.variables)
 minimize_end = time.perf_counter()
 # print(f"minimize & simulate time: {minimize_end - minimize_start}")
 
-print(f"FCI Singlet excited state energy: {e_excited_tot}")
+print(f"FCI Singlet excited state energy: {fci_energy_1}")
 print(f"SPA Singlet excited state energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
+print("SPA/FCI error: {:+2.5f}".format(result.energy-fci_energy_1))
 print(result.variables)
 print(f"Excited State Circuit: {circuit_ex}")
 
