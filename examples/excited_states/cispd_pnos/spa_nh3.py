@@ -23,7 +23,7 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
 pno_start = time.perf_counter()
-madpno = fe.MadPNO(world, geom, n_orbitals=14, dft={"econv": 1.0e-5, "dconv": 1.0e-5})
+madpno = fe.MadPNO(world, geom, n_orbitals=11, dft={"econv": 1.0e-5, "dconv": 1.0e-5})
 pno_end = time.perf_counter()
 pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
@@ -39,7 +39,7 @@ cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
-cispd_orbs_original = madpno.compute_cispd(n_orbitals=8, dominant_contribution=True) # CISPD PNO
+cispd_orbs_original = madpno.compute_cispd(n_orbitals=11, dominant_contribution=True) # CISPD PNO
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
