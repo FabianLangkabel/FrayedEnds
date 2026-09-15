@@ -184,6 +184,15 @@ for i in range(len(edge4)):
 for i in range(len(edge5)):
     print(f"fifth edge i: {edge5[i]} ")
 
+U_ex += mol.UR(edge1[0], edge1[1], (tq.Variable('u') + 0.5) * pi)
+U_ex += mol.UR(edge1[0], edge1[2], (tq.Variable('v') + 0.5) * pi)
+
+U_ex += mol.UR(edge3[0], edge3[1], (tq.Variable('w') + 0.5) * pi)
+U_ex += mol.UR(edge3[0], edge3[2], (tq.Variable('x') + 0.5) * pi)
+
+U_ex += mol.UR(edge4[0], edge4[1], (tq.Variable('y') + 0.5) * pi)
+U_ex += mol.UR(edge4[0], edge4[2], (tq.Variable('z') + 0.5) * pi)
+
 
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
