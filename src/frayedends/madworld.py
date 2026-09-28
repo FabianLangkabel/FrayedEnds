@@ -67,7 +67,6 @@ class MadWorld:
     }
 
     def __init__(self, ndims, **kwargs):
-
         self.madness_parameters = dict(self.madness_parameters)
         self.dimensions = ndims
 

@@ -232,8 +232,9 @@ class OrbitalRefinement:
         return self._c
 
     def get_rdms_hcb(self, n_orbitals, n_elec, wfn=None, U=None, molecule=None):
-        import tequila, pyscf
-        from tequila.hamiltonian.paulis import Sp, Sm
+        import pyscf
+        import tequila
+        from tequila.hamiltonian.paulis import Sm, Sp
 
         if isinstance(wfn, tequila.QubitWaveFunction):
             tq_wfn = wfn
