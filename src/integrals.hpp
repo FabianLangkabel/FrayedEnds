@@ -75,16 +75,19 @@ template <std::size_t NDIM> class Integrals {
         const std::vector<Function<double, NDIM>> &active_orbitals, 
         const std::vector<Function<double, NDIM>> &orbs_kl, 
         const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
-        const std::vector<Function<double, NDIM>> &orbs_aa
+        const std::vector<Function<double, NDIM>> &orbs_aa,
+        std::vector<Function<double, NDIM>> &sum_a_aka
     );
 
+    // Returns sum_a(baca)(b,c), sum_a(baac)(b,c), akcl(a,k,c,l), and aklc(a,k,l,c).
     std::array<Tensor<double>, 4> compute_core_as_2e_integrals_core_refinement(
         const std::vector<Function<double, NDIM>> &core_orbitals, 
         const std::vector<Function<double, NDIM>> &active_orbitals, 
         const std::vector<Function<double, NDIM>> &orbs_kl, 
         const std::vector<Function<double, NDIM>> &coul_orbs_mn, 
         const std::vector<Function<double, NDIM>> &orbs_aa,
-        const std::vector<Function<double, NDIM>> &coul_orbs_aa
+        const std::vector<Function<double, NDIM>> &coul_orbs_aa,
+        std::vector<Function<double, NDIM>> &sum_a_aca
     );
 
     // Orthonormalization and related utilities
@@ -96,13 +99,14 @@ template <std::size_t NDIM> class Integrals {
     std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals, Numpy2D matrix);
+    SavedFct<NDIM> compute_electron_density(std::vector<SavedFct<NDIM>> core_orbitals, std::vector<SavedFct<NDIM>> active_orbitals, Numpy2D rdm1);
 
-  private:
     // Helper method for mixed orthonormalization using occupations
     std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
         std::vector<Function<double, NDIM>>& orbitals,
         const std::vector<double>& occupations,
         double degeneracy_tol);
 
+  private:
     MadnessProcess<NDIM>& madness_process;
 };

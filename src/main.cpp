@@ -132,7 +132,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
         .def("normalize", &Integrals<3>::normalize)
-        .def("orthonormalize", &Integrals<3>::orthonormalize);
+        .def("orthonormalize", &Integrals<3>::orthonormalize)
+        .def("compute_electron_density", &Integrals<3>::compute_electron_density);
 
     nb::class_<Integrals<2>>(m, "Integrals2D")
         .def(nb::init<MadnessProcess<2>&>())
@@ -148,7 +149,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<2>::project_on, nb::arg("kernel"), nb::arg("target"))
         .def("normalize", &Integrals<2>::normalize)
-        .def("orthonormalize", &Integrals<2>::orthonormalize);
+        .def("orthonormalize", &Integrals<2>::orthonormalize)
+        .def("compute_electron_density", &Integrals<2>::compute_electron_density);
 
     nb::class_<Integrals_open_shell<3>>(m, "Integrals_open_shell_3D")
         .def(nb::init<MadnessProcess<3>&>())
@@ -156,6 +158,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_kinetic_integrals", &Integrals_open_shell<3>::nb_compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_two_body_integrals", &Integrals_open_shell<3>::nb_compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_effective_hamiltonian", &Integrals_open_shell<3>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
+        .def("compute_electron_density", &Integrals_open_shell<3>::compute_electron_density)
         .def("get_numerical_parameters", &Integrals_open_shell<3>::get_numerical_parameters)
         .def("override_numerical_parameters", static_cast<void (Integrals_open_shell<3>::*)(double, double, double, double, double)>(&Integrals_open_shell<3>::override_numerical_parameters), nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
         
@@ -165,6 +168,7 @@ nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
         .def("compute_kinetic_integrals", &Integrals_open_shell<2>::nb_compute_kinetic_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_two_body_integrals", &Integrals_open_shell<2>::nb_compute_two_body_integrals, nb::arg("alpha_orbitals"), nb::arg("beta_orbitals"))
         .def("compute_effective_hamiltonian", &Integrals_open_shell<2>::nb_compute_effective_hamiltonian, nb::arg("core_alpha_orbitals"), nb::arg("core_beta_orbitals"), nb::arg("active_alpha_orbitals"), nb::arg("active_beta_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
+        .def("compute_electron_density", &Integrals_open_shell<2>::compute_electron_density)
         .def("get_numerical_parameters", &Integrals_open_shell<2>::get_numerical_parameters)
         .def("override_numerical_parameters", static_cast<void (Integrals_open_shell<2>::*)(double, double, double, double, double)>(&Integrals_open_shell<2>::override_numerical_parameters), nb::arg("truncation_tol"), nb::arg("coulomb_lo"), nb::arg("coulomb_eps"), nb::arg("BSH_lo"), nb::arg("BSH_eps"));
     
@@ -225,6 +229,7 @@ nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
         .def("optimize_orbitals", &Optimization_open_shell<3>::optimize_orbitals)
         .def("get_all_active_orbital_updates", &Optimization_open_shell<3>::get_all_active_orbital_updates)
         .def("rotate_orbitals_back", &Optimization_open_shell<3>::rotate_orbitals_back)
+        .def("set_orthonormalization_method", &Optimization_open_shell<3>::set_orthonormalization_method)
         .def("get_effective_hamiltonian", &Optimization_open_shell<3>::get_effective_hamiltonian)
         .def("get_orbitals", &Optimization_open_shell<3>::get_orbitals)
         .def("get_numerical_parameters", &Optimization_open_shell<3>::get_numerical_parameters)
@@ -243,6 +248,7 @@ nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
         .def("optimize_orbitals", &Optimization_open_shell<2>::optimize_orbitals)
         .def("get_all_active_orbital_updates", &Optimization_open_shell<2>::get_all_active_orbital_updates)
         .def("rotate_orbitals_back", &Optimization_open_shell<2>::rotate_orbitals_back)
+        .def("set_orthonormalization_method", &Optimization_open_shell<2>::set_orthonormalization_method)
         .def("get_effective_hamiltonian", &Optimization_open_shell<2>::get_effective_hamiltonian)
         .def("get_orbitals", &Optimization_open_shell<2>::get_orbitals)
         .def("get_numerical_parameters", &Optimization_open_shell<2>::get_numerical_parameters)

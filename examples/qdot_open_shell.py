@@ -12,7 +12,7 @@ n_orbitals = 4  # Number of orbitals (all active in this example)
 
 
 def potential(x: float, y: float) -> float:  # Qdot potential
-    r = np.array([x, y, 1e-10])
+    r = np.array([x, y, 1e-4])
     return -5 / np.linalg.norm(r)
 
 
