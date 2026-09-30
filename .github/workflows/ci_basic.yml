@@ -37,6 +37,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
+      - name: Find BLIS path
+        run: find /usr/lib -name "*blis*"
+
       - name: Test basic MADNESS installation
         run: |
           git clone https://github.com/m-a-d-n-e-s-s/madness madness_source
