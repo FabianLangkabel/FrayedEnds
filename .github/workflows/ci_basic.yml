@@ -31,7 +31,7 @@ jobs:
       - name: Install prerequisites Ubuntu packages
         run: |
           sudo apt-get update
-          sudo apt-get install ninja-build g++-13 libblis4-serial liblapack-dev liblapack3 libboost-dev libboost-serialization-dev libeigen3-dev
+          sudo apt-get install -y ninja-build g++-13 libblis4-serial liblapack-dev liblapack3 libboost-dev libboost-serialization-dev libeigen3-dev
 
       - name: Install basic python dependencies
         run: |
@@ -46,9 +46,15 @@ jobs:
           echo $MADNESS_DIR
           echo "test"
           echo $(realpath madness)
-          cmake -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR -DENABLE_MPI=OFF -DCMAKE_CXX_FLAGS="-O3 -DNDEBUG" -S madness_source -B madness_build
-          make -C madness_build -j4
-          sudo cmake --build madness_build/ --target install -j4
+          cmake \
+            -D CMAKE_INSTALL_PREFIX=$MADNESS_DIR \
+            -D ENABLE_MPI=OFF \
+            -D CMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -D CMAKE_CXX_FLAGS="-O3 -DNDEBUG" \
+            -D LAPACK_LIBRARIES="/usr/lib/x86_64-linux-gnu/libblis.so;/usr/lib/x86_64-linux-gnu/liblapack.so" \
+            -S madness_source -B madness_build
+          make -C madness_build -j$(nproc)
+          sudo cmake --build madness_build/ --target install -j$(nproc)
 
           MADNESS_DIR=$MADNESS_DIR pip install -e .
           pip install pytest
