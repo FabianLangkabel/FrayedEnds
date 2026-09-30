@@ -37,9 +37,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
-      - name: Find BLIS path
-        run: find /usr/lib -name "*blis*"
-
       - name: Test basic MADNESS installation
         run: |
           git clone https://github.com/m-a-d-n-e-s-s/madness madness_source
@@ -54,7 +51,7 @@ jobs:
             -D ENABLE_MPI=OFF \
             -D CMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -D CMAKE_CXX_FLAGS="-O3 -DNDEBUG" \
-            -D LAPACK_LIBRARIES="/usr/lib/x86_64-linux-gnu/libblis.so;/usr/lib/x86_64-linux-gnu/liblapack.so" \
+            -D LAPACK_LIBRARIES="/usr/lib/x86_64-linux-gnu/libblis.so.4;/usr/lib/x86_64-linux-gnu/liblapack.so" \
             -S madness_source -B madness_build
           make -C madness_build -j$(nproc)
           sudo cmake --build madness_build/ --target install -j$(nproc)
