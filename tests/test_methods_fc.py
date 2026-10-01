@@ -3,7 +3,7 @@ import pytest
 
 import frayedends
 import tequila as tq
-import fci
+from pyscf import fci
 
 
 # long test
