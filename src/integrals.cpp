@@ -44,6 +44,7 @@ void Integrals<NDIM>::update_as_integral_combinations(const std::vector<Function
         std::vector<Function<double, NDIM>> kl = orbitals[k] * l_orbs;
         orbs_kl.insert(std::end(orbs_kl), std::begin(kl), std::end(kl));
     }
+
     orbs_kl = truncate(orbs_kl, num_params.truncation_tol);
     coul_orbs_mn = apply(*(madness_process.world), *coul_op_parallel, orbs_kl);
     coul_orbs_mn = truncate(coul_orbs_mn, num_params.truncation_tol);
@@ -406,15 +407,17 @@ std::array<Tensor<double>, 2> Integrals<NDIM>::compute_core_as_2e_integrals_ener
         // <ak|la> = <ka|al>
         Tensor<double> Inner_prods_akla = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_ak, false);
         for (int k = 0; k < active_orbitals.size(); k++) {
-            for (int l = 0; l < active_orbitals.size(); l++) {
+            for (int l = k; l < active_orbitals.size(); l++) {
+                // <ak|la> = <al|ka>
                 core_as_integrals_two_body_akla(a, k, l) = Inner_prods_akla(l, k);
+                core_as_integrals_two_body_akla(a, l, k) = Inner_prods_akla(l, k);
             }
         }
     }
     auto t3 = std::chrono::high_resolution_clock::now();
 
-    std::cout << "akal: " << std::chrono::duration<double>(t2 - t1).count() << " seconds" << std::endl;
-    std::cout << "akla: " << std::chrono::duration<double>(t3 - t2).count() << " seconds" << std::endl;
+    // std::cout << "akal: " << std::chrono::duration<double>(t2 - t1).count() << " seconds" << std::endl;
+    // std::cout << "akla: " << std::chrono::duration<double>(t3 - t2).count() << " seconds" << std::endl;
 
     return std::array<Tensor<double>, 2>{core_as_integrals_two_body_akal, core_as_integrals_two_body_akla};
 
@@ -465,12 +468,14 @@ std::array<Tensor<double>, 5> Integrals<NDIM>::compute_core_as_2e_integrals_as_r
         // <ak|la> = <ka|al>
         Tensor<double> Inner_prods_akla = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_ak, false);
         for (int k = 0; k < active_orbitals.size(); k++) {
-            for (int l = 0; l < active_orbitals.size(); l++) {
+            for (int l = k; l < active_orbitals.size(); l++) {
+                // <ak|la> = <al|ka>
                 core_as_integrals_two_body_akla(a, k, l) = Inner_prods_akla(l, k);
+                core_as_integrals_two_body_akla(a, l, k) = Inner_prods_akla(l, k);
             }
         }
 
-        // <ak|ln>
+        // <al|kn> = (ak|ln)
         Tensor<double> Inner_prods_akln = matrix_inner(*(madness_process.world), orbs_ak, coul_orbs_mn, false);
         for (int k = 0; k < active_orbitals.size(); k++) {
             for (int l = 0; l < active_orbitals.size(); l++) {
