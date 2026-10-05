@@ -1,5 +1,4 @@
 import numpy
-import sunrise as sun
 
 HAS_TEQUILA = True
 try:
