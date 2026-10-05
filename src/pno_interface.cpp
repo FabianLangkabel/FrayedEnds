@@ -74,6 +74,7 @@ void PNOInterface::compute_scf() {
     }
 }
 
+// Compute MRA-PNO-MP2-F12 and store PNOs for later use
 void PNOInterface::run(const size_t basis_size) {
     std::cout.precision(6);
     if (madness_process.world->rank() == 0) {
@@ -157,6 +158,7 @@ void PNOInterface::run(const size_t basis_size) {
         std::cout << "Tightening thresholds to " << thresh << " for post-processing\n";
     FunctionDefaults<3>::set_thresh(thresh);
 
+    // compute number of PNOs to take based on requested basis size and number of HF orbitals
     const size_t npno = basis_size - hf_orbitals.size(); 
     std::cout << "basis size requested: " << basis_size << "\n";
     std::cout << "reference size: " << hf_orbitals.size() << "\n";
@@ -272,6 +274,8 @@ void PNOInterface::run(const size_t basis_size) {
     this->mp2_computed = true; // flag if mp2 pnos were computed and stored successfully
 }
 
+// Compute CIS and store x-vectors for later use
+// parameter n_excitations: number of excitations to compute
 void PNOInterface::compute_cis(const size_t n_excitations) {
     if (!nemo) {
         MADNESS_EXCEPTION("Error: compute_cis() called before run(). Nemo not initialized. Run compute_scf() or run() first.", 1);
@@ -368,6 +372,7 @@ void PNOInterface::compute_cis(const size_t n_excitations) {
     cis_computed = true; 
 }
 
+// Compute CISPD and store CISPD PNOs for later use
 void PNOInterface::compute_cispd(const size_t basis_size) {
     if (!nemo) {
         MADNESS_EXCEPTION("Error: compute_cipsd() called before run(). Nemo not initialized. Run run() first.", 1);
@@ -410,6 +415,7 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
         std::vector<double> all_current_occ;
         std::vector<std::pair<size_t, size_t>> all_current_ids;
 
+        // collect CISPD PNOs from all pairs and sort by occupation number, keeping pair information
         for (auto& pairs : cispd_pairs) {
             if (pairs.type != CISPD_PAIRTYPE) {
                 continue;
@@ -448,13 +454,15 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
             zipped.push_back(std::make_tuple(all_current_occ[i], all_current_pnos[i], all_current_ids[i], current_label));
         }
 
+        // sort by occupation number in descending order
         std::sort(zipped.begin(), zipped.end(), [](const auto& i, const auto& j) { return std::get<0>(i) > std::get<0>(j); });
         if (madness_process.world->rank() == 0)
             std::cout << "sorted " << "\n";
 
+        // compute how many CISPD PNOs to take based on requested basis size and number of CISPD PNOs already available for this excitation
         size_t n_cis_x = (ex < cis_x_per_root.size()) ? cis_x_per_root[ex].size() : 0;
-        size_t requested = (basis_size > n_cis_x) ? basis_size - n_cis_x : 0;
-        size_t n_take = std::min(requested, zipped.size());
+        size_t requested = (basis_size > n_cis_x) ? basis_size - n_cis_x : 0; // requested number of CISPD PNOs for this excitation
+        size_t n_take = std::min(requested, zipped.size()); // take only as many CISPD PNOs as requested, but not more than available
 
         if (madness_process.world->rank() == 0 && n_take < requested) {
             std::cout << "Warning: requested " << requested
@@ -469,6 +477,7 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
             cispd_labels_per_ex[ex].push_back("CISPD_EX" + std::to_string(ex));
         }
 
+        // store CISPD PNOs, occ, ids, and labels for this excitation into the overall vectors
         this->cispd_pnos.insert(cispd_pnos.end(), cispd_pnos_per_ex[ex].begin(), cispd_pnos_per_ex[ex].end());
         cispd_occ.insert(cispd_occ.end(), cispd_occ_per_ex[ex].begin(), cispd_occ_per_ex[ex].end());
         cispd_ids.insert(cispd_ids.end(), cispd_ids_per_ex[ex].begin(), cispd_ids_per_ex[ex].end());
@@ -489,6 +498,7 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
     parser.set_keyval("pno", pno_base); // reset parser
 }
 
+// Get all HF orbitals as SavedFct<3> with info string
 std::vector<SavedFct<3>> PNOInterface::get_hf_orbitals() const {
     std::vector<SavedFct<3>> hf_orbs;
     for (size_t i = 0; i < hf_orbitals.size(); ++i) {
@@ -501,6 +511,7 @@ std::vector<SavedFct<3>> PNOInterface::get_hf_orbitals() const {
     return hf_orbs;
 }
 
+// Get all MP2 PNOs as SavedFct<3> with info string
 std::vector<SavedFct<3>> PNOInterface::get_mp2_pnos() const {
     std::vector<SavedFct<3>> mp2_orbs;
     size_t offset = hf_orbitals.size();
@@ -516,7 +527,7 @@ std::vector<SavedFct<3>> PNOInterface::get_mp2_pnos() const {
     return mp2_orbs;
 }
 
-// get all ground state orbitals (HF and MP2 PNOs)
+// Get all ground state orbitals (HF and MP2 PNOs)
 std::vector<SavedFct<3>> PNOInterface::get_orbitals() const {
     auto hf = get_hf_orbitals();
     auto mp2 = get_mp2_pnos();
@@ -531,6 +542,7 @@ std::vector<SavedFct<3>> PNOInterface::get_orbitals() const {
     return hf;
 }
 
+// Get all CIS x-vectors per root as SavedFct<3> with info string including norm2
 std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
     std::vector<std::vector<SavedFct<3>>> result;
     for (size_t ex = 0; ex < cis_x_per_root.size(); ++ex) {
@@ -560,6 +572,7 @@ std::vector<std::vector<SavedFct<3>>> PNOInterface::get_cis_x_per_root() const {
     return result;
 }
 
+// Get all CISPD PNOs as SavedFct<3> with info string
 std::vector<SavedFct<3>> PNOInterface::get_cispd_orbitals() const {
     std::vector<SavedFct<3>> cispd_orbs;
     for (size_t i = 0; i < cispd_pnos.size(); ++i) {

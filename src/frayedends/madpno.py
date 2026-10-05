@@ -135,7 +135,9 @@ class MadPNO:
 
     @redirect_output("madpno.log")
     def compute_orbitals(self, n_orbitals, *args, **kwargs):
-        # Calculate HF + MP2 PNOs (ground state orbitals)
+        """
+        Compute ground state orbitals (HF + MP2 PNOs)
+        """
         self.impl.run(n_orbitals)
         # package the orbitals
         self._orbitals = self.impl.get_orbitals()
@@ -143,7 +145,13 @@ class MadPNO:
         self.cleanup(*args, **kwargs)
 
     def _filter_best_contributions(self, cis_per_root, rtol, atol=1e-8):
-        # Filter CIS functions per excitation, keeping only those with largest contribution
+        """
+        Filter CIS functions per excitation, keeping only those with largest contribution (largest norm2)
+        arguments:
+            cis_per_root: list of lists of CIS functions per root
+            rtol: relative tolerance for norm2 comparison
+            atol: absolute tolerance for norm2 comparison (default 1e-8)
+        """
         filtered = []
         for root in cis_per_root:
             if not root:
@@ -158,7 +166,14 @@ class MadPNO:
 
     @redirect_output("cis.log")
     def compute_cis(self, n_excitation, dominant_contribution=False, rtol = 2e-2, *args, **kwargs):
-        # Compute cis x functions 
+        """
+        Compute CIS X functions for excited states
+        arguments:
+            n_excitation: number of excited states to compute
+            dominant_contribution: if True, only keep CIS X functions that correspond to the dominant contributions (largest norm2) for each excitation (default False)
+            rtol: relative tolerance for norm2 comparison when filtering dominant contributions (default 2e-2)
+            atol: absolute tolerance for norm2 comparison when filtering dominant contributions (default 1e-8)
+        """
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
         self.impl.compute_cis(n_excitation)
@@ -188,6 +203,12 @@ class MadPNO:
     
     @redirect_output("cispd.log")
     def compute_cispd(self, n_orbitals, dominant_contribution=False, *args, **kwargs):
+        """
+        Compute CISPD PNOs for excited states
+        arguments:
+            n_orbitals: number of orbitals per excitation (CIS X functions and CISPD PNOs for each excitation)
+            dominant_contribution: if True, only keep CISPD PNOs that correspond to the dominant CIS X functions (computed in compute_cis()) (default False)
+        """
         if self._cis_per_root is None:
             raise Exception("compute_cis() must be called before compute_cispd()")
         self.impl.compute_cispd(n_orbitals)
@@ -227,18 +248,28 @@ class MadPNO:
         return self._cispd_orbitals
 
     def get_orbitals(self, *args, **kwargs):
+        """
+        Returns ground state orbitals (HF + MP2 PNOs)
+        """
         if self._orbitals is not None:
             return self._orbitals
         else:
             raise Exception("ground state orbitals not yet computed")
     
     def get_hf_orbitals(self, *args, **kwargs):
+        """
+        Returns HF orbitals
+        """
         if self._hf_orbitals is not None:
             return self._hf_orbitals
         else: 
             raise Exception("ground state orbitals not yet computed")
 
     def _split_orbitals(self, orbitals):
+        """
+        Split orbitals into ground state and excited state orbitals based on their type.
+        Returns: (gs_orbitals, ex_orbitals, gs_indices, ex_indices)
+        """
         info = get_function_info(orbitals)
         gs_orbitals, ex_orbitals = [], []
         gs_indices, ex_indices = [], []
@@ -253,6 +284,12 @@ class MadPNO:
         return gs_orbitals, ex_orbitals, gs_indices, ex_indices
 
     def get_pno_groupings(self, diagonal=True, orbitals=None, *args, **kwargs):
+        """
+        Returns a dictionary of PNO groupings based on their pair IDs.
+        arguments:
+            diagonal: if True, only return diagonal groupings (default True), otherwise return both diagonal and off-diagonal groupings.
+            orbitals: default None, if provided, use these orbitals instead of using computed ones. Should be a list of orbitals (ground state and excited state) with info strings.
+        """
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
         use_diagonal = diagonal
 
@@ -334,6 +371,12 @@ class MadPNO:
         return {**diagonal, **off_diagonal}
 
     def get_spa_edges(self, frozen_core=True, orbitals=None):
+        """
+        Returns a list of edges for the SPA graph based on the PNO groupings.
+        arguments:
+            frozen_core: if True, remove frozen core orbitals from the edges (default True)
+            orbitals: default None, if provided, use these orbitals instead of using computed ones
+        """
         pno_groupings = self.get_pno_groupings(diagonal=True, orbitals=orbitals)
         edges = [tuple(sorted(x)) for x in pno_groupings.values()]
         nfreeze = self.impl.get_frozen_core_dim()
@@ -361,12 +404,21 @@ class MadPNO:
         return edges
 
     def get_nuclear_potential(self, *args, **kwargs):
+        """
+        Returns the nuclear potential operator as a SavedFct<3> object.
+        """
         return self.impl.get_nuclear_potential()
 
     def get_nuclear_repulsion(self, *args, **kwargs):
+        """
+        Returns the nuclear repulsion energy
+        """
         return self.impl.get_nuclear_repulsion()
 
     def get_sto3g(self, *args, **kwargs):
+        """
+        Returns the STO-3G basis set as a SavedFct<3> object.
+        """
         return self.impl.get_sto3g()
 
     def parameter_string(
