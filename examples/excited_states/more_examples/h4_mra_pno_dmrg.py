@@ -98,7 +98,7 @@ for d in distance:
     mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
     energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
-    
+
     idx = driver.orbital_reordering(h1, G)
     h1_new = h1[idx][:, idx]
     g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
@@ -166,7 +166,9 @@ for d in distance:
         driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
         mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuc_repulsion, iprint=0)
         ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-        energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
+        energies = driver.dmrg(
+            mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1
+        )
         print("State-averaged MPS energies after refinement = [%s]" % " ".join("%20.15f" % x for x in energies))
 
         kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]

@@ -119,7 +119,11 @@ sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
 )  # Compute the state average 2-body rdm
 print(
     "Energy from SA-pdms = %20.15f"
-    % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuclear_repulsion_energy)
+    % (
+        np.einsum("ij,ij->", sa_1pdm, h1_new)
+        + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+        + nuclear_repulsion_energy
+    )
 )
 
 idx_back = np.zeros(len(idx), dtype=int)
@@ -155,7 +159,7 @@ for iter in range(iterations):
     mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuclear_repulsion_energy, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
     energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
-    
+
     idx = driver.orbital_reordering(h1, G)
     h1_new = h1[idx][:, idx]
     g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
@@ -174,7 +178,11 @@ for iter in range(iterations):
     )  # Compute the state average 2-body rdm
     print(
         "Energy from SA-pdms = %20.15f"
-        % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuclear_repulsion_energy)
+        % (
+            np.einsum("ij,ij->", sa_1pdm, h1_new)
+            + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+            + nuclear_repulsion_energy
+        )
     )
 
     idx_back = np.zeros(len(idx), dtype=int)

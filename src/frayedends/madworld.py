@@ -44,10 +44,10 @@ def get_function_info(orbitals):
         for kv in x.info.strip().split(" "):
             kv = kv.split("=")
             val = kv[1]
-            try: 
+            try:
                 parsed_val = int(val)
-            except ValueError: 
-                try: 
+            except ValueError:
+                try:
                     parsed_val = float(val)
                 except ValueError:
                     parsed_val = val

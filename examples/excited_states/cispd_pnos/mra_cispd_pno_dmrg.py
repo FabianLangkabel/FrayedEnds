@@ -51,7 +51,7 @@ for i in range(len(gs_orbs)):
 
 # Calculate excited states orbitals
 cis_start = time.perf_counter()
-cis_orbs = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
+cis_orbs = madpno.compute_cis(n_excitation=2)  # Compute CIS for 2 excitations (1st and 2nd excited states)
 cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
 cis_orbs = integrals.orthonormalize(cis_orbs)
 cis_end = time.perf_counter()
@@ -62,7 +62,7 @@ for i in range(len(cis_orbs)):
     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
 cispd_start = time.perf_counter()
-cispd_orbs = madpno.compute_cispd(n_orbitals=4) # 1 CIS X function + 3 CIS(D)-PNO PER EXCITATION
+cispd_orbs = madpno.compute_cispd(n_orbitals=4)  # 1 CIS X function + 3 CIS(D)-PNO PER EXCITATION
 cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
@@ -139,7 +139,7 @@ for iter in range(iterations):
     # Orbital Refinement
     opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=1.0e-5, occ_thresh=1.0e-5)
-    
+
     for i in range(n_orbitals):
         world.cube_plot(f"iter{iter}_orb{i}", orbs[i], molecule, zoom=4.0)
 
@@ -168,7 +168,9 @@ for iter in range(iterations):
 
     kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
     sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
-    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)  # Compute the state average 2-body rdm
+    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+        0, 3, 1, 2
+    )  # Compute the state average 2-body rdm
     print(
         "Energy from SA-pdms = %20.15f"
         % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion)
@@ -190,7 +192,7 @@ for iter in range(iterations):
     iteration_results.append({"iteration": iter, "iteration_time": iter_time, "energies": energies})
 
     if prev_energies is not None:
-        avg_diff = np.mean(np.abs(np.array(energies) - np.array(prev_energies)))    
+        avg_diff = np.mean(np.abs(np.array(energies) - np.array(prev_energies)))
         print(f"Iteration {iter}: average energy difference = {avg_diff:.2e}")
 
         if avg_diff < econv:

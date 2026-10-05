@@ -125,7 +125,7 @@ for d in distance:
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
-    h1 = T + V 
+    h1 = T + V
     S = integrals.compute_overlap_integrals(orbs)
 
     n_orbitals = len(orbs)

@@ -1,10 +1,12 @@
-import numpy as np
-import tequila as tq
-import frayedends as fe
-from pyscf import fci
-from math import pi
 import time
+from math import pi
+
+import numpy as np
 import sunrise as sun
+import tequila as tq
+from pyscf import fci
+
+import frayedends as fe
 
 n_electrons = 14
 box_size = 50.0
@@ -13,7 +15,7 @@ madness_thresh = 1.0e-6
 econv = 1.0e-6
 
 geom = "N 0.0 0.0 0.0\nN 0.0 0.0 1.0977"
-molecule = fe.MolecularGeometry(geometry=geom, units='angstrom')
+molecule = fe.MolecularGeometry(geometry=geom, units="angstrom")
 n_electrons_active = molecule.n_electrons - molecule.n_core_electrons
 print("Active Electron: ", n_electrons_active)
 
@@ -27,11 +29,11 @@ pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
 
 # ---------- original orbital set ------------
-gs_orbs_original = madpno.get_orbitals() # HF + MP2
+gs_orbs_original = madpno.get_orbitals()  # HF + MP2
 print(f"PNO orbs: {len(gs_orbs_original)}")
 
 cis_start = time.perf_counter()
-cis_orbs_original = madpno.compute_cis(n_excitation=1, dominant_contribution=True, rtol=0.1) # CIS X Functions
+cis_orbs_original = madpno.compute_cis(n_excitation=1, dominant_contribution=True, rtol=0.1)  # CIS X Functions
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
@@ -39,7 +41,7 @@ print(f"CIS orbs: {len(cis_orbs_original)}")
 
 
 cispd_start = time.perf_counter()
-cispd_orbs_original = madpno.compute_cispd(n_orbitals=10, dominant_contribution=True) # CISPD PNO
+cispd_orbs_original = madpno.compute_cispd(n_orbitals=10, dominant_contribution=True)  # CISPD PNO
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
@@ -59,32 +61,45 @@ n_orbitals_active = len(orbitals_sym_active)
 print("number of active orbitals: ", n_orbitals_active)
 print("nuclear repulsion: ", madpno.get_nuclear_repulsion())
 
-H_eff = integrals.compute_effective_hamiltonian(core_orbitals=frozen, active_orbitals=orbitals_sym_active, V=madpno.get_nuclear_potential(), energy_offset=madpno.get_nuclear_repulsion())
+H_eff = integrals.compute_effective_hamiltonian(
+    core_orbitals=frozen,
+    active_orbitals=orbitals_sym_active,
+    V=madpno.get_nuclear_potential(),
+    energy_offset=madpno.get_nuclear_repulsion(),
+)
 c = H_eff[0]
 h = H_eff[1]
 g = H_eff[2]
 print("c: ", c)
-mol = tq.Molecule(geometry=geom, one_body_integrals=h, two_body_integrals=g, nuclear_repulsion=c, n_electrons= n_electrons_active, units='a', frozen_core=False)
+mol = tq.Molecule(
+    geometry=geom,
+    one_body_integrals=h,
+    two_body_integrals=g,
+    nuclear_repulsion=c,
+    n_electrons=n_electrons_active,
+    units="a",
+    frozen_core=False,
+)
 H_gs = mol.make_hamiltonian()
 
 print("len(active orbitals):", len(orbitals_sym_active))
-print("h shape:", h.shape) 
+print("h shape:", h.shape)
 print("g shape:", g.shape)
 print("mol.n_orbitals:", mol.n_orbitals)
 print("n_electrons_active: ", n_electrons_active)
 
-g_chem = g.transpose(0,2,1,3)
+g_chem = g.transpose(0, 2, 1, 3)
 e_roots, fcivecs = fci.direct_spin0.kernel(h, g_chem, n_orbitals_active, n_electrons_active, nroots=3)
 print("gs: ", e_roots[0])
 print("ex: ", e_roots[1])
-e_ground_tot = e_roots[0] + c 
-e_excited_tot = e_roots[1] + c 
+e_ground_tot = e_roots[0] + c
+e_excited_tot = e_roots[1] + c
 
 spa_edges = madpno.get_spa_edges()
 print("SPA edges: ", spa_edges)
 
 print("\n=============== SPA Calculation GS ===============\n")
-U = mol.make_ansatz(name="spa", edges=spa_edges) 
+U = mol.make_ansatz(name="spa", edges=spa_edges)
 
 edge1 = spa_edges[0]
 edge2 = spa_edges[1]
@@ -109,17 +124,17 @@ for i in range(len(edge5)):
     print(f"fifth edge i: {edge5[i]} ")
 
 
-U += mol.UR(edge1[1], edge1[2], (tq.Variable('a') + 0.5) * pi)
-U += mol.UR(edge1[2], edge1[3], (tq.Variable('b') + 0.5) * pi)
-U += mol.UR(edge1[1], edge1[3], (tq.Variable('c') + 0.5) * pi)
+U += mol.UR(edge1[1], edge1[2], (tq.Variable("a") + 0.5) * pi)
+U += mol.UR(edge1[2], edge1[3], (tq.Variable("b") + 0.5) * pi)
+U += mol.UR(edge1[1], edge1[3], (tq.Variable("c") + 0.5) * pi)
 
-U += mol.UR(edge3[1], edge3[2], (tq.Variable('d') + 0.5) * pi)
-U += mol.UR(edge3[2], edge3[3], (tq.Variable('e') + 0.5) * pi)
-U += mol.UR(edge3[1], edge3[3], (tq.Variable('f') + 0.5) * pi)
+U += mol.UR(edge3[1], edge3[2], (tq.Variable("d") + 0.5) * pi)
+U += mol.UR(edge3[2], edge3[3], (tq.Variable("e") + 0.5) * pi)
+U += mol.UR(edge3[1], edge3[3], (tq.Variable("f") + 0.5) * pi)
 
-U += mol.UR(edge4[1], edge4[2], (tq.Variable('g') + 0.5) * pi)
-U += mol.UR(edge4[2], edge4[3], (tq.Variable('h') + 0.5) * pi)
-U += mol.UR(edge4[1], edge4[3], (tq.Variable('i') + 0.5) * pi)
+U += mol.UR(edge4[1], edge4[2], (tq.Variable("g") + 0.5) * pi)
+U += mol.UR(edge4[2], edge4[3], (tq.Variable("h") + 0.5) * pi)
+U += mol.UR(edge4[1], edge4[3], (tq.Variable("i") + 0.5) * pi)
 
 
 E = tq.ExpectationValue(U=U, H=H_gs)
@@ -128,7 +143,7 @@ circuit_gs = tq.simulate(U, result.variables)
 
 print(f"FCI Ground state: {e_ground_tot}")
 print(f"SPA + UR GS energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_ground_tot))
+print("SPA/FCI error: {:+2.5f}".format(result.energy - e_ground_tot))
 print(result.variables)
 print(f"Ground State Circuit: {circuit_gs}")
 
@@ -184,22 +199,22 @@ for i in range(len(edge4)):
 for i in range(len(edge5)):
     print(f"fifth edge i: {edge5[i]} ")
 
-U_ex += mol.UR(edge1[0], edge1[1], (tq.Variable('u') + 0.5) * pi)
-U_ex += mol.UR(edge1[0], edge1[2], (tq.Variable('v') + 0.5) * pi)
+U_ex += mol.UR(edge1[0], edge1[1], (tq.Variable("u") + 0.5) * pi)
+U_ex += mol.UR(edge1[0], edge1[2], (tq.Variable("v") + 0.5) * pi)
 
-U_ex += mol.UR(edge3[0], edge3[1], (tq.Variable('w') + 0.5) * pi)
-U_ex += mol.UR(edge3[0], edge3[2], (tq.Variable('x') + 0.5) * pi)
+U_ex += mol.UR(edge3[0], edge3[1], (tq.Variable("w") + 0.5) * pi)
+U_ex += mol.UR(edge3[0], edge3[2], (tq.Variable("x") + 0.5) * pi)
 
-U_ex += mol.UR(edge4[0], edge4[1], (tq.Variable('y') + 0.5) * pi)
-U_ex += mol.UR(edge4[0], edge4[2], (tq.Variable('z') + 0.5) * pi)
+U_ex += mol.UR(edge4[0], edge4[1], (tq.Variable("y") + 0.5) * pi)
+U_ex += mol.UR(edge4[0], edge4[2], (tq.Variable("z") + 0.5) * pi)
 
 
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
-    H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
+    H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
-    circuit_list=circuit_list, 
-    constant_list=constants
+    circuit_list=circuit_list,
+    constant_list=constants,
 )
 print("done with orthogonality constraint")
 
@@ -211,9 +226,8 @@ print(f"minimize & simulate time: {minimize_end - minimize_start}")
 
 print(f"FCI Singlet excited state energy: {e_excited_tot}")
 print(f"SPA + UR Singlet excited state energy: {result.energy}")
-print("SPA/FCI error: {:+2.5f}".format(result.energy-e_excited_tot))
+print("SPA/FCI error: {:+2.5f}".format(result.energy - e_excited_tot))
 print(result.variables)
 print(f"Excited State Circuit: {circuit_ex}")
 
 fe.cleanup(globals())
-

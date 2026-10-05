@@ -1,8 +1,9 @@
+import time
+
 import numpy as np
 from pyscf import fci
 
 import frayedends as fe
-import time
 
 molecule_name = "h4"
 n_electrons = 4
@@ -24,7 +25,7 @@ integrals = fe.Integrals(world)
 
 # Calculate ground state orbitals
 pno_start = time.perf_counter()
-madpno = fe.MadPNO(world, geom, n_orbitals=4) # 2 HF + 2 MP2-PNOs
+madpno = fe.MadPNO(world, geom, n_orbitals=4)  # 2 HF + 2 MP2-PNOs
 pno_end = time.perf_counter()
 pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
@@ -34,13 +35,13 @@ hf_orbs = madpno.get_hf_orbitals()
 
 # for i in range(len(gs_orbs)):
 #     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
-# 
+#
 # for i in range(len(hf_orbs)):
 #     world.cube_plot(f"hf_orb{i}", hf_orbs[i], molecule, zoom=4.0)
 
 # Calculate excited states orbitals
-cis_start = time.perf_counter() 
-cis_orbs = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
+cis_start = time.perf_counter()
+cis_orbs = madpno.compute_cis(n_excitation=2)  # Compute CIS for 2 excitations (1st and 2nd excited states)
 cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
 cis_orbs = integrals.orthonormalize(cis_orbs)
 cis_end = time.perf_counter()
@@ -51,7 +52,7 @@ print("Generating CIS took %.2f seconds" % cis_time)
 #     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
 cispd_start = time.perf_counter()
-cispd_orbs = madpno.compute_cispd(n_orbitals=4) # 2 CIS X function + 2 CIS(D)-PNO PER EXCITATION
+cispd_orbs = madpno.compute_cispd(n_orbitals=4)  # 2 CIS X function + 2 CIS(D)-PNO PER EXCITATION
 cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
@@ -59,7 +60,7 @@ print("Generating CISPD took %.2f seconds" % cispd_time)
 
 # for i in range(len(cispd_orbs)):
 #     world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)
-    
+
 nuc_repulsion = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 

@@ -9,11 +9,11 @@ from .moleculargeometry import MolecularGeometry
 
 
 class MadPNO:
-    _orbitals = None # ground state orbitals (HF + MP2 PNOs) 
-    _hf_orbitals = None # HF orbitals
-    _cis_per_root = None # CIS X functions per root 
-    _cis_orbitals = None # flat list with CIS X functions
-    _cispd_orbitals = None # CISPD PNOs for excited states
+    _orbitals = None  # ground state orbitals (HF + MP2 PNOs)
+    _hf_orbitals = None  # HF orbitals
+    _cis_per_root = None  # CIS X functions per root
+    _cis_orbitals = None  # flat list with CIS X functions
+    _cispd_orbitals = None  # CISPD PNOs for excited states
     _h = None  # one-body tensor
     _g = None  # two-body tensor
     _c = 0.0  # constant term
@@ -25,11 +25,11 @@ class MadPNO:
         Convenience access for ground state orbitals
         """
         return self.get_orbitals(*args, **kwargs)
-    
+
     @property
     def hf_orbitals(self, *args, **kwargs):
         """
-        Returns HF orbitals 
+        Returns HF orbitals
         """
         return self.get_hf_orbitals(*args, *kwargs)
 
@@ -41,7 +41,7 @@ class MadPNO:
         if self._cis_per_root is not None:
             return self._cis_per_root
         raise Exception("CIS orbitals not yet computed. Call compute_cis() first.")
-    
+
     @property
     def cis_orbitals(self):
         """
@@ -50,7 +50,7 @@ class MadPNO:
         if self._cis_orbitals is not None:
             return self._cis_orbitals
         raise Exception("CIS orbitals not yet computed. Call compute_cis() first and then orthonormalize_cis().")
-    
+
     @property
     def cispd_orbitals(self):
         """
@@ -165,7 +165,7 @@ class MadPNO:
         return filtered
 
     @redirect_output("cis.log")
-    def compute_cis(self, n_excitation, dominant_contribution=False, rtol = 2e-2, *args, **kwargs):
+    def compute_cis(self, n_excitation, dominant_contribution=False, rtol=2e-2, *args, **kwargs):
         """
         Compute CIS X functions for excited states
         arguments:
@@ -177,7 +177,7 @@ class MadPNO:
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
         self.impl.compute_cis(n_excitation)
-        self._cis_per_root = self.impl.get_cis_x_per_root() # cis_per_root is a vector<vector<real_function_3d>>
+        self._cis_per_root = self.impl.get_cis_x_per_root()  # cis_per_root is a vector<vector<real_function_3d>>
 
         total_before = sum(len(root) for root in self._cis_per_root)
 
@@ -188,19 +188,21 @@ class MadPNO:
             for ex, root in enumerate(self._cis_per_root):
                 print(f"  Excitation {ex}: {len(root)} dominant function(s)\n ")
 
-        cis_flat = [] 
+        cis_flat = []
         for root in self._cis_per_root:
-            cis_flat.extend(root)   # created flat cis_orbitals (vector<real_function_3d>)
-        
+            cis_flat.extend(root)  # created flat cis_orbitals (vector<real_function_3d>)
+
         self._cis_orbitals = cis_flat
-        
+
         print("\nSelected CIS functions info:")
         for info in get_function_info(self._cis_orbitals):
-            print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']} norm2={info['norm2']:.6e}")
+            print(
+                f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']} norm2={info['norm2']:.6e}"
+            )
         print()
 
         return self._cis_orbitals
-    
+
     @redirect_output("cispd.log")
     def compute_cispd(self, n_orbitals, dominant_contribution=False, *args, **kwargs):
         """
@@ -231,7 +233,7 @@ class MadPNO:
                 if x["type"].startswith("CISPD_EX"):
                     ex_id = int(x["type"].split("_")[-1][2:])
                     p1, p2 = int(x["pair1"]), int(x["pair2"])
-                    
+
                     if (ex_id, p1) in active_pairs or (ex_id, p2) in active_pairs:
                         filtered_cispd.append(orb)
             self._cispd_orbitals = filtered_cispd
@@ -255,14 +257,14 @@ class MadPNO:
             return self._orbitals
         else:
             raise Exception("ground state orbitals not yet computed")
-    
+
     def get_hf_orbitals(self, *args, **kwargs):
         """
         Returns HF orbitals
         """
         if self._hf_orbitals is not None:
             return self._hf_orbitals
-        else: 
+        else:
             raise Exception("ground state orbitals not yet computed")
 
     def _split_orbitals(self, orbitals):
@@ -298,8 +300,8 @@ class MadPNO:
             ex_orbitals = []
             if self._cis_orbitals is not None and self._cispd_orbitals is not None:
                 ex_orbitals = self._cis_orbitals + self._cispd_orbitals
-            gs_indices = list(range(len(orbitals)))   
-            ex_indices = None                       
+            gs_indices = list(range(len(orbitals)))
+            ex_indices = None
         else:
             # orbitals were passed, split them into ground state and excited state orbitals
             orbitals, ex_orbitals, gs_indices, ex_indices = self._split_orbitals(orbitals)
@@ -312,7 +314,7 @@ class MadPNO:
         for k in range(len(orbitals)):
             x = info[k]["pair1"]
             y = info[k]["pair2"]
-            orig_k = gs_indices[k]  
+            orig_k = gs_indices[k]
             if x == y:
                 diagonal[x].append(orig_k)
             else:
@@ -333,18 +335,18 @@ class MadPNO:
 
             def map_ex(k_ex):
                 return ex_indices[k_ex] if ex_indices is not None else k_ex + offset
-            
+
             ex_per_orb = {}
             for k_ex, x in enumerate(ex_info):
                 ex, type = parse_label(x["type"])
                 if type != "cis":
                     continue
-                k_orb = int(x["pair1"]) 
+                k_orb = int(x["pair1"])
                 ex_per_orb.setdefault(k_orb, []).append(ex)
 
                 if k_orb in diagonal:
                     diagonal[k_orb].append(map_ex(k_ex))
-                print(f'excitations per orbital: {ex_per_orb}')
+                print(f"excitations per orbital: {ex_per_orb}")
 
             for k_ex, x in enumerate(ex_info):
                 ex, type = parse_label(x["type"])
@@ -364,7 +366,7 @@ class MadPNO:
                         if key in off_diagonal:
                             off_diagonal[key].append(map_ex(k_ex))
 
-            print(f'diagonal: {diagonal}')
+            print(f"diagonal: {diagonal}")
 
         if use_diagonal:
             return diagonal

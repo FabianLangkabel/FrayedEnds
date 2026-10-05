@@ -22,7 +22,7 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
 # Calculate ground state orbitals
-madpno = fe.MadPNO(world, geom, n_orbitals=4) # 1 HF + 3 MP2-PNOs
+madpno = fe.MadPNO(world, geom, n_orbitals=4)  # 1 HF + 3 MP2-PNOs
 
 gs_orbs = madpno.get_orbitals()
 hf_orbs = madpno.get_hf_orbitals()
@@ -34,14 +34,14 @@ for i in range(len(hf_orbs)):
     world.cube_plot(f"hf_orb{i}", hf_orbs[i], molecule, zoom=4.0)
 
 # calculate excited states orbitals
-cis_orbs = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
+cis_orbs = madpno.compute_cis(n_excitation=2)  # Compute CIS for 2 excitations (1st and 2nd excited states)
 cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
 cis_orbs = integrals.orthonormalize(cis_orbs)
 
 for i in range(len(cis_orbs)):
     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
-cispd_orbs = madpno.compute_cispd(n_orbitals=4) # 1 CIS X function + 3 CIS(D)-PNO PER EXCITATION
+cispd_orbs = madpno.compute_cispd(n_orbitals=4)  # 1 CIS X function + 3 CIS(D)-PNO PER EXCITATION
 cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 
 for i in range(len(cispd_orbs)):
