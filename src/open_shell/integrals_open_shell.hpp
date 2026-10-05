@@ -56,6 +56,13 @@ class Integrals_open_shell {
     std::vector<Numpy2D> nb_compute_kinetic_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
     std::vector<Numpy4D> nb_compute_two_body_integrals(std::vector<SavedFct<NDIM>> alpha_orbs, std::vector<SavedFct<NDIM>> beta_orbs);
     nb::tuple nb_compute_effective_hamiltonian(std::vector<SavedFct<NDIM>> core_alpha_orbitals, std::vector<SavedFct<NDIM>> core_beta_orbitals, std::vector<SavedFct<NDIM>> active_alpha_orbitals, std::vector<SavedFct<NDIM>> active_beta_orbitals, SavedFct<NDIM> potential, double energy_offset);
+    std::vector<SavedFct<NDIM>> compute_electron_density(
+      std::vector<SavedFct<NDIM>> core_alpha_orbitals,
+      std::vector<SavedFct<NDIM>> core_beta_orbitals,
+      std::vector<SavedFct<NDIM>> active_alpha_orbitals,
+      std::vector<SavedFct<NDIM>> active_beta_orbitals,
+      std::vector<Numpy2D> rdm1
+    );
 
     // Integrators
     std::array<madness::Tensor<double>, 2> compute_potential_integrals(std::array<std::vector<Function<double, NDIM>>, 2> orbitals, Function<double, NDIM> V);
@@ -89,6 +96,11 @@ class Integrals_open_shell {
       std::array<std::vector<Function<double, NDIM>>, 2> &coul_orbs_mn, 
       std::array<std::vector<Function<double, NDIM>>, 2> &orbs_aa
     );
+
+    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
+        std::vector<Function<double, NDIM>>& orbitals,
+        const std::vector<double>& occupations,
+        double degeneracy_tol);
 
   private:
     MadnessProcess<NDIM>& madness_process;

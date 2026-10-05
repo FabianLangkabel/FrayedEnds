@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <utility>
 #include <nlohmann/json.hpp>
+#include <madness/mra/nonlinsol.h>
 #include "functionsaver.hpp"
 #include "madness_process.hpp"
 #include "coulomboperator_nd.hpp"
@@ -47,6 +48,7 @@ template <std::size_t NDIM> class Optimization {
     // input
     void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs);
     void give_rdm_and_rotate_orbitals(Numpy2D& one_rdms, Numpy4D& two_rdms);
+    void give_rdm_hcb(Numpy2D& one_rdms, Numpy2D& two_rdms);
 
     // output
     nb::tuple get_effective_hamiltonian(); // returns (core_energy + nuclear repulsion, h_eff_one_body, h_eff_two_body)
@@ -56,22 +58,25 @@ template <std::size_t NDIM> class Optimization {
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
     void calculate_all_integrals(bool update_aa = true);
     void calculate_energies();
+    void calculate_energies_hcb();
     void calculate_lagrange_multiplier();
+    void calculate_lagrange_multiplier_hcb();
     double calculate_lagrange_multiplier_element_as_as(int z, int i);
+    double calculate_lagrange_multiplier_hcb_element_as_as(int z, int i);
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
+    double calculate_lagrange_multiplier_hcb_element_as_core(int z, int i);
     double calculate_lagrange_multiplier_element_core_core(int z, int c); // Core refinement
     double calculate_lagrange_multiplier_element_core_as(int z, int c); // Core refinement
-    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c);
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c, bool use_hcb,bool use_nonlinear_solver = false);
     std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
+    std::vector<Function<double, NDIM>> get_all_active_orbital_updates_hcb(std::vector<int> orbital_indicies_for_update);
     std::vector<Function<double, NDIM>> get_all_core_orbital_updates(); // Core refinement
     void rotate_orbitals_back();
 
-    bool refine_core;
+    bool refine_core = false;
 
     // Orthonormalization control
     void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-3);
-    std::vector<Function<double, NDIM>> orthonormalize_mixed_by_degeneracy(
-        std::vector<Function<double, NDIM>>& orbitals); // use integrals stuff
 
   private:
     MadnessProcess<NDIM>& madness_process;
@@ -95,6 +100,7 @@ template <std::size_t NDIM> class Optimization {
 
     // Integrals
     madness::Tensor<double> as_integrals_one_body; // (k,l)
+    madness::Tensor<double> effective_integrals_one_body; // (k,l), including frozen-core interaction
     madness::Tensor<double> as_integrals_two_body; // (k,l,m,n)
 
     madness::Tensor<double> core_as_integrals_one_body_ak;   // (a,k)
@@ -106,13 +112,13 @@ template <std::size_t NDIM> class Optimization {
     
     // Integrals only necessary for core refinement
     madness::Tensor<double> core_core_integrals_one_body_ab; // (a,b)
-    madness::Tensor<double> core_as_integrals_two_body_baca; // (a,b,c)
-    madness::Tensor<double> core_as_integrals_two_body_baac; // (a,b,c)
+    madness::Tensor<double> sum_a_core_as_integrals_two_body_baca; // (b,c)
+    madness::Tensor<double> sum_a_core_as_integrals_two_body_baac; // (b,c)
     madness::Tensor<double> core_as_integrals_two_body_akcl; // (a,k,c,l)
     madness::Tensor<double> core_as_integrals_two_body_aklc; // (a,k,l,c)
 
     // Energies
-    double core_total_energy;
+    double core_total_energy = 0.0;
 
     // AS Refinement
     double highest_as_error;
@@ -124,12 +130,18 @@ template <std::size_t NDIM> class Optimization {
     madness::Tensor<double> LagrangeMultiplier_Core_AS;
 
     // Stored AS orbital combinations
+    // Unique active pairs in lower-triangular order: (0,0), (1,0),
+    // (1,1), ... . Pair (k,l) is stored at max(k,l)*(max(k,l)+1)/2+min(k,l).
     std::vector<Function<double, NDIM>> orbs_kl;      // |kl>
     std::vector<Function<double, NDIM>> coul_orbs_mn; // 1/r|mn>
     
     // Stored core orbital combinations
     std::vector<Function<double, NDIM>> orbs_aa; // |aa>
     std::vector<Function<double, NDIM>> coul_orbs_aa; // 1/r|aa>
+
+    // Contracted core exchange action
+    std::vector<Function<double, NDIM>> sum_a_aka; // \sum_a \phi_a(r) * \int dr' 1/|r-r'| \phi_a(r') \phi_k(r')
+    std::vector<Function<double, NDIM>> sum_a_aca; // \sum_a \phi_a(r) * \int dr' 1/|r-r'| \phi_a(r') \phi_c(r')
 
     // Orthonormalization settings
     std::string orthonormalization_method = "symmetric";

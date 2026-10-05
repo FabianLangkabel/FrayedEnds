@@ -22,6 +22,51 @@ std::array<std::vector<Function<double, NDIM>>, 2> Integrals_open_shell<NDIM>::r
     return orbitals;
 }
 
+template <std::size_t NDIM>
+std::vector<SavedFct<NDIM>> Integrals_open_shell<NDIM>::compute_electron_density(
+    std::vector<SavedFct<NDIM>> core_alpha_orbitals,
+    std::vector<SavedFct<NDIM>> core_beta_orbitals,
+    std::vector<SavedFct<NDIM>> active_alpha_orbitals,
+    std::vector<SavedFct<NDIM>> active_beta_orbitals,
+    std::vector<Numpy2D> rdm1)
+{
+    auto core = read_orbitals(core_alpha_orbitals, core_beta_orbitals);
+    auto active = read_orbitals(active_alpha_orbitals, active_beta_orbitals);
+
+    std::array<Function<double, NDIM>, 2> density =
+        {FunctionFactory<double, NDIM>(*(madness_process.world)), FunctionFactory<double, NDIM>(*(madness_process.world))};
+
+    for (std::size_t spin = 0; spin < 2; ++spin) {
+        const std::size_t active_dim = active[spin].size();
+        if (rdm1[spin].shape(0) != active_dim ||
+            rdm1[spin].shape(1) != active_dim) {
+            throw std::invalid_argument(
+                "The open-shell 1-RDM dimensions must match the number of "
+                "active orbitals in each spin channel.");
+        }
+
+        if (active_dim > 0) {
+            auto rdm1_tensor = refinement_utils::to_madness(rdm1[spin]);
+            Tensor<double> rotation(active_dim, active_dim);
+            Tensor<double> occupations(active_dim);
+            syev(rdm1_tensor, rotation, occupations);
+            active[spin] =
+                transform(*(madness_process.world), active[spin], rotation);
+
+            for (std::size_t i = 0; i < active_dim; ++i) {
+                density[spin] += occupations[i] * active[spin][i] * active[spin][i];
+            }
+        }
+
+        // A frozen spin orbital contains one electron in the open-shell case.
+        for (const auto& orbital : core[spin]) {
+            density[spin] += orbital * orbital;
+        }
+    }
+
+    return std::vector<SavedFct<NDIM>>{SavedFct<NDIM>(density[0]), SavedFct<NDIM>(density[1]), SavedFct<NDIM>(density[0] + density[1])};
+}
+
 
 template <std::size_t NDIM>
 void Integrals_open_shell<NDIM>::update_as_integral_combinations(std::array<std::vector<Function<double, NDIM>>, 2> &orbitals, std::array<std::vector<Function<double, NDIM>>, 2> &orbs_kl, std::array<std::vector<Function<double, NDIM>>, 2> &coul_orbs_mn)

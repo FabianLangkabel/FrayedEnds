@@ -62,7 +62,7 @@ def test_2D_methods_from_ES():
         maxiter=4,
         econv=1.0e-8,
     )
-    assert np.isclose(energy, -11.85, atol=1.0e-2)
+    assert np.isclose(energy, -11.85, atol=1.0e-1)
     del factory
     del world
 

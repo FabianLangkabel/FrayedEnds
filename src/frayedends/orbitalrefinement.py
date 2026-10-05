@@ -64,12 +64,22 @@ class OrbitalRefinement:
     dimensions = None
     impl = None
     converged = None  # indicates if the last call converged
+    use_hcb = None  # indicate wether to use the HCB formulation
 
     @property
     def orbitals(self, *args, **kwargs):
         return self.get_orbitals(*args, **kwargs)
 
-    def __init__(self, madworld: MadWorld, Vnuc: SavedFct3D | SavedFct2D, nuc_repulsion: float, **kwargs):
+    def __init__(
+        self,
+        madworld: MadWorld,
+        Vnuc: SavedFct3D | SavedFct2D,
+        nuc_repulsion: float,
+        use_hcb: bool = False,
+        orthonormalization_method="symmetric",
+        degeneracy_tol=1e-3,
+        **kwargs,
+    ):
         # setup the numerical environment for orbital refinement.
         if madworld.dimensions == 3:
             self.dimensions = 3
@@ -77,9 +87,19 @@ class OrbitalRefinement:
         if madworld.dimensions == 2:
             self.dimensions = 2
             self.impl = OptInterface2D(madworld.impl)
-        self._Vnuc = Vnuc
+        self._Vnuc = Vnuc  # nuclear potential
         self._nuclear_repulsion = nuc_repulsion
+        self.use_hcb = use_hcb
         self.override_numerical_parameters(**kwargs)
+
+        if orthonormalization_method not in ["symmetric", "cholesky", "cd", "mixed"]:
+            raise ValueError(
+                f"Invalid orthonormalization method '{orthonormalization_method}'. Must be 'symmetric', 'cd'/'cholesky', or 'mixed'."
+            )
+        elif orthonormalization_method != "symmetric":
+            self.set_orthonormalization_method(
+                orthonormalization_method, degeneracy_tol
+            )  # after each refinement iteration the orbitals are orthonormalized using this method
 
     def override_numerical_parameters(
         self, truncation_tol=1e-6, coulomb_lo=0.001, coulomb_eps=1e-6, BSH_lo=0.001, BSH_eps=1e-6
@@ -98,7 +118,7 @@ class OrbitalRefinement:
 
     def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
         """
-        Set the orthonormalization method for orbital optimization.
+        Set the orthonormalization method for orbital refinement.
 
         Args:
             method: Orthonormalization method - "symmetric", "cholesky", or "mixed"
@@ -120,20 +140,35 @@ class OrbitalRefinement:
         occ_thresh=1.0e-5,
         maxiter=3,
         refine_core=False,
+        use_nonlinear_solver=False,
         *args,
         **kwargs,
     ):
         r"""
         this function performs the orbital refinement
+        two formulations are supported:
+        (1) standard spinful fermionic formulation (default)
+        (2) hardcore boson (HCB) formulation
         input:
-         - one body reduced density matrix (rdm1) and two body reduced density matrix (rdm2) as 2 and 4 dimensional numpy arrays, respectively
-           expects ordering of the form:
+         - one body reduced density matrix (rdm1) and two body reduced density matrix (rdm2):
+           * fermionic case:
+            rdm1: 2D numpy array
+            rdm2: 4D numpy array
+            expects ordering of the form:
               rdm1[i,j] = \sum_\sigma \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
               rdm2[i,j,k,l] = \sum_{\sigma,\tau} \langle a_{i,\sigma}^\dagger a_{j,\tau}^\dagger a_{l,\tau} a_{k,\sigma} \rangle
+           * HCB case:
+            rdm1: 2D numpy array
+            rdm2: 2D numpy array
+            ordering:
+              rdm1[i,j] = \langle b_i^\dagger b_j \rangle
+              rdm2[i,j] = \langle b_i^\dagger b_i b_j^\dagger b_j \rangle
          - orbitals is either a list of SavedFct3D objects (if all orbitals are active) or a list/tuple of [frozen_core_orbs, active_orbs], where frozen_core_orbs and active_orbs are lists of SavedFct3D objects.
-         - opt_thresh is the threshold for convergence of the orbital refinement (based on the change of the energy)
+         - opt_thresh is the threshold for convergence of the orbital refinement (based on the largest residual of the refined orbitals)
          - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
          - maxiter is the maximum number of iterations for the orbital refinement
+         - refine_core is a boolean flag indicating whether to refine the frozen core orbitals (default: False)
+         - use_nonlinear_solver determines how orbitals are updated. Default (False): phi_{n+1} = phi_n - update; if True: updated using Krylov subspace accelerated inexact Newton method
         output:
          - list of frozen core orbitals, list of refined active orbitals and convergence flag
         """
@@ -153,9 +188,17 @@ class OrbitalRefinement:
 
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
         self.impl.give_initial_orbitals(frozen_core_orbs, active_orbs)
-        self.impl.give_rdm_and_rotate_orbitals(rdm1, rdm2)
-        self.converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter, refine_core)
-        self.impl.rotate_orbitals_back()
+        if self.use_hcb:
+            self.impl.give_rdm_hcb(rdm1, rdm2)
+            self.converged = self.impl.optimize_orbitals(
+                opt_thresh, occ_thresh, maxiter, refine_core, self.use_hcb, use_nonlinear_solver
+            )
+        else:
+            self.impl.give_rdm_and_rotate_orbitals(rdm1, rdm2)
+            self.converged = self.impl.optimize_orbitals(
+                opt_thresh, occ_thresh, maxiter, refine_core, self.use_hcb, use_nonlinear_solver
+            )
+            self.impl.rotate_orbitals_back()
 
         self._fr_core_orbitals, self._active_orbitals = self.impl.get_orbitals()
         return self._fr_core_orbitals, self._active_orbitals, self.converged
@@ -188,6 +231,56 @@ class OrbitalRefinement:
         self._c = self.impl.get_c()
         return self._c
 
+    def get_rdms_hcb(self, n_orbitals, n_elec, wfn=None, U=None, molecule=None):
+        import pyscf
+        import tequila
+        from tequila.hamiltonian.paulis import Sm, Sp
+
+        if isinstance(wfn, tequila.QubitWaveFunction):
+            tq_wfn = wfn
+        elif isinstance(wfn, pyscf.fci.FCIvector):
+            # project fci wfn onto hcb subspace
+            alpha_strs = pyscf.fci.cistring.make_strings(range(n_orbitals), n_elec // 2)
+            wfn_hcb = np.zeros(2**n_orbitals)
+            for i, alpha_str in enumerate(alpha_strs):
+                alpha_str_b = bin(alpha_str)[2:].zfill(n_orbitals)[::-1]
+                alpha_str = int(alpha_str_b, 2)
+                wfn_hcb[alpha_str] = wfn[i, i]
+            wfn_hcb /= np.linalg.norm(wfn_hcb)
+            tq_wfn = tequila.QubitWaveFunction.from_array(wfn_hcb, numbering=tequila.BitNumbering.MSB)
+        elif wfn is None and U is not None and molecule is not None:
+            H = molecule.make_hardcore_boson_hamiltonian()
+            E = tequila.ExpectationValue(H=H, U=U)
+            result = tequila.minimize(E, silent=True)
+            tq_wfn = tequila.simulate(U, variables=result.variables)
+        else:
+            raise ValueError(
+                "Provide either:\n"
+                "  1. wfn as a tequila.QubitWaveFunction,\n"
+                "  2. wfn as a pyscf.fci.FCIvector, or\n"
+                "  3. both U and molecule for an SPA calculation."
+            )
+
+        # build rdm1
+        rdm1 = np.zeros([n_orbitals, n_orbitals])
+        for i in range(n_orbitals):
+            for j in range(i + 1):
+                qop = Sm(i) * Sp(j)
+                rdm1[i, j] = (tq_wfn.inner(qop(tq_wfn))).real
+                rdm1[j, i] = rdm1[i, j]
+
+        # build rdm2
+        rdm2 = np.zeros([n_orbitals, n_orbitals])
+        for i in range(n_orbitals):
+            for j in range(i + 1):
+                n_i = Sm(i) * Sp(i)
+                n_j = Sm(j) * Sp(j)
+                qop = n_i * n_j
+                rdm2[i, j] = (tq_wfn.inner(qop(tq_wfn))).real
+                rdm2[j, i] = rdm2[i, j]
+
+        return rdm1, rdm2
+
 
 class OrbitalRefinement_open_shell:
     _orbitals = None
@@ -200,7 +293,9 @@ class OrbitalRefinement_open_shell:
     # def orbitals(self, *args, **kwargs):
     #    return self.get_orbitals(*args, **kwargs)
 
-    def __init__(self, madworld, Vnuc, nuc_repulsion, *args, **kwargs):
+    def __init__(
+        self, madworld, Vnuc, nuc_repulsion, orthonormalization_method="symmetric", degeneracy_tol=1e-3, *args, **kwargs
+    ):
         if madworld.dimensions == 3:
             self.dimensions = 3
             self.impl = OptInterface_open_shell_3D(madworld.impl)
@@ -211,6 +306,13 @@ class OrbitalRefinement_open_shell:
         self._nuclear_repulsion = nuc_repulsion
         self.override_numerical_parameters(**kwargs)
 
+        if orthonormalization_method not in ["symmetric", "cd", "cholesky", "mixed"]:
+            raise ValueError(
+                f"Invalid orthonormalization method '{orthonormalization_method}'. Must be 'symmetric', 'cd'/'cholesky', or 'mixed'."
+            )
+        elif orthonormalization_method != "symmetric":
+            self.set_orthonormalization_method(orthonormalization_method, degeneracy_tol)
+
     @redirect_output("madopt.log")
     def refine_orbitals(
         self,
@@ -220,20 +322,40 @@ class OrbitalRefinement_open_shell:
         opt_thresh=1.0e-4,
         occ_thresh=1.0e-5,
         maxiter=3,
-        orthonormalization_method="symmetric",
         refine_core=False,
+        use_nonlinear_solver=False,
         *args,
         **kwargs,
     ):
+        r"""
+        this function does orbital refinement for open shell system
+        input:
+         - orbitals is a list of [frozen_core_orbs_alpha, frozen_core_orbs_beta, active_orbs_alpha, active_orbs_beta], where each of the four elements is a list of SavedFct3D objects.
+         - rdm1 is a list of two 2D numpy arrays [rdm1_alpha, rdm1_beta] with:
+              rdm1_\sigma[i,j] = \langle a_{i,\sigma}^\dagger a_{j,\sigma} \rangle
+         - rdm2 is a list of three 4D numpy arrays [rdm2_aa, rdm2_ab, rdm2_bb] with:
+              rdm2_{\sigma\tau}[i,j,k,l] = \langle a_{i,\sigma}^\dagger a_{j,\tau}^\dagger a_{l,\tau} a_{k,\sigma} \rangle
+         - opt_thresh is the threshold for convergence of the orbital refinement (based on the largest residual of the refined orbitals)
+         - occ_thresh is the occupation threshold, if orbitals have occupation numbers < occ_thresh, they are skipped and not refined
+         - maxiter is the maximum number of iterations for the orbital refinement
+         - refine_core is a boolean flag indicating whether to refine the frozen core orbitals (default: False)
+         - use_nonlinear_solver determines how orbitals are updated. Default (False): phi_{n+1} = phi_n - update; if True: updated using Krylov subspace accelerated inexact Newton method
+        output:
+         - list of frozen core orbitals as [frozen_core_orbs_alpha, frozen_core_orbs_beta], list of refined active orbitals as [active_orbs_alpha, active_orbs_beta] and convergence flag
+        """
+
         self.impl.give_potential_and_repulsion(self._Vnuc, self._nuclear_repulsion)
         self.impl.give_initial_orbitals(orbitals[0], orbitals[1], orbitals[2], orbitals[3])
         self.impl.give_rdm_and_rotate_orbitals(rdm1, rdm2)
-        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter, orthonormalization_method, refine_core)
+        converged = self.impl.optimize_orbitals(opt_thresh, occ_thresh, maxiter, refine_core, use_nonlinear_solver)
         self.impl.rotate_orbitals_back()
         self._orbitals = self.impl.get_orbitals()
         core_orbs = self._orbitals[:2]
         as_orbs = self._orbitals[2:]
         return core_orbs, as_orbs, converged
+
+    def set_orthonormalization_method(self, method="symmetric", degeneracy_tol=1e-3):
+        self.impl.set_orthonormalization_method(method, degeneracy_tol)
 
     def get_effective_hamiltonian(self, *args, **kwargs):
         H_eff = self.impl.get_effective_hamiltonian()

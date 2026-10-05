@@ -75,7 +75,6 @@ class MadWorld:
     }
 
     def __init__(self, ndims, **kwargs):
-
         self.madness_parameters = dict(self.madness_parameters)
         self.dimensions = ndims
 
@@ -193,3 +192,6 @@ class MadWorld:
             return self.impl.evaluate([functions], points)[0]
         else:
             return self.impl.evaluate(functions, points)
+
+    def load_func_from_madness_file(self, filepath):
+        return self.impl.load_savedfct_from_m_file(filepath)
