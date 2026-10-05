@@ -53,7 +53,7 @@ print(f"CISPD basis: {len(cispd_orbs_original)}")
 # ----------- symmetric orthonormalized orbital set -----------
 cis_orbs = integrals.project_out(gs_orbs_original, cis_orbs_original)
 cis_orbs = integrals.orthonormalize(cis_orbs)
-cispd_orbs = integrals.project_out(gs_orbs_original + cis_orbs, cispd_orbs_original) # Cispd only project out the ground state orbitals
+cispd_orbs = integrals.project_out(gs_orbs_original + cis_orbs, cispd_orbs_original)
 
 orbitals_sym = gs_orbs_original + cis_orbs_original + cispd_orbs_original
 orbitals_sym = integrals.orthonormalize(orbitals_sym)

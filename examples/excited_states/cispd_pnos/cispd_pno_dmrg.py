@@ -21,7 +21,8 @@ geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
-madpno = fe.MadPNO(world, geom, n_orbitals=4)
+# Calculate ground state orbitals
+madpno = fe.MadPNO(world, geom, n_orbitals=4) # 1 HF + 3 MP2-PNOs
 
 gs_orbs = madpno.get_orbitals()
 hf_orbs = madpno.get_hf_orbitals()
@@ -31,15 +32,16 @@ for i in range(len(gs_orbs)):
 
 for i in range(len(hf_orbs)):
     world.cube_plot(f"hf_orb{i}", hf_orbs[i], molecule, zoom=4.0)
- 
-cis_orbs = madpno.compute_cis(n_excitation=2)
+
+# calculate excited states orbitals
+cis_orbs = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
 cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
 cis_orbs = integrals.orthonormalize(cis_orbs)
 
 for i in range(len(cis_orbs)):
     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
-cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+cispd_orbs = madpno.compute_cispd(n_orbitals=4) # 1 CIS X function + 3 CIS(D)-PNO PER EXCITATION
 cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 
 for i in range(len(cispd_orbs)):
@@ -54,6 +56,7 @@ orbs = integrals.orthonormalize(orbitals=orbs)
 for i in range(len(orbs)):
     world.cube_plot(f"orb{i}", orbs[i], molecule, zoom=4.0)
 
+# Calculate initial integrals
 T = integrals.compute_kinetic_integrals(orbs)
 V = integrals.compute_potential_integrals(orbs, Vnuc)
 h1 = T + V
@@ -61,6 +64,7 @@ G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
 S = integrals.compute_overlap_integrals(orbs)
 n_orbitals = len(orbs)
 
+# DMRG calculation
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
 driver.initialize_system(n_sites=n_orbitals, n_elec=n_electrons, spin=0)
 mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)

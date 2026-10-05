@@ -36,8 +36,9 @@ geom = "H 0.0 0.0 -0.5\nH 0.0 0.0 0.5"
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
+# Calculate ground state orbitals
 pno_start = time.perf_counter()
-madpno = fe.MadPNO(world, geom, n_orbitals=4)  
+madpno = fe.MadPNO(world, geom, n_orbitals=4)  # 1 HF + 3 MP2-PNOs
 pno_end = time.perf_counter()
 pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
@@ -48,6 +49,7 @@ hf_orbs = madpno.get_hf_orbitals()
 for i in range(len(gs_orbs)):
     world.cube_plot(f"gs_orb{i}", gs_orbs[i], molecule, zoom=4.0)
 
+# Calculate excited states orbitals
 cis_start = time.perf_counter()
 cis_orbs = madpno.compute_cis(n_excitation=2) # Compute CIS for 2 excitations (1st and 2nd excited states)
 cis_orbs = integrals.project_out(gs_orbs, cis_orbs)
@@ -60,7 +62,7 @@ for i in range(len(cis_orbs)):
     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
 cispd_start = time.perf_counter()
-cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+cispd_orbs = madpno.compute_cispd(n_orbitals=4) # 1 CIS X function + 3 CIS(D)-PNO PER EXCITATION
 cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
@@ -80,12 +82,14 @@ for i in range(len(orbs)):
 
 n_orbitals = len(orbs)
 
+# Calculate initial integrals
 T = integrals.compute_kinetic_integrals(orbs)
 V = integrals.compute_potential_integrals(orbs, Vnuc)
 h1 = T + V
 G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
 S = integrals.compute_overlap_integrals(orbs)
 
+# DMRG calculation and extract RDMs
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
 driver.initialize_system(n_sites=n_orbitals, n_elec=n_electrons, spin=0)
 mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
@@ -125,6 +129,7 @@ with open("iteration_pno_dmrg_oo.dat", "a") as f:
 for iter in range(iterations):
     iter_start = time.perf_counter()
 
+    # transform into natural orbitals
     natural_orbs, occ_n, vec = integrals.transform_to_natural_orbitals(orbs, sa_1pdm)
     print("Natural orbital occupation: ", occ_n)
 

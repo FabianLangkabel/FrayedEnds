@@ -27,41 +27,18 @@ print("Generating PNOs took %.2f seconds" % pno_time)
 
 # ---------- original orbital set ------------
 gs_orbs_original = madpno.get_orbitals() # HF + MP2
-for i in range(len(gs_orbs_original)):
-    # world.cube_plot(f"gs_orbs{i}", gs_orbs_original[i], molecule, zoom=4.0)
-    gs_orbs_original[i].save_to_file(f"gs_orbs_original{i}.data")
 
 cis_start = time.perf_counter()
 cis_orbs_original = madpno.compute_cis(n_excitation=1) # CIS X Functions
-for i in range(len(cis_orbs_original)):
-    # world.cube_plot(f"cis_orbs{i}", cis_orbs_original[i], molecule, zoom=4.0)
-    cis_orbs_original[i].save_to_file(f"cis_orbs_original{i}.data")
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
 cispd_orbs_original = madpno.compute_cispd(n_orbitals=4) # CISPD PNO
-for i in range(len(cispd_orbs_original)):
-    # world.cube_plot(f"cispd_orbs{i}", cispd_orbs_original[i], molecule, zoom=4.0)
-    cispd_orbs_original[i].save_to_file(f"cispd_orbs_original{i}.data")
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
-
-# gs_orbs_original = []
-# for i in range(4):
-#     gs_orbs_original.append(fe.SavedFct3D(f"gs_orbs_original{i}.data"))
-# 
-# cis_orbs_original = []
-# cispd_orbs_original = []
-# for i in range(1):
-#    cis_orbs_original.append(fe.SavedFct3D(f"cis_orbs_original{i}.data"))
-# for i in range(2):   
-#    cispd_orbs_original.append(fe.SavedFct3D(f"cispd_orbs_original{i}.data"))
-# 
-# print("Orbitals loaded!")
-
 
 # ----------- symmetric orthonormalized orbital set -----------
 cis_orbs = integrals.project_out(gs_orbs_original, cis_orbs_original)

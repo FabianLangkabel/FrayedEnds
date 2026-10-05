@@ -64,7 +64,7 @@ for d in distance:
     integrals = fe.Integrals(world)
 
     pno_start = time.perf_counter()
-    madpno = fe.MadPNO(world, geom, n_orbitals=4)
+    madpno = fe.MadPNO(world, geom, n_orbitals=4) # 2 HF + 2 MP2-PNOs
     pno_end = time.perf_counter()
     pno_time = pno_end - pno_start
     print("Generating PNOs took %.2f seconds" % pno_time)
@@ -86,7 +86,7 @@ for d in distance:
     #     world.cube_plot(f"cis_orb{i}", cis_orbs[i], molecule, zoom=4.0)
 
     cispd_start = time.perf_counter()
-    cispd_orbs = madpno.compute_cispd(n_orbitals=4)
+    cispd_orbs = madpno.compute_cispd(n_orbitals=4) # 2 CIS X Functions + 2 CIS(D)-PNOS
     cispd_orbs = integrals.project_out(gs_orbs + cis_orbs, cispd_orbs)
     cispd_end = time.perf_counter()
     cispd_time = cispd_end - cispd_start

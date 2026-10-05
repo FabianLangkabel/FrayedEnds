@@ -27,40 +27,18 @@ print("Generating PNOs took %.2f seconds" % pno_time)
 
 # ---------- original orbital set ------------
 gs_orbs_original = madpno.get_orbitals() # HF + MP2
-for i in range(len(gs_orbs_original)):
-    # world.cube_plot(f"gs_orbs{i}", gs_orbs_original[i], molecule, zoom=4.0)
-    gs_orbs_original[i].save_to_file(f"gs_orbs_original{i}.data")
 
 cis_start = time.perf_counter()
 cis_orbs_original = madpno.compute_cis(n_excitation=1) # CIS X Functions
-for i in range(len(cis_orbs_original)):
-    # world.cube_plot(f"cis_orbs{i}", cis_orbs_original[i], molecule, zoom=4.0)
-    cis_orbs_original[i].save_to_file(f"cis_orbs_original{i}.data")
 cis_end = time.perf_counter()
 cis_time = cis_end - cis_start
 print("Generating CIS took %.2f seconds" % cis_time)
 
 cispd_start = time.perf_counter()
 cispd_orbs_original = madpno.compute_cispd(n_orbitals=5) # CISPD PNO
-for i in range(len(cispd_orbs_original)):
-    # world.cube_plot(f"cispd_orbs{i}", cispd_orbs_original[i], molecule, zoom=4.0)
-    cispd_orbs_original[i].save_to_file(f"cispd_orbs_original{i}.data")
 cispd_end = time.perf_counter()
 cispd_time = cispd_end - cispd_start
 print("Generating CISPD took %.2f seconds" % cispd_time)
-
-# gs_orbs_original = []
-# for i in range(5):
-#     gs_orbs_original.append(fe.SavedFct3D(f"gs_orbs_original{i}.data"))
-# 
-# cis_orbs_original = []
-# cispd_orbs_original = []
-# for i in range(1):
-#    cis_orbs_original.append(fe.SavedFct3D(f"cis_orbs_original{i}.data"))
-# for i in range(3):   
-#    cispd_orbs_original.append(fe.SavedFct3D(f"cispd_orbs_original{i}.data"))
-# 
-# print("Orbitals loaded!")
 
 # ----------- symmetric orthonormalized orbital set -----------
 cis_orbs = integrals.project_out(gs_orbs_original, cis_orbs_original)
@@ -122,6 +100,8 @@ for i in range(len(first_edge)):
 for i in range(len(second_edge)):
     print(f"second edge i: {second_edge[i]} ")
 
+# -------------- add orbital rotation for better accuracy -------------------
+
 # U += mol.UR(first_edge[0], first_edge[1], (tq.Variable('a') + 0.5) * pi)
 U += mol.UR(first_edge[1], first_edge[2], (tq.Variable('b') + 0.5) * pi)
 U += mol.UR(first_edge[1], first_edge[3], (tq.Variable('c') + 0.5) * pi)
@@ -130,7 +110,6 @@ U += mol.UR(first_edge[2], first_edge[3], (tq.Variable('d') + 0.5) * pi)
 U += mol.UR(second_edge[1], second_edge[2], (tq.Variable('f') + 0.5) * pi)
 U += mol.UR(second_edge[1], second_edge[3], (tq.Variable('g') + 0.5) * pi)
 U += mol.UR(second_edge[2], second_edge[3], (tq.Variable('h') + 0.5) * pi)
-
 
 E = tq.ExpectationValue(U=U, H=H_gs)
 result = tq.minimize(E, silent=True)
@@ -172,11 +151,6 @@ print("SPA edges: ", ex_spa_edges)
 
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
-# UR = mol.UR(0, 1, (tq.Variable('w') + 0.5) * pi)
-# UR += mol.UR(0, 2, (tq.Variable('x') + 0.5) * pi)
-# UR += mol.UR(0, 3, (tq.Variable('y') + 0.5) * pi)
-# UR += mol.UR(2, 3, (tq.Variable('z') + 0.5) * pi)
-
 ti = fe.TequilaInterface(mol=mol)
 E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
@@ -207,13 +181,14 @@ for i in range(len(ex_first_edge)):
 for i in range(len(ex_second_edge)):
     print(f"ex_second edge i: {ex_second_edge[i]} ")
 
+# ----- adding orbital rotations to get the right singlet state ------------
+
 UR = mol.UR(ex_first_edge[0], ex_first_edge[1], (tq.Variable('s') + 0.5) * pi)
 UR += mol.UR(ex_first_edge[0], ex_first_edge[2], (tq.Variable('t') + 0.5) * pi)
 # UR += mol.UR(ex_first_edge[2], ex_first_edge[3], (tq.Variable('u') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable('w') + 0.5) * pi)
 UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable('x') + 0.5) * pi)
 # UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
-
 
 E = ti.expectation_value_orthogonality_constraint(
     H=H_gs, # use ground state Hamiltonian and rotate the circuit into the different basis
