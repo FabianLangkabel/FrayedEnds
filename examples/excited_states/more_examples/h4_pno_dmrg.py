@@ -79,6 +79,7 @@ for d in distance:
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
+    h1 = T + V
     S = integrals.compute_overlap_integrals(orbs)
 
     """
@@ -89,9 +90,19 @@ for d in distance:
 
     driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
     driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-    mpo = driver.get_qc_mpo(h1e=T + V, g2e=G, ecore=nuc_repulsion, iprint=0)
+    mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
     energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
+
+    idx = driver.orbital_reordering(h1, G)
+    h1_new = h1[idx][:, idx]
+    g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
+
+    driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
+    mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuc_repulsion, iprint=0)
+    ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
+    energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
+    print("State-averaged MPS energies = [%s]" % " ".join("%20.15f" % x for x in energies))
 
     with open("results_pno_dmrg.dat", "a") as f:
         f.write(f"{reported_distance:.3f} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
