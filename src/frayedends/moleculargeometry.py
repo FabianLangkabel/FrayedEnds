@@ -14,7 +14,8 @@ class MolecularGeometry:
     impl = None
     silent = False
 
-    def __init__(self, geometry: str = None, units=None, silent=False, *args, **kwargs):
+    def __init__(self, geometry: str = None, units=None, silent=False, eprec=None, *args, **kwargs):
+        # eprec: smoothing parameter of the nuclear potential (default of madness: 1e-4)
         self.silent = silent
 
         if units is None:
@@ -35,6 +36,8 @@ class MolecularGeometry:
                 units = "angstrom"
 
         self.impl = MolecularGeometryImpl(units)
+        if eprec is not None:
+            self.set_eprec(eprec)
         if geometry is not None:
             geometry = geometry.lower()
             geometry = geometry.strip()
@@ -57,6 +60,12 @@ class MolecularGeometry:
 
     def add_atom(self, pos_x, pos_y, pos_z, symbol):
         self.impl.add_atom(pos_x, pos_y, pos_z, symbol)
+
+    def set_eprec(self, eprec):
+        self.impl.set_eprec(eprec)
+
+    def get_eprec(self):
+        return self.impl.get_eprec()
 
     def to_json(self):
         json_str = self.impl.to_json()

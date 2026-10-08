@@ -61,6 +61,7 @@ nanobind_add_module(
   src/pyfuncfactory.hpp
   src/eigensolver.cpp
   src/nwchem_converter.cpp
+  src/hartree_fock.cpp
   src/moleculargeometry.cpp
   src/coulomboperator_nd.hpp
   src/open_shell/integrals_open_shell.cpp

@@ -29,6 +29,10 @@ class MolecularGeometry {
     double get_nuclear_repulsion() const { return mol.nuclear_repulsion_energy(); }
     double get_nuclear_charge() const { return mol.total_nuclear_charge(); }
 
+    // smoothing of the nuclear potential (eprec of the madness molecule)
+    void set_eprec(double eprec) { mol.update_rcut_with_eprec(eprec); }
+    double get_eprec() const { return mol.get_eprec(); }
+
     int get_core_n_electrons() const {
         int total = 0;
         for (auto atom : mol.get_atoms()) {

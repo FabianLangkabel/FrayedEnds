@@ -10,6 +10,7 @@
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
 #include "atombas.hpp"
+#include "hartree_fock.hpp"
 #include "madness_process.hpp"
 #include "moleculargeometry.hpp"
 #include "open_shell/nwchem_converter_open_shell.hpp"
@@ -98,6 +99,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_nuclear_repulsion", &MolecularGeometry::get_nuclear_repulsion)
         .def("get_nuclear_charge", &MolecularGeometry::get_nuclear_charge)
         .def("get_core_n_electrons", &MolecularGeometry::get_core_n_electrons)
+        .def("set_eprec", &MolecularGeometry::set_eprec, nb::arg("eprec"))
+        .def("get_eprec", &MolecularGeometry::get_eprec)
         .def("molecular_potential_derivative", &MolecularGeometry::molecular_potential_derivative)
         .def("molecular_potential_second_derivative", &MolecularGeometry::molecular_potential_second_derivative)
         .def("nuclear_repulsion_derivative", &MolecularGeometry::nuclear_repulsion_derivative)
@@ -295,6 +298,22 @@ nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
         .def("solve_scf", &AtomBasProjector::solve_scf)
         .def("get_nuclear_repulsion", &AtomBasProjector::get_nuclear_repulsion);
 
+    nb::class_<HartreeFock>(m, "HartreeFock")
+        .def(nb::init<MadnessProcess<3>&, const MolecularGeometry&, const std::string&>(), nb::arg("madness_process"),
+             nb::arg("molecule"), nb::arg("parameters_json"))
+        .def("set_initial_orbitals", &HartreeFock::set_initial_orbitals, nb::arg("alpha_orbitals"),
+             nb::arg("alpha_energies"), nb::arg("beta_orbitals"), nb::arg("beta_energies"))
+        .def("solve", &HartreeFock::solve)
+        .def("get_alpha_orbitals", &HartreeFock::get_alpha_orbitals)
+        .def("get_beta_orbitals", &HartreeFock::get_beta_orbitals)
+        .def("get_alpha_orbital_energies", &HartreeFock::get_alpha_orbital_energies)
+        .def("get_beta_orbital_energies", &HartreeFock::get_beta_orbital_energies)
+        .def("get_minimal_basis", &HartreeFock::get_minimal_basis)
+        .def("get_energy", &HartreeFock::get_energy)
+        .def("get_vnuc", &HartreeFock::get_vnuc)
+        .def("get_nuclear_repulsion", &HartreeFock::get_nuclear_repulsion)
+        .def("is_spin_restricted", &HartreeFock::is_spin_restricted);
+
     nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<MadnessProcess<3>&, const std::vector<double>&, const double&,
                       const std::vector<std::vector<double>>&>())
@@ -331,7 +350,10 @@ nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
         .def("get_normalized_aos", &NWChem_Converter::get_normalized_aos)
         .def("get_mos", &NWChem_Converter::get_mos)
         .def("get_vnuc", &NWChem_Converter::get_vnuc)
-        .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy);
+        .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy)
+        .def("get_occupancies", &NWChem_Converter::get_occupancies)
+        .def("get_orbital_energies", &NWChem_Converter::get_orbital_energies)
+        .def("get_atoms", &NWChem_Converter::get_atoms);
 
     nb::class_<NWChem_Converter_open_shell>(m, "NWChem_Converter_open_shell")
         .def(nb::init<MadnessProcess<3>&>())
