@@ -48,6 +48,7 @@ template <std::size_t NDIM> class Optimization {
     // input
     void give_initial_orbitals(std::vector<SavedFct<NDIM>> fr_core_orbs, std::vector<SavedFct<NDIM>> act_orbs);
     void give_rdm_and_rotate_orbitals(Numpy2D& one_rdms, Numpy4D& two_rdms);
+    void give_rdm_hcb(Numpy2D& one_rdms, Numpy2D& two_rdms);
 
     // output
     nb::tuple get_effective_hamiltonian(); // returns (core_energy + nuclear repulsion, h_eff_one_body, h_eff_two_body)
@@ -57,14 +58,18 @@ template <std::size_t NDIM> class Optimization {
     void give_potential_and_repulsion(SavedFct<NDIM> potential, double nuclear_repulsion);
     void calculate_all_integrals(bool update_aa = true);
     void calculate_energies();
+    void calculate_energies_hcb();
     void calculate_lagrange_multiplier();
+    void calculate_lagrange_multiplier_hcb();
     double calculate_lagrange_multiplier_element_as_as(int z, int i);
+    double calculate_lagrange_multiplier_hcb_element_as_as(int z, int i);
     double calculate_lagrange_multiplier_element_as_core(int z, int i);
+    double calculate_lagrange_multiplier_hcb_element_as_core(int z, int i);
     double calculate_lagrange_multiplier_element_core_core(int z, int c); // Core refinement
     double calculate_lagrange_multiplier_element_core_as(int z, int c); // Core refinement
-    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c,
-                            bool use_nonlinear_solver = false);
+    bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_c, bool use_hcb,bool use_nonlinear_solver = false);
     std::vector<Function<double, NDIM>> get_all_active_orbital_updates(std::vector<int> orbital_indicies_for_update);
+    std::vector<Function<double, NDIM>> get_all_active_orbital_updates_hcb(std::vector<int> orbital_indicies_for_update);
     std::vector<Function<double, NDIM>> get_all_core_orbital_updates(); // Core refinement
     void rotate_orbitals_back();
 

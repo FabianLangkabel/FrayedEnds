@@ -9,7 +9,11 @@ from .moleculargeometry import MolecularGeometry
 
 
 class MadPNO:
-    _orbitals = None
+    _orbitals = None  # ground state orbitals (HF + MP2 PNOs)
+    _hf_orbitals = None  # HF orbitals
+    _cis_per_root = None  # CIS X functions per root
+    _cis_orbitals = None  # flat list with CIS X functions
+    _cispd_orbitals = None  # CISPD PNOs for excited states
     _h = None  # one-body tensor
     _g = None  # two-body tensor
     _c = 0.0  # constant term
@@ -18,9 +22,43 @@ class MadPNO:
     @property
     def orbitals(self, *args, **kwargs):
         """
-        Convenience
+        Convenience access for ground state orbitals
         """
         return self.get_orbitals(*args, **kwargs)
+
+    @property
+    def hf_orbitals(self, *args, **kwargs):
+        """
+        Returns HF orbitals
+        """
+        return self.get_hf_orbitals(*args, *kwargs)
+
+    @property
+    def cis_per_root(self):
+        """
+        CIS X vectors per root for excited states
+        """
+        if self._cis_per_root is not None:
+            return self._cis_per_root
+        raise Exception("CIS orbitals not yet computed. Call compute_cis() first.")
+
+    @property
+    def cis_orbitals(self):
+        """
+        flat CIS X vector for excited states
+        """
+        if self._cis_orbitals is not None:
+            return self._cis_orbitals
+        raise Exception("CIS orbitals not yet computed. Call compute_cis() first and then orthonormalize_cis().")
+
+    @property
+    def cispd_orbitals(self):
+        """
+        CISPD PNOs for excited states
+        """
+        if self._cispd_orbitals is not None:
+            return self._cispd_orbitals
+        raise Exception("CISPD orbitals not yet computed. Call compute_cispd() first.")
 
     def __init__(
         self,
@@ -89,14 +127,186 @@ class MadPNO:
             *args,
             **kwargs,
         )
+
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
-            self._orbitals = self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
+            self.compute_orbitals(n_orbitals=n_orbitals, *args, **kwargs)
 
-    def get_pno_groupings(self, diagonal=True, *args, **kwargs):
+    @redirect_output("madpno.log")
+    def compute_orbitals(self, n_orbitals, *args, **kwargs):
+        """
+        Compute ground state orbitals (HF + MP2 PNOs)
+        """
+        self.impl.run(n_orbitals)
+        # package the orbitals
+        self._orbitals = self.impl.get_orbitals()
+        self._hf_orbitals = self.impl.get_hf_orbitals()
+        self.cleanup(*args, **kwargs)
+
+    def _filter_best_contributions(self, cis_per_root, rtol, atol=1e-8):
+        """
+        Filter CIS functions per excitation, keeping only those with largest contribution (largest norm2)
+        arguments:
+            cis_per_root: list of lists of CIS functions per root
+            rtol: relative tolerance for norm2 comparison
+            atol: absolute tolerance for norm2 comparison (default 1e-8)
+        """
+        filtered = []
+        for root in cis_per_root:
+            if not root:
+                filtered.append([])
+                continue
+            info = get_function_info(root)
+            norms = [float(x.get("norm2", 0.0)) for x in info]
+            max_norm2 = max(norms)
+            best = [fct for fct, n in zip(root, norms) if numpy.isclose(n, max_norm2, rtol=rtol, atol=atol)]
+            filtered.append(best)
+        return filtered
+
+    @redirect_output("cis.log")
+    def compute_cis(self, n_excitation, dominant_contribution=False, rtol=2e-2, *args, **kwargs):
+        """
+        Compute CIS X functions for excited states
+        arguments:
+            n_excitation: number of excited states to compute
+            dominant_contribution: if True, only keep CIS X functions that correspond to the dominant contributions (largest norm2) for each excitation (default False)
+            rtol: relative tolerance for norm2 comparison when filtering dominant contributions (default 2e-2)
+            atol: absolute tolerance for norm2 comparison when filtering dominant contributions (default 1e-8)
+        """
+        if self._orbitals is None:
+            raise Exception("compute_orbitals() must be called before compute_cis()")
+        self.impl.compute_cis(n_excitation)
+        self._cis_per_root = self.impl.get_cis_x_per_root()  # cis_per_root is a vector<vector<real_function_3d>>
+
+        total_before = sum(len(root) for root in self._cis_per_root)
+
+        if dominant_contribution:
+            self._cis_per_root = self._filter_best_contributions(self._cis_per_root, rtol)
+            total_after = sum(len(root) for root in self._cis_per_root)
+            print(f"\n \n Dominant CIS functions kept: {total_after}/{total_before}")
+            for ex, root in enumerate(self._cis_per_root):
+                print(f"  Excitation {ex}: {len(root)} dominant function(s)\n ")
+
+        cis_flat = []
+        for root in self._cis_per_root:
+            cis_flat.extend(root)  # created flat cis_orbitals (vector<real_function_3d>)
+
+        self._cis_orbitals = cis_flat
+
+        print("\nSelected CIS functions info:")
+        for info in get_function_info(self._cis_orbitals):
+            print(
+                f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']} norm2={info['norm2']:.6e}"
+            )
+        print()
+
+        return self._cis_orbitals
+
+    @redirect_output("cispd.log")
+    def compute_cispd(self, n_orbitals, dominant_contribution=False, *args, **kwargs):
+        """
+        Compute CISPD PNOs for excited states
+        arguments:
+            n_orbitals: number of orbitals per excitation (CIS X functions and CISPD PNOs for each excitation)
+            dominant_contribution: if True, only keep CISPD PNOs that correspond to the dominant CIS X functions (computed in compute_cis()) (default False)
+        """
+        if self._cis_per_root is None:
+            raise Exception("compute_cis() must be called before compute_cispd()")
+        self.impl.compute_cispd(n_orbitals)
+        raw_cispd = self.impl.get_cispd_orbitals()
+
+        if dominant_contribution and self._cis_orbitals is not None:
+            active_cis_info = get_function_info(self._cis_orbitals)
+            active_pairs = []
+            for x in active_cis_info:
+                if x["type"].startswith("CIS_X_EX"):
+                    ex_id = int(x["type"].split("_")[2][2:])
+                    orb_id = int(x["pair1"])
+                    pair = (ex_id, orb_id)
+                    if pair not in active_pairs:
+                        active_pairs.append(pair)
+
+            cispd_info = get_function_info(raw_cispd)
+            filtered_cispd = []
+            for orb, x in zip(raw_cispd, cispd_info):
+                if x["type"].startswith("CISPD_EX"):
+                    ex_id = int(x["type"].split("_")[-1][2:])
+                    p1, p2 = int(x["pair1"]), int(x["pair2"])
+
+                    if (ex_id, p1) in active_pairs or (ex_id, p2) in active_pairs:
+                        filtered_cispd.append(orb)
+            self._cispd_orbitals = filtered_cispd
+            print(f"\nCISPD PNOs filtered: {len(filtered_cispd)}/{len(raw_cispd)} kept.")
+        else:
+            self._cispd_orbitals = raw_cispd
+
+        print("\nSelected CISPD PNOs info:")
+        for info in get_function_info(self._cispd_orbitals):
+            print(f"  type={info['type']} occ={info['occ']} pair1={info['pair1']} pair2={info['pair2']}")
+        print()
+
+        self.cleanup(*args, **kwargs)
+        return self._cispd_orbitals
+
+    def get_orbitals(self, *args, **kwargs):
+        """
+        Returns ground state orbitals (HF + MP2 PNOs)
+        """
+        if self._orbitals is not None:
+            return self._orbitals
+        else:
+            raise Exception("ground state orbitals not yet computed")
+
+    def get_hf_orbitals(self, *args, **kwargs):
+        """
+        Returns HF orbitals
+        """
+        if self._hf_orbitals is not None:
+            return self._hf_orbitals
+        else:
+            raise Exception("ground state orbitals not yet computed")
+
+    def _split_orbitals(self, orbitals):
+        """
+        Split orbitals into ground state and excited state orbitals based on their type.
+        Returns: (gs_orbitals, ex_orbitals, gs_indices, ex_indices)
+        """
+        info = get_function_info(orbitals)
+        gs_orbitals, ex_orbitals = [], []
+        gs_indices, ex_indices = [], []
+        for i, orb in enumerate(orbitals):
+            label = info[i]["type"]
+            if label.startswith("CIS_X_EX") or label.startswith("CISPD_EX"):
+                ex_orbitals.append(orb)
+                ex_indices.append(i)
+            else:
+                gs_orbitals.append(orb)
+                gs_indices.append(i)
+        return gs_orbitals, ex_orbitals, gs_indices, ex_indices
+
+    def get_pno_groupings(self, diagonal=True, orbitals=None, *args, **kwargs):
+        """
+        Returns a dictionary of PNO groupings based on their pair IDs.
+        arguments:
+            diagonal: if True, only return diagonal groupings (default True), otherwise return both diagonal and off-diagonal groupings.
+            orbitals: default None, if provided, use these orbitals instead of using computed ones. Should be a list of orbitals (ground state and excited state) with info strings.
+        """
         # group the PNOs according to their pair IDs. For diagonal approximation (default) this corresponds to SPA edges
-        orbitals = self.get_orbitals(*args, **kwargs)
+        use_diagonal = diagonal
+
+        if orbitals is None:
+            orbitals = self.get_orbitals(*args, **kwargs)
+            ex_orbitals = []
+            if self._cis_orbitals is not None and self._cispd_orbitals is not None:
+                ex_orbitals = self._cis_orbitals + self._cispd_orbitals
+            gs_indices = list(range(len(orbitals)))
+            ex_indices = None
+        else:
+            # orbitals were passed, split them into ground state and excited state orbitals
+            orbitals, ex_orbitals, gs_indices, ex_indices = self._split_orbitals(orbitals)
+
+        # ground state orbitals (HF + MP2 PNOs)
         info = get_function_info(orbitals)
         nhf = len([x for x in info if numpy.isclose(float(x["occ"]), 2.0)])
         diagonal = {k: [] for k in range(nhf)}
@@ -104,17 +314,72 @@ class MadPNO:
         for k in range(len(orbitals)):
             x = info[k]["pair1"]
             y = info[k]["pair2"]
+            orig_k = gs_indices[k]
             if x == y:
-                diagonal[x].append(k)
+                diagonal[x].append(orig_k)
             else:
-                off_diagonal[(x, y)].append(k)
+                off_diagonal[(x, y)].append(orig_k)
 
-        if diagonal:
+        if ex_orbitals:
+            # excited state orbitals (CIS X functions and CISPD PNOs)
+            offset = len(orbitals)
+            ex_info = get_function_info(ex_orbitals)
+
+            def parse_label(label):
+                # CIS_X_EX{ex}_X{idx}  oder  CISPD_EX{ex}
+                if label.startswith("CIS_X_EX"):
+                    return int(label.split("_")[2][2:]), "cis"
+                elif label.startswith("CISPD_EX"):
+                    return int(label.split("_")[-1][2:]), "cispd"
+                return None, None
+
+            def map_ex(k_ex):
+                return ex_indices[k_ex] if ex_indices is not None else k_ex + offset
+
+            ex_per_orb = {}
+            for k_ex, x in enumerate(ex_info):
+                ex, type = parse_label(x["type"])
+                if type != "cis":
+                    continue
+                k_orb = int(x["pair1"])
+                ex_per_orb.setdefault(k_orb, []).append(ex)
+
+                if k_orb in diagonal:
+                    diagonal[k_orb].append(map_ex(k_ex))
+                print(f"excitations per orbital: {ex_per_orb}")
+
+            for k_ex, x in enumerate(ex_info):
+                ex, type = parse_label(x["type"])
+                if type != "cispd":
+                    continue
+                xi, yi = int(x["pair1"]), int(x["pair2"])
+
+                if xi == yi:
+                    orb_excitations = ex_per_orb.get(xi)
+                    if orb_excitations is not None and ex in orb_excitations:
+                        diagonal[xi].append(map_ex(k_ex))
+                else:
+                    orb_excitations_x = ex_per_orb.get(xi, [])
+                    orb_excitations_y = ex_per_orb.get(yi, [])
+                    if ex in orb_excitations_x or ex in orb_excitations_y:
+                        key = (min(xi, yi), max(xi, yi))
+                        if key in off_diagonal:
+                            off_diagonal[key].append(map_ex(k_ex))
+
+            print(f"diagonal: {diagonal}")
+
+        if use_diagonal:
             return diagonal
         return {**diagonal, **off_diagonal}
 
-    def get_spa_edges(self, frozen_core=True):
-        pno_groupings = self.get_pno_groupings(diagonal=True)
+    def get_spa_edges(self, frozen_core=True, orbitals=None):
+        """
+        Returns a list of edges for the SPA graph based on the PNO groupings.
+        arguments:
+            frozen_core: if True, remove frozen core orbitals from the edges (default True)
+            orbitals: default None, if provided, use these orbitals instead of using computed ones
+        """
+        pno_groupings = self.get_pno_groupings(diagonal=True, orbitals=orbitals)
         edges = [tuple(sorted(x)) for x in pno_groupings.values()]
         nfreeze = self.impl.get_frozen_core_dim()
         if frozen_core:
@@ -140,29 +405,23 @@ class MadPNO:
             edges = [tuple([y - nof for y in x]) for x in edges]
         return edges
 
-    def get_orbitals(self, *args, **kwargs):
-        if self._orbitals is not None:
-            return self._orbitals
-        else:
-            raise Exception("orbitals not yet computed")
-
     def get_nuclear_potential(self, *args, **kwargs):
+        """
+        Returns the nuclear potential operator as a SavedFct<3> object.
+        """
         return self.impl.get_nuclear_potential()
 
     def get_nuclear_repulsion(self, *args, **kwargs):
+        """
+        Returns the nuclear repulsion energy
+        """
         return self.impl.get_nuclear_repulsion()
 
     def get_sto3g(self, *args, **kwargs):
+        """
+        Returns the STO-3G basis set as a SavedFct<3> object.
+        """
         return self.impl.get_sto3g()
-
-    @redirect_output("madpno.log")
-    def compute_orbitals(self, n_orbitals, *args, **kwargs):
-        self.impl.run(n_orbitals)
-        # package the orbitals
-        orbitals = self.impl.get_pnos()
-        self.cleanup(*args, **kwargs)
-        self._orbitals = orbitals
-        return orbitals
 
     def parameter_string(
         self,
@@ -172,6 +431,7 @@ class MadPNO:
         maxrank=10,
         diagonal=True,
         frozen_core=True,
+        cispd=-1,
         **kwargs,
     ) -> str:
         """
@@ -179,6 +439,7 @@ class MadPNO:
         :param maxrank: maxrank for each set of PNOs
         :param diagonal: use diagonal approximation (default True)
         :param frozen_core: use frozen core approximation (default True)
+        :param cispd: number of excited states for CIS(D) PNO generation (default -1)
         :param kwargs: additional key/value pairs. Example kwargs={"dft":{"k":5, "econv":1.e-6}, "pno":{...}, ... }
         :return: parameter string for the PNO class in madness
         """
@@ -194,6 +455,7 @@ class MadPNO:
             "localize": "boys",
         }
         data["nemo"] = {"ncf": "( none , 1.0)"}
+
         data["pno"] = {
             "maxrank": maxrank,
             "f12": "false",
@@ -219,23 +481,13 @@ class MadPNO:
                 + molecule_file
                 + '"'
             )
-        input_str += ' --dft="'
-        for k, v in data["dft"].items():
-            input_str += "{}={}; ".format(k, v)
-        input_str = input_str[:-2] + '"'
-        input_str += ' --pno="'
-        for k, v in data["pno"].items():
-            input_str += "{}={}; ".format(k, v)
-        input_str = input_str[:-2] + '"'
-        input_str += ' --nemo="'
-        for k, v in data["nemo"].items():
-            input_str += "{}={}; ".format(k, v)
-        input_str = input_str[:-2] + '"'
-        if data["plot"] != {}:
-            input_str += ' --plot="'
-            for k, v in data["plot"].items():
-                input_str += "{}={}; ".format(k, v)
-            input_str = input_str[:-2] + '"'
+
+        for item in ["dft", "pno", "nemo", "plot"]:
+            if item in data and data[item]:
+                input_str += ' --{}="'.format(item)
+                for k, v in data[item].items():
+                    input_str += "{}={}; ".format(k, v)
+                input_str = input_str[:-2] + '"'
 
         return input_str
 
