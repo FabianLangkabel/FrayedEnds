@@ -1,6 +1,7 @@
 from ._frayedends_impl import CoulombPotentialFromChargeDensity, SavedFct2D, SavedFct3D
 from .atomicbasisprojector import AtomicBasisProjector
 from .eigensolver import Eigensolver
+from .gradients import Gradients
 from .integrals import Integrals, Integrals_open_shell
 from .madpno import MadPNO
 from .madworld import MadWorld, cleanup, get_function_info

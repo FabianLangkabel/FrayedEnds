@@ -7,6 +7,7 @@
 #include "sum_of_gaussians.hpp"
 #include "pyfuncfactory.hpp"
 #include "integrals.hpp"
+#include "gradients.hpp"
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
 #include "atombas.hpp"
@@ -103,6 +104,17 @@ NB_MODULE(_frayedends_impl, m) {
         .def("nuclear_repulsion_derivative", &MolecularGeometry::nuclear_repulsion_derivative)
         .def("nuclear_repulsion_second_derivative", &MolecularGeometry::nuclear_repulsion_second_derivative)
         .def("get_vnuc", &MolecularGeometry::get_vnuc);
+    
+    
+    nb::class_<GradientResponse<3>>(m, "GradientResponse")
+        .def_ro("orbital_derivatives", &GradientResponse<3>::orbital_derivatives)
+        .def_ro("dRdphi_E", &GradientResponse<3>::dRdphi_E)
+        .def_ro("parameter_derivative", &GradientResponse<3>::parameter_derivative);
+
+    nb::class_<Gradients<3>>(m, "Gradients3D")
+        .def(nb::init<MadnessProcess<3>&>(), nb::keep_alive<1, 2>())
+        .def("override_numerical_parameters", &Gradients<3>::override_numerical_parameters)
+        .def("solve_h2", &Gradients<3>::solve_h2);
 
     nb::class_<SavedFct<3>>(m, "SavedFct3D")
         .def(nb::init<const Function<double, 3>&>())
@@ -132,6 +144,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
         .def("normalize", &Integrals<3>::normalize)
+        .def("multiply", nb::overload_cast<const SavedFct<3>&, double>(&Integrals<3>::multiply), nb::arg("f"), nb::arg("scalar"))
+        .def("multiply", nb::overload_cast<const SavedFct<3>&, const SavedFct<3>&>(&Integrals<3>::multiply), nb::arg("f"), nb::arg("other"))
         .def("orthonormalize", &Integrals<3>::orthonormalize)
         .def("compute_electron_density", &Integrals<3>::compute_electron_density);
 
@@ -149,6 +163,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"))
         .def("project_on", &Integrals<2>::project_on, nb::arg("kernel"), nb::arg("target"))
         .def("normalize", &Integrals<2>::normalize)
+        .def("multiply", nb::overload_cast<const SavedFct<2>&, double>(&Integrals<2>::multiply), nb::arg("f"), nb::arg("scalar"))
+        .def("multiply", nb::overload_cast<const SavedFct<2>&, const SavedFct<2>&>(&Integrals<2>::multiply), nb::arg("f"), nb::arg("other"))
         .def("orthonormalize", &Integrals<2>::orthonormalize)
         .def("compute_electron_density", &Integrals<2>::compute_electron_density);
 

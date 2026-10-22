@@ -118,6 +118,15 @@ class Integrals:
     def normalize(self, orbitals, *args, **kwargs):
         return self.impl.normalize(orbitals)
 
+    def multiply(self, fct, other, *args, **kwargs):
+        # multiplies a function by a scalar or pointwise by another function
+        # if either argument is a list, every element is multiplied by the other argument
+        if isinstance(other, list):
+            fct, other = other, fct
+        if isinstance(fct, list):
+            return [self.multiply(f, other) for f in fct]
+        return self.impl.multiply(fct, other)
+
     def transform(self, orbitals, matrix, *args, **kwargs):
         return self.impl.transform(
             orbitals, matrix

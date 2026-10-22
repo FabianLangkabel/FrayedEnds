@@ -242,6 +242,16 @@ nb::tuple Integrals<NDIM>::nb_compute_effective_hamiltonian(const std::vector<Sa
         Numpy4D(two_e_pointer->ptr(), {as_dim, as_dim, as_dim, as_dim}, two_e_capsule));
 }
 
+template <std::size_t NDIM>
+SavedFct<NDIM> Integrals<NDIM>::multiply(const SavedFct<NDIM>& f, double s) {
+    return SavedFct<NDIM>(madness_process.loadfct(f) * s);
+}
+
+template <std::size_t NDIM>
+SavedFct<NDIM> Integrals<NDIM>::multiply(const SavedFct<NDIM>& f, const SavedFct<NDIM>& g) {
+    return SavedFct<NDIM>(madness_process.loadfct(f) * madness_process.loadfct(g));
+}
+
 //
 // Integrators
 //

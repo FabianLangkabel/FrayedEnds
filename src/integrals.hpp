@@ -99,6 +99,8 @@ template <std::size_t NDIM> class Integrals {
     std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals, Numpy2D matrix);
+    SavedFct<NDIM> multiply(const SavedFct<NDIM>& f, double s);
+    SavedFct<NDIM> multiply(const SavedFct<NDIM>& f, const SavedFct<NDIM>& g);
     SavedFct<NDIM> compute_electron_density(std::vector<SavedFct<NDIM>> core_orbitals, std::vector<SavedFct<NDIM>> active_orbitals, Numpy2D rdm1);
 
     // Helper method for mixed orthonormalization using occupations
