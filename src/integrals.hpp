@@ -96,8 +96,9 @@ template <std::size_t NDIM> class Integrals {
                                                nb::ndarray<nb::numpy, double, nb::ndim<1>> occupations = {},
                                                double degeneracy_tol = 1e-6);
     std::vector<SavedFct<NDIM>> normalize(std::vector<SavedFct<NDIM>> all_orbs);
-    std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
+    std::vector<SavedFct<NDIM>> project_out(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target, bool normalize = true);
     std::vector<SavedFct<NDIM>> project_on(std::vector<SavedFct<NDIM>> kernel, std::vector<SavedFct<NDIM>> target);
+    std::vector<SavedFct<NDIM>> mirror(std::vector<SavedFct<NDIM>> orbitals, std::vector<long> mirrormap);
     std::vector<SavedFct<NDIM>> transform(std::vector<SavedFct<NDIM>> orbitals, Numpy2D matrix);
     SavedFct<NDIM> compute_electron_density(std::vector<SavedFct<NDIM>> core_orbitals, std::vector<SavedFct<NDIM>> active_orbitals, Numpy2D rdm1);
 

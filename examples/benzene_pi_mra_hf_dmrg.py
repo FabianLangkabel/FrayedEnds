@@ -38,7 +38,7 @@ H   -1.23975000  -2.14730999   0.00000000
 H    1.23975000  -2.14730999   0.00000000
 """  # angstrom
 
-basis = "cc-pvdz"  # Gaussian basis of the NWChem calculation (initial guess for MRA-HF and source of the pi* orbitals)
+basis = "sto-3g"  # Gaussian basis of the NWChem calculation (initial guess for MRA-HF and source of the pi* orbitals)
 nwchem_command = "nwchem"  # e.g. "mpirun -np 8 nwchem"
 
 box_size = 50.0  # half box length L (bohr)

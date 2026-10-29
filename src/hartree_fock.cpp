@@ -90,11 +90,13 @@ void HartreeFock::install_initial_orbitals(World& world) {
     const int nbeta = calc->param.nbeta();
     const bool unrestricted = !calc->param.spin_restricted() && nbeta > 0;
 
-    if (guess_alpha.size() != std::size_t(calc->param.nmo_alpha()))
+    if (calc->param.nmo_alpha() != nalpha || calc->param.nmo_beta() != nbeta)
+        throw std::invalid_argument("HartreeFock: virtual orbitals (nvalpha, nvbeta) are not supported");
+    if (guess_alpha.size() != std::size_t(nalpha))
         throw std::invalid_argument("HartreeFock: got " + std::to_string(guess_alpha.size()) +
                                     " alpha guess orbitals, but the calculation has " + std::to_string(nalpha) +
                                     " occupied alpha orbitals");
-    if (unrestricted && guess_beta.size() != std::size_t(calc->param.nmo_beta()))
+    if (unrestricted && guess_beta.size() != std::size_t(nbeta))
         throw std::invalid_argument("HartreeFock: got " + std::to_string(guess_beta.size()) +
                                     " beta guess orbitals, but the calculation has " + std::to_string(nbeta) +
                                     " occupied beta orbitals");
@@ -114,13 +116,13 @@ void HartreeFock::install_initial_orbitals(World& world) {
         return mos;
     };
     auto energies_tensor = [](const std::vector<double>& energies, std::size_t n) {
-        tensorT eps(n);
+        Tensor<double> eps(n);
         for (std::size_t i = 0; i < std::min(n, energies.size()); ++i)
             eps(i) = energies[i];
         return eps;
     };
     auto occupations_tensor = [](std::size_t n) {
-        tensorT occ(n);
+        Tensor<double> occ(n);
         occ.fill(1.0);
         return occ;
     };
@@ -128,13 +130,13 @@ void HartreeFock::install_initial_orbitals(World& world) {
     calc->amo = prepare(guess_alpha);
     calc->aocc = occupations_tensor(guess_alpha.size());
     calc->aeps = energies_tensor(guess_alpha_energies, guess_alpha.size());
-    calc->aset = calc->group_orbital_sets(world, calc->aeps, calc->aocc, calc->param.nmo_alpha());
+    calc->aset = calc->group_orbital_sets(world, calc->aeps, calc->aocc, nalpha);
 
     if (unrestricted) {
         calc->bmo = prepare(guess_beta);
         calc->bocc = occupations_tensor(guess_beta.size());
         calc->beps = energies_tensor(guess_beta_energies, guess_beta.size());
-        calc->bset = calc->group_orbital_sets(world, calc->beps, calc->bocc, calc->param.nmo_beta());
+        calc->bset = calc->group_orbital_sets(world, calc->beps, calc->bocc, nbeta);
     }
 }
 
@@ -143,6 +145,10 @@ double HartreeFock::solve() {
     FunctionDefaultsGuard guard;
 
     calc = std::make_shared<SCF>(world, param, molecule);
+    if (world.rank() == 0) {
+        calc->param.print("dft", "end");
+        molecule.print();
+    }
     const std::vector<double> protocol = calc->param.protocol();
     if (protocol.empty())
         throw std::invalid_argument("HartreeFock: the protocol must contain at least one threshold");

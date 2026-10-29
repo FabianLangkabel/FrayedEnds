@@ -22,26 +22,22 @@ def project_virtual_orbitals(madworld, occupied, virtuals, norm_thresh=1.0e-6, l
     occupied = list(occupied)
     virtuals = integrals.normalize(list(virtuals))
 
-    # norm of Q|v> for Q = 1 - sum_i |i><i|: <v|v> - 2 sum_i <v|i><i|v> + sum_ij <v|i><i|j><j|v>
-    S_ov = integrals.compute_overlap_integrals(occupied, virtuals)
-    S_oo = integrals.compute_overlap_integrals(occupied)
-    projected_norms_sq = 1.0 - 2.0 * np.einsum("iv,iv->v", S_ov, S_ov) + np.einsum("iv,ij,jv->v", S_ov, S_oo, S_ov)
-    projected_norms = np.sqrt(np.clip(projected_norms_sq, 0.0, None))
+    projected = integrals.project_out(occupied, virtuals, normalize=False)
+    projected_norms = np.sqrt(np.clip(np.diag(integrals.compute_overlap_integrals(projected)), 0.0, None))
 
     kept = [i for i, norm in enumerate(projected_norms) if norm > norm_thresh]
     info = {"kept": kept, "projected_norms": projected_norms, "overlap_with_input": np.array([])}
     if len(kept) == 0:
         return [], info
 
-    # project_out normalizes the projected functions
-    projected = integrals.project_out(occupied, [virtuals[i] for i in kept])
+    projected = integrals.normalize([projected[i] for i in kept])
 
     S = integrals.compute_overlap_integrals(projected)
     eigenvalues = np.linalg.eigvalsh(S)
-    if eigenvalues[0] < lindep_thresh * eigenvalues[-1]:
+    if eigenvalues[0] < lindep_thresh:
         raise ValueError(
-            f"The projected virtuals are (nearly) linearly dependent (smallest/largest eigenvalue of the overlap "
-            f"matrix: {eigenvalues[0] / eigenvalues[-1]:.3e}). Select fewer virtuals."
+            f"The projected virtuals are (nearly) linearly dependent smallest eigenvalue of the overlap "
+            f"matrix: {eigenvalues[0]:.3e}). Select fewer virtuals."
         )
     projected = integrals.orthonormalize(projected, method="symmetric")
 
@@ -49,41 +45,26 @@ def project_virtual_orbitals(madworld, occupied, virtuals, norm_thresh=1.0e-6, l
     return projected, info
 
 
-def mirror_parity(madworld, orbitals, molecule, offsets=(0.7, 1.4), in_plane_shift=0.7, plane_tol=1.0e-2):
+def mirror_parity(madworld, orbitals, molecule, plane_tol=1.0e-2):
     """
-    Symmetry of orbitals with respect to the reflection through the plane of a planar molecule.
-    For every orbital the parity
-        p = sum_r phi(r) phi(r') / sum_r (phi(r)^2 + phi(r')^2) / 2
-    is evaluated on sample points r above the molecular plane (around every atom) and their mirror images r'.
-    p ~ +1: symmetric (sigma-type orbital), p ~ -1: antisymmetric (pi-type orbital)
+    Symmetry of orbitals with respect to the reflection R through the plane of a planar molecule:
+        p = <phi|R|phi> / <phi|phi>
+    p = +1: symmetric (sigma-type orbital), p = -1: antisymmetric (pi-type orbital),
+    values in between measure the mixing: p = w_sym - w_antisym for the weights of the (anti)symmetric parts.
+    The molecule has to lie in a coordinate plane (xy, xz or yz) through the origin.
 
-    offsets: distances (bohr) of the sample points from the molecular plane
-    in_plane_shift: shift (bohr) of the sample points from the atom positions within the plane
-    plane_tol: maximal distance (bohr) of an atom from the fitted molecular plane
+    plane_tol: maximal distance (bohr) of an atom from that plane
     """
     coords = np.array(molecule.to_json()["geometry"])  # bohr
-    center = coords.mean(axis=0)
-    _, _, vt = np.linalg.svd(coords - center)
-    u, v, normal = vt[0], vt[1], vt[2]
-    deviation = np.abs((coords - center) @ normal).max()
-    if deviation > plane_tol:
-        raise ValueError(f"The molecule is not planar (max. distance of an atom from the plane: {deviation:.3e} bohr).")
+    axes = np.flatnonzero(np.abs(coords).max(axis=0) <= plane_tol)
+    if len(axes) == 0:
+        raise ValueError("The molecule has to lie in a coordinate plane (xy, xz or yz) through the origin.")
+    mirrormap = [1] * coords.shape[1]
+    mirrormap[axes[0]] = -1
 
-    above = []
-    below = []
-    for atom in coords:
-        for du, dv in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]:
-            base = atom + in_plane_shift * (du * u + dv * v)
-            for h in offsets:
-                above.append(base + h * normal)
-                below.append(base - h * normal)
-    n = len(above)
-    points = np.concatenate([np.ravel(above), np.ravel(below)]).tolist()
-
-    values = np.array(madworld.evaluate(list(orbitals), points, units="bohr"))
-    values_above = values[:, :n]
-    values_below = values[:, n:]
-    return np.sum(values_above * values_below, axis=1) / (0.5 * np.sum(values_above**2 + values_below**2, axis=1))
+    integrals = Integrals(madworld)
+    orbitals = integrals.normalize(orbitals)
+    return np.diag(integrals.compute_overlap_integrals(orbitals, integrals.mirror(orbitals, mirrormap)))
 
 
 def minimal_basis_weights(madworld, orbitals, minimal_basis):

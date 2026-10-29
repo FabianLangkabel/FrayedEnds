@@ -132,8 +132,9 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_frozen_core_interaction", &Integrals<3>::nb_compute_frozen_core_interaction)
         .def("compute_effective_hamiltonian", &Integrals<3>::nb_compute_effective_hamiltonian)
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
-        .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
+        .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"), nb::arg("normalize") = true)
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
+        .def("mirror", &Integrals<3>::mirror, nb::arg("orbitals"), nb::arg("mirrormap"))
         .def("normalize", &Integrals<3>::normalize)
         .def("orthonormalize", &Integrals<3>::orthonormalize)
         .def("compute_electron_density", &Integrals<3>::compute_electron_density);
@@ -149,8 +150,9 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_frozen_core_interaction", &Integrals<2>::nb_compute_frozen_core_interaction)
         .def("compute_effective_hamiltonian", &Integrals<2>::nb_compute_effective_hamiltonian)
         .def("transform", &Integrals<2>::transform, nb::arg("orbitals"), nb::arg("matrix"))
-        .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"))
+        .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"), nb::arg("normalize") = true)
         .def("project_on", &Integrals<2>::project_on, nb::arg("kernel"), nb::arg("target"))
+        .def("mirror", &Integrals<2>::mirror, nb::arg("orbitals"), nb::arg("mirrormap"))
         .def("normalize", &Integrals<2>::normalize)
         .def("orthonormalize", &Integrals<2>::orthonormalize)
         .def("compute_electron_density", &Integrals<2>::compute_electron_density);

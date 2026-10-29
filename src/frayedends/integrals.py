@@ -109,11 +109,19 @@ class Integrals:
             occupations_empty = np.array([], dtype=np.float64)
             return self.impl.orthonormalize(orbitals, method, rr_thresh, occupations_empty, degeneracy_tol)
 
-    def project_out(self, kernel, target, *args, **kwargs):
-        return self.impl.project_out(kernel, target)
+    def project_out(self, kernel, target, normalize=True, *args, **kwargs):
+        # result = Q(target) with Q = 1 - \sum_i |i><i| for |i> in kernel
+        # make sure kernel is orthonormal or it wont be a proper projection
+        # normalize determines if target is normalized after projection
+        return self.impl.project_out(kernel, target, normalize)
 
     def project_on(self, kernel, target, *args, **kwargs):
         return self.impl.project_on(kernel, target)
+
+    def mirror(self, orbitals, mirrormap):
+        # result[i](r) = orbitals[i](r') with r'_k = mirrormap[k] * r_k (entries +1 or -1)
+        # (e.g. [1, 1, -1] mirrors at the xy-plane)
+        return self.impl.mirror(orbitals, mirrormap)
 
     def normalize(self, orbitals, *args, **kwargs):
         return self.impl.normalize(orbitals)

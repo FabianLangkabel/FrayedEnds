@@ -94,10 +94,6 @@ class HartreeFock:
         self.energy = self.impl.solve()
         return self.energy
 
-    @property
-    def orbitals(self):
-        return self.get_orbitals()
-
     def get_orbitals(self):
         # occupied (alpha) orbitals
         return self.impl.get_alpha_orbitals()
