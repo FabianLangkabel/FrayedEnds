@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [tool.scikit-build.cmake]
 args =[ 
-  "-DCMAKE_CXX_FLAGS=-O3 -DNDEBUG -fcolor-diagnostics -w", # or use -Wno-everything if using Clang
+  "-DCMAKE_CXX_FLAGS=-O3 -DNDEBUG -fdiagnostics-color=always -w", # or use -Wno-everything if using Clang
   "-DCMAKE_COLOR_MAKEFILE=ON",
 ]
 #generator = "Ninja"
