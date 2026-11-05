@@ -74,7 +74,7 @@ nwchem_command = "nwchem"  # e.g. "mpirun -np 8 nwchem"
 box_size = 50.0  # half box length L (bohr)
 wavelet_order = 7
 madness_thresh = 1.0e-6
-eprec = 1.0e- # smoothing of the nuclear potential
+eprec = 1.0e-6 # smoothing of the nuclear potential
 
 hf_econv = 1.0e-6
 hf_maxiter = 30

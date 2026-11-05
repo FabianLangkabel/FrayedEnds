@@ -12,3 +12,4 @@ molecule
 *.hdf5
 *.sif
 /local
+*.fe

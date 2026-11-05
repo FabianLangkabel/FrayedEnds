@@ -1,7 +1,7 @@
 """
 Benzene: MRA-DMRG orbital refinement of the pi space, starting from MRA Hartree-Fock orbitals
 
-1. NWChem SCF in a Gaussian basis
+1. NWChem SCF in a Gaussian basis, the occupied orbitals are localized (Pipek-Mezey)
 2. MRA Hartree-Fock (MADNESS SCF solver) started from the NWChem orbitals
 3. Active space: the occupied pi orbitals of MRA-HF and pi* virtuals of NWChem, which are projected onto
    the virtual space of MRA-HF and orthonormalized. sigma and pi orbitals are distinguished by their parity
@@ -38,8 +38,10 @@ H   -1.23975000  -2.14730999   0.00000000
 H    1.23975000  -2.14730999   0.00000000
 """  # angstrom
 
+
 basis = "sto-3g"  # Gaussian basis of the NWChem calculation (initial guess for MRA-HF and source of the pi* orbitals)
 nwchem_command = "nwchem"  # e.g. "mpirun -np 8 nwchem"
+nwchem_localize = "boys"  # localization of the occupied NWChem orbitals ("pm", "boys", "ibo" or None for canonical)
 
 box_size = 50.0  # half box length L (bohr)
 wavelet_order = 7
@@ -76,7 +78,12 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh,
 # 1. NWChem SCF
 # ---------------------------------------------------------------------------
 nwchem_prefix = fe.run_nwchem(
-    geometry, basis=basis, name="benzene", workdir=os.path.join(output_dir, "nwchem"), nwchem_command=nwchem_command
+    geometry,
+    basis=basis,
+    name="benzene",
+    workdir=os.path.join(output_dir, "nwchem"),
+    nwchem_command=nwchem_command,
+    localize=nwchem_localize,
 )
 
 converter = fe.NWChem_Converter(world)
@@ -87,6 +94,9 @@ nwchem_energies = np.array(converter.get_orbital_energies())
 # the molecule is taken from the NWChem output to guarantee the same coordinate frame for all orbitals
 molecule = converter.get_molecular_geometry(eprec=eprec)
 del converter  # holds a second copy of all AOs and MOs
+
+for i in range(len(nwchem_mos)):
+    world.cube_plot(f"nwchem_mo{i}", nwchem_mos[i], molecule, zoom = 5)
 
 occupied_indices = [i for i, occ in enumerate(nwchem_occupancies) if occ > 0.0]
 virtual_indices = [i for i, occ in enumerate(nwchem_occupancies) if occ == 0.0]
@@ -102,6 +112,7 @@ hf = fe.HartreeFock(
     initial_orbital_energies=nwchem_energies[occupied_indices],
     econv=hf_econv,
     maxiter=hf_maxiter,
+    localize = "boys"
 )
 hf_energy = hf.solve(redirect_filename=os.path.join(output_dir, "hartree_fock.log"))
 hf_orbitals = hf.get_orbitals()
@@ -110,6 +121,11 @@ Vnuc = hf.get_vnuc()
 nuclear_repulsion = hf.get_nuclear_repulsion()
 print(f"MRA-HF energy: {hf_energy:.10f}")
 
+for i in range(len(hf_orbitals)):
+    world.cube_plot(f"hf{i}", hf_orbitals[i], molecule, zoom = 5)
+
+
+'''
 # ---------------------------------------------------------------------------
 # 3. Active space: pi orbitals of MRA-HF + projected pi* orbitals of NWChem
 # ---------------------------------------------------------------------------
@@ -202,5 +218,5 @@ print(f"  DMRG energy (HF orbitals):  {energies[0]:.10f}")
 print(f"  DMRG energy (refined):      {energies[-1]:.10f}")
 with open(os.path.join(output_dir, "energies.json"), "w") as f:
     json.dump({"hf_energy": hf_energy, "dmrg_energies": energies}, f, indent=2)
-
+'''
 fe.cleanup(globals())

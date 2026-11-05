@@ -25,6 +25,7 @@ def run_nwchem(
     direct: bool = True,
     nwchem_command: str = "nwchem",
     extra_input: str = "",
+    localize: str | None = None,
     silent: bool = False,
 ) -> str:
     """
@@ -35,6 +36,9 @@ def run_nwchem(
     multiplicity: 1 -> RHF, otherwise UHF with multiplicity-1 unpaired electrons
     nwchem_command: e.g. "nwchem" or "mpirun -np 4 nwchem"
     extra_input: additional NWChem input, inserted before "task scf"
+    localize: None (canonical orbitals) or the NWChem localization method of the occupied orbitals ("pm", "boys", "ibo").
+        The localized orbitals replace workdir/name.movecs (their orbital energies are the diagonal Fock matrix elements,
+        the virtual orbitals stay canonical), the canonical orbitals are kept in workdir/name.canonical.movecs.
 
     The geometry is not centered, reoriented or symmetrized by NWChem (noautoz nocenter noautosym),
     so the NWChem orbitals live in the coordinate frame of the given geometry.
@@ -48,6 +52,16 @@ def run_nwchem(
     else:
         scf_type = f"uhf\n  nopen {multiplicity - 1}"
 
+    basis_type = "spherical" if spherical else "cartesian"
+    task = "task scf"
+    if localize is not None:
+        task = f"property\n  localization {localize}\nend\ntask scf property"
+        if localize == "ibo":  # IBO localization needs a minimal basis for the intrinsic atomic orbitals
+            task = f'basis "iao basis" {basis_type}\n  * library sto-3g\nend\n' + task
+    locorb = os.path.join(workdir, "locorb.movecs")  # NWChem writes the localized orbitals to this file
+    if os.path.exists(locorb):
+        os.remove(locorb)
+
     nwchem_input = f"""start {name}
 title "{name}"
 permanent_dir {workdir}
@@ -58,7 +72,7 @@ geometry units {units} noautoz nocenter noautosym
   symmetry c1
 {atoms}
 end
-basis {"spherical" if spherical else "cartesian"}
+basis {basis_type}
   * library {basis}
 end
 scf
@@ -68,7 +82,7 @@ scf
   {"direct" if direct else ""}
 end
 {extra_input}
-task scf
+{task}
 """
     with open(os.path.join(workdir, name + ".nw"), "w") as f:
         f.write(nwchem_input)
@@ -99,7 +113,13 @@ task scf
     if not silent:
         print(f"NWChem SCF energy: {float(energies[-1]):.10f}")
 
-    return os.path.join(workdir, name)
+    prefix = os.path.join(workdir, name)
+    if localize is not None:
+        if not os.path.exists(locorb):
+            raise RuntimeError(f"NWChem localization ({localize}) failed, see {prefix}.out")
+        os.replace(prefix + ".movecs", prefix + ".canonical.movecs")
+        os.replace(locorb, prefix + ".movecs")
+    return prefix
 
 
 class NWChem_Converter:
