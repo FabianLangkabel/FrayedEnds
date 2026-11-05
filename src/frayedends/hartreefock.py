@@ -46,7 +46,7 @@ class HartreeFock:
 
         defaults = madworld.get_function_defaults()
         k = defaults["k"]
-        L = defaults["cell_width"] / 2
+        L = defaults["L"]
         thresh = defaults["thresh"]
 
         if initial_orbitals is not None or thresh >= 1.0e-4:
@@ -66,6 +66,7 @@ class HartreeFock:
             )
         self.parameters = parameters
 
+        self.madworld = madworld
         self.impl = HartreeFockImpl(madworld.impl, molecule.impl, json.dumps(parameters))
 
         if initial_orbitals is not None:
@@ -91,7 +92,8 @@ class HartreeFock:
 
     @redirect_output("hartree_fock.log")
     def solve(self):
-        self.energy = self.impl.solve()
+        with self.madworld.keep_function_defaults():
+            self.energy = self.impl.solve()
         return self.energy
 
     def get_orbitals(self):

@@ -1,4 +1,5 @@
 import inspect
+from contextlib import contextmanager
 from functools import wraps
 
 from ._frayedends_impl import MadnessProcess2D, MadnessProcess3D, RedirectOutput
@@ -64,13 +65,17 @@ class MadWorld:
     impl = None
     dimensions = None
 
-    madness_parameters = {
+    madness_parameters = { #default parameters for MADNESS simulation environment and MRA representations (function_defaults)
         "L": 50.0,  # half the box length, units: bohr
         "k": 7,  # wavelet order
         "thresh": 1.0e-5,  # threshold for function representation
         "initial_level": 3,  # initial projection level
-        "truncate_mode": 1,
-        "refine": True,
+        "truncate_mode": 1,  # 0: truncate with thresh, 1-3: thresh is scaled down with the box level
+        "refine": True,  # adaptive refinement when projecting new functions
+        "autorefine": True,  # adaptive refinement in multiplications
+        "apply_randomize": False,  # randomized load balancing when applying integral operators
+        "project_randomize": False,  # randomized load balancing in projection/refinement
+        "debug": False,  # print MADNESS debug information
         "n_threads": -1,  # default is all available threads
     }
 
@@ -85,29 +90,14 @@ class MadWorld:
                 raise ValueError(f"Unknown parameter: {k}")
 
         if self.dimensions == 3:
-            self.impl = MadnessProcess3D(
-                self.madness_parameters["L"],
-                self.madness_parameters["k"],
-                self.madness_parameters["thresh"],
-                self.madness_parameters["initial_level"],
-                self.madness_parameters["truncate_mode"],
-                self.madness_parameters["refine"],
-                self.madness_parameters["n_threads"],
-            )
+            self.impl = MadnessProcess3D(self.madness_parameters["n_threads"])
         elif self.dimensions == 2:
-            self.impl = MadnessProcess2D(
-                self.madness_parameters["L"],
-                self.madness_parameters["k"],
-                self.madness_parameters["thresh"],
-                self.madness_parameters["initial_level"],
-                self.madness_parameters["truncate_mode"],
-                self.madness_parameters["refine"],
-                self.madness_parameters["n_threads"],
-            )
+            self.impl = MadnessProcess2D(self.madness_parameters["n_threads"])
         else:
             raise ValueError(
                 f"Currently only calculations in 2 and 3 dimensions are implemented (you set ndims to {ndims})."
             )
+        self.set_function_defaults()
 
     def get_params(self):
         return dict(self.madness_parameters)
@@ -115,21 +105,24 @@ class MadWorld:
     def get_function_defaults(self):
         return self.impl.get_function_defaults()
 
-    def set_function_defaults(self, **kwargs):
+    def set_function_defaults(self, **kwargs): # resets Madness function defaults to the values in self.madness_parameters or **kwargs
         for k, v in kwargs.items():
             if k in self.madness_parameters.keys():
                 self.madness_parameters[k] = v
 
-        self.impl.L = self.madness_parameters["L"]
-        self.impl.k = self.madness_parameters["k"]
-        self.impl.thresh = self.madness_parameters["thresh"]
-        self.impl.initial_level = self.madness_parameters["initial_level"]
-        self.impl.truncate_mode = self.madness_parameters["truncate_mode"]
-        self.impl.refine = self.madness_parameters["refine"]
         if "n_threads" in kwargs.keys():
             self.change_nthreads(self.madness_parameters["n_threads"])
 
-        self.impl.update_function_defaults()
+        self.impl.update_function_defaults(**{k: v for k, v in self.madness_parameters.items() if k != "n_threads"})
+
+    @contextmanager
+    def keep_function_defaults(self):
+        # MADNESS SCF calculations (PNO, Hartree-Fock, ...) overwrite the global FunctionDefaults, restore them afterwards
+        defaults = self.get_function_defaults()
+        try:
+            yield
+        finally:
+            self.set_function_defaults(**defaults)
 
     def change_nthreads(self, nthreads):
         self.impl.change_nthreads(nthreads)

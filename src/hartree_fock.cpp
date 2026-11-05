@@ -6,46 +6,6 @@ using namespace madness;
 
 namespace {
 
-// SCF::set_protocol overwrites the global FunctionDefaults<3>, this guard restores the
-// state of the MadnessProcess after the SCF calculation (also if the calculation throws)
-class FunctionDefaultsGuard {
-  public:
-    FunctionDefaultsGuard()
-        : k(FunctionDefaults<3>::get_k()), thresh(FunctionDefaults<3>::get_thresh()),
-          initial_level(FunctionDefaults<3>::get_initial_level()),
-          truncate_mode(FunctionDefaults<3>::get_truncate_mode()), refine(FunctionDefaults<3>::get_refine()),
-          autorefine(FunctionDefaults<3>::get_autorefine()),
-          truncate_on_project(FunctionDefaults<3>::get_truncate_on_project()),
-          apply_randomize(FunctionDefaults<3>::get_apply_randomize()),
-          project_randomize(FunctionDefaults<3>::get_project_randomize()), cell(copy(FunctionDefaults<3>::get_cell())) {
-    }
-
-    ~FunctionDefaultsGuard() {
-        FunctionDefaults<3>::set_k(k);
-        FunctionDefaults<3>::set_thresh(thresh);
-        FunctionDefaults<3>::set_initial_level(initial_level);
-        FunctionDefaults<3>::set_truncate_mode(truncate_mode);
-        FunctionDefaults<3>::set_refine(refine);
-        FunctionDefaults<3>::set_autorefine(autorefine);
-        FunctionDefaults<3>::set_truncate_on_project(truncate_on_project);
-        FunctionDefaults<3>::set_apply_randomize(apply_randomize);
-        FunctionDefaults<3>::set_project_randomize(project_randomize);
-        FunctionDefaults<3>::set_cell(cell);
-    }
-
-  private:
-    int k;
-    double thresh;
-    int initial_level;
-    int truncate_mode;
-    bool refine;
-    bool autorefine;
-    bool truncate_on_project;
-    bool apply_randomize;
-    bool project_randomize;
-    Tensor<double> cell;
-};
-
 std::vector<double> tensor_to_vector(const Tensor<double>& t) {
     std::vector<double> result;
     for (long i = 0; i < t.size(); ++i)
@@ -142,8 +102,6 @@ void HartreeFock::install_initial_orbitals(World& world) {
 
 double HartreeFock::solve() {
     World& world = *(madness_process.world);
-    FunctionDefaultsGuard guard;
-
     calc = std::make_shared<SCF>(world, param, molecule);
     if (world.rank() == 0) {
         calc->param.print("dft", "end");

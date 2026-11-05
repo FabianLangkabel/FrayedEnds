@@ -13,3 +13,4 @@ molecule
 *.sif
 /local
 *.fe
+*.00000

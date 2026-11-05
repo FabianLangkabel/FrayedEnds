@@ -71,6 +71,7 @@ class MadPNO:
         maxrank=None,
         diagonal=True,
         frozen_core=True,
+        eprec=1.0e-6, #smoothing parameter of the nuclear potential
         *args,
         **kwargs,
     ):
@@ -124,10 +125,12 @@ class MadPNO:
             maxrank=maxrank,
             diagonal=diagonal,
             frozen_core=frozen_core,
+            eprec=eprec,
             *args,
             **kwargs,
         )
 
+        self.madworld = madworld
         self.impl = PNOInterface(madworld.impl, pno_input_string)
 
         if not no_compute:
@@ -138,7 +141,8 @@ class MadPNO:
         """
         Compute ground state orbitals (HF + MP2 PNOs)
         """
-        self.impl.run(n_orbitals)
+        with self.madworld.keep_function_defaults():
+            self.impl.run(n_orbitals)
         # package the orbitals
         self._orbitals = self.impl.get_orbitals()
         self._hf_orbitals = self.impl.get_hf_orbitals()
@@ -176,7 +180,8 @@ class MadPNO:
         """
         if self._orbitals is None:
             raise Exception("compute_orbitals() must be called before compute_cis()")
-        self.impl.compute_cis(n_excitation)
+        with self.madworld.keep_function_defaults():
+            self.impl.compute_cis(n_excitation)
         self._cis_per_root = self.impl.get_cis_x_per_root()  # cis_per_root is a vector<vector<real_function_3d>>
 
         total_before = sum(len(root) for root in self._cis_per_root)
@@ -213,7 +218,8 @@ class MadPNO:
         """
         if self._cis_per_root is None:
             raise Exception("compute_cis() must be called before compute_cispd()")
-        self.impl.compute_cispd(n_orbitals)
+        with self.madworld.keep_function_defaults():
+            self.impl.compute_cispd(n_orbitals)
         raw_cispd = self.impl.get_cispd_orbitals()
 
         if dominant_contribution and self._cis_orbitals is not None:
@@ -431,6 +437,7 @@ class MadPNO:
         maxrank=10,
         diagonal=True,
         frozen_core=True,
+        eprec=1.0e-6,
         cispd=-1,
         **kwargs,
     ) -> str:
@@ -448,7 +455,7 @@ class MadPNO:
 
         data["dft"] = {
             "xc": "hf",
-            "L": madworld.get_function_defaults()["cell_width"] / 2,
+            "L": madworld.get_function_defaults()["L"],
             "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-4,
             "dconv": 5.0e-4,
@@ -471,13 +478,13 @@ class MadPNO:
                 data[key] = {**data[key], **kwargs[key]}
         if units == "bohr":
             input_str = (
-                'pno --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec=1.e-6; source_name='
+                f'pno --geometry="source_type=inputfile; units=bohr; no_orient=1; eprec={eprec}; source_name='
                 + molecule_file
                 + '"'
             )
         else:
             input_str = (
-                'pno --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec=1.e-6; source_name='
+                f'pno --geometry="source_type=inputfile; units=angstrom; no_orient=1; eprec={eprec}; source_name='
                 + molecule_file
                 + '"'
             )

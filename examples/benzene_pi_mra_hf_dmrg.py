@@ -41,7 +41,7 @@ H    1.23975000  -2.14730999   0.00000000
 
 basis = "sto-3g"  # Gaussian basis of the NWChem calculation (initial guess for MRA-HF and source of the pi* orbitals)
 nwchem_command = "nwchem"  # e.g. "mpirun -np 8 nwchem"
-nwchem_localize = "boys"  # localization of the occupied NWChem orbitals ("pm", "boys", "ibo" or None for canonical)
+nwchem_localize = "pm"  # localization of the occupied NWChem orbitals ("pm", "boys", "ibo" or None for canonical)
 
 box_size = 50.0  # half box length L (bohr)
 wavelet_order = 7

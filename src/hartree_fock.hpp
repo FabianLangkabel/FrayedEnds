@@ -13,8 +13,6 @@ using namespace madness;
 // Hartree-Fock calculation with the MADNESS SCF solver (the solver behind moldft).
 // The occupied orbitals can be started from user-provided guess orbitals (e.g. NWChem MOs
 // translated into MRA with the NWChem_Converter) or from the default MADNESS AO guess.
-// The calculation runs on the FunctionDefaults of the given MadnessProcess, which are
-// restored after the calculation.
 class HartreeFock {
   public:
     // parameters_json: MADNESS "dft" calculation parameters as JSON object, e.g. {"econv": 1e-6, "protocol": [1e-6]}
