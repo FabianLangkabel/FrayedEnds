@@ -68,6 +68,14 @@ nanobind_add_module(
   src/open_shell/nwchem_converter_open_shell.cpp
 )
 
+nanobind_add_stub(
+  _frayedends_impl_stub
+  MODULE _frayedends_impl
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/frayedends/_frayedends_impl.pyi
+  PYTHON_PATH $<TARGET_FILE_DIR:_frayedends_impl>
+  DEPENDS _frayedends_impl
+)
+
 # Install directive for scikit-build-core
 target_link_libraries(_frayedends_impl PRIVATE MADchem)
 install(TARGETS _frayedends_impl LIBRARY DESTINATION frayedends)
