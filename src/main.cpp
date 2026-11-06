@@ -116,7 +116,9 @@ NB_MODULE(_frayedends_impl, m) {
             nb::arg("atom"), nb::arg("axis"))
         .def("nuclear_repulsion_second_derivative", &MolecularGeometry::nuclear_repulsion_second_derivative,
             nb::arg("atom1"), nb::arg("atom2"), nb::arg("axis1"), nb::arg("axis2"))
-        .def("get_vnuc", &MolecularGeometry::get_vnuc, nb::arg("mp"));
+        .def("get_vnuc", &MolecularGeometry::get_vnuc, nb::arg("mp"))
+        .def("set_eprec", &MolecularGeometry::set_eprec, nb::arg("eprec"))
+        .def("get_eprec", &MolecularGeometry::get_eprec);
 
     nb::class_<SavedFct<3>>(m, "SavedFct3D")
         .def(nb::init<const Function<double, 3>&>(), nb::arg("f"))
