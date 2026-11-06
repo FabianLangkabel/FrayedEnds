@@ -14,7 +14,11 @@ class MolecularGeometry:
     impl = None
     silent = False
 
-    def __init__(self, geometry: str = None, units=None, silent=False, *args, **kwargs):
+    def __init__(self, geometry: str = None, units=None, silent=False, eprec=None, *args, **kwargs):
+        """
+        eprec: smoothing of the nuclear potential (get_vnuc), madness default 1e-4 if None
+               MadPNO and AtomicBasisProjector use 1e-6
+        """
         self.silent = silent
 
         if units is None:
@@ -51,6 +55,14 @@ class MolecularGeometry:
                 z = eval(data[3])
                 s = data[0]
                 self.add_atom(x, y, z, s)
+        if eprec is not None:
+            self.set_eprec(eprec)
+
+    def set_eprec(self, eprec):
+        self.impl.set_eprec(eprec)
+
+    def get_eprec(self):
+        return self.impl.get_eprec()
 
     def check_units(self):
         return self.impl.units

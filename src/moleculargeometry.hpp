@@ -26,6 +26,10 @@ class MolecularGeometry {
 
     SavedFct<3> get_vnuc(MadnessProcess<3>& mp);
 
+    // smoothing of the nuclear potential (madness default 1e-4), also updates the atoms already added
+    void set_eprec(double eprec) { mol.update_rcut_with_eprec(eprec); }
+    double get_eprec() const { return mol.get_eprec(); }
+
     double get_nuclear_repulsion() const { return mol.nuclear_repulsion_energy(); }
     double get_nuclear_charge() const { return mol.total_nuclear_charge(); }
 
