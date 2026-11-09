@@ -43,6 +43,8 @@ def run_nwchem(
     The geometry is not centered, reoriented or symmetrized by NWChem (noautoz nocenter noautosym),
     so the NWChem orbitals live in the coordinate frame of the given geometry.
     """
+    if localize not in (None, "pm", "boys", "ibo"):
+        raise ValueError(f'localize must be None for canonical orbitals, "pm", "boys" or "ibo" (got {localize!r})')
     os.makedirs(workdir, exist_ok=True)
     workdir = os.path.abspath(workdir)
 

@@ -282,8 +282,9 @@ nb::class_<Integrals_open_shell<2>>(m, "Integrals_open_shell_2D")
         .def("get_nuclear_repulsion", &AtomBasProjector::get_nuclear_repulsion);
 
     nb::class_<HartreeFock>(m, "HartreeFock")
-        .def(nb::init<MadnessProcess<3>&, const MolecularGeometry&, const std::string&>(), nb::arg("madness_process"),
-             nb::arg("molecule"), nb::arg("parameters_json"))
+        .def(nb::init<MadnessProcess<3>&, const MolecularGeometry&, const std::string&, const std::string&>(),
+             nb::arg("madness_process"), nb::arg("molecule"), nb::arg("parameters_json"),
+             nb::arg("localize_result") = "")
         .def("set_initial_orbitals", &HartreeFock::set_initial_orbitals, nb::arg("alpha_orbitals"),
              nb::arg("alpha_energies"), nb::arg("beta_orbitals"), nb::arg("beta_energies"))
         .def("solve", &HartreeFock::solve)
