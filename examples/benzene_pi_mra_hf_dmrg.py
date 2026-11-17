@@ -71,6 +71,11 @@ def save_orbitals(path, core, active):
     for i, orb in enumerate(active):
         orb.save_to_file(os.path.join(path, f"active_{i}.fe"))
 
+#reordering for dmrg
+def reorder_active(driver, active, h1, g2, method="fiedler"):
+    idx = driver.orbital_reordering(h1, g2, method=method)
+    return [active[i] for i in idx], h1[np.ix_(idx, idx)], g2[np.ix_(idx, idx, idx, idx)]
+
 
 os.makedirs(output_dir, exist_ok=True)
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh, n_threads=n_threads)
@@ -124,7 +129,6 @@ print(f"MRA-HF time: {time() - start_time:.2f} s")
 
 save_orbitals(os.path.join(output_dir, "hf_nw_orbs"), hf_orbitals, [])
 
-'''
 # ---------------------------------------------------------------------------
 # 3. Active space: pi orbitals of MRA-HF + projected pi* orbitals of NWChem
 # ---------------------------------------------------------------------------
@@ -170,13 +174,20 @@ save_orbitals(os.path.join(output_dir, "initial_orbitals"), core, active)
 # 4. DMRG + MRA orbital refinement
 # ---------------------------------------------------------------------------
 integrals = fe.Integrals(world)
+start_time = time()
 c, h1, g2 = integrals.compute_effective_hamiltonian(core, active, Vnuc, nuclear_repulsion, g_ordering="chem")
-
-driver = DMRGDriver(scratch=os.path.join(output_dir, "dmrg_tmp"), symm_type=SymmetryTypes.SU2, n_threads=n_threads)
-driver.initialize_system(n_sites=len(active), n_elec=n_active_electrons, spin=0)
+print(f"time integrals: {time() - start_time:.2f} s")
 
 energies = []
 for iteration in range(max_macro_iterations):
+    start_time = time()
+    driver = DMRGDriver(
+        scratch=os.path.join(output_dir, "dmrg_tmp"),
+        symm_type=SymmetryTypes.SU2,
+    )
+    driver.initialize_system(n_sites=len(active), n_elec=n_active_electrons, spin=0)
+
+    active, h1, g2 = reorder_active(driver, active, h1, g2, method="fiedler")
     mpo = driver.get_qc_mpo(h1e=h1, g2e=g2, ecore=c, iprint=0)
     ket = driver.get_random_mps(tag=f"GS{iteration}", bond_dim=dmrg_bond_dim, nroots=1)
     energy = driver.dmrg(
@@ -192,10 +203,11 @@ for iteration in range(max_macro_iterations):
     rdm2 = driver.get_2pdm(ket).transpose(0, 1, 3, 2)  # block2 -> phys ordering of OrbitalRefinement
     energies.append(energy)
     print(f"Macro iteration {iteration}: DMRG energy = {energy:.10f}  occupations = {np.round(np.diag(rdm1), 4)}")
-
+    print(f"time dmrg: {time() - start_time:.2f} s")
     if iteration > 0 and abs(energies[-1] - energies[-2]) < energy_conv and converged:
         break
 
+    start_time = time()
     opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion, orthonormalization_method="cd")
     core, active, converged = opti.refine_orbitals(
         orbitals=[core, active],
@@ -217,5 +229,5 @@ print(f"  DMRG energy (HF orbitals):  {energies[0]:.10f}")
 print(f"  DMRG energy (refined):      {energies[-1]:.10f}")
 with open(os.path.join(output_dir, "energies.json"), "w") as f:
     json.dump({"hf_energy": hf_energy, "dmrg_energies": energies}, f, indent=2)
-'''
+
 fe.cleanup(globals())
