@@ -368,17 +368,10 @@ NB_MODULE(_frayedends_impl, m) {
     nb::class_<PNOInterface>(m, "PNOInterface")
         .def(nb::init<MadnessProcess<3>&, const std::string&>(), nb::arg("mp"), nb::arg("argv"))
         .def("get_nuclear_potential", &PNOInterface::get_nuclear_potential)
-<<<<<<< HEAD
-        .def("run", &PNOInterface::run)
-        .def("compute_scf", &PNOInterface::compute_scf)
-        .def("compute_cis", &PNOInterface::compute_cis)
-        .def("compute_cispd", &PNOInterface::compute_cispd)
-=======
         .def("run", &PNOInterface::run, nb::arg("basis_size"))
         .def("compute_scf", &PNOInterface::compute_scf)
         .def("compute_cis", &PNOInterface::compute_cis, nb::arg("n_excitations"))
         .def("compute_cispd", &PNOInterface::compute_cispd, nb::arg("basis_size"))
->>>>>>> main
         .def("get_frozen_core_dim", &PNOInterface::get_frozen_core_dim)
         .def("get_nuclear_repulsion", &PNOInterface::get_nuclear_repulsion)
         .def("get_hf_orbitals", &PNOInterface::get_hf_orbitals)
