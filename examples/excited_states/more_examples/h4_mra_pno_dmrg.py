@@ -5,18 +5,18 @@ from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 
 import frayedends as fe
 
-iterations = 6
 molecule_name = "h4"
-box_size = 50.0
-wavelet_order = 7
-madness_thresh = 0.0001
-basisset = "6-31g"
 n_elec = 4
 number_roots = 3
+iterations = 20
+box_size = 50.0
+wavelet_order = 7
+madness_thresh = 1.0e-4
+econv = 1.0e-4 
 
 iteration_results = []
 
-geometry_mode = "h2_pair"  # "equidistant" or "h2_pair"
+geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
 
 if geometry_mode == "equidistant":  # linear H4 molecule with equidistant spacing d
@@ -26,16 +26,10 @@ elif geometry_mode == "h2_pair":  # for H2 pair getting closer
 else:
     raise ValueError("geometry_mode must be 'equidistant' or 'h2_pair'")
 
-with open("iteration_pno_dmrg_oo.dat", "w") as f:
-    header = "distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots))
-    f.write(header + "\n")
-
-with open("distance_times_pno_dmrg_oo.dat", "w") as f:
-    f.write("distance total_time_s\n")
-
-with open("results_pno_dmrg_oo.dat", "w") as f:
-    header = "distance " + " ".join(f"energy_{i}" for i in range(number_roots))
-    f.write(header + "\n")
+output_file = f"{molecule_name}_{geometry_mode}_pno_dmrg_oo.dat"
+ 
+with open(output_file, "w") as f:
+    f.write("distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
 
 total_start = time.perf_counter()
 
@@ -43,36 +37,22 @@ for d in distance:
     dist_start = time.perf_counter()
     reported_distance = 2 * d if geometry_mode == "h2_pair" else d
 
-    if geometry_mode == "equidistant":  # for equidistant linear H4 molecule
-        geom = (
-            "H 0.0 0.0 " + (-d - d / 2).__str__() + "\n"
-            "H 0.0 0.0 " + (-d / 2).__str__() + "\n"
-            "H 0.0 0.0 " + (d / 2).__str__() + "\n"
-            "H 0.0 0.0 " + (d + d / 2).__str__() + "\n"
-        )
-    elif geometry_mode == "h2_pair":  # for H2 molecules getting closer and closer to a H4 molecule
-        geom = (
-            "H 0.0 0.0 " + (-d - 1.5).__str__() + "\n"
-            "H 0.0 0.0 " + (-d).__str__() + "\n"
-            "H 0.0 0.0 " + d.__str__() + "\n"
-            "H 0.0 0.0 " + (d + 1.5).__str__() + "\n"
-        )
-    else:
-        raise ValueError("Invalid geometry mode selected.")
+    if geometry_mode == "equidistant":  # equidistant linear H4 molecule
+        z = [-1.5 * d, -0.5 * d, 0.5 * d, 1.5 * d]
+    else:  # two H2 molecules getting closer
+        z = [-d - 2.55, -d, d, d + 2.55]
+    geom = "".join(f"H 0.0 0.0 {zi}\n" for zi in z)
 
     world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-    madpno = fe.MadPNO(world, geom, n_orbitals=12)
+    madpno = fe.MadPNO(world, geom, units="angstrom", n_orbitals=8, maxrank=8) 
     orbs = madpno.get_orbitals()
 
-    nuc_repulsion = madpno.get_nuclear_repulsion()
+    nuclear_repulsion_energy = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals(world)
     orbs = integrals.orthonormalize(orbitals=orbs)
-
-    for i in range(len(orbs)):
-        orbs[i].type = "active"
 
     # for i in range(len(orbs)):
     #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
@@ -85,7 +65,6 @@ for d in distance:
     T = integrals.compute_kinetic_integrals(orbs)
     V = integrals.compute_potential_integrals(orbs, Vnuc)
     h1 = T + V
-    S = integrals.compute_overlap_integrals(orbs)
 
     """
     Performe SA DMRG calculation and extract rdms
@@ -95,19 +74,14 @@ for d in distance:
 
     driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
     driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-    mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
-    ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-    energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
 
     idx = driver.orbital_reordering(h1, G)
     h1_new = h1[idx][:, idx]
     g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
 
-    driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-    mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuc_repulsion, iprint=0)
+    mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuclear_repulsion_energy, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-    energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
-    print("State-averaged MPS energies = [%s]" % " ".join("%20.15f" % x for x in energies))
+    energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=0)
 
     """
     Extract rdms
@@ -115,21 +89,25 @@ for d in distance:
     kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
     sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)
     sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
-    print(
-        "Energy from SA-pdms = %20.15f"
-        % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion)
-    )
 
-    idx_back = np.zeros(len(idx), dtype=int)
-    for i in range(len(idx)):
-        idx_back[idx[i]] = i
+    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
+            + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+            + nuclear_repulsion_energy)
 
+    idx_back = np.argsort(idx)
     sa_1pdm = sa_1pdm[idx_back][:, idx_back]
     sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
-    with open("iteration_pno_dmrg_oo.dat", "a") as f:
-        f.write(f"{reported_distance:.3f} {-1} {0.00} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
+    with open(output_file, "a") as f:
+        f.write(f"{reported_distance:.3f} 0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+    
+    print(f"\nDistance: {reported_distance:.3f}")
+    print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
+    print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
+    
+    current = e_avg
+    converged = False
 
     for iter in range(iterations):
         iter_start = time.perf_counter()
@@ -137,7 +115,7 @@ for d in distance:
         """
         Refine orbitals
         """
-        opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
+        opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
         # for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001))
@@ -149,63 +127,59 @@ for d in distance:
         T = integrals.compute_kinetic_integrals(orbs)
         V = integrals.compute_potential_integrals(orbs, Vnuc)
         h1 = T + V
-        S = integrals.compute_overlap_integrals(orbs)
 
         driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
         driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-        mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
-        ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-        energies = driver.dmrg(
-            mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1
-        )
-
+        
         idx = driver.orbital_reordering(h1, G)
         h1_new = h1[idx][:, idx]
         g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
 
-        driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-        mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuc_repulsion, iprint=0)
+        mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuclear_repulsion_energy, iprint=0)
         ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-        energies = driver.dmrg(
-            mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1
-        )
-        print("State-averaged MPS energies after refinement = [%s]" % " ".join("%20.15f" % x for x in energies))
-
+        energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=0)
+    
         kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
         sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)
         sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
-        print(
-            "Energy from SA-pdms = %20.15f"
-            % (np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion)
-        )
-        idx_back = np.zeros(len(idx), dtype=int)
-        for i in range(len(idx)):
-            idx_back[idx[i]] = i
 
+        e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
+                + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+                + nuclear_repulsion_energy)
+        
+        idx_back = np.argsort(idx)
         sa_1pdm = sa_1pdm[idx_back][:, idx_back]
         sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
         sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
-        iter_end = time.perf_counter()
-        iter_time = iter_end - iter_start
+        print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
+         
+        iter_time = time.perf_counter() - iter_start
+        with open(output_file, "a") as f:
+            f.write(f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+    
+        if abs(e_avg - current) < econv:
+            converged = True
+            print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
+            break  # stop as soon as the state-averaged energy changes less than econv
+        current = e_avg
 
-        with open("iteration_pno_dmrg_oo.dat", "a") as f:
-            f.write(f"{reported_distance:.3f} {iter} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
-
-        iteration_results.append(
-            {"distance": reported_distance, "iteration": iter, "iteration_time": iter_time, "energies": energies}
-        )
-
-    with open("results_pno_dmrg_oo.dat", "a") as f:
-        f.write(f"{reported_distance:.3f} " + " ".join(f"{x:.15f}" for x in energies) + "\n")
-
-    dist_end = time.perf_counter()
-    dist_time = dist_end - dist_start
-    print(f"Distance {reported_distance:.3f} took {dist_time:.2f} s")
-    with open("distance_times_pno_dmrg_oo.dat", "a") as f:
-        f.write(f"{reported_distance:.3f} {dist_time:.2f}\n")
-
+    dist_time = time.perf_counter() - dist_start
+    status = f"converged after {iter + 1} iterations" if converged else f"not converged after {iterations} iterations"
+    print(f"Distance {reported_distance:.3f}: {status}, time = {dist_time:.1f} s")
+    
+    with open(output_file, "a") as f:
+        f.write(f"# distance {reported_distance:.3f}: {status}, econv = {econv:.0e}, time = {dist_time:.2f} s\n")
+    
     del integrals
     del opti
     del madpno
     del world
+    
+with open(output_file, "a") as f:
+    f.write(f"# total time = {time.perf_counter() - total_start:.2f} s\n")
+    
+print(f"\nTotal time: {time.perf_counter() - total_start:.1f} s")
+    
+fe.cleanup(globals())
+         

@@ -13,26 +13,22 @@ import frayedends as fe
 
 # Parameter Configuration
 molecule_name = "h4"
-n_electrons = 4  # Number of electrons
-iterations = 10  # Number of iterations
+n_elec = 4  # Number of electrons
+number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
+iterations = 20  # Number of iterations
 box_size = 50.0  # Size of the simulation box
 wavelet_order = 7  # Order of wavelet basis functions
-madness_thresh = 0.0001  # Threshold for numerical precision of function representation
-econv = 1.0e-6  # Energy convergence threshold
+madness_thresh = 1.0e-4  # Threshold for numerical precision of function representation
 basisset = "6-31g"  # Initial basis set for calculation
-
-iteration_results = []
+econv = 1.0e-4  # Energy convergence threshold
 
 # Create .dat files for the results
-with open("iteration_nwchem_fci_oo.dat", "w") as f:
-    header = "iteration iteration_time_s energy_0"
-    f.write(header + "\n")
+output_file = f"{molecule_name}_nwchem_fci_oo.dat"
 
-with open("results_nwchem_fci_oo.dat", "w") as f:
-    header = "energy_0"
-    f.write(header + "\n")
+with open(output_file, "w") as f:
+    f.write("iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
 
-true_start = time.perf_counter()
+total_start = time.perf_counter()
 
 # Create NWChem Input file
 # Defines a linear H4 molecule geometry with 1.0 Angstrom spacing between adjacent atoms
@@ -81,51 +77,92 @@ nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 
 n_orbitals = len(orbs)
 
+# for i in range(n_orbitals):
+#     world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot guess orbitals
 
-for i in range(n_orbitals):
-    world.line_plot(f"initial_orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot guess orbitals
+# Calculate initial integrals
+integrals = fe.Integrals(world)
+G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
+T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
+V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
+h1 = T + V
+ 
+# Perform State Average (SA) FCI calculation
+cisolver = fci.direct_spin1.FCI()
+cisolver = fci.addons.fix_spin_(cisolver, ss=0)
+e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
+energies = e + nuclear_repulsion_energy
+ 
+# Extract rdms (PySCF / chemist notation)
+rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
+sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
+sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
+ 
+# State-averaged energy from SA-RDMs
+e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
+         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
+         + nuclear_repulsion_energy)
+ 
+sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
+ 
+with open(output_file, "a") as f:
+    f.write("0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+ 
+print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
+print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
+ 
+current = e_avg
+converged = False
 
-current = 0.0
-for iteration in range(iterations):
+for iter in range(iterations):
     iter_start = time.perf_counter()
-
-    integrals = fe.Integrals(world)  # Setup for integrals
-    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
-    T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
-    V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
-
-    # Full Configuration Interaction (FCI) calculation
-    e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals, n_electrons)  # Compute the energy and the FCI vector
-    # Calculate reduced density matrices needed for orbital refinement
-    rdm1, rdm2 = fci.direct_spin0.make_rdm12(fcivec, n_orbitals, n_electrons)  # Compute the 1- and 2- body rdms
-    rdm2 = np.swapaxes(rdm2, 1, 2)  # Change to physics notation
-
-    e_tot = e + nuclear_repulsion_energy  # Computes total energy
-
-    print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
 
     # Orbital Refinement
     opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(
-        orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001
+        orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001
     )  # Refines the orbitals and returns the new ones
 
-    for i in range(n_orbitals):
-        world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals
+    # for i in range(n_orbitals):
+    #     world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals
 
-    iter_end = time.perf_counter()
-    iter_time = iter_end - iter_start
-
-    with open("iteration_nwchem_fci_oo.dat", "a") as f:
-        f.write(f"{iteration} {iter_time:.2f} {e_tot: .15f}" + "\n")
-
-    iteration_results.append({"iteration": iteration, "iteration_time": iter_time, "energy": e_tot})
-
-    if np.isclose(e_tot, current, atol=econv, rtol=0.0):
-        break  # Loop terminates as soon as the energy changes less than econv in one iteration step
-    current = e_tot
-
-with open("results_nwchem_fci_oo.dat", "a") as f:
-    f.write(f"{e_tot: .15f}" + "\n")
-
+    # FCI calculation with refined orbitals
+    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
+    T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
+    V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
+    h1 = T + V
+ 
+    e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
+    energies = e + nuclear_repulsion_energy
+ 
+    rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
+    sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
+    sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
+ 
+    # State-averaged energy from SA-RDMs
+    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
+             + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
+             + nuclear_repulsion_energy)
+ 
+    sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
+ 
+    print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
+ 
+    iter_time = time.perf_counter() - iter_start
+    with open(output_file, "a") as f:
+        f.write(f"{iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+ 
+    if abs(e_avg - current) < econv:
+        converged = True
+        print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
+        break  # stop as soon as the state-averaged energy changes less than econv
+    current = e_avg
+ 
+if not converged:
+    print(f"Not converged after {iterations} iterations")
+ 
+with open(output_file, "a") as f:
+    status = "converged" if converged else "not converged"
+    f.write(f"# {status}, econv = {econv:.0e}, total time = {time.perf_counter() - total_start:.2f} s\n")
+ 
 fe.cleanup(globals())
