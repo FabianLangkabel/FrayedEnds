@@ -65,7 +65,7 @@ class MadWorld:
     impl = None
     dimensions = None
 
-    madness_parameters = { #default parameters for MADNESS simulation environment and MRA representations (function_defaults)
+    madness_parameters = {  # default parameters for MADNESS simulation environment and MRA representations (function_defaults)
         "L": 50.0,  # half the box length, units: bohr
         "k": 7,  # wavelet order
         "thresh": 1.0e-5,  # threshold for function representation
@@ -105,7 +105,9 @@ class MadWorld:
     def get_function_defaults(self):
         return self.impl.get_function_defaults()
 
-    def set_function_defaults(self, **kwargs): # resets Madness function defaults to the values in self.madness_parameters or **kwargs
+    def set_function_defaults(
+        self, **kwargs
+    ):  # resets Madness function defaults to the values in self.madness_parameters or **kwargs
         for k, v in kwargs.items():
             if k in self.madness_parameters.keys():
                 self.madness_parameters[k] = v

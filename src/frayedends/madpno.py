@@ -71,7 +71,7 @@ class MadPNO:
         maxrank=None,
         diagonal=True,
         frozen_core=True,
-        eprec=1.0e-6, #smoothing parameter of the nuclear potential
+        eprec=1.0e-6,  # smoothing parameter of the nuclear potential
         *args,
         **kwargs,
     ):

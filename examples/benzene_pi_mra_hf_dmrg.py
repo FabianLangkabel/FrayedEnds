@@ -12,10 +12,10 @@ Benzene: MRA-DMRG orbital refinement of the pi space, starting from MRA Hartree-
 
 import json
 import os
+from time import time
 
 import numpy as np
 from pyblock2.driver.core import DMRGDriver, SymmetryTypes
-from time import time
 
 import frayedends as fe
 
@@ -71,7 +71,8 @@ def save_orbitals(path, core, active):
     for i, orb in enumerate(active):
         orb.save_to_file(os.path.join(path, f"active_{i}.fe"))
 
-#reordering for dmrg
+
+# reordering for dmrg
 def reorder_active(driver, active, h1, g2, method="fiedler"):
     idx = driver.orbital_reordering(h1, g2, method=method)
     return [active[i] for i in idx], h1[np.ix_(idx, idx)], g2[np.ix_(idx, idx, idx, idx)]
@@ -117,7 +118,7 @@ hf = fe.HartreeFock(
     initial_orbital_energies=nwchem_energies[occupied_indices],
     econv=hf_econv,
     maxiter=hf_maxiter,
-    localize_result = "new",
+    localize_result="new",
 )
 hf_energy = hf.solve(redirect_filename=os.path.join(output_dir, "hartree_fock.log"))
 hf_orbitals = hf.get_orbitals()
