@@ -397,7 +397,7 @@ void PNOInterface::compute_cispd(const size_t basis_size) {
 
     for (size_t ex = 0; ex < cis_roots.size(); ++ex) {
         // add cispd-specific parameters to parser for excitation calculation
-        parser.set_keyval("pno", pno_base + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega));
+        parser.set_keyval("pno", pno_base + "; cispd_number " + std::to_string(ex) + "; cispd_energy " + std::to_string(cis_roots[ex].omega) + "; no_opt mp2; no_guess mp2");
 
         PNOParameters cispd_parameters(*(madness_process.world), parser, nemo->get_calc()->molecule, TAG_PNO);
         F12Parameters cispd_paramf12(*(madness_process.world), parser, cispd_parameters, TAG_F12);
