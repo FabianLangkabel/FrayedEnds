@@ -42,7 +42,7 @@ H    1.23975000  -2.14730999   0.00000000
 
 basis = "sto-3g"  # Gaussian basis of the NWChem calculation (initial guess for MRA-HF and source of the pi* orbitals)
 nwchem_command = "nwchem"  # e.g. "mpirun -np 8 nwchem"
-nwchem_localize = None  # localization of the occupied NWChem orbitals ("pm", "boys", "ibo" or None for canonical)
+nwchem_localize = "pm"  # localization of the occupied NWChem orbitals ("pm", "boys", "ibo" or None for canonical)
 
 box_size = 50.0  # half box length L (bohr)
 wavelet_order = 7
@@ -96,8 +96,6 @@ nwchem_energies = np.array(converter.get_orbital_energies())
 molecule = converter.get_molecular_geometry(eprec=eprec)
 del converter  # holds a second copy of all AOs and MOs
 
-for i in range(len(nwchem_mos)):
-    world.cube_plot(f"benzene_pi/nwchem_mo{i}", nwchem_mos[i], molecule, zoom = 5)
 
 occupied_indices = [i for i, occ in enumerate(nwchem_occupancies) if occ > 0.0]
 virtual_indices = [i for i, occ in enumerate(nwchem_occupancies) if occ == 0.0]
@@ -114,7 +112,7 @@ hf = fe.HartreeFock(
     initial_orbital_energies=nwchem_energies[occupied_indices],
     econv=hf_econv,
     maxiter=hf_maxiter,
-    localize = "canon",
+    localize_result = "new",
 )
 hf_energy = hf.solve(redirect_filename=os.path.join(output_dir, "hartree_fock.log"))
 hf_orbitals = hf.get_orbitals()
@@ -124,9 +122,7 @@ nuclear_repulsion = hf.get_nuclear_repulsion()
 print(f"MRA-HF energy: {hf_energy:.10f}")
 print(f"MRA-HF time: {time() - start_time:.2f} s")
 
-for i in range(len(hf_orbitals)):
-    world.cube_plot(f"benzene_pi/hf{i}", hf_orbitals[i], molecule, zoom = 5)
-
+save_orbitals(os.path.join(output_dir, "hf_nw_orbs"), hf_orbitals, [])
 
 '''
 # ---------------------------------------------------------------------------

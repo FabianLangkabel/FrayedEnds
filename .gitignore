@@ -14,3 +14,4 @@ molecule
 /local
 *.fe
 *.00000
+F.MPS.*
