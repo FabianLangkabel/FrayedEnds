@@ -6,7 +6,6 @@
 #include <madness/chem/molecular_functors.h>
 #include <cstdio>
 #include <unistd.h>
-#include <tuple>
 
 using namespace madness;
 
@@ -36,16 +35,8 @@ class MolecularGeometry; // Forward declaration
 template <std::size_t NDIM> class MadnessProcess {
   public:
     World* world;
-    double L;
-    long k;
-    double thresh;
-    int initial_level;
-    int truncate_mode;
-    bool refine;
-    int n_threads;
 
-    MadnessProcess(double L, long k, double thresh, int initial_level = 3, int truncate_mode = 1, bool refine = true,
-                   int n_threads = -1);
+    MadnessProcess(int n_threads = -1);
     ~MadnessProcess();
 
     void change_nthreads(int n_threads);
@@ -62,9 +53,8 @@ template <std::size_t NDIM> class MadnessProcess {
     // save a SavedFct to a binary madness file (compatible with madness::load())
     void save_to_m_file(const std::string& filename, const SavedFct<NDIM>& Sf);
 
-    std::tuple<double, long, double, int, int, bool, int> get_function_defaults();
-
-    void update_function_defaults();
+    void update_function_defaults(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine,
+                                  bool autorefine, bool apply_randomize, bool project_randomize, bool debug);
 
     void plot(std::string filename, SavedFct<NDIM> f, std::string axis, int datapoints);
 

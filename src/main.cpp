@@ -11,6 +11,7 @@
 #include "eigensolver.hpp"
 #include "nwchem_converter.hpp"
 #include "atombas.hpp"
+#include "hartree_fock.hpp"
 #include "madness_process.hpp"
 #include "moleculargeometry.hpp"
 #include "open_shell/nwchem_converter_open_shell.hpp"
@@ -19,25 +20,31 @@
 
 namespace nb = nanobind;
 
+template <std::size_t NDIM> nb::dict function_defaults() {
+    using FD = FunctionDefaults<NDIM>;
+    nb::dict d;
+    d["L"] = FD::get_cell()(0, 1);
+    d["k"] = FD::get_k();
+    d["thresh"] = FD::get_thresh();
+    d["initial_level"] = FD::get_initial_level();
+    d["truncate_mode"] = FD::get_truncate_mode();
+    d["refine"] = FD::get_refine();
+    d["autorefine"] = FD::get_autorefine();
+    d["apply_randomize"] = FD::get_apply_randomize();
+    d["project_randomize"] = FD::get_project_randomize();
+    d["debug"] = FD::get_debug();
+    d["n_threads"] = ThreadPool::size();
+    return d;
+}
+
 NB_MODULE(_frayedends_impl, m) {
 
     nb::class_<MadnessProcess<3>>(m, "MadnessProcess3D")
-        .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
-             nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
-             nb::arg("refine"), nb::arg("n_threads"))
-        .def("get_function_defaults", [](MadnessProcess<3>& self) {
-            auto t = self.get_function_defaults();
-            nb::dict d;
-            d["cell_width"] = std::get<0>(t);
-            d["k"] = std::get<1>(t);
-            d["thresh"] = std::get<2>(t);
-            d["initial_level"] = std::get<3>(t);
-            d["truncate_mode"] = std::get<4>(t);
-            d["refine"] = std::get<5>(t);
-            d["n_threads"] = std::get<6>(t);
-            return d;
-        })
-        .def("update_function_defaults", &MadnessProcess<3>::update_function_defaults)
+        .def(nb::init<int>(), nb::arg("n_threads") = -1)
+        .def("get_function_defaults", [](MadnessProcess<3>&) { return function_defaults<3>(); })
+        .def("update_function_defaults", &MadnessProcess<3>::update_function_defaults, nb::arg("L"), nb::arg("k"),
+             nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"), nb::arg("refine"),
+             nb::arg("autorefine"), nb::arg("apply_randomize"), nb::arg("project_randomize"), nb::arg("debug"))
         .def("change_nthreads", &MadnessProcess<3>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<3>::loadfct, nb::arg("Sf"))
         .def("loadfct_from_m_file", &MadnessProcess<3>::loadfct_from_m_file, nb::arg("filename"))
@@ -51,32 +58,14 @@ NB_MODULE(_frayedends_impl, m) {
         .def("cube_plot", &MadnessProcess<3>::cube_plot,
             nb::arg("filename"), nb::arg("f"), nb::arg("molecule"), nb::arg("zoom"), nb::arg("datapoints"),
             nb::arg("origin"))
-        .def("evaluate", &MadnessProcess<3>::evaluate, nb::arg("orbitals"), nb::arg("flat_points"))
-        .def_rw("L", &MadnessProcess<3>::L)
-        .def_rw("k", &MadnessProcess<3>::k)
-        .def_rw("thresh", &MadnessProcess<3>::thresh)
-        .def_rw("initial_level", &MadnessProcess<3>::initial_level)
-        .def_rw("truncate_mode", &MadnessProcess<3>::truncate_mode)
-        .def_rw("refine", &MadnessProcess<3>::refine)
-        .def_rw("n_threads", &MadnessProcess<3>::n_threads);
+        .def("evaluate", &MadnessProcess<3>::evaluate, nb::arg("orbitals"), nb::arg("flat_points"));
     
     nb::class_<MadnessProcess<2>>(m, "MadnessProcess2D")
-        .def(nb::init<const double&, const int&, const double&, const int&, const int&, const bool&, const int&>(),
-             nb::arg("L"), nb::arg("k"), nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"),
-             nb::arg("refine"), nb::arg("n_threads"))
-        .def("get_function_defaults", [](MadnessProcess<2>& self) {
-            auto t = self.get_function_defaults();
-            nb::dict d;
-            d["cell_width"] = std::get<0>(t);
-            d["k"] = std::get<1>(t);
-            d["thresh"] = std::get<2>(t);
-            d["initial_level"] = std::get<3>(t);
-            d["truncate_mode"] = std::get<4>(t);
-            d["refine"] = std::get<5>(t);
-            d["n_threads"] = std::get<6>(t);
-            return d;
-        })
-        .def("update_function_defaults", &MadnessProcess<2>::update_function_defaults)
+        .def(nb::init<int>(), nb::arg("n_threads") = -1)
+        .def("get_function_defaults", [](MadnessProcess<2>&) { return function_defaults<2>(); })
+        .def("update_function_defaults", &MadnessProcess<2>::update_function_defaults, nb::arg("L"), nb::arg("k"),
+             nb::arg("thresh"), nb::arg("initial_level"), nb::arg("truncate_mode"), nb::arg("refine"),
+             nb::arg("autorefine"), nb::arg("apply_randomize"), nb::arg("project_randomize"), nb::arg("debug"))
         .def("change_nthreads", &MadnessProcess<2>::change_nthreads, nb::arg("n_threads"))
         .def("loadfct", &MadnessProcess<2>::loadfct, nb::arg("Sf"))
         .def("loadfct_from_m_file", &MadnessProcess<2>::loadfct_from_m_file, nb::arg("filename"))
@@ -87,14 +76,7 @@ NB_MODULE(_frayedends_impl, m) {
         .def("plane_plot", &MadnessProcess<2>::plane_plot,
             nb::arg("filename"), nb::arg("f"), nb::arg("plane"), nb::arg("zoom"), nb::arg("datapoints"),
             nb::arg("origin"))
-        .def("evaluate", &MadnessProcess<2>::evaluate, nb::arg("orbitals"), nb::arg("flat_points"))
-        .def_rw("L", &MadnessProcess<2>::L)
-        .def_rw("k", &MadnessProcess<2>::k)
-        .def_rw("thresh", &MadnessProcess<2>::thresh)
-        .def_rw("initial_level", &MadnessProcess<2>::initial_level)
-        .def_rw("truncate_mode", &MadnessProcess<2>::truncate_mode)
-        .def_rw("refine", &MadnessProcess<2>::refine)
-        .def_rw("n_threads", &MadnessProcess<2>::n_threads);
+        .def("evaluate", &MadnessProcess<2>::evaluate, nb::arg("orbitals"), nb::arg("flat_points"));
 
     nb::class_<madness::real_function_3d>(m, "real_function_3d").def(nb::init<>());
     nb::class_<madness::real_function_2d>(m, "real_function_2d").def(nb::init<>());
@@ -108,6 +90,8 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_nuclear_repulsion", &MolecularGeometry::get_nuclear_repulsion)
         .def("get_nuclear_charge", &MolecularGeometry::get_nuclear_charge)
         .def("get_core_n_electrons", &MolecularGeometry::get_core_n_electrons)
+        .def("set_eprec", &MolecularGeometry::set_eprec, nb::arg("eprec"))
+        .def("get_eprec", &MolecularGeometry::get_eprec)
         .def("molecular_potential_derivative", &MolecularGeometry::molecular_potential_derivative,
             nb::arg("mp"), nb::arg("atom"), nb::arg("axis"))
         .def("molecular_potential_second_derivative", &MolecularGeometry::molecular_potential_second_derivative,
@@ -149,8 +133,9 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_effective_hamiltonian", &Integrals<3>::nb_compute_effective_hamiltonian,
              nb::arg("core_orbitals"), nb::arg("active_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
         .def("transform", &Integrals<3>::transform, nb::arg("orbitals"), nb::arg("matrix"))
-        .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"))
+        .def("project_out", &Integrals<3>::project_out, nb::arg("kernel"), nb::arg("target"), nb::arg("normalize") = true)
         .def("project_on", &Integrals<3>::project_on, nb::arg("kernel"), nb::arg("target"))
+        .def("mirror", &Integrals<3>::mirror, nb::arg("orbitals"), nb::arg("mirrormap"))
         .def("normalize", &Integrals<3>::normalize, nb::arg("all_orbs"))
         .def("orthonormalize", &Integrals<3>::orthonormalize,
              nb::arg("all_orbs"), nb::arg("method"), nb::arg("rr_thresh"), nb::arg("occupations"),
@@ -176,8 +161,9 @@ NB_MODULE(_frayedends_impl, m) {
         .def("compute_effective_hamiltonian", &Integrals<2>::nb_compute_effective_hamiltonian,
              nb::arg("core_orbitals"), nb::arg("active_orbitals"), nb::arg("potential"), nb::arg("energy_offset"))
         .def("transform", &Integrals<2>::transform, nb::arg("orbitals"), nb::arg("matrix"))
-        .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"))
+        .def("project_out", &Integrals<2>::project_out, nb::arg("kernel"), nb::arg("target"), nb::arg("normalize") = true)
         .def("project_on", &Integrals<2>::project_on, nb::arg("kernel"), nb::arg("target"))
+        .def("mirror", &Integrals<2>::mirror, nb::arg("orbitals"), nb::arg("mirrormap"))
         .def("normalize", &Integrals<2>::normalize, nb::arg("all_orbs"))
         .def("orthonormalize", &Integrals<2>::orthonormalize,
              nb::arg("all_orbs"), nb::arg("method"), nb::arg("rr_thresh"), nb::arg("occupations"),
@@ -391,7 +377,24 @@ NB_MODULE(_frayedends_impl, m) {
         .def("solve_scf", &AtomBasProjector::solve_scf, nb::arg("thresh") = 1e-4)
         .def("get_nuclear_repulsion", &AtomBasProjector::get_nuclear_repulsion);
 
-        nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
+    nb::class_<HartreeFock>(m, "HartreeFock")
+        .def(nb::init<MadnessProcess<3>&, const MolecularGeometry&, const std::string&, const std::string&>(),
+             nb::arg("madness_process"), nb::arg("molecule"), nb::arg("parameters_json"),
+             nb::arg("localize_result") = "")
+        .def("set_initial_orbitals", &HartreeFock::set_initial_orbitals, nb::arg("alpha_orbitals"),
+             nb::arg("alpha_energies"), nb::arg("beta_orbitals"), nb::arg("beta_energies"))
+        .def("solve", &HartreeFock::solve)
+        .def("get_alpha_orbitals", &HartreeFock::get_alpha_orbitals)
+        .def("get_beta_orbitals", &HartreeFock::get_beta_orbitals)
+        .def("get_alpha_orbital_energies", &HartreeFock::get_alpha_orbital_energies)
+        .def("get_beta_orbital_energies", &HartreeFock::get_beta_orbital_energies)
+        .def("get_minimal_basis", &HartreeFock::get_minimal_basis)
+        .def("get_energy", &HartreeFock::get_energy)
+        .def("get_vnuc", &HartreeFock::get_vnuc)
+        .def("get_nuclear_repulsion", &HartreeFock::get_nuclear_repulsion)
+        .def("is_spin_restricted", &HartreeFock::is_spin_restricted);
+
+    nb::class_<CoulombPotentialFromChargeDensity>(m, "CoulombPotentialFromChargeDensity")
         .def(nb::init<MadnessProcess<3>&, const std::vector<double>&, const double&,
                       const std::vector<std::vector<double>>&>(),
              nb::arg("mp"), nb::arg("sharpness_list"), nb::arg("Q"), nb::arg("charge_locations"))
@@ -430,7 +433,10 @@ NB_MODULE(_frayedends_impl, m) {
         .def("get_normalized_aos", &NWChem_Converter::get_normalized_aos)
         .def("get_mos", &NWChem_Converter::get_mos)
         .def("get_vnuc", &NWChem_Converter::get_vnuc)
-        .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy);
+        .def("get_nuclear_repulsion_energy", &NWChem_Converter::get_nuclear_repulsion_energy)
+        .def("get_occupancies", &NWChem_Converter::get_occupancies)
+        .def("get_orbital_energies", &NWChem_Converter::get_orbital_energies)
+        .def("get_atoms", &NWChem_Converter::get_atoms);
 
     nb::class_<NWChem_Converter_open_shell>(m, "NWChem_Converter_open_shell")
         .def(nb::init<MadnessProcess<3>&>(), nb::arg("mp"))

@@ -697,7 +697,7 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::orthonormalize(std::vector<SavedFct
 
 template <std::size_t NDIM>
 std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_out(std::vector<SavedFct<NDIM>> kernel,
-                                                         std::vector<SavedFct<NDIM>> target) {
+                                                         std::vector<SavedFct<NDIM>> target, bool normalize) {
     std::vector<Function<double, NDIM>> x;
     for (SavedFct<NDIM> orb : kernel)
         x.push_back(madness_process.loadfct(orb));
@@ -707,7 +707,8 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_out(std::vector<SavedFct<ND
 
     auto Q = madness::QProjector<double, NDIM>(x);
     auto z = Q(y);
-    madness::normalize(*(madness_process.world), z);
+    if (normalize)
+        madness::normalize(*(madness_process.world), z);
     std::vector<SavedFct<NDIM>> result;
     for (size_t k = 0; k < target.size(); k++)
         result.push_back(SavedFct<NDIM>(z[k], target[k].info));
@@ -730,6 +731,15 @@ std::vector<SavedFct<NDIM>> Integrals<NDIM>::project_on(std::vector<SavedFct<NDI
     std::vector<SavedFct<NDIM>> result;
     for (size_t k = 0; k < target.size(); k++)
         result.push_back(SavedFct<NDIM>(z[k], target[k].info));
+    return result;
+}
+
+template <std::size_t NDIM>
+std::vector<SavedFct<NDIM>> Integrals<NDIM>::mirror(std::vector<SavedFct<NDIM>> orbitals,
+                                                    std::vector<long> mirrormap) {
+    std::vector<SavedFct<NDIM>> result;
+    for (SavedFct<NDIM> orb : orbitals)
+        result.push_back(SavedFct<NDIM>(madness::mirror(madness_process.loadfct(orb), mirrormap), orb.info));
     return result;
 }
 

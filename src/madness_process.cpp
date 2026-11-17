@@ -3,11 +3,7 @@
 
 using namespace madness;
 
-template <std::size_t NDIM>
-MadnessProcess<NDIM>::MadnessProcess(double L, long k, double thresh, int initial_level, int truncate_mode, bool refine,
-                                     int n_threads)
-    : L(L), k(k), thresh(thresh), initial_level(initial_level), truncate_mode(truncate_mode), refine(refine),
-      n_threads(n_threads) {
+template <std::size_t NDIM> MadnessProcess<NDIM>::MadnessProcess(int n_threads) {
     int arg = 0;
     char** a = new char*[0]();
 
@@ -19,13 +15,6 @@ MadnessProcess<NDIM>::MadnessProcess(double L, long k, double thresh, int initia
 
     startup(*world, arg, a);
     delete[] a;
-
-    FunctionDefaults<NDIM>::set_k(k);
-    FunctionDefaults<NDIM>::set_thresh(thresh);
-    FunctionDefaults<NDIM>::set_refine(refine);
-    FunctionDefaults<NDIM>::set_initial_level(initial_level);
-    FunctionDefaults<NDIM>::set_truncate_mode(truncate_mode);
-    FunctionDefaults<NDIM>::set_cubic_cell(-L, L);
 }
 
 template <std::size_t NDIM> MadnessProcess<NDIM>::~MadnessProcess() {
@@ -43,20 +32,19 @@ template <std::size_t NDIM> void MadnessProcess<NDIM>::change_nthreads(int n_thr
 }
 
 template <std::size_t NDIM>
-std::tuple<double, long, double, int, int, bool, int> MadnessProcess<NDIM>::get_function_defaults() {
-    return std::make_tuple(FunctionDefaults<NDIM>::get_cell_width()[0], FunctionDefaults<NDIM>::get_k(),
-                           FunctionDefaults<NDIM>::get_thresh(), FunctionDefaults<NDIM>::get_initial_level(),
-                           FunctionDefaults<NDIM>::get_truncate_mode(), FunctionDefaults<NDIM>::get_refine(),
-                           ThreadPool::size());
-}
-
-template <std::size_t NDIM> void MadnessProcess<NDIM>::update_function_defaults() {
+void MadnessProcess<NDIM>::update_function_defaults(double L, long k, double thresh, int initial_level,
+                                                    int truncate_mode, bool refine, bool autorefine,
+                                                    bool apply_randomize, bool project_randomize, bool debug) {
     FunctionDefaults<NDIM>::set_k(k);
     FunctionDefaults<NDIM>::set_thresh(thresh);
     FunctionDefaults<NDIM>::set_refine(refine);
     FunctionDefaults<NDIM>::set_initial_level(initial_level);
     FunctionDefaults<NDIM>::set_truncate_mode(truncate_mode);
     FunctionDefaults<NDIM>::set_cubic_cell(-L, L);
+    FunctionDefaults<NDIM>::set_autorefine(autorefine);
+    FunctionDefaults<NDIM>::set_apply_randomize(apply_randomize);
+    FunctionDefaults<NDIM>::set_project_randomize(project_randomize);
+    FunctionDefaults<NDIM>::set_debug(debug);
 }
 
 // load a function from a SavedFct object
