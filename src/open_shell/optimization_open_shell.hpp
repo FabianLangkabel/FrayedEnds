@@ -68,7 +68,7 @@ class Optimization_open_shell {
     double calculate_lagrange_multiplier_element_core_as(int z, int c, int spin); // Core refinement
     bool optimize_orbitals(double optimization_thresh, double NO_occupation_thresh, int maxiter, bool refine_core,
                            bool use_nonlinear_solver = false);
-    std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indicies_for_update);
+    std::array<std::vector<Function<double, NDIM>>, 2> get_all_active_orbital_updates(std::array<std::vector<int>, 2> orbital_indices_for_update);
     std::array<std::vector<Function<double, NDIM>>, 2> get_all_core_orbital_updates();
     void rotate_orbitals_back();
     void set_orthonormalization_method(const std::string& method, double degeneracy_tol = 1e-3);
