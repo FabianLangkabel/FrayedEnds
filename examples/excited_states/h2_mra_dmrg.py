@@ -1,5 +1,4 @@
 # SA-Excited states with DMRG + NWChem + Orbital refinement
-import subprocess as sp
 import time
 
 import numpy as np
@@ -16,8 +15,11 @@ iterations = 10 # Number of iterations
 box_size = 50.0 # Size of the simulation box
 wavelet_order = 7  # Order of wavelet basis functions
 madness_thresh = 1.0e-4 # Threshold for numerical precision of function representation
-basisset = "6-31g" # Initial basis set for calculation
 econv = 1.0e-4  # Energy convergence threshold (state-averaged energy)
+
+basisset = "6-31g" # Initial basis set for calculation
+nwchem_command = "nwchem" 
+nwchem_localize = None # localization of the occupied NWChem orbitals
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_nwchem_dmrg_oo.dat"
@@ -27,56 +29,21 @@ with open(output_file, "w") as f:
 
 total_start = time.perf_counter()
 
+"""
+Run NWChem calculation
+"""
+geometry = f"H 0.0 0.0 {distance}\nH 0.0 0.0 {-distance}"
+
+nwchem = fe.run_nwchem(geometry=geometry, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
 
 """
-### Run NWChem calculation
-Create NWChem input and run NWChem calculation. If the MadPy devcontainer or the singularity image is used, NWChem is already installed. Otherwise, NWChem has to be installed and the path has to be adjusted.
-"""
-
-
-nwchem_input = (
-    """
-title "molecule"
-memory stack 1500 mb heap 100 mb global 1400 mb
-charge 0  
-geometry noautosym nocenter
-  H 0.0 0.0 """
-    + distance.__str__()
-    + """
-  H 0.0 0.0 """
-    + (-distance).__str__()
-    + """
-end
-basis  
-  * library """
-    + basisset
-    + """
-end
-scf  
- maxiter 200
-end   
-task scf  
-"""
-)
-with open("nwchem", "w") as f:
-    f.write(nwchem_input)
-programm = sp.call(
-    "/opt/anaconda3/envs/frayedends/bin/nwchem nwchem",
-    stdout=open("nwchem.out", "w"),
-    stderr=open("nwchem_err.log", "w"),
-    shell=True,
-)
-
-
-"""
-### Convert NWChem AOs and MOs to MRA-Orbitals
+Convert NWChem AOs and MOs to MRA-Orbitals
 Read the molecular orbitals (MOs) from a NWChem calculation and translate them into multiwavelets.
 """
-
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 converter = fe.NWChem_Converter(world)
-converter.read_nwchem_file("nwchem")
+converter.read_nwchem_file(nwchem)
 orbs = converter.get_mos()
 Vnuc = converter.get_Vnuc()
 nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
@@ -95,7 +62,6 @@ h1 = T + V
 """
 Performe SA DMRG calculation and extract rdms
 """
-
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=4)
 driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
 

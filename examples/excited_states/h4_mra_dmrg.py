@@ -2,8 +2,6 @@
 H4 linear molecule State Average (SA) DMRG calculation with Orbital Refinement
 NWChem molecular orbitals used as initial guesses
 """
-
-import subprocess as sp
 import time
 
 import numpy as np
@@ -19,8 +17,11 @@ iterations = 20  # Number of iterations
 box_size = 50.0  # Size of the simulation box
 wavelet_order = 7  # Order of wavelet basis functions
 madness_thresh = 1.0e-4  # Threshold for numerical precision of function representation
-basisset = "6-31g"  # Initial basis set for calculation
 econv = 1.0e-4  # Energy convergence threshold (state-averaged energy)
+
+basisset = "6-31g" # Initial basis set for calculation
+nwchem_command = "nwchem" 
+nwchem_localize = None # localization of the occupied NWChem orbitals
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_nwchem_dmrg_oo.dat"
@@ -30,48 +31,18 @@ with open(output_file, "w") as f:
 
 total_start = time.perf_counter()
 
-# Create NWChem Input file
-# Define a linear H4 molecule geometry with 1.0 Angstrom spacing between adjacent atoms
+# Defines a linear H4 molecule geometry with 1.0 Angstrom spacing between adjacent atoms
+geom = "H 0.0 0.0 -1.5\nH 0.0 0.0 -0.5\nH 0.0 0.0 0.5\nH 0.0 0.0 1.5\n"
 
-nwchem_input = (
-    """
-title "molecule"
-memory stack 1500 mb heap 100 mb global 1400 mb
-charge 0  
-geometry units angstrom noautosym nocenter
-    H 0.0 0.0 -1.5
-    H 0.0 0.0 -0.5
-    H 0.0 0.0 0.5
-    H 0.0 0.0 1.5
-end
-basis  
-  * library """
-    + basisset
-    + """
-end
-scf  
- maxiter 200
-end   
-task scf  
-"""
-)
-
-# Run NWchem calculations
-with open("nwchem", "w") as f:
-    f.write(nwchem_input)
-programm = sp.call(
-    "/opt/anaconda3/envs/frayedends/bin/nwchem nwchem",
-    stdout=open("nwchem.out", "w"),
-    stderr=open("nwchem_err.log", "w"),
-    shell=True,
-)
+# Run NWChem calculation
+nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
 
 # Setting up the numerical environment for the MRA calculations
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Read the molecular orbitals (MOs) from the NWchem calculation and translate them into multiwavelets
 converter = fe.NWChem_Converter(world)
-converter.read_nwchem_file("nwchem")
+converter.read_nwchem_file(nwchem)
 orbs = converter.get_mos()
 Vnuc = converter.get_Vnuc()
 nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()

@@ -1,4 +1,3 @@
-import subprocess as sp
 import time
 
 import numpy as np
@@ -13,8 +12,11 @@ iterations = 20
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 1.0e-4
-basisset = "6-31g"
 econv = 1.0e-4 
+
+basisset = "6-31g"
+nwchem_command = "nwchem" 
+nwchem_localize = None 
 
 geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
@@ -41,37 +43,14 @@ for d in distance:
         z = [-1.5 * d, -0.5 * d, 0.5 * d, 1.5 * d]
     else:  # two H2 molecules (bond length 2.55) getting closer
         z = [-d - 2.55, -d, d, d + 2.55]
-    geom = "\n".join(f"    H 0.0 0.0 {zi}" for zi in z)
+    geom = "".join(f"H 0.0 0.0 {zi}\n" for zi in z)
 
-    nwchem_input = f"""
-    title "molecule"
-    memory stack 1500 mb heap 100 mb global 1400 mb
-    charge 0
-    geometry units angstrom noautosym nocenter
-    {geom}
-    end
-    basis
-    * library {basisset}
-    end
-    scf
-    maxiter 200
-    end
-    task scf
-    """
-
-    with open("nwchem", "w") as f:
-        f.write(nwchem_input)
-    programm = sp.call(
-        "/opt/anaconda3/envs/frayedends/bin/nwchem nwchem",
-        stdout=open("nwchem.out", "w"),
-        stderr=open("nwchem_err.log", "w"),
-        shell=True,
-    )
+    nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
 
     world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
     converter = fe.NWChem_Converter(world)
-    converter.read_nwchem_file("nwchem")
+    converter.read_nwchem_file(nwchem)
     orbs = converter.get_mos()
     Vnuc = converter.get_Vnuc()
     nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
