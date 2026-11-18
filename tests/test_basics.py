@@ -9,7 +9,7 @@ import frayedends
 def test_pno_execution(geom):
     world = frayedends.MadWorld(ndims=3)
 
-    madpno = frayedends.MadPNO(world, geom, n_orbitals=2)
+    madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=2)
     orbitals = madpno.get_orbitals()
 
     nuc_repulsion = madpno.get_nuclear_repulsion()
@@ -30,7 +30,7 @@ def test_pno_execution(geom):
 def test_cispd_pno_execution(geom):
     world = frayedends.MadWorld(ndims=3)
 
-    madpno = frayedends.MadPNO(world, geom, n_orbitals=3)
+    madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=3)
     nuc_repulsion = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
@@ -67,7 +67,7 @@ def test_spa(data):
     n = 2
     if "be" in geom:
         n = 3
-    madpno = frayedends.MadPNO(world, geom, n_orbitals=n)
+    madpno = frayedends.MadPNO(world, geom, units="angstrom", n_orbitals=n)
     orbitals = madpno.get_orbitals()
     edges = madpno.get_spa_edges()
     c = madpno.get_nuclear_repulsion()
@@ -84,7 +84,7 @@ def test_spa(data):
         G = integrals.compute_two_body_integrals(orbitals)
         del integrals
 
-        mol = tq.Molecule(geom, one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
+        mol = tq.Molecule(geom, units="angstrom", one_body_integrals=T + V, two_body_integrals=G, nuclear_repulsion=c)
         U = mol.make_ansatz(name="SPA", edges=edges)
         H = mol.make_hamiltonian()
         E = tq.ExpectationValue(H=H, U=U)
