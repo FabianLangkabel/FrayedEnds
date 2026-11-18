@@ -14,5 +14,8 @@ molecule
 /local
 *.fe
 *.00000
+*.[0-9]*
+*.-[0-9]*
 F.MPS.*
 *.pyi
+*.bin
