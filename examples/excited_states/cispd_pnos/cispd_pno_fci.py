@@ -88,7 +88,7 @@ n_orbitals = len(orbs)
 
 # FCI calculation
 cisolver = fci.direct_spin1.FCI()
-cisolver = fci.addons.fix_spin_(cisolver, ss=0)
+cisolver = fci.addons.fix_spin_(cisolver, shift=1.0, ss=0)
 e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
 energies = e + nuclear_repulsion_energy
 
