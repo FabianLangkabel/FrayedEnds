@@ -8,11 +8,10 @@ import frayedends as fe
 molecule_name = "li3"
 n_elec = 3
 n_core = 3
-distance = 1.0
 iterations = 15
 box_size = 50.0
 wavelet_order = 7
-madness_thresh = 1.0e-4
+madness_thresh = 1.0e-6
 econv = 1.0e-4 
 
 basisset = "sto-3g"
@@ -32,7 +31,7 @@ with open(output_file, "w") as f:
 total_start = time.perf_counter()
 
 # Define the linear Li3 geometry
-geom = f"Li 0.0 0.0 0.0\nLi 0.0 0.0 {distance}\nLi 0.0 0.0 {-distance}\n"
+geom = f"Li 0.0 0.0 1.5489\nLi 0.0 1.6710 -0.7745\nLi 0.0 -1.6710 -0.7745\n"
 
 # Run NWChem calculation (doublet, UHF)
 nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", multiplicity=2, nwchem_command=nwchem_command)
