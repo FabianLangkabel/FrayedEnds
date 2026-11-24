@@ -12,7 +12,7 @@ n_excitations = 2 # Number of excitations
 iterations = 15 # Number of iterations
 box_size = 50.0 # Size of the simulation box
 wavelet_order = 7 # Order of wavelet basis functions
-madness_thresh = 1.0e-4 # Threshold for numerical precision of function representation
+madness_thresh = 1.0e-6 # Threshold for numerical precision of function representation
 econv = 1.0e-4 # Energy convergence threshold (state-averaged energy)
 
 # Create .dat file for the results

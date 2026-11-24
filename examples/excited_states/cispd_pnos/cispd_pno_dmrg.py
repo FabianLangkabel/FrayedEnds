@@ -10,7 +10,7 @@ n_elec = 2 # Number of electrons
 number_roots = 3 # Number of states (groundstate, 1. excited state, 2. excited state)
 box_size = 50.0 # Size of the simulation box
 wavelet_order = 7 # Order of wavelet basis functions
-madness_thresh = 1.0e-4 # Threshold for numerical precision of function representation
+madness_thresh = 1.0e-5 # Threshold for numerical precision of function representation
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_cispd_pno_dmrg.dat"
