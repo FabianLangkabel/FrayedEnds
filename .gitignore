@@ -19,3 +19,5 @@ molecule
 F.MPS.*
 *.pyi
 *.bin
+*_cisx[0-9]*
+*_phi[0-9]*
