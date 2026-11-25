@@ -50,8 +50,8 @@ nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 core_alpha_orbitals = alpha_mos[:n_core]
 core_beta_orbitals = beta_mos[:n_core]
 
-active_alpha_orbitals = alpha_mos[n_core:]
-active_beta_orbitals = beta_mos[n_core:]
+active_alpha_orbitals = alpha_mos[n_core:6]
+active_beta_orbitals = beta_mos[n_core:6]
 
 n_active = len(active_alpha_orbitals)
 
@@ -101,7 +101,7 @@ for iter in range(iterations):
         opt_thresh=0.001,
         occ_thresh=0.001,
         maxiter=1,
-        orthonormalization_method="cd",
+        #orthonormalization_method="cd",
         refine_core=True,
     )
 
