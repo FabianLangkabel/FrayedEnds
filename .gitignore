@@ -21,3 +21,4 @@ F.MPS.*
 *.bin
 *_cisx[0-9]*
 *_phi[0-9]*
+nwchem/
