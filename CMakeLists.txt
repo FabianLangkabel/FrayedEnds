@@ -62,11 +62,20 @@ nanobind_add_module(
   src/pyfuncfactory.hpp
   src/eigensolver.cpp
   src/nwchem_converter.cpp
+  src/hartree_fock.cpp
   src/moleculargeometry.cpp
   src/coulomboperator_nd.hpp
   src/open_shell/integrals_open_shell.cpp
   src/open_shell/optimization_open_shell.cpp
   src/open_shell/nwchem_converter_open_shell.cpp
+)
+
+nanobind_add_stub(
+  _frayedends_impl_stub
+  MODULE _frayedends_impl
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/frayedends/_frayedends_impl.pyi
+  PYTHON_PATH $<TARGET_FILE_DIR:_frayedends_impl>
+  DEPENDS _frayedends_impl
 )
 
 # Install directive for scikit-build-core

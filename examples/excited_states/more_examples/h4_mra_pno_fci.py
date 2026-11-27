@@ -5,16 +5,15 @@ from pyscf import fci
 
 import frayedends as fe
 
-iterations = 15
 molecule_name = "h4"
+n_elec = 4
+number_roots = 3
+iterations = 20
 box_size = 50.0
 wavelet_order = 7
-madness_thresh = 0.0001
+madness_thresh = 1.0e-4
 basisset = "6-31g"
-n_electrons = 4
-econv = 1.0e-6  # Energy convergence threshold
-
-iterations_results = []
+econv = 1.0e-4
 
 geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
@@ -26,16 +25,12 @@ elif geometry_mode == "h2_pair":  # for H2 pair getting closer
 else:
     raise ValueError("geometry_mode must be 'equidistant' or 'h2_pair'")
 
-with open("iterations_pno_fci_oo.dat", "w") as f:
-    header = "distance iteration iteration_time_s energy_0"
-    f.write(header + "\n")
+output_file = f"{molecule_name}_{geometry_mode}_pno_fci_oo.dat"
 
-with open("distance_times_pno_fci_oo.dat", "w") as f:
-    f.write("distance total_time_s\n")
-
-with open("results_pno_fci_oo.dat", "w") as f:
-    header = "distance energy_0"
-    f.write(header + "\n")
+with open(output_file, "w") as f:
+    f.write(
+        "distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n"
+    )
 
 total_start = time.perf_counter()
 
@@ -43,91 +38,120 @@ for d in distance:
     dist_start = time.perf_counter()
     reported_distance = 2 * d if geometry_mode == "h2_pair" else d
 
-    if geometry_mode == "equidistant":  # for equidistant linear H4 molecule
-        geom = (
-            "H 0.0 0.0 " + (-d - d / 2).__str__() + "\n"
-            "H 0.0 0.0 " + (-d / 2).__str__() + "\n"
-            "H 0.0 0.0 " + (d / 2).__str__() + "\n"
-            "H 0.0 0.0 " + (d + d / 2).__str__() + "\n"
-        )
-    elif geometry_mode == "h2_pair":  # for H2 molecules getting closer and closer to a H4 molecule
-        geom = (
-            "H 0.0 0.0 " + (-d - 1.5).__str__() + "\n"
-            "H 0.0 0.0 " + (-d).__str__() + "\n"
-            "H 0.0 0.0 " + d.__str__() + "\n"
-            "H 0.0 0.0 " + (d + 1.5).__str__() + "\n"
-        )
-    else:
-        raise ValueError("Invalid geometry mode selected.")
+    if geometry_mode == "equidistant":  # equidistant linear H4 molecule
+        z = [-1.5 * d, -0.5 * d, 0.5 * d, 1.5 * d]
+    else:  # two H2 molecules getting closer
+        z = [-d - 2.55, -d, d, d + 2.55]
+    geom = "".join(f"H 0.0 0.0 {zi}\n" for zi in z)
 
     world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
-    madpno = fe.MadPNO(world, geom, n_orbitals=8)
+    madpno = fe.MadPNO(world, geom, units="angstrom", n_orbitals=8, maxrank=8)
     orbs = madpno.get_orbitals()
 
-    nuc_repulsion = madpno.get_nuclear_repulsion()
+    nuclear_repulsion_energy = madpno.get_nuclear_repulsion()
     Vnuc = madpno.get_nuclear_potential()
 
     integrals = fe.Integrals(world)
     orbs = integrals.orthonormalize(orbitals=orbs)
-    for i in range(len(orbs)):
-        orbs[i].type = "active"
 
     # for i in range(len(orbs)):
     #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
+    G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
+    T = integrals.compute_kinetic_integrals(orbs)
+    V = integrals.compute_potential_integrals(orbs, Vnuc)
+    h1 = T + V
+
     n_orbitals = len(orbs)
 
-    current = 0.0
-    for iteration in range(iterations):
+    cisolver = fci.direct_spin1.FCI()
+    cisolver = fci.addons.fix_spin_(cisolver, shift=1.0, ss=0)
+    e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
+    energies = e + nuclear_repulsion_energy
+
+    rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
+    sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
+    sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
+
+    # State-averaged energy from SA-RDMs
+    e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
+
+    sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
+
+    with open(output_file, "a") as f:
+        f.write(f"{reported_distance:.3f} 0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+
+    print(f"\nDistance: {reported_distance:.3f}")
+    print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
+    print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
+
+    current = e_avg
+    converged = False
+
+    for iter in range(iterations):
         iter_start = time.perf_counter()
 
-        integrals = fe.Integrals(world)
-        G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
-        T = integrals.compute_kinetic_integrals(orbs)
-        V = integrals.compute_potential_integrals(orbs, Vnuc)
-
-        # FCI calculation
-        e, fcivec = fci.direct_spin0.kernel(T + V, G, n_orbitals, n_electrons)  # Computes the energy and the FCI vector
-        rdm1, rdm2 = fci.direct_spin0.make_rdm12(
-            fcivec, n_orbitals, n_electrons
-        )  # Computes the 1- and 2- body reduced density matrices
-        rdm2 = np.swapaxes(rdm2, 1, 2)
-
-        e_tot = e + nuc_repulsion
-
-        print("iteration {} FCI electronic energy {:+2.8f}, total energy {:+2.8f}".format(iteration, e, e_tot))
-
-        opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
-        orbs = opti.get_orbitals(orbitals=orbs, rdm1=rdm1, rdm2=rdm2, opt_thresh=0.001, occ_thresh=0.001)
+        opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
+        orbs = opti.get_orbitals(
+            orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001
+        )  # Optimizes the orbitals and returns the new ones
 
         # for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
-        iter_end = time.perf_counter()
-        iter_time = iter_end - iter_start
+        G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
+        T = integrals.compute_kinetic_integrals(orbs)
+        V = integrals.compute_potential_integrals(orbs, Vnuc)
+        h1 = T + V
 
-        with open("iterations_pno_fci_oo.dat", "a") as f:
-            f.write(f"{reported_distance:.3f} {iteration} {iter_time:.2f} {e_tot: .15f}" + "\n")
+        n_orbitals = len(orbs)
 
-        iterations_results.append(
-            {"distance": reported_distance, "iteration": iteration, "iteration_time": iter_time, "energy": e_tot}
+        e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
+        energies = e + nuclear_repulsion_energy
+
+        rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
+        sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
+        sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
+
+        # State-averaged energy from SA-RDMs
+        e_avg = (
+            np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
         )
 
-        if np.isclose(e_tot, current, atol=econv, rtol=0.0):
-            break  # The loop terminates as soon as the energy changes less than econv in one iteration step
-        current = e_tot
+        sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
-    with open("results_pno_fci_oo.dat", "a") as f:
-        f.write(f"{reported_distance:.3f} {e_tot: .15f}" + "\n")
+        print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
 
-    dist_end = time.perf_counter()
-    dist_time = dist_end - dist_start
-    print(f"Distance {reported_distance:.3f} took {dist_time:.2f} s")
-    with open("distance_times_pno_fci_oo.dat", "a") as f:
-        f.write(f"{reported_distance:.3f} {dist_time:.2f}\n")
+        iter_time = time.perf_counter() - iter_start
+        with open(output_file, "a") as f:
+            f.write(
+                f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} "
+                + " ".join(f"{x:.15f}" for x in energies)
+                + f" {e_avg:.15f}\n"
+            )
+
+        if abs(e_avg - current) < econv:
+            converged = True
+            print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
+            break  # stop as soon as the state-averaged energy changes less than econv
+        current = e_avg
+
+    dist_time = time.perf_counter() - dist_start
+    status = f"converged after {iter + 1} iterations" if converged else f"not converged after {iterations} iterations"
+    print(f"Distance {reported_distance:.3f}: {status}, time = {dist_time:.1f} s")
+
+    with open(output_file, "a") as f:
+        f.write(f"# distance {reported_distance:.3f}: {status}, econv = {econv:.0e}, time = {dist_time:.2f} s\n")
 
     del integrals
     del opti
     del madpno
     del world
+
+with open(output_file, "a") as f:
+    f.write(f"# total time = {time.perf_counter() - total_start:.2f} s\n")
+
+print(f"\nTotal time: {time.perf_counter() - total_start:.1f} s")
+
+fe.cleanup(globals())

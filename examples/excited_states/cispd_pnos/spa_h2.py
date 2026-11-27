@@ -127,7 +127,7 @@ constants = [5.0]
 U_ex = mol.make_ansatz(name="spa", edges=[(0, 1, 2, 3)])
 
 ti = fe.TequilaInterface(mol=mol)
-E = ti.expectation_value_orthogonality_constraint(
+E = ti.vqd_projection_method(
     H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list,
@@ -152,7 +152,7 @@ UR = mol.UR(0, 1, (tq.Variable("u") + 0.5) * pi)
 # UR += mol.UR(1, 3, (tq.Variable("y") + 0.5) * pi)
 UR += mol.UR(0, 2, (tq.Variable("z") + 0.5) * pi)
 
-E = ti.expectation_value_orthogonality_constraint(
+E = ti.vqd_projection_method(
     H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + UR + rotation,
     circuit_list=circuit_list,
@@ -183,7 +183,7 @@ variables = {k: 1.0 for k in U_ex.extract_variables()}
 print("Consistency Test difference: ", f1(variables) - f2(variables))
 
 print("\n--------------- SPA H_gs & U_ex + UR + rotation:  ES -----------------")
-E = ti.expectation_value_orthogonality_constraint(
+E = ti.vqd_projection_method(
     H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + UR + rotation,
     circuit_list=circuit_list,
@@ -198,9 +198,7 @@ print(f"Circuit: {circuit}")
 
 print("--------------- SPA H_check & U_ex + UR:  ES -----------------")
 gs_circuit_ch = gs_circuit + rotation  # add rotation to groundstate circuit
-E = ti.expectation_value_orthogonality_constraint(
-    H=H_check, U=U_ex + UR, circuit_list=[gs_circuit_ch], constant_list=constants
-)
+E = ti.vqd_projection_method(H=H_check, U=U_ex + UR, circuit_list=[gs_circuit_ch], constant_list=constants)
 result = tq.minimize(E, silent=True)
 print(f"FCI Singlet EX: {fci_energy_1}")
 print(f"SPA Singlet EX: {result.energy}")

@@ -180,7 +180,7 @@ for d in distance:
 
     ti = fe.TequilaInterface(mol=mol)
 
-    E = ti.expectation_value_orthogonality_constraint(
+    E = ti.vqd_projection_method(
         H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
         U=U_ex + UR + rotation,
         circuit_list=circuit_list,

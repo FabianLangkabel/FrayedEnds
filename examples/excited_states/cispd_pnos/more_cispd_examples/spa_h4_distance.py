@@ -155,7 +155,7 @@ for d in distance:
     UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable("x") + 0.5) * pi)
 
     ti = fe.TequilaInterface(mol=mol)
-    E = ti.expectation_value_orthogonality_constraint(
+    E = ti.vqd_projection_method(
         H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
         U=U_ex + UR + rotation,
         circuit_list=circuit_list,

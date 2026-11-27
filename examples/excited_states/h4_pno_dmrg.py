@@ -16,15 +16,13 @@ n_elec = 4  # Number of electrons
 number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
 box_size = 50.0  # Size of the simulation box
 wavelet_order = 7  # Order of wavelet basis functions
-madness_thresh = 0.0001  # Threshold for numerical precision of function representation
-basisset = "6-31g"  # Initial basis set for calculation
-
-iteration_results = []
+madness_thresh = 1.0e-4  # Threshold for numerical precision of function representation
 
 # Create .dat files for the results
-with open("results_pno_dmrg.dat", "w") as f:
-    header = "distance " + " ".join(f"energy_{i}" for i in range(number_roots))
-    f.write(header + "\n")
+output_file = f"{molecule_name}_pno_dmrg.dat"
+
+with open(output_file, "w") as f:
+    f.write("time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
 
 total_start = time.perf_counter()
 
@@ -35,7 +33,7 @@ geom = "H 0.0 0.0 -1.5 \nH 0.0 0.0 -0.5 \nH 0.0 0.0 0.5 \nH 0.0 0.0 1.5 \n"
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Get 8 Pair Natural Orbitals (PNOs)
-madpno = fe.MadPNO(world, geom, n_orbitals=8)
+madpno = fe.MadPNO(world, geom, units="angstrom", n_orbitals=8, maxrank=8)
 orbs = madpno.get_orbitals()
 
 nuc_repulsion = madpno.get_nuclear_repulsion()  # Compute nuclear repulsion energy
@@ -46,36 +44,43 @@ orbs = integrals.orthonormalize(orbitals=orbs)  # Orthonormalize orbitals
 
 n_orbitals = len(orbs)
 
-
-for i in range(n_orbitals):
-    world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot PNOs
+# for i in range(n_orbitals):
+#     world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot PNOs
 
 # Calculate initial integrals
-integrals = fe.Integrals(world)
 G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
 T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
 V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
 h1 = T + V
-S = integrals.compute_overlap_integrals(orbs)  # Overlap
 
 # Performe DMRG calculation and extract rdms
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SU2, n_threads=8)
 driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
-mpo = driver.get_qc_mpo(h1e=h1, g2e=G, ecore=nuc_repulsion, iprint=0)
-ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
 
 idx = driver.orbital_reordering(h1, G)
 h1_new = h1[idx][:, idx]
 g2_new = G[idx][:, idx][:, :, idx][:, :, :, idx]
 
-driver.initialize_system(n_sites=n_orbitals, n_elec=n_elec, spin=0)
 mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuc_repulsion, iprint=0)
 ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=1)
-print("State-averaged MPS energies = [%s]" % " ".join("%20.15f" % x for x in energies))
+energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=0)
 
-with open("results_pno_dmrg.dat", "a") as f:
-    f.write(" ".join(f"{x:.15f}" for x in energies) + "\n")
+# Extract rdms
+kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
+sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
+sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+    0, 3, 1, 2
+)  # Compute the state average 2-body rdm
+
+# State-averaged energy from SA-RDMs
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion
+
+total_time = time.perf_counter() - total_start
+
+print(f"{'Energies':<{14 * number_roots}}{'E_SA':<16}Time / s")
+print(f"{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{total_time:.1f}")
+
+with open(output_file, "a") as f:
+    f.write(f"{total_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
 
 fe.cleanup(globals())

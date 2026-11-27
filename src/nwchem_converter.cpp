@@ -37,10 +37,19 @@ void NWChem_Converter::read_nwchem_file(std::string nwchem_file) {
     }
 
     auto molecule = madness::Molecule();
+    atoms.clear();
     for (auto atom : nwchem.atoms) {
         molecule.add_atom(atom.position[0], atom.position[1], atom.position[2],
                           (double)symbol_to_atomic_number(atom.symbol), symbol_to_atomic_number(atom.symbol));
+        atoms.push_back(std::make_tuple(atom.symbol, atom.position[0], atom.position[1], atom.position[2]));
     }
+
+    occupancies.clear();
+    orbital_energies.clear();
+    for (long i = 0; i < nwchem.occupancies.size(); i++)
+        occupancies.push_back(nwchem.occupancies(i));
+    for (long i = 0; i < nwchem.energies.size(); i++)
+        orbital_energies.push_back(nwchem.energies(i));
 
     // Vnuc = create_nuclear_correlation_factor(*(madness_process.world), molecule).U2();
     // Vnuc = new Nuclear<double,3>(*(madness_process.world), molecule);

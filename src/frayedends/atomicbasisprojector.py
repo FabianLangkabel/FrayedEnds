@@ -67,9 +67,11 @@ class AtomicBasisProjector:
         )
         print(input_string)
 
+        self.madworld = madworld
         self.impl = AtomBasProjector(madworld.impl, input_string, aobasis)
 
-        self.impl.run()
+        with madworld.keep_function_defaults():
+            self.impl.run()
         orbitals = self.impl.get_atomic_basis()
         self.orbitals = orbitals
 
@@ -78,7 +80,8 @@ class AtomicBasisProjector:
 
     @redirect_output("minbas_scf.log")
     def solve_scf(self, thresh=1.0e-4):
-        return self.impl.solve_scf(thresh)
+        with self.madworld.keep_function_defaults():
+            return self.impl.solve_scf(thresh)
 
     def get_nuclear_potential(self):
         return self.impl.get_nuclear_potential()
@@ -91,7 +94,7 @@ class AtomicBasisProjector:
 
         data["dft"] = {
             "xc": "hf",
-            "L": madworld.get_function_defaults()["cell_width"] / 2,
+            "L": madworld.get_function_defaults()["L"],
             "k": madworld.get_function_defaults()["k"],
             "econv": 1.0e-4,
             "dconv": 5.0e-4,

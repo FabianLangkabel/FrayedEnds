@@ -78,13 +78,12 @@ task scf energy
         g2[1] = g2[1].transpose(0, 2, 1, 3)
         g2[2] = g2[2].transpose(0, 2, 1, 3)
 
-        # FCI calculation on active space
-        e, fcivec = fci.direct_uhf.kernel(h1, g2, n_act_orbitals, n_act_electrons)  # Computes the energy and the FCI vector
-        rdm1, rdm2 = fci.direct_uhf.make_rdm12s(fcivec, n_act_orbitals, n_act_electrons)
-        rdm2 = np.swapaxes(rdm2, 1, 2)
-        rdm_2_phys_aa = rdm2[0].transpose(0, 2, 1, 3)
-        rdm_2_phys_ab = rdm2[1].transpose(0, 2, 1, 3)
-        rdm_2_phys_bb = rdm2[2].transpose(0, 2, 1, 3)
+    # FCI calculation on active space
+    e, fcivec = fci.direct_uhf.kernel(h1, g2, n_act_orbitals, (1, 1))
+    rdm1, rdm2 = fci.direct_uhf.make_rdm12s(fcivec, n_act_orbitals, (1, 1))
+    rdm_2_phys_aa = rdm2[0].transpose(0, 2, 1, 3)
+    rdm_2_phys_ab = rdm2[1].transpose(0, 2, 1, 3)
+    rdm_2_phys_bb = rdm2[2].transpose(0, 2, 1, 3)
 
         print(f"Iteration {iteration} - FCI energy: {e + c:+2.10f} and core energy: {c:+2.10f}")
 

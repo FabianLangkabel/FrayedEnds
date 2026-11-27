@@ -13,44 +13,16 @@ molecule_name = "h3"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
+
 basisset = "sto-3g"
+nwchem_command = "nwchem"
+nwchem_localize = None
 
-# Run NWChem calculation
-nwchem_input = (
-    """
-title "molecule"
-memory stack 1500 mb heap 100 mb global 1400 mb
-charge 0  
-geometry noautosym nocenter
-  H 0.0 0.0 0.0
-  H 0.0 0.0 """
-    + distance.__str__()
-    + """
-  H 0.0 0.0 """
-    + (-distance).__str__()
-    + """
-end
-basis  
-  * library """
-    + basisset
-    + """
-end
-scf  
- doublet; uhf
- maxiter 200
-end   
-task scf  
-"""
-)
+geom = "H 0.0 0.0 0.0\nH 0.0 0.0 1.0\nH 0.0 0.0 -1.0\n"
 
-with open("nwchem", "w") as f:
-    f.write(nwchem_input)
-
-programm = sp.call(
-    "/Users/timo/miniforge3/envs/fe_test/bin/nwchem nwchem",
-    stdout=open("nwchem.out", "w"),
-    stderr=open("nwchem_err.log", "w"),
-    shell=True,
+# Run NWChem calculation (doublet, UHF)
+nwchem = fe.run_nwchem(
+    geometry=geom, basis=basisset, name=molecule_name, units="angstrom", multiplicity=2, nwchem_command=nwchem_command
 )
 
 # Initalize world
@@ -58,46 +30,12 @@ world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
 converter = fe.NWChem_Converter_open_shell(world)
-converter.read_nwchem_file("nwchem")
+converter.read_nwchem_file(nwchem)
 aos = converter.get_normalized_aos()
 alpha_mos, beta_mos = converter.get_mos()
 Vnuc = converter.get_Vnuc()
 nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
 del converter
-
-# Visualization of initial orbitals
-'''
-import py3Dmol
-def orbital_view(molecule, orbital, label):
-
-    world.cube_plot("orbital", orbital, molecule.impl, 1.0, 81, [0.0, 0.0, 0.0])
-    orbdata = open("orbital.cube", "r").read()
-    v = py3Dmol.view(width=300, height=300)  # kleine Breite für nebeneinander
-    v.addVolumetricData(orbdata, "cube", {'isoval': -0.001, 'color': "red", 'opacity': 0.75})
-    v.addVolumetricData(orbdata, "cube", {'isoval': 0.001, 'color': "blue", 'opacity': 0.75})
-    v.addModel(orbdata, "cube")
-    v.setStyle({'sphere':{}})
-    v.zoomTo()
-    html = f"""
-    <div style="display:inline-block; text-align:center; margin:5px;">
-        <div style="font-weight:bold; margin-bottom:4px;">{label}</div>
-        {v._make_html()}
-    </div>
-    """
-    return html
-
-molecule = fe.MadMolecule()
-molecule.add_atom(0, 0, 0, "H")
-molecule.add_atom(0, 0, distance, "H")
-molecule.add_atom(0, 0, -distance, "H")
-
-alpha_0_plot = orbital_view(molecule, alpha_mos[0], "alpha 0")
-beta_0_plot = orbital_view(molecule, beta_mos[0], "beta 0")
-alpha_1_plot = orbital_view(molecule, alpha_mos[1], "alpha 1")
-
-from IPython.display import display, HTML
-display(HTML(f"<div style='display:flex; gap:10px'>{alpha_0_plot}{beta_0_plot}{alpha_1_plot}</div>"))
-'''
 
 # Calculate Integrals
 integrals = fe.Integrals_open_shell(world)
@@ -124,7 +62,6 @@ ket = driver.get_random_mps(tag="GS", bond_dim=50, nroots=1)
 energy = driver.dmrg(mpo, ket, n_sweeps=20, bond_dims=bond_dims, noises=noises, thrds=thrds, iprint=1)
 print("DMRG energy = %20.15f" % energy)
 
-
 # Extract rdms
 rdm_1 = driver.get_1pdm(ket)
 rdm_2 = driver.get_2pdm(ket)
@@ -142,9 +79,7 @@ two_body_en = 0.5 * (
 rdm_energy = one_body_en + two_body_en + nuclear_repulsion_energy
 print("Energy from rdms = %20.15f" % rdm_energy)
 
-
 # Refine orbitals
-
 opti = fe.OrbitalRefinement_open_shell(world, Vnuc, nuclear_repulsion_energy)
 opti.refine_orbitals(
     orbitals=[[], [], alpha_mos, beta_mos],
@@ -153,4 +88,5 @@ opti.refine_orbitals(
     opt_thresh=0.001,
     occ_thresh=0.001,
 )
+
 fe.cleanup(globals())
