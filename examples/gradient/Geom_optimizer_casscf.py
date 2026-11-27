@@ -10,21 +10,30 @@ but with orbitals expanded in a (large) Gaussian basis set instead of MRA functi
 The analytic CASSCF nuclear gradients are passed to geomeTRIC through pyscf's geomeTRIC interface.
 """
 
+n_orbs = 13
+geometry1 = "H 0.0 0.0 -1.\nH 0.0 0.0 1." 
+geometry2 = "H 0. 0. -2.\nBe 0. 0. 0.\nH 0. 0. 2."
+geometry3 = "H 0. 2. 2.\nH 0. 2. -2.\nH 0. -2. 2.\nH 0. -2. -2.\nC 0. 0. 0."
+geometry4 = "H 0. 0. -2.5\nO 0. -0.1 0.\nH 0. 0. 2.5"
 
 def make_casscf(pyscf_mol, n_orbitals):
     mf = scf.RHF(pyscf_mol).run()
-    return mcscf.CASSCF(mf, n_orbitals, pyscf_mol.nelectron)  # all electrons active, as in the FCI-based MRA calculation
-
+    mc = mcscf.CASSCF(mf, n_orbitals, pyscf_mol.nelectron)  # all electrons active, as in the FCI-based MRA calculation
+    mc.max_cycle_macro = 200
+    return mc
 
 geom_opt_start = time()
-pyscf_mol = gto.M(atom="H 0.0 0.0 -2.5\nH 0.0 0.0 2.5", unit="bohr", basis="cc-pV5Z")  # initial guess molecule
+pyscf_mol = gto.M(atom=geometry4, unit="bohr", basis="cc-pV5Z")  # initial guess molecule
 print(pyscf_mol.atom_coords())
 
-mc = make_casscf(pyscf_mol, n_orbitals=2)
+mc = make_casscf(pyscf_mol, n_orbitals=n_orbs)
 new_mol = geometric_solver.optimize(mc)  # geometry optimization with geomeTRIC using analytic CASSCF gradients
 geom_opt_end = time()
 
-mc_final = make_casscf(new_mol, n_orbitals=2)
+print(type(pyscf_mol))
+print(type(new_mol))
+print(new_mol.basis)
+mc_final = make_casscf(new_mol, n_orbitals=n_orbs)
 mc_final.kernel()
 print("Final CASSCF energy:", mc_final.e_tot)
 print("New geometry (bohr)")
