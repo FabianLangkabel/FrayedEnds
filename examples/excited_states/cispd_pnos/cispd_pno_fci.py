@@ -6,13 +6,21 @@ from pyscf import fci
 import frayedends as fe
 
 molecule_name = "h4"
-n_electrons = 4
-box_size = 50.0
-wavelet_order = 7
-madness_thresh = 1.0e-6
-econv = 1.0e-6
+n_elec = 4  # Number of electrons
+number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
+box_size = 50.0  # Size of the simulation box
+wavelet_order = 7  # Order of wavelet basis functions
+madness_thresh = 1.0e-5  # Threshold for numerical precision of function representation
 
+# Create .dat files for the results
+output_file = f"{molecule_name}_cispd_pno_fci.dat"
 
+with open(output_file, "w") as f:
+    f.write("time_s n_orbitals " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
+
+total_start = time.perf_counter()
+
+# Define a linear H4 molecule geometry with 1.0 Angstrom spacing between adjacent atoms
 molecule = fe.MolecularGeometry(units="angstrom")
 molecule.add_atom(0.0, 0.0, -1.5, "H")
 molecule.add_atom(0.0, 0.0, -0.5, "H")
@@ -20,12 +28,13 @@ molecule.add_atom(0.0, 0.0, 0.5, "H")
 molecule.add_atom(0.0, 0.0, 1.5, "H")
 geom = "H 0.0 0.0 -1.5\nH 0.0 0.0 -0.5\nH 0.0 0.0 0.5\nH 0.0 0.0 1.5"
 
+# Setting up the numerical environment for the MRA calculations
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 integrals = fe.Integrals(world)
 
 # Calculate ground state orbitals
 pno_start = time.perf_counter()
-madpno = fe.MadPNO(world, geom, n_orbitals=4)  # 2 HF + 2 MP2-PNOs
+madpno = fe.MadPNO(world, geom, units="angstrom", n_orbitals=4)  # 2 HF + 2 MP2-PNOs
 pno_end = time.perf_counter()
 pno_time = pno_end - pno_start
 print("Generating PNOs took %.2f seconds" % pno_time)
@@ -61,7 +70,7 @@ print("Generating CISPD took %.2f seconds" % cispd_time)
 # for i in range(len(cispd_orbs)):
 #     world.cube_plot(f"cispd_orb{i}", cispd_orbs[i], molecule, zoom=4.0)
 
-nuc_repulsion = madpno.get_nuclear_repulsion()
+nuclear_repulsion_energy = madpno.get_nuclear_repulsion()
 Vnuc = madpno.get_nuclear_potential()
 
 orbs = gs_orbs + cis_orbs + cispd_orbs
@@ -73,19 +82,31 @@ orbs = integrals.orthonormalize(orbitals=orbs)
 # Calculate initial integrals
 T = integrals.compute_kinetic_integrals(orbs)
 V = integrals.compute_potential_integrals(orbs, Vnuc)
-H_core = T + V
+h1 = T + V
 G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems
 n_orbitals = len(orbs)
 
 # FCI calculation
-e_roots, fcivecs = fci.direct_spin0.kernel(H_core, G, n_orbitals, n_electrons, nroots=3)
+cisolver = fci.direct_spin1.FCI()
+cisolver = fci.addons.fix_spin_(cisolver, shift=1.0, ss=0)
+e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
+energies = e + nuclear_repulsion_energy
 
-e_ground_tot = e_roots[0] + nuc_repulsion
-e_excited_tot = e_roots[1] + nuc_repulsion
-e_excited_tot_2 = e_roots[2] + nuc_repulsion
+rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
+sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
+sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
 
-print(f"Total Energy (Ground State):    {e_ground_tot:+2.8f}")
-print(f"Total Energy (1st Excited):     {e_excited_tot:+2.8f}")
-print(f"Total Energy (2nd Excited):     {e_excited_tot_2:+2.8f}")
+# State-averaged energy from SA-RDMs
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
+
+total_time = time.perf_counter() - total_start
+
+print(f"{'Energies':<{14 * number_roots}}{'E_SA':<16}Time / s")
+print(f"{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{total_time:.1f}")
+
+with open(output_file, "a") as f:
+    f.write(f"{total_time:.2f} {n_orbitals} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+    f.write(f"# orbitals: {len(gs_orbs)} GS + {len(cis_orbs)} CIS + {len(cispd_orbs)} CIS(D) -> {n_orbitals}\n")
+    f.write(f"# orbital generation time: PNO {pno_time:.2f} s, CIS {cis_time:.2f} s, CIS(D) {cispd_time:.2f} s\n")
 
 fe.cleanup(globals())

@@ -51,7 +51,6 @@ for iteration in range(10):
     # FCI calculation on active space
     e, fcivec = fci.direct_uhf.kernel(h1, g2, n_orbitals, (n_alpha, n_beta))
     rdm1, rdm2 = fci.direct_uhf.make_rdm12s(fcivec, n_orbitals, (n_alpha, n_beta))
-    rdm2 = np.swapaxes(rdm2, 1, 2)
     rdm_2_phys_aa = rdm2[0].transpose(0, 2, 1, 3)  # again reordering to fit our convention
     rdm_2_phys_ab = rdm2[1].transpose(0, 2, 1, 3)
     rdm_2_phys_bb = rdm2[2].transpose(0, 2, 1, 3)

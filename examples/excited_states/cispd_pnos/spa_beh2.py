@@ -171,7 +171,7 @@ print("SPA edges: ", ex_spa_edges)
 U_ex = mol.make_ansatz(name="spa", edges=ex_spa_edges)
 
 ti = fe.TequilaInterface(mol=mol)
-E = ti.expectation_value_orthogonality_constraint(
+E = ti.vqd_projection_method(
     H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + rotation,
     circuit_list=circuit_list,
@@ -209,7 +209,7 @@ UR += mol.UR(ex_second_edge[0], ex_second_edge[1], (tq.Variable("w") + 0.5) * pi
 UR += mol.UR(ex_second_edge[0], ex_second_edge[2], (tq.Variable("x") + 0.5) * pi)
 # UR += mol.UR(ex_second_edge[2], ex_second_edge[3], (tq.Variable('y') + 0.5) * pi)
 
-E = ti.expectation_value_orthogonality_constraint(
+E = ti.vqd_projection_method(
     H=H_gs,  # use ground state Hamiltonian and rotate the circuit into the different basis
     U=U_ex + UR + rotation,
     circuit_list=circuit_list,
