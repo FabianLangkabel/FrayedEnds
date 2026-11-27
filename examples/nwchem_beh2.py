@@ -11,48 +11,22 @@ molecule_name = "beh2"
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 0.0001
+
 basisset = "cc-pvdz"
+nwchem_command = "nwchem" 
+nwchem_localize = None
+
+geom = "Be 0.0 0.0 0.0\nH 0.0 0.0 2.5\nH 0.0 0.0 -2.5\n"
 
 # Run NWChem calculation
-nwchem_input = (
-    """
-title "molecule"
-memory stack 1500 mb heap 100 mb global 1400 mb
-charge 0  
-geometry noautosym nocenter
-  Be 0.0 0.0 0.0
-  H 0.0 0.0 """
-    + distance.__str__()
-    + """
-  H 0.0 0.0 """
-    + (-distance).__str__()
-    + """
-end
-basis  
-  * library """
-    + basisset
-    + """
-end
-scf  
- maxiter 200
-end   
-task scf  
-"""
-)
-
-with open("nwchem", "w") as f:
-    f.write(nwchem_input)
-
-programm = sp.call(
-    "/opt/conda/bin/nwchem nwchem", stdout=open("nwchem.out", "w"), stderr=open("nwchem_err.log", "w"), shell=True
-)
+nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
 
 # Initalize world
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
 # Convert NWChem AOs and MOs to MRA-Orbitals
 converter = fe.NWChem_Converter(world)
-converter.read_nwchem_file("nwchem")
+converter.read_nwchem_file(nwchem)
 aos = converter.get_normalized_aos()
 mos = converter.get_mos()
 del converter
