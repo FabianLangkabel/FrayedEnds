@@ -26,10 +26,12 @@ else:
 
 # Create .dat file for the results
 output_file = f"{molecule_name}_{geometry_mode}_cispd_pno_fci_oo.dat"
- 
+
 with open(output_file, "w") as f:
-    f.write("distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
- 
+    f.write(
+        "distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n"
+    )
+
 total_start = time.perf_counter()
 
 for d in distance:
@@ -100,28 +102,28 @@ for d in distance:
     e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
     energies = e + nuc_repulsion
 
-    # Extract rdms  
+    # Extract rdms
     rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
     sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
     sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
- 
+
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-             + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-             + nuc_repulsion)
- 
+    e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuc_repulsion
+
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
     with open(output_file, "a") as f:
-        f.write(f"# distance {reported_distance:.3f}: orbitals {len(gs_orbs)} GS + {len(cis_orbs)} CIS + "
-                f"{len(cispd_orbs)} CIS(D) -> {n_orbitals}, generation time PNO {pno_time:.2f} s, "
-                f"CIS {cis_time:.2f} s, CIS(D) {cispd_time:.2f} s\n")
+        f.write(
+            f"# distance {reported_distance:.3f}: orbitals {len(gs_orbs)} GS + {len(cis_orbs)} CIS + "
+            f"{len(cispd_orbs)} CIS(D) -> {n_orbitals}, generation time PNO {pno_time:.2f} s, "
+            f"CIS {cis_time:.2f} s, CIS(D) {cispd_time:.2f} s\n"
+        )
         f.write(f"{reported_distance:.3f} 0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
     print(f"\nDistance: {reported_distance:.3f}")
     print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
     print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
- 
+
     current = e_avg
     converged = False
 
@@ -133,7 +135,7 @@ for d in distance:
         """
         opti = fe.OrbitalRefinement(world, Vnuc, nuc_repulsion)
         orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
-        
+
         # for i in range(len(orbs)):
         #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
@@ -144,45 +146,47 @@ for d in distance:
 
         e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
         energies = e + nuc_repulsion
- 
+
         rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
         sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
         sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
- 
+
         # State-averaged energy from SA-RDMs
-        e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-                 + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-                 + nuc_repulsion)
- 
+        e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuc_repulsion
+
         sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
- 
+
         print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
- 
+
         iter_time = time.perf_counter() - iter_start
         with open(output_file, "a") as f:
-            f.write(f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+            f.write(
+                f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} "
+                + " ".join(f"{x:.15f}" for x in energies)
+                + f" {e_avg:.15f}\n"
+            )
+
         if abs(e_avg - current) < econv:
             converged = True
             print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
             break  # stop as soon as the state-averaged energy changes less than econv
         current = e_avg
- 
+
     dist_time = time.perf_counter() - dist_start
     status = f"converged after {iter + 1} iterations" if converged else f"not converged after {iterations} iterations"
     print(f"Distance {reported_distance:.3f}: {status}, time = {dist_time:.1f} s")
- 
+
     with open(output_file, "a") as f:
         f.write(f"# distance {reported_distance:.3f}: {status}, econv = {econv:.0e}, time = {dist_time:.2f} s\n")
- 
+
     del integrals
     del opti
     del madpno
     del world
- 
+
 with open(output_file, "a") as f:
     f.write(f"# total time = {time.perf_counter() - total_start:.2f} s\n")
- 
+
 print(f"\nTotal time: {time.perf_counter() - total_start:.1f} s")
- 
+
 fe.cleanup(globals())

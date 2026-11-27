@@ -6,18 +6,18 @@ from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 import frayedends as fe
 
 molecule_name = "h2"
-n_elec = 2 # Number of electrons
-number_roots = 3 # Number of states (groundstate, 1. excited state, 2. excited state)
-box_size = 50.0 # Size of the simulation box
-wavelet_order = 7 # Order of wavelet basis functions
-madness_thresh = 1.0e-5 # Threshold for numerical precision of function representation
+n_elec = 2  # Number of electrons
+number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
+box_size = 50.0  # Size of the simulation box
+wavelet_order = 7  # Order of wavelet basis functions
+madness_thresh = 1.0e-5  # Threshold for numerical precision of function representation
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_cispd_pno_dmrg.dat"
- 
+
 with open(output_file, "w") as f:
     f.write("time_s n_orbitals " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
- 
+
 total_start = time.perf_counter()
 
 # Define a linear H2 molecule geometry with 1.0 Angstrom spacing
@@ -102,9 +102,7 @@ sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)
 sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
 
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-         + nuc_repulsion)
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion
 
 idx_back = np.argsort(idx)
 sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -112,7 +110,7 @@ sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
 sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
 total_time = time.perf_counter() - total_start
- 
+
 print(f"{'Energies':<{14 * number_roots}}{'E_SA':<16}Time / s")
 print(f"{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{total_time:.1f}")
 

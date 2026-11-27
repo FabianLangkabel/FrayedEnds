@@ -9,17 +9,17 @@ import frayedends as fe
 # Parameter Configuration
 molecule_name = "h2"
 distance = 1.0
-n_elec = 2 # Number of electrons
-number_roots = 3 # Number of states (groundstate, 1. excited state, 2. excited state)
-iterations = 10 # Number of iterations
-box_size = 50.0 # Size of the simulation box
+n_elec = 2  # Number of electrons
+number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
+iterations = 10  # Number of iterations
+box_size = 50.0  # Size of the simulation box
 wavelet_order = 7  # Order of wavelet basis functions
-madness_thresh = 1.0e-4 # Threshold for numerical precision of function representation
+madness_thresh = 1.0e-4  # Threshold for numerical precision of function representation
 econv = 1.0e-4  # Energy convergence threshold (state-averaged energy)
 
-basisset = "6-31g" # Initial basis set for calculation
-nwchem_command = "nwchem" 
-nwchem_localize = None # localization of the occupied NWChem orbitals
+basisset = "6-31g"  # Initial basis set for calculation
+nwchem_command = "nwchem"
+nwchem_localize = None  # localization of the occupied NWChem orbitals
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_nwchem_dmrg_oo.dat"
@@ -34,7 +34,14 @@ Run NWChem calculation
 """
 geometry = f"H 0.0 0.0 {distance}\nH 0.0 0.0 {-distance}"
 
-nwchem = fe.run_nwchem(geometry=geometry, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
+nwchem = fe.run_nwchem(
+    geometry=geometry,
+    basis=basisset,
+    name=molecule_name,
+    units="angstrom",
+    nwchem_command=nwchem_command,
+    localize=nwchem_localize,
+)
 
 """
 Convert NWChem AOs and MOs to MRA-Orbitals
@@ -78,13 +85,15 @@ energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4
 Extract rdms
 """
 kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
-sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0) # Compute the state average 1-body rdm
-sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2) # Compute the state average 2-body rdm
+sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
+sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+    0, 3, 1, 2
+)  # Compute the state average 2-body rdm
 
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-         + nuclear_repulsion_energy)
+e_avg = (
+    np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuclear_repulsion_energy
+)
 
 idx_back = np.argsort(idx)  # Get the inverse of the orbital reordering
 sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -93,10 +102,10 @@ sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
 with open(output_file, "a") as f:
     f.write("0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
 print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
 print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
- 
+
 current = e_avg
 converged = False
 
@@ -130,34 +139,35 @@ for iter in range(iterations):
     kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
     sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)
     sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
-    
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-             + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-             + nuclear_repulsion_energy)    
- 
+
+    e_avg = (
+        np.einsum("ij,ij->", sa_1pdm, h1_new)
+        + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+        + nuclear_repulsion_energy
+    )
+
     idx_back = np.argsort(idx)
     sa_1pdm = sa_1pdm[idx_back][:, idx_back]
     sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
     print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
- 
+
     iter_time = time.perf_counter() - iter_start
     with open(output_file, "a") as f:
         f.write(f"{iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
-    
+
     if abs(e_avg - current) < econv:
         converged = True
         print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
         break  # stop as soon as the state-averaged energy changes less than econv
     current = e_avg
- 
+
 if not converged:
     print(f"Not converged after {iterations} iterations")
- 
+
 with open(output_file, "a") as f:
     status = "converged" if converged else "not converged"
     f.write(f"# {status}, econv = {econv:.0e}, total time = {time.perf_counter() - total_start:.2f} s\n")
- 
-fe.cleanup(globals())
 
+fe.cleanup(globals())

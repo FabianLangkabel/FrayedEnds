@@ -15,8 +15,8 @@ madness_thresh = 1.0e-4
 econv = 1.0e-4
 
 basisset = "6-31g"
-nwchem_command = "nwchem" 
-nwchem_localize = None 
+nwchem_command = "nwchem"
+nwchem_localize = None
 
 geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
@@ -30,9 +30,11 @@ else:
 
 # Create .dat file for the results
 output_file = f"{molecule_name}_{geometry_mode}_nwchem_dmrg_oo.dat"
- 
+
 with open(output_file, "w") as f:
-    f.write("distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
+    f.write(
+        "distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n"
+    )
 
 total_start = time.perf_counter()
 
@@ -43,14 +45,21 @@ Run NWChem calculation
 for d in distance:
     dist_start = time.perf_counter()
     reported_distance = 2 * d if geometry_mode == "h2_pair" else d
-    
+
     if geometry_mode == "equidistant":  # equidistant linear H4 molecule
         z = [-1.5 * d, -0.5 * d, 0.5 * d, 1.5 * d]
     else:  # two H2 molecules (bond length 2.55) getting closer
         z = [-d - 2.55, -d, d, d + 2.55]
     geom = "".join(f"H 0.0 0.0 {zi}\n" for zi in z)
-    
-    nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
+
+    nwchem = fe.run_nwchem(
+        geometry=geom,
+        basis=basisset,
+        name=molecule_name,
+        units="angstrom",
+        nwchem_command=nwchem_command,
+        localize=nwchem_localize,
+    )
 
     """
     Convert NWChem AOs and MOs to MRA-Orbitals
@@ -64,7 +73,7 @@ for d in distance:
     orbs = converter.get_mos()
     Vnuc = converter.get_Vnuc()
     nuclear_repulsion_energy = converter.get_nuclear_repulsion_energy()
-    
+
     # for i in range(len(orbs)):
     #    world.line_plot(f"orb{i}_d{d}.dat", orbs[i], axis="z", datapoints=2001)
 
@@ -102,10 +111,12 @@ for d in distance:
     sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
 
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-            + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-            + nuclear_repulsion_energy)
-    
+    e_avg = (
+        np.einsum("ij,ij->", sa_1pdm, h1_new)
+        + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+        + nuclear_repulsion_energy
+    )
+
     idx_back = np.argsort(idx)  # Get the inverse of the orbital reordering
     sa_1pdm = sa_1pdm[idx_back][:, idx_back]
     sa_2pdm = sa_2pdm[idx_back][:, idx_back][:, :, idx_back][:, :, :, idx_back]
@@ -113,11 +124,11 @@ for d in distance:
 
     with open(output_file, "a") as f:
         f.write(f"{reported_distance:.3f} 0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
     print(f"\nDistance: {reported_distance:.3f}")
     print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
     print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
- 
+
     current = e_avg
     converged = False
 
@@ -150,16 +161,20 @@ for d in distance:
 
         mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuclear_repulsion_energy, iprint=0)
         ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
-        energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=0)
-        
+        energies = driver.dmrg(
+            mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=0
+        )
+
         kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
         sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)
         sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
-        
+
         # State-averaged energy from SA-RDMs
-        e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-                    + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-                    + nuclear_repulsion_energy)
+        e_avg = (
+            np.einsum("ij,ij->", sa_1pdm, h1_new)
+            + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+            + nuclear_repulsion_energy
+        )
 
         idx_back = np.argsort(idx)  # Get the inverse of the orbital reordering
         sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -167,11 +182,15 @@ for d in distance:
         sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
         print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
- 
+
         iter_time = time.perf_counter() - iter_start
         with open(output_file, "a") as f:
-            f.write(f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+            f.write(
+                f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} "
+                + " ".join(f"{x:.15f}" for x in energies)
+                + f" {e_avg:.15f}\n"
+            )
+
         if abs(e_avg - current) < econv:
             converged = True
             print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
@@ -181,19 +200,18 @@ for d in distance:
     dist_time = time.perf_counter() - dist_start
     status = f"converged after {iter + 1} iterations" if converged else f"not converged after {iterations} iterations"
     print(f"Distance {reported_distance:.3f}: {status}, time = {dist_time:.1f} s")
- 
+
     with open(output_file, "a") as f:
         f.write(f"# distance {reported_distance:.3f}: {status}, econv = {econv:.0e}, time = {dist_time:.2f} s\n")
- 
+
     del converter
     del integrals
     del opti
     del world
- 
+
 with open(output_file, "a") as f:
     f.write(f"# total time = {time.perf_counter() - total_start:.2f} s\n")
- 
+
 print(f"\nTotal time: {time.perf_counter() - total_start:.1f} s")
- 
+
 fe.cleanup(globals())
- 

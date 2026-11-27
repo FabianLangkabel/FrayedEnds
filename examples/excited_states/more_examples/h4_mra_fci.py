@@ -6,17 +6,17 @@ from pyscf import fci
 import frayedends as fe
 
 molecule_name = "h4"
-n_elec = 4 
+n_elec = 4
 number_roots = 3
 iterations = 20
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 1.0e-4
-econv = 1.0e-4 
+econv = 1.0e-4
 
 basisset = "6-31g"
-nwchem_command = "nwchem" 
-nwchem_localize = None 
+nwchem_command = "nwchem"
+nwchem_localize = None
 
 geometry_mode = "equidistant"  # "equidistant" or "h2_pair"
 print(f"Geometry mode: {geometry_mode}")
@@ -29,9 +29,11 @@ else:
     raise ValueError("Invalid geometry mode selected.")
 
 output_file = f"{molecule_name}_{geometry_mode}_nwchem_fci_oo.dat"
- 
+
 with open(output_file, "w") as f:
-    f.write("distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
+    f.write(
+        "distance iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n"
+    )
 
 total_start = time.perf_counter()
 
@@ -45,7 +47,14 @@ for d in distance:
         z = [-d - 2.55, -d, d, d + 2.55]
     geom = "".join(f"H 0.0 0.0 {zi}\n" for zi in z)
 
-    nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
+    nwchem = fe.run_nwchem(
+        geometry=geom,
+        basis=basisset,
+        name=molecule_name,
+        units="angstrom",
+        nwchem_command=nwchem_command,
+        localize=nwchem_localize,
+    )
 
     world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
 
@@ -70,25 +79,23 @@ for d in distance:
     cisolver = fci.addons.fix_spin_(cisolver, shift=1.0, ss=0)
     e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
     energies = e + nuclear_repulsion_energy
-    
+
     rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
     sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
     sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
-    
+
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-                + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-                + nuclear_repulsion_energy)
+    e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
 
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
     with open(output_file, "a") as f:
         f.write(f"{reported_distance:.3f} 0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
-    
+
     print(f"\nDistance: {reported_distance:.3f}")
     print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
     print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
-    
+
     current = e_avg
     converged = False
 
@@ -97,7 +104,9 @@ for d in distance:
 
         # Orbital optimization
         opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
-        orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)  # Optimizes the orbitals and returns the new ones
+        orbs = opti.get_orbitals(
+            orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001
+        )  # Optimizes the orbitals and returns the new ones
 
         # for i in range(n_orbitals):
         #    world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plots the optimized orbitals
@@ -106,29 +115,33 @@ for d in distance:
         T = integrals.compute_kinetic_integrals(orbs)
         V = integrals.compute_potential_integrals(orbs, Vnuc)
         h1 = T + V
-    
+
         n_orbitals = len(orbs)
-    
+
         e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
         energies = e + nuclear_repulsion_energy
-        
+
         rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
         sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
         sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
-        
+
         # State-averaged energy from SA-RDMs
-        e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-                    + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-                    + nuclear_repulsion_energy)
-    
+        e_avg = (
+            np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
+        )
+
         sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
-        
+
         print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
-         
+
         iter_time = time.perf_counter() - iter_start
         with open(output_file, "a") as f:
-            f.write(f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
-    
+            f.write(
+                f"{reported_distance:.3f} {iter + 1} {iter_time:.2f} "
+                + " ".join(f"{x:.15f}" for x in energies)
+                + f" {e_avg:.15f}\n"
+            )
+
         if abs(e_avg - current) < econv:
             converged = True
             print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
@@ -138,18 +151,18 @@ for d in distance:
     dist_time = time.perf_counter() - dist_start
     status = f"converged after {iter + 1} iterations" if converged else f"not converged after {iterations} iterations"
     print(f"Distance {reported_distance:.3f}: {status}, time = {dist_time:.1f} s")
-    
+
     with open(output_file, "a") as f:
         f.write(f"# distance {reported_distance:.3f}: {status}, econv = {econv:.0e}, time = {dist_time:.2f} s\n")
-    
+
     del converter
     del integrals
     del opti
     del world
-    
+
 with open(output_file, "a") as f:
     f.write(f"# total time = {time.perf_counter() - total_start:.2f} s\n")
-    
+
 print(f"\nTotal time: {time.perf_counter() - total_start:.1f} s")
-    
+
 fe.cleanup(globals())

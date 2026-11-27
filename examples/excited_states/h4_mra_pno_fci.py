@@ -55,31 +55,29 @@ G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tenso
 T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
 V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
 h1 = T + V
- 
+
 # Perform State Average (SA) FCI calculation
 cisolver = fci.direct_spin1.FCI()
 cisolver = fci.addons.fix_spin_(cisolver, shift=1.0, ss=0)
 e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
 energies = e + nuclear_repulsion_energy
- 
+
 # Extract rdms (PySCF / chemist notation)
 rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
 sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
 sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
- 
+
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-         + nuclear_repulsion_energy)
- 
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
+
 sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Physics Notation
 
 with open(output_file, "a") as f:
     f.write("0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
 print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
 print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
- 
+
 current = e_avg
 converged = False
 
@@ -94,33 +92,31 @@ for iter in range(iterations):
 
     # for i in range(len(orbs)):
     #     world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals
-    
+
     # FCI calculation with refined orbitals
     G = integrals.compute_two_body_integrals(orbs, ordering="chem").elems  # g-tensor (electron-electron interaction)
     T = integrals.compute_kinetic_integrals(orbs)  # Kinetic energy
     V = integrals.compute_potential_integrals(orbs, Vnuc)  # Potential energy
     h1 = T + V
- 
+
     e, fcivec = cisolver.kernel(h1, G, n_orbitals, n_elec, nroots=number_roots)
     energies = e + nuclear_repulsion_energy
- 
+
     rdms = [cisolver.make_rdm12(c, n_orbitals, n_elec) for c in fcivec]
     sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-body rdm
     sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
- 
+
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-             + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-             + nuclear_repulsion_energy)
- 
+    e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
+
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
- 
+
     print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
- 
+
     iter_time = time.perf_counter() - iter_start
     with open(output_file, "a") as f:
         f.write(f"{iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
     if abs(e_avg - current) < econv:
         converged = True
         print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
@@ -129,9 +125,9 @@ for iter in range(iterations):
 
 if not converged:
     print(f"Not converged after {iterations} iterations")
- 
+
 with open(output_file, "a") as f:
     status = "converged" if converged else "not converged"
     f.write(f"# {status}, econv = {econv:.0e}, total time = {time.perf_counter() - total_start:.2f} s\n")
- 
+
 fe.cleanup(globals())

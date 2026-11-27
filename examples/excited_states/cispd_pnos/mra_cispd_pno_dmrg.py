@@ -6,21 +6,21 @@ from pyblock2.driver.core import DMRGDriver, SymmetryTypes
 import frayedends as fe
 
 molecule_name = "h2"
-n_elec = 2 # Number of electrons
-number_roots = 3 # Number of states (groundstate, 1. excited state, 2. excited state)
-n_excitations = 2 # Number of excitations
-iterations = 15 # Number of iterations
-box_size = 50.0 # Size of the simulation box
-wavelet_order = 7 # Order of wavelet basis functions
-madness_thresh = 1.0e-6 # Threshold for numerical precision of function representation
-econv = 1.0e-4 # Energy convergence threshold (state-averaged energy)
+n_elec = 2  # Number of electrons
+number_roots = 3  # Number of states (groundstate, 1. excited state, 2. excited state)
+n_excitations = 2  # Number of excitations
+iterations = 15  # Number of iterations
+box_size = 50.0  # Size of the simulation box
+wavelet_order = 7  # Order of wavelet basis functions
+madness_thresh = 1.0e-6  # Threshold for numerical precision of function representation
+econv = 1.0e-4  # Energy convergence threshold (state-averaged energy)
 
 # Create .dat file for the results
 output_file = f"{molecule_name}_cispd_pno_dmrg_oo.dat"
- 
+
 with open(output_file, "w") as f:
     f.write("iteration iteration_time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
- 
+
 total_start = time.perf_counter()
 
 # Define a linear H2 molecule geometry with 1.0 Angstrom spacing
@@ -103,9 +103,7 @@ sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)
 sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)
 
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-         + nuc_repulsion)
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion
 
 idx_back = np.argsort(idx)
 sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -118,13 +116,13 @@ natural_orbs, occ_n, vec = integrals.transform_to_natural_orbitals(orbs, sa_1pdm
 
 # for i in range(len(natural_orbs)):
 #     world.cube_plot(f"nat_orb_it0_orb{i}", natural_orbs[i], molecule, zoom=4.0)
- 
+
 with open(output_file, "a") as f:
     f.write("0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
 print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
 print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
- 
+
 current = e_avg
 converged = False
 
@@ -157,12 +155,12 @@ for iter in range(iterations):
 
     kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
     sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
-    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)  # Compute the state average 2-body rdm
+    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+        0, 3, 1, 2
+    )  # Compute the state average 2-body rdm
 
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-            + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-            + nuc_repulsion)
+    e_avg = np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion
 
     idx_back = np.argsort(idx)
     sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -176,23 +174,23 @@ for iter in range(iterations):
     #     world.cube_plot(f"nat_orb_it{iter+1}_orb{i}", natural_orbs[i], molecule, zoom=4.0)
 
     print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
- 
+
     iter_time = time.perf_counter() - iter_start
     with open(output_file, "a") as f:
         f.write(f"{iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
     if abs(e_avg - current) < econv:
         converged = True
         print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
         break  # stop as soon as the state-averaged energy changes less than econv
     current = e_avg
- 
+
 if not converged:
     print(f"Not converged after {iterations} iterations")
- 
+
 with open(output_file, "a") as f:
     status = "converged" if converged else "not converged"
     f.write("# final natural orbital occupations: " + " ".join(f"{x:.10f}" for x in occ_n) + "\n")
     f.write(f"# {status}, econv = {econv:.0e}, total time = {time.perf_counter() - total_start:.2f} s\n")
- 
+
 fe.cleanup(globals())

@@ -12,10 +12,10 @@ iterations = 15
 box_size = 50.0
 wavelet_order = 7
 madness_thresh = 1.0e-6
-econv = 1.0e-4 
+econv = 1.0e-4
 
 basisset = "sto-3g"
-nwchem_command = "nwchem" 
+nwchem_command = "nwchem"
 
 # DRMG parameters
 bond_dims = [250] * 4 + [500]
@@ -24,17 +24,19 @@ thrds = [1e-10] * 8
 
 # Create .dat file for the results
 output_file = f"{molecule_name}_nwchem_dmrg_oo.dat"
- 
+
 with open(output_file, "w") as f:
     f.write("iteration iteration_time_s energy energy_rdm\n")
- 
+
 total_start = time.perf_counter()
 
 # Define the linear Li3 geometry
 geom = f"Li 0.0 0.0 1.5489\nLi 0.0 1.6710 -0.7745\nLi 0.0 -1.6710 -0.7745\n"
 
 # Run NWChem calculation (doublet, UHF)
-nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", multiplicity=2, nwchem_command=nwchem_command)
+nwchem = fe.run_nwchem(
+    geometry=geom, basis=basisset, name=molecule_name, units="angstrom", multiplicity=2, nwchem_command=nwchem_command
+)
 
 # Initalize world
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)
@@ -59,9 +61,9 @@ integrals = fe.Integrals_open_shell(world)
 c, h1, g2 = integrals.compute_effective_hamiltonian(
     core_alpha_orbitals, core_beta_orbitals, active_alpha_orbitals, active_beta_orbitals, Vnuc, nuclear_repulsion_energy
 )
-g2[0] = g2[0].transpose(0, 2, 1, 3) # aa
-g2[1] = g2[1].transpose(0, 2, 1, 3) # ab
-g2[2] = g2[2].transpose(0, 2, 1, 3) # bb
+g2[0] = g2[0].transpose(0, 2, 1, 3)  # aa
+g2[1] = g2[1].transpose(0, 2, 1, 3)  # ab
+g2[2] = g2[2].transpose(0, 2, 1, 3)  # bb
 
 driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SZ, n_threads=8)
 driver.initialize_system(n_sites=n_active, n_elec=n_elec, spin=1)
@@ -117,9 +119,9 @@ for iter in range(iterations):
 
     # Update Integrals with new orbitals
     c, h1, g2 = opti.get_effective_hamiltonian()
-    g2[0] = g2[0].transpose(0, 2, 1, 3) # aa
-    g2[1] = g2[1].transpose(0, 2, 1, 3) # ab
-    g2[2] = g2[2].transpose(0, 2, 1, 3) # bb
+    g2[0] = g2[0].transpose(0, 2, 1, 3)  # aa
+    g2[1] = g2[1].transpose(0, 2, 1, 3)  # ab
+    g2[2] = g2[2].transpose(0, 2, 1, 3)  # bb
 
     driver = DMRGDriver(scratch="./tmp", symm_type=SymmetryTypes.SZ, n_threads=8)
     driver.initialize_system(n_sites=n_active, n_elec=n_elec, spin=1)
@@ -145,22 +147,22 @@ for iter in range(iterations):
     rdm_energy = one_body_en + two_body_en + c
 
     print(f"{iter + 1:<6}{energy:<18.10f}{rdm_energy:<18.10f}{energy - current:+.1e}")
- 
+
     iter_time = time.perf_counter() - iter_start
     with open(output_file, "a") as f:
         f.write(f"{iter + 1} {iter_time:.2f} {energy:.15f} {rdm_energy:.15f}\n")
- 
+
     if abs(energy - current) < econv:
         converged = True
         print(f"Converged after {iter + 1} iterations (|dE| < {econv:.0e})")
         break
     current = energy
- 
+
 if not converged:
     print(f"Not converged after {iterations} iterations")
- 
+
 with open(output_file, "a") as f:
     status = "converged" if converged else "not converged"
     f.write(f"# {status}, econv = {econv:.0e}, total time = {time.perf_counter() - total_start:.2f} s\n")
- 
+
 fe.cleanup(globals())

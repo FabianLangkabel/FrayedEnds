@@ -23,10 +23,10 @@ else:
     raise ValueError("geometry_mode must be 'equidistant' or 'h2_pair'")
 
 output_file = f"{molecule_name}_{geometry_mode}_pno_fci.dat"
- 
+
 with open(output_file, "w") as f:
     f.write("distance time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
- 
+
 total_start = time.perf_counter()
 
 for d in distance:
@@ -78,17 +78,17 @@ for d in distance:
     sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
 
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-            + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-            + nuclear_repulsion_energy)
-    
+    e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
+
     dist_time = time.perf_counter() - dist_start
-    
+
     print(f"{'Dist':<8}{'Energies':<{14 * number_roots}}{'E_SA':<16}Time / s")
     print(f"{reported_distance:<8.3f}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{dist_time:.1f}")
 
     with open(output_file, "a") as f:
-        f.write(f"{reported_distance:.3f} {dist_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
+        f.write(
+            f"{reported_distance:.3f} {dist_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n"
+        )
 
     del integrals
     del madpno

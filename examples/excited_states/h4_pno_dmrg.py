@@ -20,7 +20,7 @@ madness_thresh = 1.0e-4  # Threshold for numerical precision of function represe
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_pno_dmrg.dat"
- 
+
 with open(output_file, "w") as f:
     f.write("time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
 
@@ -68,19 +68,19 @@ energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4
 # Extract rdms
 kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
 sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
-sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)  # Compute the state average 2-body rdm
+sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+    0, 3, 1, 2
+)  # Compute the state average 2-body rdm
 
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-         + nuc_repulsion)
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuc_repulsion
 
 total_time = time.perf_counter() - total_start
- 
+
 print(f"{'Energies':<{14 * number_roots}}{'E_SA':<16}Time / s")
 print(f"{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{total_time:.1f}")
- 
+
 with open(output_file, "a") as f:
     f.write(f"{total_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
 fe.cleanup(globals())

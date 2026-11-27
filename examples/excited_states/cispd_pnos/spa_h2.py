@@ -198,9 +198,7 @@ print(f"Circuit: {circuit}")
 
 print("--------------- SPA H_check & U_ex + UR:  ES -----------------")
 gs_circuit_ch = gs_circuit + rotation  # add rotation to groundstate circuit
-E = ti.vqd_projection_method(
-    H=H_check, U=U_ex + UR, circuit_list=[gs_circuit_ch], constant_list=constants
-)
+E = ti.vqd_projection_method(H=H_check, U=U_ex + UR, circuit_list=[gs_circuit_ch], constant_list=constants)
 result = tq.minimize(E, silent=True)
 print(f"FCI Singlet EX: {fci_energy_1}")
 print(f"SPA Singlet EX: {result.energy}")

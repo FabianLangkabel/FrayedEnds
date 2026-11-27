@@ -13,13 +13,20 @@ wavelet_order = 7
 madness_thresh = 0.0001
 
 basisset = "cc-pvdz"
-nwchem_command = "nwchem" 
+nwchem_command = "nwchem"
 nwchem_localize = None
 
 geom = "Be 0.0 0.0 0.0\nH 0.0 0.0 2.5\nH 0.0 0.0 -2.5\n"
 
 # Run NWChem calculation
-nwchem = fe.run_nwchem(geometry=geom, basis=basisset, name=molecule_name, units="angstrom", nwchem_command=nwchem_command, localize=nwchem_localize)
+nwchem = fe.run_nwchem(
+    geometry=geom,
+    basis=basisset,
+    name=molecule_name,
+    units="angstrom",
+    nwchem_command=nwchem_command,
+    localize=nwchem_localize,
+)
 
 # Initalize world
 world = fe.MadWorld(ndims=3, L=box_size, k=wavelet_order, thresh=madness_thresh)

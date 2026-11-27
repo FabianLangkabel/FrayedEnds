@@ -70,12 +70,14 @@ energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4
 # Extract rdms
 kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
 sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
-sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)  # Compute the state average 2-body rdm
+sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+    0, 3, 1, 2
+)  # Compute the state average 2-body rdm
 
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-         + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-         + nuclear_repulsion_energy)
+e_avg = (
+    np.einsum("ij,ij->", sa_1pdm, h1_new) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new) + nuclear_repulsion_energy
+)
 
 idx_back = np.argsort(idx)  # Get the inverse of the orbital reordering
 sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -84,10 +86,10 @@ sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
 
 with open(output_file, "a") as f:
     f.write("0 0.00 " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
 print(f"{'Iter':<6}{'Energies':<{14 * number_roots}}{'E_SA':<16}dE_SA")
 print(f"{0:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}-")
- 
+
 current = e_avg
 converged = False
 
@@ -97,7 +99,7 @@ for iter in range(iterations):
     # Orbital Refinement
     opti = fe.OrbitalRefinement(world, Vnuc, nuclear_repulsion_energy)
     orbs = opti.get_orbitals(orbitals=orbs, rdm1=sa_1pdm, rdm2=sa_2pdm_phys, opt_thresh=0.001, occ_thresh=0.001)
-    
+
     # for i in range(len(orbs)):
     #     world.line_plot(f"orb{i}.dat", orbs[i], axis="z", datapoints=2001)  # Plot the refined orbitals
 
@@ -117,15 +119,19 @@ for iter in range(iterations):
     mpo = driver.get_qc_mpo(h1e=h1_new, g2e=g2_new, ecore=nuclear_repulsion_energy, iprint=0)
     ket = driver.get_random_mps(tag="KET", bond_dim=100, nroots=number_roots)
     energies = driver.dmrg(mpo, ket, n_sweeps=10, bond_dims=[100], noises=[1e-5] * 4 + [0], thrds=[1e-10] * 8, iprint=0)
-    
+
     kets = [driver.split_mps(ket, ir, tag="KET-%d" % ir) for ir in range(ket.nroots)]
     sa_1pdm = np.mean([driver.get_1pdm(k) for k in kets], axis=0)  # Compute the state average 1-body rdm
-    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(0, 3, 1, 2)  # Compute the state average 2-body rdm
+    sa_2pdm = np.mean([driver.get_2pdm(k) for k in kets], axis=0).transpose(
+        0, 3, 1, 2
+    )  # Compute the state average 2-body rdm
 
     # State-averaged energy from SA-RDMs
-    e_avg = (np.einsum("ij,ij->", sa_1pdm, h1_new)
-             + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
-             + nuclear_repulsion_energy)    
+    e_avg = (
+        np.einsum("ij,ij->", sa_1pdm, h1_new)
+        + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, g2_new)
+        + nuclear_repulsion_energy
+    )
 
     idx_back = np.argsort(idx)  # Get the inverse of the orbital reordering
     sa_1pdm = sa_1pdm[idx_back][:, idx_back]
@@ -133,23 +139,22 @@ for iter in range(iterations):
     sa_2pdm_phys = sa_2pdm.swapaxes(1, 2)  # Change to physics Notation
 
     print(f"{iter + 1:<6}{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{e_avg - current:+.1e}")
-     
+
     iter_time = time.perf_counter() - iter_start
     with open(output_file, "a") as f:
         f.write(f"{iter + 1} {iter_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
-    
+
     if abs(e_avg - current) < econv:
         converged = True
         print(f"Converged after {iter + 1} iterations (|dE_SA| < {econv:.0e})")
         break  # stop as soon as the state-averaged energy changes less than econv
     current = e_avg
-    
+
 if not converged:
     print(f"Not converged after {iterations} iterations")
-    
+
 with open(output_file, "a") as f:
     status = "converged" if converged else "not converged"
     f.write(f"# {status}, econv = {econv:.0e}, total time = {time.perf_counter() - total_start:.2f} s\n")
-    
+
 fe.cleanup(globals())
-    

@@ -20,7 +20,7 @@ madness_thresh = 1.0e-4  # Threshold for numerical precision of function represe
 
 # Create .dat files for the results
 output_file = f"{molecule_name}_pno_fci.dat"
- 
+
 with open(output_file, "w") as f:
     f.write("time_s " + " ".join(f"energy_{i}" for i in range(number_roots)) + " energy_SA\n")
 
@@ -64,16 +64,14 @@ sa_1pdm = np.mean([r[0] for r in rdms], axis=0)  # Compute the state average 1-b
 sa_2pdm = np.mean([r[1] for r in rdms], axis=0)  # Compute the state average 2-body rdm
 
 # State-averaged energy from SA-RDMs
-e_avg = (np.einsum("ij,ij->", sa_1pdm, h1)
-        + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G)
-        + nuclear_repulsion_energy)
+e_avg = np.einsum("ij,ij->", sa_1pdm, h1) + 0.5 * np.einsum("ijkl,ijkl->", sa_2pdm, G) + nuclear_repulsion_energy
 
 total_time = time.perf_counter() - total_start
- 
+
 print(f"{'Energies':<{14 * number_roots}}{'E_SA':<16}Time / s")
 print(f"{''.join(f'{e:<14.8f}' for e in energies)}{e_avg:<16.8f}{total_time:.1f}")
- 
+
 with open(output_file, "a") as f:
     f.write(f"{total_time:.2f} " + " ".join(f"{x:.15f}" for x in energies) + f" {e_avg:.15f}\n")
- 
+
 fe.cleanup(globals())
